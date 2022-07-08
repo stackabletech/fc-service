@@ -1,0 +1,34 @@
+version: '3.7'
+
+services:
+  keycloak:
+    container_name: "federated-catalogue-keycloak"
+    environment:
+      KEYCLOAK_ADMIN: "admin"
+      KEYCLOAK_ADMIN_PASSWORD: "admin"
+      PROXY_ADDRESS_FORWARDING: "true"
+    image: "quay.io/keycloak/keycloak:17.0.1"
+    ports:
+      - "8080:8080"
+    networks:
+      - "gaia-x"
+    restart: unless-stopped
+    extra_hosts:
+      - "auth-server:127.0.0.1"
+    volumes:
+      - "../keycloak/providers:/opt/keycloak/providers"
+      - "../keycloak/realms:/tmp/import"
+    command:
+      [
+          'start-dev --auto-build',
+          '-Dkeycloak.migration.action=import',
+          '-Dkeycloak.migration.provider=dir',
+          '-Dkeycloak.migration.dir=/tmp/import',
+          '-Dkeycloak.migration.strategy=OVERWRITE_EXISTING',
+          '-Dkeycloak.profile.feature.upload_scripts=enabled',
+          '--log-level=DEBUG,io.quarkus:INFO,liquibase:INFO,org.hibernate:INFO,org.infinispan:INFO,org.keycloak.services.scheduled:INFO,org.keycloak.transaction:INFO,io.netty.buffer.PoolThreadCache:INFO,org.keycloak.models.sessions.infinispan:INFO'
+      ]
+
+networks:
+  gaia-x:
+    driver: "bridge"
