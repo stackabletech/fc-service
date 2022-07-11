@@ -1,0 +1,50 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+server:
+  port: 8081
+  tomcat:
+    mbeanregistry:
+      enabled: true
+
+spring:
+  profiles:
+    active: ${APPLICATION_PROFILES:default}
+  application:
+    name: ${APPLICATION_NAME:federated-catalogue-service-app}
+  mvc:
+    log-request-details: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/gaia-x
+          jwk-set-uri: http://localhost:8080/realms/gaia-x/protocol/openid-connect/certs
+
+springdoc:
+  api-docs:
+    path: /api/docs
+    enabled: true
+
+keycloak:
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://localhost:8080}
+  realm: ${KEYCLOAK_REALM:gaia-x}
+  ssl-required: external
+  resource: ${KEYCLOAK_CLIENT_ID:federated-catalogue}
+  credentials:
+    secret: ${KEYCLOAK_CLIENT_SECRET:fS1bDdAX0fvTPRK6GLp4LMObE1rrwwPz}
+  principal-attribute: preferred_username
+  bearer-only: true
+  cors: true
+
+logging:
+  level:
+    root: INFO
+    eu.gaiax.difs.fc.server: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web.client.RestTemplate: DEBUG
+    org.keycloak.adapters.OAuthRequestAuthenticator: DEBUG
