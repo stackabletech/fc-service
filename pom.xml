@@ -45,7 +45,7 @@
         <keycloak.version>18.0.1</keycloak.version>
         <micrometer.version>1.9.0</micrometer.version>
         <!-- plugins -->
-        <plugin.jib.version>3.2.1</plugin.jib.version>
+        <plugin.jib.version>3.2.0</plugin.jib.version>
         <!-- repoositiry path -->
         <repository.path>gaia-x/data-infrastructure-federation-services/cat/fc-service</repository.path>
         <!--jib-->
