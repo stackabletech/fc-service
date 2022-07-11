@@ -45,8 +45,7 @@
         <keycloak.version>18.0.1</keycloak.version>
         <micrometer.version>1.9.0</micrometer.version>
         <!-- plugins -->
-        <plugin.checkstyle.version>3.1.2</plugin.checkstyle.version>
-        <plugin.maven-compiler-plugin.version>3.8.1</plugin.maven-compiler-plugin.version>
+        <plugin.jib.version>3.2.1</plugin.jib.version>
         <!-- repoositiry path -->
         <repository.path>gaia-x/data-infrastructure-federation-services/cat/fc-service</repository.path>
         <!--jib-->
@@ -180,6 +179,7 @@
                 <plugin>
                     <groupId>com.google.cloud.tools</groupId>
                     <artifactId>jib-maven-plugin</artifactId>
+                    <version>${plugin.jib.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
