@@ -59,4 +59,5 @@ deploy:jdk11:
     - 'mvn $MAVEN_CLI_OPTS compile jib:build'
   only:
     variables:
-      - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+#      - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      - $MODULE == 'fc-service-server'
