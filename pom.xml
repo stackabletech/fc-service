@@ -198,19 +198,6 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>com.google.cloud.tools</groupId>
-                <artifactId>jib-maven-plugin</artifactId>
-                <configuration>
-                    <to>
-                        <image>${ci-registry}/${project.name}-image</image>
-                        <auth>
-                            <username>${env.CI_REGISTRY_USER}</username>
-                            <password>${env.CI_REGISTRY_PASSWORD}</password>
-                        </auth>
-                    </to>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
