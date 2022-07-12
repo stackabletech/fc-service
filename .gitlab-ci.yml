@@ -41,10 +41,7 @@ verify:jdk11:
 deploy:jdk11:
   stage: deploy
   script:
-#    - 'mvn $MAVEN_CLI_OPTS clean compile'
     - 'mvn $MAVEN_CLI_OPTS package jib:build -am'
-  artifacts:
-    expire_in: 10 min
   only:
     variables:
       - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
