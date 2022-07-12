@@ -118,7 +118,8 @@
                 <configuration>
                     <skip>false</skip>
                     <to>
-                        <image>${ci-registry}/${project.name}-image</image>
+                        <!--image>${ci-registry}/${project.name}-image</image-->
+                        <image>${ci-registry}/${project.artifactId}:${project.version}</image>
                         <auth>
                             <username>${env.CI_REGISTRY_USER}</username>
                             <password>${env.CI_REGISTRY_PASSWORD}</password>
