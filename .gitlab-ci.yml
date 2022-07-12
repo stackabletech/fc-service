@@ -17,13 +17,13 @@ cache:
     - .m2/repository
 
 stages:
-- test
+- build
 - deploy
 
 # For merge requests do not `deploy` but only run `verify`.
 # See https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html
 .verify: &verify
-  stage: test
+  stage: build
   script:
     - 'mvn $MAVEN_CLI_OPTS verify'
   except:
@@ -33,21 +33,6 @@ stages:
 # Verify merge requests using JDK11
 verify:jdk11:
   <<: *verify
-
-# You can override the included template(s) by including variable overrides
-# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
-# Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
-# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
-# Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
-# Note that environment variables can be set in several places
-# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
-sast:
-  stage: test
-#  only:
-#    variables:
-#      - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-include:
-- template: Security/SAST.gitlab-ci.yml
 
 # To deploy packages from CI, create a ci_settings.xml file
 # For deploying packages to GitLab's Maven Repository: See https://docs.gitlab.com/ee/user/packages/maven_repository/index.html#create-maven-packages-with-gitlab-cicd for more details.
@@ -59,5 +44,16 @@ deploy:jdk11:
     - 'mvn $MAVEN_CLI_OPTS compile jib:build'
   only:
     variables:
-#      - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      - $MODULE == 'fc-service-server'
+      - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+     
+# You can override the included template(s) by including variable overrides
+# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
+# Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
+# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
+# Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
+# Note that environment variables can be set in several places
+# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
+sast:
+  stage: deploy
+include:
+- template: Security/SAST.gitlab-ci.yml
