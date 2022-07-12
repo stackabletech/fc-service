@@ -180,6 +180,11 @@
                     <groupId>com.google.cloud.tools</groupId>
                     <artifactId>jib-maven-plugin</artifactId>
                     <version>${plugin.jib.version}</version>
+                    <configuration>
+                        <!-- Turn it off for all the modules, but
+                            turn it on in server module only -->
+                        <skip>true</skip>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
