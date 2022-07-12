@@ -101,6 +101,39 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <configuration>
+                    <generateModels>false</generateModels>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-federated-catalogue-api-server</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skipValidateSpec>true</skipValidateSpec>
+                            <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
+                            <inputSpec>${project.parent.basedir}/openapi/fc_openapi.json</inputSpec>
+                            <generatorName>spring</generatorName>
+                            <modelPackage>eu.gaiax.difs.fc.api.generated.model</modelPackage>
+                            <apiPackage>${project.groupId}.server.generated.controller</apiPackage>
+                            <configOptions>
+                                <performBeanValidation>true</performBeanValidation>
+                                <useBeanValidation>true</useBeanValidation>
+                                <useTags>true</useTags>
+                                <library>spring-boot</library>
+                                <delegatePattern>true</delegatePattern>
+                                <openApiNullable>false</openApiNullable>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <executions>

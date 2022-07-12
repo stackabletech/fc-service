@@ -46,6 +46,9 @@
         <micrometer.version>1.9.0</micrometer.version>
         <!-- plugins -->
         <plugin.jib.version>3.2.1</plugin.jib.version>
+        <plugin.openapi-generator.version>5.4.0</plugin.openapi-generator.version>
+        <plugin.maven-compiler.version>3.8.1</plugin.maven-compiler.version>
+        <plugin.checkstyle.version>3.1.2</plugin.checkstyle.version>
         <!-- repoositiry path -->
         <repository.path>gaia-x/data-infrastructure-federation-services/cat/fc-service</repository.path>
         <!--jib-->
@@ -150,10 +153,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${plugin.checkstyle.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${plugin.maven-compiler.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -175,6 +180,18 @@
                 <plugin>
                     <groupId>org.openapitools</groupId>
                     <artifactId>openapi-generator-maven-plugin</artifactId>
+                    <version>${plugin.openapi-generator.version}</version>
+                    <configuration>
+                        <generateApiTests>false</generateApiTests>
+                        <generateModelTests>false</generateModelTests>
+                        <generateApiDocumentation>false</generateApiDocumentation>
+                        <generateModelDocumentation>false</generateModelDocumentation>
+                        <configOptions>
+                            <serializableModel>true</serializableModel>
+                            <oas3>true</oas3>
+                            <useSpringfox>false</useSpringfox>
+                        </configOptions>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>com.google.cloud.tools</groupId>
