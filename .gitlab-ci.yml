@@ -41,8 +41,8 @@ verify:jdk11:
 deploy:jdk11:
   stage: deploy
   script:
-    - 'mvn $MAVEN_CLI_OPTS clean compile'
-    - 'mvn $MAVEN_CLI_OPTS jib:build'
+#    - 'mvn $MAVEN_CLI_OPTS clean compile'
+    - 'mvn $MAVEN_CLI_OPTS compile jib:build --also-make'
   only:
     variables:
       - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
