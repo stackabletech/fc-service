@@ -24,6 +24,10 @@ spring:
           issuer-uri: http://localhost:8080/realms/gaia-x
           jwk-set-uri: http://localhost:8080/realms/gaia-x/protocol/openid-connect/certs
 
+openapi:
+  gaiaXCatalogue:
+    base-path: ""
+
 springdoc:
   api-docs:
     path: /api/docs
