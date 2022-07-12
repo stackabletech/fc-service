@@ -41,7 +41,7 @@ verify:jdk11:
 deploy:jdk11:
   stage: deploy
   script:
-    - 'mvn $MAVEN_CLI_OPTS clean compile'
+    - 'mvn $MAVEN_CLI_OPTS clean compile --also-make'
     - 'mvn $MAVEN_CLI_OPTS jib:build'
   only:
     variables:
