@@ -9,17 +9,6 @@ info:
 servers:
   - url: https://api.gaiax.io/v1
 components:
-  securitySchemes:
-    oAuthNoScopes:
-      type: oauth2
-      description: This if left from original API, will fix it later on
-      flows:
-        implicit:
-          authorizationUrl: https://api.gaiax.io/oauth2/authorize
-          scopes:
-            read_self-descriptions: read the Self-Descriptions
-            write_self-descriptions: Add, delete, and update a Self-Description
-            query: Send queries
   responses:
     NotFound:
       description: The specified resource was not found
@@ -100,7 +89,7 @@ components:
           type: string
           example: Ro-MU-CA
   parameters:
-    Offset:
+    offsetParam:
       name: offset
       in: query
       schema:
@@ -109,7 +98,7 @@ components:
         default: 0
       required: false
       description: The number of items to skip before starting to collect the result set.
-    Limit:
+    limitParam:
       in: query
       name: limit
       schema:
@@ -119,14 +108,14 @@ components:
         default: 100
       required: false
       description: The number of items to return.
-    OrderBy:
+    orderByParam:
       in: query
       name: orderBy
       schema:
         type: string
       required: false
       description: Results will be sorted by this field.
-    Ascending:
+    orderDirParam:
       in: query
       name: ascending
       schema:
@@ -134,41 +123,41 @@ components:
         default: true
       required: false
       description: Ascending/Descending ordering.
+  securitySchemes:
+    jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+#    oAuthNoScopes:
+#      type: oauth2
+#      description: This if left from original API, will fix it later on
+#      flows:
+#        implicit:
+#          authorizationUrl: https://api.gaiax.io/oauth2/authorize
+#          scopes:
+#            read_self-descriptions: read the Self-Descriptions
+#            write_self-descriptions: Add, delete, and update a Self-Description
+#            query: Send queries
+
 tags:
-  - name: participants
+  - name: Participants
     description: Participant Management operations
-  - name: users
+  - name: Users
     description: User Management operations
-  - name: roles
+  - name: Roles
     description: Role Managemet operations
 paths:
   /participants:
     get:
       tags:
-        - participants
+        - Participants
       summary: Get the registered participants
       operationId: getParticipants
       parameters:
-        - in: query
-          name: offset
-          schema:
-#            $ref: '#/components/parameters/Offset'
-            type: integer
-        - in: query
-          name: limit
-          schema:
-#            $ref: '#/components/parameters/Limit'
-            type: integer
-        - in: query
-          name: orderBy
-          schema:
-#            $ref: '#/components/parameters/OrderBy'
-            type: string
-        - in: query
-          name: ascending
-          schema:
-#            $ref: '#/components/parameters/Ascending'
-            type: boolean
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/orderByParam'
+        - $ref: '#/components/parameters/orderDirParam'
       responses:
         '200':
           description: List of registered participants
@@ -182,9 +171,11 @@ paths:
           $ref: '#/components/responses/ClientError'
         '500':
           $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
     post:
       tags:
-        - participants
+        - Participants
       summary: Register a new participant in the catalogue
       operationId: addParticipant
       requestBody:
@@ -207,10 +198,12 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
   /participants/{participantId}:
     get:
       tags:
-        - participants
+        - Participants
       summary: Get the registered participant
       operationId: getParticipant
       parameters:
@@ -235,9 +228,11 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
     put:
       tags:
-        - participants
+        - Participants
       summary: Update a participant in the catalogue
       operationId: updateParticipant
       parameters:
@@ -269,9 +264,11 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
     delete:
       tags:
-        - participants
+        - Participants
       summary: Delete a participant in the catalogue
       operationId: deleteParticipant
       parameters:
@@ -296,10 +293,12 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
   /participants/{participantId}/users:
     get:
       tags:
-        - participants
+        - Participants
       summary: Get all users of the registered participant
       operationId: getParticipantUsers
       parameters:
@@ -326,12 +325,19 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
   /users:
     get:
       tags:
-        - users
+        - Users
       summary: List the registered users
       operationId: getUsers
+      parameters:
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/orderByParam'
+        - $ref: '#/components/parameters/orderDirParam'
       responses:
         '200':
           description: List of usernames
@@ -347,7 +353,7 @@ paths:
           $ref: '#/components/responses/ServerError'
     post:
       tags:
-        - users
+        - Users
       summary: Register a new user to the associated participant in the catalogue
       operationId: addUser
       requestBody:
@@ -368,7 +374,7 @@ paths:
   /users/{userId}:
     get:
       tags:
-        - users
+        - Users
       summary: Get the user profile
       operationId: getUser
       parameters:
@@ -394,7 +400,7 @@ paths:
           $ref: '#/components/responses/ServerError'
     put:
       tags:
-        - users
+        - Users
       summary: Update the user profile
       operationId: updateUser
       parameters:
@@ -420,7 +426,7 @@ paths:
           $ref: '#/components/responses/ServerError'
     delete:
       tags:
-        - users
+        - Users
       summary: Delete a user
       operationId: deleteUser
       parameters:
@@ -447,7 +453,7 @@ paths:
   /users/{userId}/roles:
     get:
       tags:
-        - users
+        - Users
       summary: Get roles of the user
       operationId: getUserRoles
       parameters:
@@ -475,7 +481,7 @@ paths:
           $ref: '#/components/responses/ServerError'
     put:
       tags:
-        - users
+        - Users
       summary: Update roles of the user
       operationId: updateUserRoles
       parameters:
@@ -510,7 +516,7 @@ paths:
   /roles:
     get:
       tags:
-        - roles
+        - Roles
       summary: Get all registered roles in the catalogue
       operationId: getAllRoles
       responses:
