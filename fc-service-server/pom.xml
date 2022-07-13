@@ -116,9 +116,11 @@
                         <configuration>
                             <skipValidateSpec>true</skipValidateSpec>
                             <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
-                            <inputSpec>${project.parent.basedir}/openapi/fc_openapi.json</inputSpec>
+                            <!--inputSpec>${project.parent.basedir}/openapi/fc_openapi.json</inputSpec-->
+                            <inputSpec>${project.parent.basedir}/openapi/part_user_role.yaml</inputSpec>
                             <generatorName>spring</generatorName>
                             <modelPackage>eu.gaiax.difs.fc.api.generated.model</modelPackage>
+                            <packageName>${project.groupId}.server.generated</packageName>
                             <apiPackage>${project.groupId}.server.generated.controller</apiPackage>
                             <configOptions>
                                 <performBeanValidation>true</performBeanValidation>

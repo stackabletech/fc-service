@@ -1,0 +1,528 @@
+openapi: 3.0.1
+info:
+  title: Gaia-X Catalogue
+  description: This is the REST API of the Gaia-X catalogue.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+  - url: https://api.gaiax.io/v1
+components:
+  securitySchemes:
+    oAuthNoScopes:
+      type: oauth2
+      description: This if left from original API, will fix it later on
+      flows:
+        implicit:
+          authorizationUrl: https://api.gaiax.io/oauth2/authorize
+          scopes:
+            read_self-descriptions: read the Self-Descriptions
+            write_self-descriptions: Add, delete, and update a Self-Description
+            query: Send queries
+  responses:
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServerError:
+      description: >-
+        May contain hints how to solve the error or indicate what went wrong at
+        the server. Must not outline any information about the internal
+        structure of the server.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ClientError:
+      description: >-
+        May contain hints how to solve the error or indicate what was wrong in
+        the request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+        - code
+        - message
+    Participant:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Global ID of the participant
+        name:
+          type: string
+        public-key:
+          type: string
+        self-description:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Internal catalogue user id
+          example: ExampleCompany-John-Doe
+        participantId:
+          type: string
+          description: Global ID of the associated participant
+          example: ExampleCompany
+        username:
+          type: string
+          example: John Doe
+        email:
+          type: string
+        roleIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          example: Ro-MU-CA
+  parameters:
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      required: false
+      description: The number of items to skip before starting to collect the result set.
+    Limit:
+      in: query
+      name: limit
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 100
+      required: false
+      description: The number of items to return.
+    OrderBy:
+      in: query
+      name: orderBy
+      schema:
+        type: string
+      required: false
+      description: Results will be sorted by this field.
+    Ascending:
+      in: query
+      name: ascending
+      schema:
+        type: boolean
+        default: true
+      required: false
+      description: Ascending/Descending ordering.
+tags:
+  - name: participants
+    description: Participant Management operations
+  - name: users
+    description: User Management operations
+  - name: roles
+    description: Role Managemet operations
+paths:
+  /participants:
+    get:
+      tags:
+        - participants
+      summary: Get the registered participants
+      operationId: getParticipants
+      parameters:
+        - in: query
+          name: offset
+          schema:
+#            $ref: '#/components/parameters/Offset'
+            type: integer
+        - in: query
+          name: limit
+          schema:
+#            $ref: '#/components/parameters/Limit'
+            type: integer
+        - in: query
+          name: orderBy
+          schema:
+#            $ref: '#/components/parameters/OrderBy'
+            type: string
+        - in: query
+          name: ascending
+          schema:
+#            $ref: '#/components/parameters/Ascending'
+            type: boolean
+      responses:
+        '200':
+          description: List of registered participants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Participant'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags:
+        - participants
+      summary: Register a new participant in the catalogue
+      operationId: addParticipant
+      requestBody:
+        description: Participant Self-Description
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Participant'
+      responses:
+        '201':
+          description: Created Participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Participant'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /participants/{participantId}:
+    get:
+      tags:
+        - participants
+      summary: Get the registered participant
+      operationId: getParticipant
+      parameters:
+        - in: path
+          name: participantId
+          required: true
+          description: The participantId to get.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The requested participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Participant'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags:
+        - participants
+      summary: Update a participant in the catalogue
+      operationId: updateParticipant
+      parameters:
+        - in: path
+          name: participantId
+          required: true
+          description: The participant to update.
+          schema:
+            type: string
+      requestBody:
+        description: Participant Self-Description
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Participant'
+      responses:
+        '200':
+          description: Updated Participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Participant'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags:
+        - participants
+      summary: Delete a participant in the catalogue
+      operationId: deleteParticipant
+      parameters:
+        - in: path
+          name: participantId
+          required: true
+          description: The participant to delete.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted Participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Participant'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /participants/{participantId}/users:
+    get:
+      tags:
+        - participants
+      summary: Get all users of the registered participant
+      operationId: getParticipantUsers
+      parameters:
+        - in: path
+          name: participantId
+          required: true
+          description: The participant to create.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Users of the participant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /users:
+    get:
+      tags:
+        - users
+      summary: List the registered users
+      operationId: getUsers
+      responses:
+        '200':
+          description: List of usernames
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags:
+        - users
+      summary: Register a new user to the associated participant in the catalogue
+      operationId: addUser
+      requestBody:
+        description: User profile
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Created
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /users/{userId}:
+    get:
+      tags:
+        - users
+      summary: Get the user profile
+      operationId: getUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags:
+        - users
+      summary: Update the user profile
+      operationId: updateUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags:
+        - users
+      summary: Delete a user
+      operationId: deleteUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /users/{userId}/roles:
+    get:
+      tags:
+        - users
+      summary: Get roles of the user
+      operationId: getUserRoles
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags:
+        - users
+      summary: Update roles of the user
+      operationId: updateUserRoles
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: List of roles which should be assigned to the user
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Role'
+      responses:
+        '200':
+          description: All assigned roles of the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /roles:
+    get:
+      tags:
+        - roles
+      summary: Get all registered roles in the catalogue
+      operationId: getAllRoles
+      responses:
+        '200':
+          description: All roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'

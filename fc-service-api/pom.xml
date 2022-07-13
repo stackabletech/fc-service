@@ -50,8 +50,10 @@
                         <configuration>
                             <skipValidateSpec>true</skipValidateSpec>
                             <generateSupportingFiles>false</generateSupportingFiles>
-                            <inputSpec>${project.parent.basedir}/openapi/fc_openapi.json</inputSpec>
+                            <!--inputSpec>${project.parent.basedir}/openapi/fc_openapi.json</inputSpec-->
+                            <inputSpec>${project.parent.basedir}/openapi/part_user_role.yaml</inputSpec>
                             <generatorName>spring</generatorName>
+                            <packageName>${project.groupId}.api.generated</packageName>
                             <modelPackage>${project.groupId}.api.generated.model</modelPackage>
                             <configOptions>
                                 <performBeanValidation>true</performBeanValidation>
