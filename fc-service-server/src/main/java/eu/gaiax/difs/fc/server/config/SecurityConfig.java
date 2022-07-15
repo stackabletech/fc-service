@@ -154,6 +154,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                         .antMatchers(HttpMethod.GET, "/demo").permitAll()
                         .antMatchers(HttpMethod.GET, "/demo/authorized").authenticated()
                         .antMatchers(HttpMethod.GET, "/demo/admin")
+
                         .hasAnyAuthority("SCOPE_gaia-x", "ROLE_Ro-MU-CA")
                         // Self-Description APIs
                         .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()
@@ -165,6 +166,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                         .antMatchers(HttpMethod.POST, "/self-descriptions/{self_description_hash}/revoke")
                         .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
 
+                        .antMatchers("/users").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)

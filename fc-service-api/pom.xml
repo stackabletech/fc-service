@@ -50,11 +50,12 @@
                         <configuration>
                             <skipValidateSpec>true</skipValidateSpec>
                             <generateSupportingFiles>false</generateSupportingFiles>
-                            <!--inputSpec>${project.parent.basedir}/openapi/fc_openapi.json</inputSpec-->
-                            <inputSpec>${project.parent.basedir}/openapi/part_user_role.yaml</inputSpec>
+                            <inputSpec>${project.parent.basedir}/openapi/fc_openapi.yaml</inputSpec>
                             <generatorName>spring</generatorName>
                             <packageName>${project.groupId}.api.generated</packageName>
                             <modelPackage>${project.groupId}.api.generated.model</modelPackage>
+                            <generateModelTests>true</generateModelTests>
+                            <generateModelDocumentation>true</generateModelDocumentation>
                             <configOptions>
                                 <additionalModelTypeAnnotations>@lombok.NoArgsConstructor @lombok.AllArgsConstructor</additionalModelTypeAnnotations>
                                 <performBeanValidation>true</performBeanValidation>
@@ -62,6 +63,8 @@
                                 <useTags>true</useTags>
                                 <library>spring-boot</library>
                                 <openApiNullable>false</openApiNullable>
+                                <generateModelTests>true</generateModelTests>
+                                <generateModelDocumentation>true</generateModelDocumentation>
                             </configOptions>
                         </configuration>
                     </execution>

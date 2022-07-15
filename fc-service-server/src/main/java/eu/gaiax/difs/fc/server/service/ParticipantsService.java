@@ -13,12 +13,12 @@ import eu.gaiax.difs.fc.server.generated.controller.ParticipantsApiDelegate;
 public class ParticipantsService implements ParticipantsApiDelegate {
     
     @Override
-    public ResponseEntity<Participant> addParticipant(Participant participant) {
+    public ResponseEntity<Participant> addParticipant(Object body) {
         // store Participant in DB, create SD for it etc.. 
         // here we can do our own implementation with some our helper classes, may be using Data Access Layer, 
         // or we will use components provided by Fraunhofer to work with their entities.. 
-        Optional<Participant> created = Optional.of(participant); 
-        return new ResponseEntity<>(HttpStatus.CREATED).of(created);
+        //Optional<Participant> created = Optional.of(participant); 
+        return null; //new ResponseEntity<>(HttpStatus.CREATED).of(created);
     }    
 
 }
