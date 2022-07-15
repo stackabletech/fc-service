@@ -10,6 +10,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -43,24 +44,33 @@ public class UserDao {
     
     public void create(User user) {
         
-        UserRepresentation userRep = new UserRepresentation();
-        userRep.setUsername(user.getUsername());
-        //userRep.setFirstName(userDTO.getFirstname());
-        //userRep.setLastName(userDTO.getLastName());
-        userRep.setEmail(user.getEmail());
-        //userRep.setCredentials(Collections.singletonList(createPasswordCredentials(INITIAL_PASSWORD)));
-        userRep.setAttributes(Map.of("principalId", List.of(user.getParticipantId())));
-        userRep.setEnabled(true);
-        userRep.setEmailVerified(false);
-        userRep.setRequiredActions(List.of(ACT_UPDATE_PASSWORD, ACT_VERIFY_EMAIL));
+        UserRepresentation userRepo = new UserRepresentation();
+        userRepo.setUsername(user.getUsername());
+        //userRepo.setFirstName(userDTO.getFirstname());
+        //userRepo.setLastName(userDTO.getLastName());
+        userRepo.setEmail(user.getEmail());
+        //userRepo.setCredentials(Collections.singletonList(createPasswordCredentials(INITIAL_PASSWORD)));
+        userRepo.setAttributes(Map.of("principalId", List.of(user.getParticipantId())));
+        userRepo.setEnabled(true);
+        userRepo.setEmailVerified(false);
+        userRepo.setRequiredActions(List.of(ACT_UPDATE_PASSWORD, ACT_VERIFY_EMAIL));
 
         UsersResource instance = keycloak.realm(realm).users();
-        Response response = instance.create(userRep);  
+        Response response = instance.create(userRepo);  
         if (response.getStatus() != HttpStatus.SC_CREATED) {
             String message = getErrorMessage(response);
             log.info("create.error; status {}:{}, {}", response.getStatus(), response.getStatusInfo(), message);
             throw new RuntimeException(message);
         }
+    }
+
+    public User select(String userId) {
+        
+        UsersResource instance = keycloak.realm(realm).users();
+        UserResource userResource = instance.get(userId);
+        UserRepresentation userRepo = userResource.toRepresentation();
+        User user = new User();
+        return user;
     }
     
     private String getErrorMessage(Response response) {

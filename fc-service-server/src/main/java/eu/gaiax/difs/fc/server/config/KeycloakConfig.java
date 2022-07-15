@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class KeycloakConfig {
     
-    
     @Value("${keycloak.auth-server-url}")
     private String serverUrl;
     //@Value("${keycloak.realm}")
@@ -30,17 +29,11 @@ public class KeycloakConfig {
 
     @Bean
     public Keycloak getKeycloakClient() {
-            return KeycloakBuilder.builder()
-                    .serverUrl(serverUrl)
-                    .realm(realm)
-                    .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-                    .clientId(clientId)
-                    .clientSecret(clientSecret)
-                    //.resteasyClient(new ResteasyClientBuilder()
-                    //               .connectionPoolSize(10)
-                    //               .build())
-                    .build();
+        return KeycloakBuilder.builder()
+                .serverUrl(serverUrl).realm(realm).grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .clientId(clientId).clientSecret(clientSecret)
+                .resteasyClient(new ResteasyClientBuilder().connectionPoolSize(10).build())
+                .build();
     }
     
-        
 }

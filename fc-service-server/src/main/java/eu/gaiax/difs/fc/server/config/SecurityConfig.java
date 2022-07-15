@@ -165,8 +165,8 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                         .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
                         .antMatchers(HttpMethod.POST, "/self-descriptions/{self_description_hash}/revoke")
                         .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
-
-                        .antMatchers("/users").permitAll()
+                        // User APIs
+                        .antMatchers("/users").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
