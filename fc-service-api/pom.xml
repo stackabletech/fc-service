@@ -56,6 +56,7 @@
                             <packageName>${project.groupId}.api.generated</packageName>
                             <modelPackage>${project.groupId}.api.generated.model</modelPackage>
                             <configOptions>
+                                <additionalModelTypeAnnotations>@lombok.NoArgsConstructor @lombok.AllArgsConstructor</additionalModelTypeAnnotations>
                                 <performBeanValidation>true</performBeanValidation>
                                 <useBeanValidation>true</useBeanValidation>
                                 <useTags>true</useTags>
