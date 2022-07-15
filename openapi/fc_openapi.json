@@ -52,6 +52,16 @@
           }
         }
       },
+      "Forbidden": {
+        "description": "Forbidden. The user does not have the permission to execute this request.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
       "ServerError": {
         "description": "May contain hints how to solve the error or indicate what went wrong at the server. Must not outline any information about the internal structure of the server.",
         "content": {
@@ -310,20 +320,65 @@
           "sd-hash": {
             "type": "string"
           },
+          "id": {
+            "type": "string"
+          },
           "status": {
-            "type": "integer"
+            "type": "string",
+            "enum": [
+              "active",
+              "eol",
+              "deprecated",
+              "revoked"
+            ],
+            "example": "active"
           },
           "issuer": {
             "type": "string"
           },
-          "issue-date": {
-            "type": "string"
+          "validators": {
+            "description": "The credentialSubjects of the parties that validated (parts of) the Self-Description",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
-          "status-date": {
+          "upload-time": {
             "type": "string",
-            "description": "The last time the status changed (for this Catalogue)"
+            "example": "2022-03-01T13:00:00Z",
+            "description": "The time stamp (ISO8601) when the SD was uploaded."
+          },
+          "status-time": {
+            "type": "string",
+            "example": "2022-05-11T15:30:00Z",
+            "description": "The last time stamp (ISO8601) the status changed (for this Catalogue)"
           }
         }
+      }
+    },
+    "parameters": {
+      "Offset": {
+        "name": "offset",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "required": false,
+        "description": "The number of items to skip before starting to collect the result set."
+      },
+      "Limit": {
+        "in": "query",
+        "name": "limit",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 100
+        },
+        "required": false,
+        "description": "The number of items to return."
       }
     }
   },
@@ -1121,14 +1176,25 @@
         "tags": [
           "SelfDescriptions"
         ],
-        "summary": "Get the list of Self-Descriptions in the Catalogue",
+        "summary": "Get the list of metadata of Self-Descriptions in the Catalogue",
         "operationId": "readSelfDescriptions",
         "parameters": [
           {
-            "name": "daterange",
+            "name": "upload-timerange",
             "in": "query",
-            "description": "Range of dates for the Self-Descriptions (when the SD was first known this Catalogue)",
+            "description": "Filter for the time range when the Self-Description was uploaded to the catalogue. The time range has to be specified as start time and end time as ISO8601 timestamp separated by a `/`.",
             "required": false,
+            "example": "2022-03-01T13:00:00Z/2022-05-11T15:30:00Z",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status-timerange",
+            "in": "query",
+            "description": "Filter for the time range when the status of the Self-Description was last changed in the catalogue. The time range has to be specified as start time and end time as ISO8601 timestamp separated by a `/`.",
+            "required": false,
+            "example": "2022-03-01T13:00:00Z/2022-05-11T15:30:00Z",
             "schema": {
               "type": "string"
             }
@@ -1143,32 +1209,58 @@
             }
           },
           {
-            "name": "offset",
+            "name": "validator",
             "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
-            },
+            "description": "Filter for a validator of the Self-Description. This is the unique ID of the Participant that validated (part of) the Self-Description.",
             "required": false,
-            "description": "The number of items to skip before starting to collect the result set."
+            "schema": {
+              "type": "string"
+            }
           },
           {
+            "name": "status",
             "in": "query",
-            "name": "limit",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 1000,
-              "default": 100
-            },
+            "description": "Filter for the status of the Self-Description.",
             "required": false,
-            "description": "The number of items to return."
+            "schema": {
+              "type": "string",
+              "default": "active",
+              "enum": [
+                "active",
+                "eol",
+                "deprecated",
+                "revoked"
+              ]
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "description": "Filter for a id/credentialSubject of the Self-Description.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hash",
+            "in": "query",
+            "description": "Filter for a hash of the Self-Description.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
           }
         ],
         "responses": {
           "200": {
-            "description": "List of self-description in JSON-LD format",
+            "description": "List of meta data of available Self-Descriptions.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1192,7 +1284,7 @@
         "tags": [
           "SelfDescriptions"
         ],
-        "summary": "Add a new self-description to the catalogue",
+        "summary": "Add a new Self-Description to the catalogue",
         "operationId": "addSelfDescription",
         "security": [
           {
@@ -1213,14 +1305,45 @@
         },
         "responses": {
           "201": {
-            "description": "Created"
+            "description": "Created",
+            "headers": {
+              "location": {
+                "description": "URL of the added Self-Description.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Self-Description"
+                }
+              }
+            }
           },
-          "405": {
-            "description": "Invalid input",
-            "content": {}
+          "202": {
+            "description": "The request was accepted but the validation is not finished yet.",
+            "headers": {
+              "location": {
+                "description": "The URL of the status page.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "retry-after": {
+                "description": "The delay the client have to wait before requesting the status page.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/ClientError"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -1233,7 +1356,7 @@
         "tags": [
           "SelfDescriptions"
         ],
-        "summary": "Read a Self-Description by its hash",
+        "summary": "Read a Self-Description by its hash. This returns the content of the self-description.",
         "description": "Returns a single Self-Description",
         "operationId": "readSelfDescriptionByHash",
         "parameters": [
@@ -1258,55 +1381,18 @@
           "200": {
             "description": "The requested Self-Description",
             "content": {
-              "application/json": {}
-            }
-          },
-          "404": {
-            "description": "Self-Description not found",
-            "content": {}
-          },
-          "400": {
-            "$ref": "#/components/responses/ClientError"
-          },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "SelfDescriptions"
-        ],
-        "summary": "Change the lifecycle state of a self-description",
-        "operationId": "updateSelfDescription",
-        "parameters": [
-          {
-            "name": "self_description_hash",
-            "in": "path",
-            "description": "Hash of the self-description",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "description": "Lifecycle update message",
-          "content": {
-            "application/json": {
-              "schema": {
+              "application/ld+json": {
+                "schema": {
+                  "type": "object"
+                }
               }
             }
           },
-          "required": true
-        },
-        "responses": {
-          "405": {
-            "description": "Invalid input",
-            "content": {}
-          },
           "400": {
             "$ref": "#/components/responses/ClientError"
+          },
+          "404": {
+            "description": "Self-Description not found"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -1317,7 +1403,7 @@
         "tags": [
           "SelfDescriptions"
         ],
-        "summary": "Delete a self-description",
+        "summary": "Completely delete a self-description",
         "operationId": "deleteSelfDescription",
         "parameters": [
           {
@@ -1334,12 +1420,11 @@
           "200": {
             "description": "OK"
           },
-          "405": {
-            "description": "Invalid input",
-            "content": {}
-          },
           "400": {
             "$ref": "#/components/responses/ClientError"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -1347,6 +1432,56 @@
         }
       }
     },
+    "/self-descriptions/{self_description_hash}/revoke": {
+      "post": {
+        "tags": [
+          "SelfDescriptions"
+        ],
+        "summary": "Change the lifecycle state of a Self-Description to revoked.",
+        "operationId": "updateSelfDescription",
+        "parameters": [
+          {
+            "name": "self_description_hash",
+            "in": "path",
+            "description": "Hash of the self-description",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revoked",
+            "headers": {
+              "location": {
+                "description": "URL of the added Self-Description",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Self-Description"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ClientError"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+
     "/schemas/latest": {
       "get": {
         "tags": [
