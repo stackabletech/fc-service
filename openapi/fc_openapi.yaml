@@ -170,23 +170,43 @@ components:
     User:
       type: object
       properties:
-        id:
-          type: string
-          description: Internal catalogue user id
-          example: ExampleCompany-John-Doe
         participantId:
           type: string
           description: Global ID of the associated participant
           example: ExampleCompany
-        username:
+        firstName:
           type: string
-          example: John Doe
+          example: John
+        lastName:
+          type: string
+          example: Doe
         email:
           type: string
-        roleIds:
+        roles:
           type: array
           items:
             $ref: '#/components/schemas/Role'
+      required:
+        - participantId
+        - firstName
+        - lastName
+        - email
+    UserProfile:
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          properties:
+            id:
+              type: string
+              description: Internal catalogue user id
+              example: ExampleCompany-John-Doe
+            username:
+              type: string
+              example: John Doe
+          required:
+            - id
+            - username
+    
     Role:
       type: object
       properties:
@@ -202,7 +222,7 @@ components:
           type: string
         status:
           type: string
-        roleIds:
+        roles:
           type: array
           items:
             $ref: '#/components/schemas/Role'
@@ -296,8 +316,6 @@ components:
 #      - write_self-descriptions
 #      - query
 tags:
-  - name: Discovery
-    description: Announce the endpoints of this Catalogue.
   - name: SelfDescriptions
     description: >-
       Retrieving Self-Descriptions from the Catalogue. All Self-Descriptions are
@@ -334,57 +352,6 @@ tags:
   - name: Session
     description: Management for auth sessions in the catalogue
 paths:
-  /:
-    get:
-      tags:
-        - Discovery
-      summary: Announce all endpoints
-      operationId: discovery
-      responses:
-        '200':
-          description: >-
-            Provides a JSON element with relative paths to all other available
-            endpoints of this Catalogue.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  query:
-                    type: string
-                    example: ./query
-                  self-descriptions:
-                    type: string
-                    example: ./self-descriptions
-                  self_description_hash:
-                    type: string
-                    example: ./self-descriptions/{self_description_hash}
-            application/ld+json:
-              schema:
-                type: object
-                properties:
-                  '@context':
-                    type: object
-                    properties:
-                      gax:
-                        type: string
-                        example: http://gaia-x.eu/gaiaxOntology#
-                  '@id':
-                    type: string
-                    example: <the identifier of this catalogue>
-                  gax:hasQueryEndpoint:
-                    type: string
-                    example: ./query
-                  gax:hasSelfDescriptionEndpoint:
-                    type: string
-                    example: ./self-descriptions
-                  gax:hasSelfDescriptionHashEndpoint:
-                    type: string
-                    example: ./self-descriptions/{self_description_hash}
-                  gax:isOperatedBy:
-                    type: string
-                    example: http://example.org/CatalogueProvider
-
   /self-descriptions:
     get:
       tags:
@@ -808,7 +775,6 @@ paths:
           application/json+d:
             schema:
               type: object
-#              $ref: '#/components/schemas/Participant'
       responses:
         '201':
           description: Created Participant
@@ -873,7 +839,6 @@ paths:
           application/json:
             schema:
               type: object
-#            $ref: '#/components/schemas/Participant'
       responses:
         '200':
           description: Updated Participant
@@ -930,7 +895,7 @@ paths:
         - in: path
           name: participantId
           required: true
-          description: The participant to create.
+          description: The participant Id
           schema:
             type: string
       responses:
@@ -941,7 +906,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/User'
+                  $ref: '#/components/schemas/UserProfile'
         '400':
           $ref: '#/components/responses/ClientError'
         '403':
@@ -972,7 +937,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/User'
+                  $ref: '#/components/schemas/UserProfile'
         '400':
           $ref: '#/components/responses/ClientError'
         '500':
@@ -990,7 +955,11 @@ paths:
               $ref: '#/components/schemas/User'
       responses:
         '201':
-          description: Created
+          description: Created User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
         '400':
           $ref: '#/components/responses/ClientError'
         '403':
@@ -1015,7 +984,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserProfile'
         '400':
           $ref: '#/components/responses/ClientError'
         '403':
@@ -1047,7 +1016,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserProfile'
         '400':
           $ref: '#/components/responses/ClientError'
         '403':
@@ -1073,7 +1042,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserProfile'
         '400':
           $ref: '#/components/responses/ClientError'
         '403':
@@ -1136,7 +1105,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Role'
+                $ref: '#/components/schemas/UserProfile'
         '400':
           $ref: '#/components/responses/ClientError'
         '403':
