@@ -3,14 +3,13 @@ package eu.gaiax.difs.fc.server.service;
 
 import eu.gaiax.difs.fc.api.generated.model.SchemaFC;
 import eu.gaiax.difs.fc.server.generated.controller.SchemasApiDelegate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
