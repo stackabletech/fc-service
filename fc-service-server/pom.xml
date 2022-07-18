@@ -64,6 +64,10 @@
             <artifactId>keycloak-spring-boot-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
@@ -116,10 +120,13 @@
                         <configuration>
                             <skipValidateSpec>true</skipValidateSpec>
                             <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
-                            <inputSpec>${project.parent.basedir}/openapi/fc_openapi.json</inputSpec>
+                            <inputSpec>${project.parent.basedir}/openapi/fc_openapi.yaml</inputSpec>
                             <generatorName>spring</generatorName>
                             <modelPackage>eu.gaiax.difs.fc.api.generated.model</modelPackage>
+                            <packageName>${project.groupId}.server.generated</packageName>
                             <apiPackage>${project.groupId}.server.generated.controller</apiPackage>
+                            <generateApiTests>true</generateApiTests>
+                            <generateApiDocumentation>true</generateApiDocumentation>
                             <configOptions>
                                 <performBeanValidation>true</performBeanValidation>
                                 <useBeanValidation>true</useBeanValidation>

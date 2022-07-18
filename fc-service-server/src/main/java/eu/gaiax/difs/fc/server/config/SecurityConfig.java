@@ -171,6 +171,9 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                         .antMatchers(HttpMethod.POST, "/self-descriptions/{self_description_hash}/revoke")
                         .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
 
+                        // User APIs
+                        .antMatchers("/users", "users/**").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
+
                         // Verification APIs
                         .antMatchers("/verifications").authenticated()
 

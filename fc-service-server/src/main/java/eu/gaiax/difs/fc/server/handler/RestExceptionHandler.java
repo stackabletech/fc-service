@@ -1,11 +1,13 @@
 package eu.gaiax.difs.fc.server.handler;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import eu.gaiax.difs.fc.api.generated.model.Error;
 import eu.gaiax.difs.fc.server.exception.ClientException;
+import eu.gaiax.difs.fc.server.exception.ConflictException;
 import eu.gaiax.difs.fc.server.exception.NotFoundException;
 import eu.gaiax.difs.fc.server.exception.ServerException;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,12 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Error> handleBadRequestException(ClientException ex) {
         log.debug("Bad request error: ", ex);
         return new ResponseEntity<>(new Error("client_error", ex.getMessage()), BAD_REQUEST);
+    }
+
+    @ExceptionHandler({ConflictException.class})
+    protected ResponseEntity<Error> handleConflictException(ConflictException ex) {
+        log.debug("Conflict error: ", ex);
+        return new ResponseEntity<>(new Error("conflict_error", ex.getMessage()), CONFLICT);
     }
 
     @ExceptionHandler({ServerException.class})

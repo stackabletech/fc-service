@@ -34,13 +34,17 @@ springdoc:
     enabled: true
 
 keycloak:
-  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://localhost:8080}
-  realm: ${KEYCLOAK_REALM:gaia-x}
+  auth-server-url: http://localhost:8080
+  realm: gaia-x
   ssl-required: external
-  resource: ${KEYCLOAK_CLIENT_ID:federated-catalogue}
+#  resource: federated-catalogue
+  resource: admin-cli
   credentials:
-    secret: ${KEYCLOAK_CLIENT_SECRET:fS1bDdAX0fvTPRK6GLp4LMObE1rrwwPz}
+#    secret: ${KEYCLOAK_CLIENT_SECRET:fS1bDdAX0fvTPRK6GLp4LMObE1rrwwPz}
+#    secret: fwirOT4r8s3DC45CHtUNUNthfnogLAal
+    secret: 5OlXNJpIk2nFfj6lTffBBUexsHyM8AUm
   principal-attribute: preferred_username
+#  bearer-only: false
   bearer-only: true
   cors: true
 
