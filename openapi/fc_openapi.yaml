@@ -193,7 +193,7 @@ components:
         - email
     UserProfile:
       allOf:
-        - $ref: "#/components/schemas/User"
+        - $ref: '#/components/schemas/User'
         - type: object
           properties:
             id:
@@ -206,7 +206,6 @@ components:
           required:
             - id
             - username
-    
     Role:
       type: object
       properties:
@@ -260,6 +259,26 @@ components:
           description: >-
             The last time stamp (ISO8601) the status changed (for this
             Catalogue)
+    SchemaFC:
+      type: object
+      properties:
+        ontologies:
+          description: Ontologies defining the terms of a schema,
+          type: array
+          items:
+            type: string
+        shapes:
+          description: >-
+            Shapes used to validate instances against the schema. SHACL Shapes
+            Constraint Language
+          type: array
+          items:
+            type: string
+        vocabularies:
+          description: Controlled vocabularies used in the scema
+          type: array
+          items:
+            type: string
   parameters:
     OffsetParam:
       name: offset
@@ -300,21 +319,6 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-#    oAuthNoScopes:
-#      type: oauth2
-#      description: This if left from original API, will fix it later on
-#      flows:
-#        implicit:
-#          authorizationUrl: https://api.gaiax.io/oauth2/authorize
-#          scopes:
-#            read_self-descriptions: read the Self-Descriptions
-#            write_self-descriptions: Add, delete, and update a Self-Description
-#            query: Send queries
-#security:
-#  - oAuthNoScopes:
-#      - read_self-descriptions
-#      - write_self-descriptions
-#      - query
 tags:
   - name: SelfDescriptions
     description: >-
@@ -562,7 +566,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
-
   /queries:
     get:
       tags:
@@ -636,7 +639,108 @@ paths:
             processed faster.
         '500':
           $ref: '#/components/responses/ServerError'
-
+          
+  /schemas:
+    get:
+      tags:
+        - Schemas
+      summary: Get the full list of schemas
+      operationId: getSchemas
+      parameters:
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OrderByParam'
+        - $ref: '#/components/parameters/AscendingParam'
+      responses:
+        '200':
+          description: All schemas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SchemaFC'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags:
+        - Schemas
+      summary: >-
+        Add a new Schema to the catalogue, or replace an existing schema that
+        has the same URI,
+      operationId: addSchema,
+      security:
+        - jwt: []
+      requestBody:
+        description: The new Schema,
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchemaFC'
+        required: true
+      responses:
+        '201':
+          description: Created,
+          headers:
+            location:
+              description: URL of the added Schema
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /schemas/{schemaId}:
+    get:
+      tags:
+        - Schemas
+      summary: Get a specific schema.
+      operationId: getSchema
+      parameters:
+        - name: schemaId
+          in: path
+          description: Identifier of the Schema
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A specific Schema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaFC'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags:
+        - Schemas
+      summary: Delete a Schema
+      operationId: deleteSchema
+      parameters:
+        - name: schemaId
+          in: path
+          description: Identifier of the Schema
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted Schema
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
   /schemas/latest:
     get:
       tags:
@@ -684,7 +788,6 @@ paths:
           content: {}
         '500':
           $ref: '#/components/responses/ServerError'
-
   /verifications/self-descriptions:
     get:
       tags:
@@ -736,7 +839,6 @@ paths:
             processed faster.
         '500':
           $ref: '#/components/responses/ServerError'
-
   /participants:
     get:
       tags:
@@ -917,7 +1019,6 @@ paths:
           $ref: '#/components/responses/ServerError'
       security:
         - jwt: []
-
   /users:
     get:
       tags:
@@ -1114,7 +1215,6 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
-
   /roles:
     get:
       tags:
@@ -1134,7 +1234,6 @@ paths:
           $ref: '#/components/responses/ClientError'
         '500':
           $ref: '#/components/responses/ServerError'
-
   /sessions:
     get:
       tags:
