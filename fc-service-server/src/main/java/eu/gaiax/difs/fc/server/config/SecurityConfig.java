@@ -42,6 +42,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
     @Value("${keycloak.resource}")
     private String resourceId;
 
+
     /**
      * Defines bean for the Keycloak Authentication Processing Filter.
      */
@@ -155,6 +156,12 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                         .antMatchers(HttpMethod.GET, "/demo/authorized").authenticated()
                         .antMatchers(HttpMethod.GET, "/demo/admin")
                         .hasAnyAuthority("SCOPE_gaia-x", "ROLE_Ro-MU-CA")
+
+                        // Schema APIs
+                        .antMatchers(HttpMethod.POST,"/schemas").hasRole("Ro-MU-CA")
+                        .antMatchers(HttpMethod.DELETE,"/schemas/**").hasRole("Ro-MU-CA")
+                        .antMatchers(HttpMethod.GET,"/schemas","/schemas/**").hasAnyRole("Ro-MU-CA","Ro-MU-A","Ro-SD-A","Ro-Pa-A")
+
                         // Self-Description APIs
                         .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()
                         .antMatchers(HttpMethod.GET, "/self-descriptions/{self_description_hash}").authenticated()
