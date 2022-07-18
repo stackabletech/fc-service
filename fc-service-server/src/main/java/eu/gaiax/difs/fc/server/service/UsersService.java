@@ -1,6 +1,7 @@
 package eu.gaiax.difs.fc.server.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import eu.gaiax.difs.fc.api.generated.model.Role;
 import eu.gaiax.difs.fc.api.generated.model.User;
+import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.server.dao.UserDao;
 import eu.gaiax.difs.fc.server.generated.controller.UsersApiDelegate;
 import lombok.extern.slf4j.Slf4j;
@@ -21,40 +23,52 @@ public class UsersService implements UsersApiDelegate {
     private UserDao userDao;
     
     @Override
-    public ResponseEntity<Void> addUser(User user) {
+    public ResponseEntity<UserProfile> addUser(User user) {
         log.debug("addUser.enter; got user: {}", user);
-        userDao.create(user);
-        log.debug("addUser.exit; success: {}", true);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        UserProfile profile = userDao.create(user);
+        log.debug("addUser.exit; returning: {}", profile);
+        return new ResponseEntity<>(HttpStatus.CREATED).of(Optional.of(profile));
     }
     
     @Override
-    public ResponseEntity<User> updateUser(String userId, User user) {
-        return null;
+    public ResponseEntity<UserProfile> updateUser(String userId, User user) {
+        log.debug("updateUser.enter; got userId: {}", userId);
+        UserProfile profile = userDao.update(userId, user);
+        log.debug("updateUser.exit; returning: {}", profile);
+        return ResponseEntity.ok(profile);
     }
     
     @Override
-    public ResponseEntity<User> deleteUser(String userId) {
-        return null;
+    public ResponseEntity<UserProfile> deleteUser(String userId) {
+        log.debug("deleteUser.enter; got userId: {}", userId);
+        UserProfile profile = userDao.delete(userId);
+        log.debug("deleteUser.exit; returning: {}", profile);
+        return ResponseEntity.ok(profile);
     }
     
     @Override
-    public ResponseEntity<User> getUser(String userId) {
-        return null;
+    public ResponseEntity<UserProfile> getUser(String userId) {
+        log.debug("getUser.enter; got userId: {}", userId);
+        UserProfile profile = userDao.select(userId);
+        log.debug("getUser.exit; returning: {}", profile);
+        return ResponseEntity.ok(profile);
     }
     
     @Override
-    public ResponseEntity<List<User>> getUsers(Integer offset, Integer limit, String orderBy, Boolean ascending) {
+    public ResponseEntity<List<UserProfile>> getUsers(Integer offset, Integer limit, String orderBy, Boolean ascending) {
         return null;
     }
     
     @Override
     public ResponseEntity<List<Role>> getUserRoles(String userId) {
-        return null;
+        log.debug("getUserRoles.enter; got userId: {}", userId);
+        UserProfile profile = userDao.select(userId);
+        log.debug("getUserRoles.exit; returning: {}", profile.getRoles());
+        return ResponseEntity.ok(profile.getRoles());
     }
     
     @Override
-    public ResponseEntity<Role> updateUserRoles(String userId, List<Role> role) {
+    public ResponseEntity<UserProfile> updateUserRoles(String userId, List<Role> role) {
         return null;
     }
 

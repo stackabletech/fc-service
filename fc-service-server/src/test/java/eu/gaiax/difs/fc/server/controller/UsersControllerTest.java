@@ -41,14 +41,14 @@ public class UsersControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private KeycloakBuilder builder;
-    @MockBean
-    private Keycloak keycloak;
-    @MockBean
-    private RealmResource realmResource;
-    @MockBean
-    private UsersResource usersResource;
+    //@MockBean
+    //private KeycloakBuilder builder;
+    //@MockBean
+    //private Keycloak keycloak;
+    //@MockBean
+    //private RealmResource realmResource;
+    //@MockBean
+    //private UsersResource usersResource;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -73,11 +73,12 @@ public class UsersControllerTest {
     public void addUserShouldReturnCreatedResponse() throws Exception {
         
         User user = new User()
-                .email("email@test.org")
+                .email("unit-test.user@test.org")
                 .participantId("test-participant-id")
-                .username("unit-test-user");
+                .firstName("unit-test")
+                .lastName("user");
 
-        setupKeycloak(HttpStatus.SC_CREATED);
+        //setupKeycloak(HttpStatus.SC_CREATED);
 
         mockMvc
             .perform(MockMvcRequestBuilders.post("/users")
@@ -85,12 +86,68 @@ public class UsersControllerTest {
             .content(objectMapper.writeValueAsString(user)))
             .andExpect(status().isCreated());
     }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    public void getUserShouldReturnSuccessResponse() throws Exception {
+        
+        //User user = new User()
+        //        .email("email@test.org")
+        //        .participantId("test-participant-id")
+        //        .username("unit-test-user");
+
+        //setupKeycloak(HttpStatus.SC_OK);
+        String userId = "f7e47bd2-8ae4-4fd7-8b03-6e2fdcf1c912";
+
+        mockMvc
+            .perform(MockMvcRequestBuilders.get("/users/{userId}", userId)
+            .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    public void deleteUserShouldReturnSuccessResponse() throws Exception {
+        
+        //User user = new User()
+        //        .email("email@test.org")
+        //        .participantId("test-participant-id")
+        //        .username("unit-test-user");
+
+        //setupKeycloak(HttpStatus.SC_OK);
+        String userId = "0fb1eb26-4f92-4941-a782-f092e19dedcb";
+
+        mockMvc
+            .perform(MockMvcRequestBuilders.delete("/users/{userId}", userId)
+            .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk());
+    }
+    
+    @Test
+    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    public void updateUserShouldReturnSuccessResponse() throws Exception {
+        
+        User user = new User()
+                .firstName("unit-test")
+                .lastName("last user")
+                .email("email_changed@test.org")
+                .participantId("test-participant-id");
+
+        //setupKeycloak(HttpStatus.SC_OK);
+        String userId = "ae366624-8371-401d-b2c4-518d2f308a15";
+
+        mockMvc
+            .perform(MockMvcRequestBuilders.put("/users/{userId}", userId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(user)))
+            .andExpect(status().isOk());
+    }
     
     private void setupKeycloak(int status) {
-        when(builder.build()).thenReturn(keycloak);
-        when(keycloak.realm("gaia-x")).thenReturn(realmResource);
-        when(realmResource.users()).thenReturn(usersResource);
-        when(usersResource.create(any())).thenReturn(Response.status(status).build());
+        //when(builder.build()).thenReturn(keycloak);
+        //when(keycloak.realm("gaia-x")).thenReturn(realmResource);
+        //when(realmResource.users()).thenReturn(usersResource);
+        //when(usersResource.create(any())).thenReturn(Response.status(status).build());
     }
     
 }

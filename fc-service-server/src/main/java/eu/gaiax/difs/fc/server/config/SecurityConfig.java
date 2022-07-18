@@ -167,6 +167,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                         .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
                         // User APIs
                         .antMatchers("/users").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
+                        .antMatchers("/users/**").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
