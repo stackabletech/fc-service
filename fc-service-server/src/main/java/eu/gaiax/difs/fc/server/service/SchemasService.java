@@ -29,7 +29,7 @@ public class SchemasService implements SchemasApiDelegate {
     }
 
     @Override
-    public ResponseEntity<List<SchemaFC>> getSchemas(Integer offset, Integer limit) {
+    public ResponseEntity<List<SchemaFC>> getSchemas(Integer offset, Integer limit, String orderBy, Boolean ascending) {
         log.debug("processing getSchemas");
         Optional<List<SchemaFC>> schemas = Optional.of(Collections.emptyList());
         return new ResponseEntity<>(HttpStatus.OK).of(schemas);

@@ -27,6 +27,7 @@ import com.google.common.io.CharStreams;
 import eu.gaiax.difs.fc.api.generated.model.Role;
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
+import eu.gaiax.difs.fc.server.exception.ConflictException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -54,7 +55,7 @@ public class UserDao {
         if (response.getStatus() != HttpStatus.SC_CREATED) {
             String message = getErrorMessage(response);
             log.info("create.error; status {}:{}, {}", response.getStatus(), response.getStatusInfo(), message);
-            throw new RuntimeException(message);
+            throw new ConflictException(message);
         }
         
         userRepo = instance.search(userRepo.getUsername()).get(0);
@@ -69,6 +70,13 @@ public class UserDao {
         return toUserProfile(userRepo);
     }
     
+    public List<UserProfile> search(Integer offset, Integer limit) {
+        
+        UsersResource instance = keycloak.realm(realm).users();
+        List<UserRepresentation> userRepos = instance.list(offset, limit);
+        return userRepos.stream().map(u -> toUserProfile(u)).collect(Collectors.toList());
+    }
+
     public UserProfile delete(String userId) {
         
         UsersResource instance = keycloak.realm(realm).users();
@@ -92,20 +100,35 @@ public class UserDao {
         UserResource userResource = instance.get(userId);
         UserRepresentation userRepo = toUserRepo(user);
         userResource.update(userRepo);
-
         // no Response ?
-        userRepo = instance.search(userRepo.getUsername()).get(0);
+
+        userResource = instance.get(userId);
+        userRepo = userResource.toRepresentation();
+        return toUserProfile(userRepo);
+    }
+
+    public UserProfile updateRoles(String userId, List<Role> roles) {
+        
+        UsersResource instance = keycloak.realm(realm).users();
+        UserResource userResource = instance.get(userId);
+        UserRepresentation userRepo = userResource.toRepresentation();
+        userRepo.setRealmRoles(roles.stream().map(r -> r.getId()).collect(Collectors.toList()));
+        userResource.update(userRepo);
+        // no Response ?
+ 
+        userResource = instance.get(userId);
+        userRepo = userResource.toRepresentation();
         return toUserProfile(userRepo);
     }
     
-    private UserRepresentation toUserRepo(User user) {
+    public static UserRepresentation toUserRepo(User user) {
         
         UserRepresentation userRepo = new UserRepresentation();
         //userRepo.setCredentials(Collections.singletonList(createPasswordCredentials(INITIAL_PASSWORD)));
         userRepo.setFirstName(user.getFirstName());
         userRepo.setLastName(user.getLastName());
         userRepo.setEmail(user.getEmail());
-        userRepo.setUsername(getUsername(user));
+        userRepo.setUsername(getUsername(user)); // use email instead?
         userRepo.setAttributes(Map.of(ATR_PARTICIPANT_ID, List.of(user.getParticipantId())));
         userRepo.setEnabled(true);
         userRepo.setEmailVerified(false);
@@ -116,15 +139,15 @@ public class UserDao {
         return userRepo;
     }
     
-    private UserProfile toUserProfile(UserRepresentation userRepo) {
-        List<String> partIds = userRepo.getAttributes().get(ATR_PARTICIPANT_ID);
+    public static UserProfile toUserProfile(UserRepresentation userRepo) {
+        List<String> partIds = userRepo.getAttributes() == null ? null : userRepo.getAttributes().get(ATR_PARTICIPANT_ID);
         String participantId = partIds == null ? null : partIds.get(0);
         return new UserProfile(participantId, userRepo.getFirstName(), userRepo.getLastName(), userRepo.getEmail(),
                 userRepo.getRealmRoles() == null ? null : userRepo.getRealmRoles().stream().map(r -> new Role(r)).collect(Collectors.toList()),
                 userRepo.getId(), userRepo.getFirstName() + " " + userRepo.getLastName());
     }
     
-    private String getUsername(User user) {
+    private static String getUsername(User user) {
         return user.getParticipantId() + "{" + user.getFirstName() + " " + user.getLastName() + "}";
     }
 

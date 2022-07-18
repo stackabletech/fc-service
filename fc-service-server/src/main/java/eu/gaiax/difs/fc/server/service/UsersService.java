@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.server.service;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,7 +28,7 @@ public class UsersService implements UsersApiDelegate {
         log.debug("addUser.enter; got user: {}", user);
         UserProfile profile = userDao.create(user);
         log.debug("addUser.exit; returning: {}", profile);
-        return new ResponseEntity<>(HttpStatus.CREATED).of(Optional.of(profile));
+        return ResponseEntity.created(URI.create("/users/" + profile.getId())).body(profile);
     }
     
     @Override
@@ -56,7 +57,11 @@ public class UsersService implements UsersApiDelegate {
     
     @Override
     public ResponseEntity<List<UserProfile>> getUsers(Integer offset, Integer limit, String orderBy, Boolean ascending) {
-        return null;
+        // sorting is not supported yet by keycloak admin API
+        log.debug("getUsers.enter; got offset: {}, limit: {}", offset, limit);
+        List<UserProfile> profiles = userDao.search(offset, limit);
+        log.debug("getUser.exit; returning: {}", profiles.size());
+        return ResponseEntity.ok(profiles);
     }
     
     @Override
@@ -68,8 +73,11 @@ public class UsersService implements UsersApiDelegate {
     }
     
     @Override
-    public ResponseEntity<UserProfile> updateUserRoles(String userId, List<Role> role) {
-        return null;
+    public ResponseEntity<UserProfile> updateUserRoles(String userId, List<Role> roles) {
+        log.debug("updateUserRoles.enter; got userId: {}, roles: {}", userId, roles);
+        UserProfile profile = userDao.updateRoles(userId, roles);
+        log.debug("updateUserRoles.exit; returning: {}", profile);
+        return ResponseEntity.ok(profile);
     }
 
 }
