@@ -1,4 +1,4 @@
-package eu.gaiax.difs.fc.server.generated.controller;
+package eu.gaiax.difs.fc.server.controller;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

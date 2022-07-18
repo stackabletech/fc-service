@@ -152,16 +152,14 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
         http
                 .csrf().disable()
                 .authorizeRequests(authz -> authz
-                        .antMatchers(HttpMethod.GET, "/demo").permitAll()
-                        .antMatchers(HttpMethod.GET, "/demo/authorized").authenticated()
-                        .antMatchers(HttpMethod.GET, "/demo/admin")
-
-                        .hasAnyAuthority("SCOPE_gaia-x", "ROLE_Ro-MU-CA")
+                        .antMatchers(HttpMethod.GET, "/api/**", "/swagger-ui/**", "/actuator", "/actuator/**")
+                        .permitAll()
 
                         // Schema APIs
-                        .antMatchers(HttpMethod.POST,"/schemas").hasRole("Ro-MU-CA")
-                        .antMatchers(HttpMethod.DELETE,"/schemas/**").hasRole("Ro-MU-CA")
-                        .antMatchers(HttpMethod.GET,"/schemas","/schemas/**").hasAnyRole("Ro-MU-CA","Ro-MU-A","Ro-SD-A","Ro-Pa-A")
+                        .antMatchers(HttpMethod.POST, "/schemas").hasRole("Ro-MU-CA")
+                        .antMatchers(HttpMethod.DELETE, "/schemas/**").hasRole("Ro-MU-CA")
+                        .antMatchers(HttpMethod.GET, "/schemas", "/schemas/**")
+                        .hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-Pa-A")
 
                         // Self-Description APIs
                         .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()
@@ -172,9 +170,13 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                         .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
                         .antMatchers(HttpMethod.POST, "/self-descriptions/{self_description_hash}/revoke")
                         .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
+
                         // User APIs
-                        .antMatchers("/users").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
-                        .antMatchers("/users/**").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
+                        .antMatchers("/users", "users/**").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
+
+                        // Verification APIs
+                        .antMatchers("/verifications").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
