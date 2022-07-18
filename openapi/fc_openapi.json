@@ -294,6 +294,32 @@
           }
         }
       },
+      "SchemaFC": {
+        "type": "object",
+        "properties": {
+          "ontologies": {
+            "description": "Ontologies defining the terms of a schema",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "shapes": {
+            "description": "Shapes used to validate instances against the schema. SHACL Shapes Constraint Language.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "vocabularies": {
+            "description": "Controlled vocabularies used in the scema",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "Session": {
         "type": "object",
         "properties": {
@@ -1481,7 +1507,175 @@
         }
       }
     },
-
+    "/schemas": {
+      "get": {
+        "tags": [
+          "Schemas"
+        ],
+        "summary": "Get the full list of schemas.",
+        "operationId": "getSchemas",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "description": "The number of items to skip before starting to collect the result set."
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 100
+            },
+            "required": false,
+            "description": "The number of items to return."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All schemas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaFC"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ClientError"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Schemas"
+        ],
+        "summary": "Add a new Schema to the catalogue, or replace an existing schema that has the same IRI",
+        "operationId": "addSchema",
+        "security": [
+          {
+            "oAuthNoScopes": [
+              "write_schema"
+            ]
+          }
+        ],
+        "requestBody": {
+          "description": "The new Schema",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchemaFC"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "headers": {
+              "location": {
+                "description": "URL of the added Schema.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ClientError"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/schemas/{schemaId}": {
+      "get": {
+        "tags": [
+          "Schemas"
+        ],
+        "summary": "Get a specific schema.",
+        "operationId": "getSchema",
+        "parameters": [
+          {
+            "name": "schemaId",
+            "in": "path",
+            "description": "Identifier of the Schema",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A specific Schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaFC"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ClientError"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Schemas"
+        ],
+        "summary": "Delete a Schema",
+        "operationId": "deleteSchema",
+        "parameters": [
+          {
+            "name": "schemaId",
+            "in": "path",
+            "description": "Identifier of the Schema",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted Schema"
+          },
+          "400": {
+            "$ref": "#/components/responses/ClientError"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
     "/schemas/latest": {
       "get": {
         "tags": [
