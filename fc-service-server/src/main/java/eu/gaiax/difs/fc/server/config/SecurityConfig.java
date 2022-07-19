@@ -178,7 +178,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                         .antMatchers("/users", "users/**").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
 
                         // Roles APIs
-                        .antMatchers("/roles").permitAll()
+                        .antMatchers("/roles").authenticated()
                         
                         // Verification APIs
                         .antMatchers("/verifications").authenticated()
