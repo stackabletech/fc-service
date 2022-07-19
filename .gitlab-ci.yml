@@ -17,13 +17,13 @@ cache:
     - .m2/repository
 
 stages:
-- build
+- test
 - deploy
 
 # For merge requests do not `deploy` but only run `verify`.
 # See https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html
 .verify: &verify
-  stage: build
+  stage: test
   script:
     - 'mvn $MAVEN_CLI_OPTS verify'
   except:
