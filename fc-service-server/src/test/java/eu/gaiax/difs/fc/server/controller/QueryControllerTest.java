@@ -1,0 +1,59 @@
+package eu.gaiax.difs.fc.server.controller;
+
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.event.annotation.BeforeTestClass;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@ExtendWith(SpringExtension.class)
+public class QueryControllerTest {
+
+    // TODO: Need to fix after final implementations
+
+    @Autowired
+    private WebApplicationContext context;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+
+    @BeforeTestClass
+    public void setup() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+    }
+
+
+    String QUERY_REQUEST_DUMMY="{\"query-language\":null,\"Statements\":null}";
+
+
+
+    @Test
+    public void postQueriesReturnSuccessResponse() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/queries")
+                        .content(QUERY_REQUEST_DUMMY)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Produces","application/json","application/sparql-results+xml", "text/turtle", "text/html")
+                        .header("Accept","application/json","application/sparql-query","application/sparql*")
+                        .header("query-language","application/sparql-query"))
+                .andExpect(status().isOk());
+    }
+
+
+}
