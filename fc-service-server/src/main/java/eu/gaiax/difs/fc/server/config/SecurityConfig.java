@@ -161,6 +161,9 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                         .antMatchers(HttpMethod.GET, "/schemas", "/schemas/**")
                         .hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-Pa-A")
 
+                        // Query APIs
+                        .antMatchers("/queries").permitAll()
+
                         // Self-Description APIs
                         .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()
                         .antMatchers(HttpMethod.GET, "/self-descriptions/{self_description_hash}").authenticated()
