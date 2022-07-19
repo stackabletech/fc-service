@@ -11,6 +11,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -120,6 +121,12 @@ public class UserDao {
         userResource = instance.get(userId);
         userRepo = userResource.toRepresentation();
         return toUserProfile(userRepo);
+    }
+    
+    public List<Role> getAllRoles() {
+        
+        RolesResource instance = keycloak.realm(realm).roles();
+        return instance.list(true).stream().map(r -> new Role(r.getName())).collect(Collectors.toList());
     }
 
     public static UserRepresentation toUserRepo(User user) {
