@@ -38,7 +38,6 @@ import org.springframework.web.context.WebApplicationContext;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import eu.gaiax.difs.fc.api.generated.model.Role;
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.server.dao.UserDao;
@@ -182,7 +181,7 @@ public class UsersControllerTest {
         mockMvc
             .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", userId)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(List.of(new Role("ROLE_test1"), new Role("ROLE_test2")))))
+            .content(objectMapper.writeValueAsString(List.of("ROLE_test1", "ROLE_test2"))))
             .andExpect(status().isOk());
     }
 
@@ -206,7 +205,7 @@ public class UsersControllerTest {
             .participantId("test-participant-id")
             .firstName(firstName)
             .lastName(lastName)
-            .addRolesItem(new Role("ROLE_test"));
+            .addRoleIdsItem("ROLE_test");
     }
     
 }

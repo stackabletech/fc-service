@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 
-import eu.gaiax.difs.fc.api.generated.model.Role;
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.server.exception.ConflictException;
@@ -109,12 +108,12 @@ public class UserDao {
         return toUserProfile(userRepo);
     }
 
-    public UserProfile updateRoles(String userId, List<Role> roles) {
+    public UserProfile updateRoles(String userId, List<String> roles) {
 
         UsersResource instance = keycloak.realm(realm).users();
         UserResource userResource = instance.get(userId);
         UserRepresentation userRepo = userResource.toRepresentation();
-        userRepo.setRealmRoles(roles.stream().map(r -> r.getId()).collect(Collectors.toList()));
+        userRepo.setRealmRoles(roles);
         userResource.update(userRepo);
         // no Response ?
 
@@ -123,10 +122,10 @@ public class UserDao {
         return toUserProfile(userRepo);
     }
     
-    public List<Role> getAllRoles() {
+    public List<String> getAllRoles() {
         
         RolesResource instance = keycloak.realm(realm).roles();
-        return instance.list(true).stream().map(r -> new Role(r.getName())).collect(Collectors.toList());
+        return instance.list(true).stream().map(r -> r.getName()).collect(Collectors.toList());
     }
 
     public static UserRepresentation toUserRepo(User user) {
@@ -141,8 +140,8 @@ public class UserDao {
         userRepo.setEnabled(true);
         userRepo.setEmailVerified(false);
         userRepo.setRequiredActions(List.of(ACT_UPDATE_PASSWORD, ACT_VERIFY_EMAIL));
-        if (user.getRoles() != null) {
-            userRepo.setRealmRoles(user.getRoles().stream().map(r -> r.getId()).collect(Collectors.toList()));
+        if (user.getRoleIds() != null) {
+            userRepo.setRealmRoles(user.getRoleIds());
         }
         return userRepo;
     }
@@ -152,9 +151,7 @@ public class UserDao {
                 : userRepo.getAttributes().get(ATR_PARTICIPANT_ID);
         String participantId = partIds == null ? null : partIds.get(0);
         return new UserProfile(participantId, userRepo.getFirstName(), userRepo.getLastName(), userRepo.getEmail(),
-                userRepo.getRealmRoles() == null ? null
-                        : userRepo.getRealmRoles().stream().map(r -> new Role(r)).collect(Collectors.toList()),
-                userRepo.getId(), userRepo.getFirstName() + " " + userRepo.getLastName());
+                userRepo.getRealmRoles(), userRepo.getId(), userRepo.getFirstName() + " " + userRepo.getLastName());
     }
 
     private static String getUsername(User user) {
