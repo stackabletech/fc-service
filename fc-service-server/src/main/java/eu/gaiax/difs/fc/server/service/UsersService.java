@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import eu.gaiax.difs.fc.api.generated.model.Role;
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.server.dao.UserDao;
@@ -63,15 +62,15 @@ public class UsersService implements UsersApiDelegate {
     }
     
     @Override
-    public ResponseEntity<List<Role>> getUserRoles(String userId) {
+    public ResponseEntity<List<String>> getUserRoles(String userId) {
         log.debug("getUserRoles.enter; got userId: {}", userId);
         UserProfile profile = userDao.select(userId);
-        log.debug("getUserRoles.exit; returning: {}", profile.getRoles());
-        return ResponseEntity.ok(profile.getRoles());
+        log.debug("getUserRoles.exit; returning: {}", profile.getRoleIds());
+        return ResponseEntity.ok(profile.getRoleIds());
     }
     
     @Override
-    public ResponseEntity<UserProfile> updateUserRoles(String userId, List<Role> roles) {
+    public ResponseEntity<UserProfile> updateUserRoles(String userId, List<String> roles) {
         log.debug("updateUserRoles.enter; got userId: {}, roles: {}", userId, roles);
         UserProfile profile = userDao.updateRoles(userId, roles);
         log.debug("updateUserRoles.exit; returning: {}", profile);

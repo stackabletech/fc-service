@@ -188,7 +188,7 @@ components:
           example: Doe
         email:
           type: string
-        roles:
+        roleIds:
           type: array
           items:
             $ref: '#/components/schemas/Role'
@@ -213,11 +213,8 @@ components:
             - id
             - username
     Role:
-      type: object
-      properties:
-        id:
-          type: string
-          example: Ro-MU-CA
+      type: string
+      example: Ro-MU-CA
     Session:
       type: object
       properties:
@@ -227,7 +224,7 @@ components:
           type: string
         status:
           type: string
-        roles:
+        roleIds:
           type: array
           items:
             $ref: '#/components/schemas/Role'
