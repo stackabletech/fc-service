@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.server.controller;
 
+import com.c4_soft.springaddons.security.oauth2.test.annotations.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -23,14 +25,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(SpringExtension.class)
 public class SelfDescriptionControllerTest {
     // TODO: 14.07.2022 After adding business logic, need to fix/add tests, taking into account exceptions
-
-    private final String ADD_SD_REQUEST_BODY = "{\n" +
-            " \"@context\": \"https://json-ld.org/contexts/gaia-x.jsonld\",\n" +
-            " \"@id\": \"http://dbpedia.org/resource/MyService\",\n" +
-            " \"provider\": \"http://dbpedia.org/resource/MyProvider\",\n" +
-            " \"name\": \"https://gaia-x.catalogue.com\"\n" +
-            " }";
-
     @Autowired
     private WebApplicationContext context;
 
@@ -62,8 +56,8 @@ public class SelfDescriptionControllerTest {
     @Test
     public void readSDByHashShouldReturnUnauthorizedResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions/123")
-                .with(csrf())
-                .accept(MediaType.APPLICATION_JSON))
+                        .with(csrf())
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -96,7 +90,9 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = {"Ro-MU-CA"})
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
+            claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
+                    {@StringClaim(name = "participant_id", value = "http://example.org/test-provider")})))
     public void deleteSDReturnSuccessResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.delete("/self-descriptions/123")
                         .with(csrf())
@@ -118,7 +114,7 @@ public class SelfDescriptionControllerTest {
     @WithMockUser
     public void addSDReturnForbiddenResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
-                        .content(ADD_SD_REQUEST_BODY)
+                        .content(getMockFileDataAsString("test-provider-self-description"))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
@@ -126,10 +122,12 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = {"Ro-MU-CA"})
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
+            claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
+                    {@StringClaim(name = "participant_id", value = "http://example.org/test-provider")})))
     public void addSDReturnSuccessResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
-                        .content(ADD_SD_REQUEST_BODY)
+                        .content(getMockFileDataAsString("test-provider-self-description"))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
@@ -156,7 +154,9 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = {"Ro-MU-CA"})
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
+            claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
+                    {@StringClaim(name = "participant_id", value = "http://example.org/test-provider")})))
     public void revokeSDReturnSuccessResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions/123/revoke")
                         .with(csrf())

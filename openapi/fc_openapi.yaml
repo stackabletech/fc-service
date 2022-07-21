@@ -453,7 +453,8 @@ paths:
         description: The new Self-Description
         content:
           application/json:
-            schema: {}
+            schema:
+              type: string
         required: true
       responses:
         '201':
