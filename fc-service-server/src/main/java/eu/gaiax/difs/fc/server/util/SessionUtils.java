@@ -12,7 +12,7 @@ public class SessionUtils {
             String participantId = ((Jwt) principal).getClaim("participant_id");
             log.debug("getSessionParticipantId.exit; got participant id = {} from principal information: {}",
                     participantId, principal);
-                return participantId;
+            return participantId;
         }
         return null;
     }
