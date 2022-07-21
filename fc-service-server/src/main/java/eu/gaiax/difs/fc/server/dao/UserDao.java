@@ -1,14 +1,20 @@
 package eu.gaiax.difs.fc.server.dao;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
+import com.google.common.io.CharStreams;
+import eu.gaiax.difs.fc.api.generated.model.User;
+import eu.gaiax.difs.fc.api.generated.model.UserProfile;
+import eu.gaiax.difs.fc.server.exception.ConflictException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import javax.ws.rs.core.Response;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RolesResource;
@@ -19,16 +25,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
-import com.google.common.io.CharStreams;
-
-import eu.gaiax.difs.fc.api.generated.model.User;
-import eu.gaiax.difs.fc.api.generated.model.UserProfile;
-import eu.gaiax.difs.fc.server.exception.ConflictException;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -123,7 +119,6 @@ public class UserDao {
     }
     
     public List<String> getAllRoles() {
-        
         RolesResource instance = keycloak.realm(realm).roles();
         return instance.list(true).stream().map(r -> r.getName()).collect(Collectors.toList());
     }
