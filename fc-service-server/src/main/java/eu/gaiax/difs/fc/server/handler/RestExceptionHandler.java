@@ -35,12 +35,12 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler({ServerException.class})
     protected ResponseEntity<Error> handleServerException(ServerException ex) {
         log.debug("Server error: ", ex);
-        return new ResponseEntity<>(new Error("not_found_error", ex.getMessage()), INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(new Error("server_error", ex.getMessage()), INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler({NotFoundException.class})
     protected ResponseEntity<Error> handleNotFoundException(NotFoundException ex) {
         log.debug("Not found error: ", ex);
-        return new ResponseEntity<>(new Error("server_error", ex.getMessage()), NOT_FOUND);
+        return new ResponseEntity<>(new Error("not_found_error", ex.getMessage()), NOT_FOUND);
     }
 }
