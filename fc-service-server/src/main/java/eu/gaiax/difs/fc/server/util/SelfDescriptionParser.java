@@ -3,18 +3,18 @@ package eu.gaiax.difs.fc.server.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.gaiax.difs.fc.server.exception.ParserException;
+import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.*;
 
 @Slf4j
 public class SelfDescriptionParser {
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private final static String PARSER_ERROR_MESSAGE = "Self-description doesn't contain information about participant.";
+    private static final String PARSER_ERROR_MESSAGE
+            = "Self-description doesn't contain information about participant.";
 
     private static final String[] TYPE_VALUES = new String[]{"gax:Provider", "gax:Consumer", "gax:Federator",
-            "gax:FederationService", "gax:ServiceOffering", "gax:Resource", "gax:Asset"};
+      "gax:FederationService", "gax:ServiceOffering", "gax:Resource", "gax:Asset"};
 
     public static String getParticipantIdFromSD(String selfDescription) {
         log.debug("getParticipantIdFromSD.enter; got selfDescription: {}", selfDescription);

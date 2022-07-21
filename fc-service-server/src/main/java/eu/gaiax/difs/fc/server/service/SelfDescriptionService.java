@@ -1,20 +1,22 @@
 package eu.gaiax.difs.fc.server.service;
 
+import static eu.gaiax.difs.fc.server.util.SelfDescriptionParser.getParticipantIdFromSD;
+import static eu.gaiax.difs.fc.server.util.SessionUtils.getSessionParticipantId;
+
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription.StatusEnum;
 import eu.gaiax.difs.fc.server.exception.ClientException;
 import eu.gaiax.difs.fc.server.exception.ParserException;
 import eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-
-import static eu.gaiax.difs.fc.server.util.SelfDescriptionParser.getParticipantIdFromSD;
-import static eu.gaiax.difs.fc.server.util.SessionUtils.getSessionParticipantId;
 
 @Slf4j
 @Service
@@ -91,18 +93,18 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     }
 
     private void checkParticipantAccess(String selfDescription) {
-        String sdParticipantId, sessionParticipantId;
+        String sdParticipantId;
         try {
             sdParticipantId = getParticipantIdFromSD(selfDescription);
         } catch (ParserException exception) {
             log.debug(exception.getMessage(), exception);
             throw new ClientException(exception.getMessage());
         }
-        sessionParticipantId = getSessionParticipantId();
+        String sessionParticipantId = getSessionParticipantId();
         if (Objects.isNull(sdParticipantId) || Objects.isNull(sessionParticipantId)
                 || !sdParticipantId.equals(sessionParticipantId)) {
-            log.debug("checkParticipantAccess; The user does not have access to the specified participant." +
-                            " User participant id = {}, self-description participant id = {}.",
+            log.debug("checkParticipantAccess; The user does not have access to the specified participant."
+                            + " User participant id = {}, self-description participant id = {}.",
                     sessionParticipantId, sdParticipantId);
             throw new AccessDeniedException("The user does not have access to the specified participant.");
         }
