@@ -3,6 +3,8 @@ package eu.gaiax.difs.fc.server.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import eu.gaiax.difs.fc.api.generated.model.Error;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,13 +19,9 @@ import org.springframework.security.config.annotation.web.configurers.oauth2.ser
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-
-
 /**
- *  Note: WebSecurity adapter is deprecated in spring security 5.7 ; so we are using SecurityFilterChain for configuring security without extending  deprecated adapter.
+ *  Note: WebSecurity adapter is deprecated in spring security 5.7 ;
+ *  so we are using SecurityFilterChain for configuring security without extending  deprecated adapter.
  */
 @Configuration
 @EnableWebSecurity //(debug = true)

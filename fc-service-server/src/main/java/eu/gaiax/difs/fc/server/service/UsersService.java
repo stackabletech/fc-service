@@ -1,17 +1,15 @@
 package eu.gaiax.difs.fc.server.service;
 
-import java.net.URI;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.server.dao.UserDao;
 import eu.gaiax.difs.fc.server.generated.controller.UsersApiDelegate;
+import java.net.URI;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -53,7 +51,8 @@ public class UsersService implements UsersApiDelegate {
     }
     
     @Override
-    public ResponseEntity<List<UserProfile>> getUsers(Integer offset, Integer limit, String orderBy, Boolean ascending) {
+    public ResponseEntity<List<UserProfile>> getUsers(Integer offset, Integer limit,
+                                                      String orderBy, Boolean ascending) {
         // sorting is not supported yet by keycloak admin API
         log.debug("getUsers.enter; got offset: {}, limit: {}", offset, limit);
         List<UserProfile> profiles = userDao.search(offset, limit);
