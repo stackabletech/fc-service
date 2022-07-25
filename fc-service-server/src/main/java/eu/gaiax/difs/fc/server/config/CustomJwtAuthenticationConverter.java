@@ -12,16 +12,31 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 
+/**
+ * Converter provides type conversion for custom jwt claim values.
+ */
 public class CustomJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
   private final String resourceId;
   private final JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
 
+  /**
+   * Constructs a new Converter with the specified resourceId.
+   *
+   * @param resourceId Keycloak client id.
+   */
   public CustomJwtAuthenticationConverter(String resourceId) {
     this.resourceId = resourceId;
   }
 
+  /**
+   * Extract all user authorities.
+   *
+   * @param jwt User authentication token.
+   * @param resourceId Keycloak client id.
+   * @return Collection of user authorities.
+   */
   private Collection<? extends GrantedAuthority> extractResourceRoles(final Jwt jwt, final String resourceId) {
-    Collection<GrantedAuthority> authorities = this.extractAuthorities(jwt);
+    Collection<GrantedAuthority> authorities = this.jwtGrantedAuthoritiesConverter.convert(jwt);
     Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
     Map<String, Object> resource;
     Collection<String> resourceRoles;
@@ -33,10 +48,12 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, Abstract
     return authorities;
   }
 
-  protected Collection<GrantedAuthority> extractAuthorities(Jwt jwt) {
-    return this.jwtGrantedAuthoritiesConverter.convert(jwt);
-  }
-
+  /**
+   * Convert user jwt token to JwtAuthenticationToken with all user authorities.
+   *
+   * @param source User authentication token.
+   * @return JwtAuthenticationToken with all user authorities.
+   */
   @Override
   public AbstractAuthenticationToken convert(final Jwt source) {
     Collection<GrantedAuthority> authorities =
