@@ -1,9 +1,7 @@
 package eu.gaiax.difs.fc.server.handler;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+
+import static org.springframework.http.HttpStatus.*;
 
 import eu.gaiax.difs.fc.api.generated.model.Error;
 import eu.gaiax.difs.fc.server.exception.ClientException;
@@ -20,27 +18,27 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler({ClientException.class})
-    protected ResponseEntity<Error> handleBadRequestException(ClientException ex) {
-        log.debug("Bad request error: ", ex);
-        return new ResponseEntity<>(new Error("client_error", ex.getMessage()), BAD_REQUEST);
-    }
+  @ExceptionHandler({ClientException.class})
+  protected ResponseEntity<Error> handleBadRequestException(ClientException ex) {
+    log.debug("Bad request error: ", ex);
+    return new ResponseEntity<>(new Error("client_error", ex.getMessage()), BAD_REQUEST);
+  }
 
-    @ExceptionHandler({ConflictException.class})
-    protected ResponseEntity<Error> handleConflictException(ConflictException ex) {
-        log.debug("Conflict error: ", ex);
-        return new ResponseEntity<>(new Error("conflict_error", ex.getMessage()), CONFLICT);
-    }
+  @ExceptionHandler({ConflictException.class})
+  protected ResponseEntity<Error> handleConflictException(ConflictException ex) {
+    log.debug("Conflict error: ", ex);
+    return new ResponseEntity<>(new Error("conflict_error", ex.getMessage()), CONFLICT);
+  }
 
-    @ExceptionHandler({ServerException.class})
-    protected ResponseEntity<Error> handleServerException(ServerException ex) {
-        log.debug("Server error: ", ex);
-        return new ResponseEntity<>(new Error("server_error", ex.getMessage()), INTERNAL_SERVER_ERROR);
-    }
+  @ExceptionHandler({ServerException.class})
+  protected ResponseEntity<Error> handleServerException(ServerException ex) {
+    log.debug("Server error: ", ex);
+    return new ResponseEntity<>(new Error("server_error", ex.getMessage()), INTERNAL_SERVER_ERROR);
+  }
 
-    @ExceptionHandler({NotFoundException.class})
-    protected ResponseEntity<Error> handleNotFoundException(NotFoundException ex) {
-        log.debug("Not found error: ", ex);
-        return new ResponseEntity<>(new Error("not_found_error", ex.getMessage()), NOT_FOUND);
-    }
+  @ExceptionHandler({NotFoundException.class})
+  protected ResponseEntity<Error> handleNotFoundException(NotFoundException ex) {
+    log.debug("Not found error: ", ex);
+    return new ResponseEntity<>(new Error("not_found_error", ex.getMessage()), NOT_FOUND);
+  }
 }

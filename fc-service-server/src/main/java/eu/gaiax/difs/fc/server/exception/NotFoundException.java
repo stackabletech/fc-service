@@ -6,7 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class NotFoundException extends ServiceException {
-    public NotFoundException(String msg) {
-        super(msg);
-    }
+  public NotFoundException(String msg) {
+    super(msg);
+  }
 }

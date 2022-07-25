@@ -6,11 +6,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ParserException extends ServiceException {
-    public ParserException(String msg) {
-        super(msg);
-    }
+  public ParserException(String msg) {
+    super(msg);
+  }
 
-    public ParserException(String msg, Throwable throwable) {
-        super(msg, throwable);
-    }
+  public ParserException(String msg, Throwable throwable) {
+    super(msg, throwable);
+  }
 }
