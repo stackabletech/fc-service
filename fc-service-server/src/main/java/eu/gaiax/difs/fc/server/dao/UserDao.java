@@ -36,9 +36,7 @@ public class UserDao {
   private static final String ATR_PARTICIPANT_ID = "participantId";
 
   private static final ObjectMapper jsonMapper = new ObjectMapper();
-  private static final TypeReference<Map<String, Object>> MAP_TYPE_REF =
-      new TypeReference<Map<String, Object>>() {
-      };
+  private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
 
   @Value("${keycloak.realm}")
   private String realm;
@@ -181,5 +179,4 @@ public class UserDao {
     passwordCredentials.setValue(password);
     return passwordCredentials;
   }
-
 }

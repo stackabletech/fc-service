@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class RolesService implements RolesApiDelegate {
-
   @Autowired
   private UserDao userDao;
 
@@ -21,5 +20,4 @@ public class RolesService implements RolesApiDelegate {
     log.debug("getAllRoles; returning {} roles", roles.size());
     return ResponseEntity.ok(roles);
   }
-
 }

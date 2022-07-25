@@ -1,7 +1,9 @@
 package eu.gaiax.difs.fc.server.handler;
 
-
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import eu.gaiax.difs.fc.api.generated.model.Error;
 import eu.gaiax.difs.fc.server.exception.ClientException;

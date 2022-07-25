@@ -21,13 +21,11 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 
 /**
  * Note: WebSecurity adapter is deprecated in spring security 5.7 ;
- * so we are using SecurityFilterChain for configuration security without extending deprecated
- * adapter.
+ * so we are using SecurityFilterChain for configuration security without extending deprecated adapter.
  */
 @Configuration
 @EnableWebSecurity //(debug = true)
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-
 public class SecurityConfig {
   private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -43,41 +41,41 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
-        .csrf().disable()
-        .authorizeRequests(authorization -> authorization
-            .antMatchers(HttpMethod.GET, "/api/**", "/swagger-ui/**", "/actuator", "/actuator/**")
-            .permitAll()
+      .csrf().disable()
+      .authorizeRequests(authorization -> authorization
+        .antMatchers(HttpMethod.GET, "/api/**", "/swagger-ui/**", "/actuator", "/actuator/**")
+          .permitAll()
 
-            // Schema APIs
-            .antMatchers(HttpMethod.POST, "/schemas").hasRole("Ro-MU-CA")
-            .antMatchers(HttpMethod.DELETE, "/schemas/**").hasRole("Ro-MU-CA")
-            .antMatchers(HttpMethod.GET, "/schemas", "/schemas/**")
-            .hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-Pa-A")
+          // Schema APIs
+          .antMatchers(HttpMethod.POST, "/schemas").hasRole("Ro-MU-CA")
+          .antMatchers(HttpMethod.DELETE, "/schemas/**").hasRole("Ro-MU-CA")
+          .antMatchers(HttpMethod.GET, "/schemas", "/schemas/**")
+          .hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-Pa-A")
 
-            // Query APIs
-            .antMatchers("/queries").permitAll()
+          // Query APIs
+          .antMatchers("/queries").permitAll()
 
-            // Self-Description APIs
-            .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()
-            .antMatchers(HttpMethod.GET, "/self-descriptions/{self_description_hash}")
-            .authenticated()
-            .antMatchers(HttpMethod.POST, "/self-descriptions")
-            .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
-            .antMatchers(HttpMethod.DELETE, "/self-descriptions/{self_description_hash}")
-            .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
-            .antMatchers(HttpMethod.POST, "/self-descriptions/{self_description_hash}/revoke")
-            .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
+          // Self-Description APIs
+          .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()
+          .antMatchers(HttpMethod.GET, "/self-descriptions/{self_description_hash}")
+          .authenticated()
+          .antMatchers(HttpMethod.POST, "/self-descriptions")
+          .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
+          .antMatchers(HttpMethod.DELETE, "/self-descriptions/{self_description_hash}")
+          .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
+          .antMatchers(HttpMethod.POST, "/self-descriptions/{self_description_hash}/revoke")
+          .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
 
-            // User APIs
-            .antMatchers("/users", "users/**").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
+          // User APIs
+          .antMatchers("/users", "users/**").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
 
-            // Roles APIs
-            .antMatchers("/roles").authenticated()
+          // Roles APIs
+          .antMatchers("/roles").authenticated()
 
-            // Verification APIs
-            .antMatchers("/verifications").authenticated()
+          // Verification APIs
+          .antMatchers("/verifications").authenticated()
 
-            .anyRequest().authenticated()
+          .anyRequest().authenticated()
         )
         .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
         .exceptionHandling()
