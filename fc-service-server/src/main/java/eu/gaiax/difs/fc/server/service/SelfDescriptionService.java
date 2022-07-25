@@ -18,27 +18,65 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+/**
+ * Implementation of the {@link eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate} interface.
+ */
 @Slf4j
 @Service
 public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   //TODO: 13.07.2022 Need to replace mocked Data with business logic
 
+  /**
+   * Service method for GET /self-descriptions : Get the list of metadata of SD in the Catalogue.
+   *
+   * @param uploadTimeRange Filter for the time range when the SD was uploaded to the catalogue.
+   *                        The time range has to be specified as start time and end time as ISO8601 timestamp
+   *                        separated by a &#x60;/&#x60;. (optional)
+   * @param statusTimeRange Filter for the time range when the status of the SD was last changed in the catalogue.
+   *                        The time range has to be specified as start time and end time as ISO8601 timestamp
+   *                        separated by a &#x60;/&#x60;. (optional)
+   * @param issuer          Filter for the issuer of the SD. This is the unique ID of the Participant
+   *                        that has prepared the SD. (optional)
+   * @param validator       Filter for a validator of the SD. This is the unique ID of the Participant
+   *                        that validated (part of) the SD. (optional)
+   * @param status          Filter for the status of the SD. (optional, default to active)
+   * @param id              Filter for id/credentialSubject of the SD. (optional)
+   * @param hash            Filter for a hash of the SD. (optional)
+   * @param offset          The number of items to skip before starting to collect the result set.
+   *                        (optional, default to 0)
+   * @param limit           The number of items to return. (optional, default to 100)
+   * @return List of meta-data of available SD. (status code 200)
+   *        or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *        or May contain hints how to solve the error or indicate what went wrong at the server.
+   *        Must not outline any information about the internal structure of the server. (status code 500)
+   */
   @Override
   public ResponseEntity<List<SelfDescription>> readSelfDescriptions(String uploadTimeRange,
                                                                     String statusTimeRange,
                                                                     String issuer, String validator,
-                                                                    String statusValue, String id,
+                                                                    String status, String id,
                                                                     String hash,
                                                                     Integer offset, Integer limit) {
     log.debug("readSelfDescriptions.enter; got uploadTimeRange: {}, statusTimeRange: {},"
             + "issuer: {}, validator: {}, status: {}, id: {}, hash: {}, offset: {}, limit: {}",
-        uploadTimeRange, statusTimeRange, issuer, validator, statusValue, id, hash, offset, limit);
+        uploadTimeRange, statusTimeRange, issuer, validator, status, id, hash, offset, limit);
     List<SelfDescription> selfDescriptions = new ArrayList<>();
     selfDescriptions.add(getDefaultSdMetadata());
     log.debug("readSelfDescriptions.exit; returning: {}", selfDescriptions.size());
     return new ResponseEntity<>(selfDescriptions, HttpStatus.OK);
   }
 
+  /**
+   * Service method for GET /self-descriptions/{self_description_hash} : Read a SD by its hash. Returns the content
+   * of the single SD.
+   *
+   * @param selfDescriptionHash Hash of the self-description (required)
+   * @return The requested Self-Description (status code 200)
+   *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *         or Self-Description not found (status code 404)
+   *         or May contain hints how to solve the error or indicate what went wrong at the server.
+   *         Must not outline any information about the internal structure of the server. (status code 500)
+   */
   @Override
   public ResponseEntity<Object> readSelfDescriptionByHash(String selfDescriptionHash) {
     log.debug("readSelfDescriptionByHash.enter; got hash: {}", selfDescriptionHash);
@@ -59,6 +97,16 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
         .body(sd);
   }
 
+  /**
+   * Service method for DELETE /self-descriptions/{self_description_hash} : Completely delete a SD.
+   *
+   * @param selfDescriptionHash Hash of the SD (required)
+   * @return OK (status code 200)
+   *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *         or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *         or May contain hints how to solve the error or indicate what went wrong at the server.
+   *         Must not outline any information about the internal structure of the server. (status code 500)
+   */
   @Override
   public ResponseEntity<Void> deleteSelfDescription(String selfDescriptionHash) {
     log.debug("deleteSelfDescription.enter; got hash: {}", selfDescriptionHash);
@@ -71,6 +119,17 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     return new ResponseEntity<>(HttpStatus.OK);
   }
 
+  /**
+   * Service method for POST /self-descriptions : Add a new SD to the catalogue.
+   *
+   * @param selfDescription The new SD (required)
+   * @return Created (status code 201)
+   *         or The request was accepted but the validation is not finished yet. (status code 202)
+   *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *         or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *         or May contain hints how to solve the error or indicate what went wrong at the server.
+   *         Must not outline any information about the internal structure of the server. (status code 500)
+   */
   @Override
   public ResponseEntity<SelfDescription> addSelfDescription(String selfDescription) {
     log.debug("addSelfDescription.enter; got selfDescription: {}", selfDescription);
@@ -82,6 +141,17 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     return new ResponseEntity<>(sdMetadata, HttpStatus.CREATED);
   }
 
+  /**
+   * Service method for POST /self-descriptions/{self_description_hash}/revoke :
+   * Change the lifecycle state of a SD to revoke.
+   *
+   * @param selfDescriptionHash Hash of the self-description (required)
+   * @return Revoked (status code 200)
+   *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *         or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *         or May contain hints how to solve the error or indicate what went wrong at the server.
+   *         Must not outline any information about the internal structure of the server. (status code 500)
+   */
   @Override
   public ResponseEntity<SelfDescription> updateSelfDescription(String selfDescriptionHash) {
     log.debug("updateSelfDescription.enter; got hash: {}", selfDescriptionHash);
@@ -95,6 +165,11 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     return new ResponseEntity<>(sdMetadata, HttpStatus.OK);
   }
 
+  /**
+   * Internal service method for checking user access to a particular Participant.
+   *
+   * @param selfDescription The verifiable SD (required).
+   */
   private void checkParticipantAccess(String selfDescription) {
     String sdParticipantId;
     try {
