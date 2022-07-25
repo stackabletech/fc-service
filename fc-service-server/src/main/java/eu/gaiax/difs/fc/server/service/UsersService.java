@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class UsersService implements UsersApiDelegate {
-
   @Autowired
   private UserDao userDao;
 
@@ -75,5 +74,4 @@ public class UsersService implements UsersApiDelegate {
     log.debug("updateUserRoles.exit; returning: {}", profile);
     return ResponseEntity.ok(profile);
   }
-
 }

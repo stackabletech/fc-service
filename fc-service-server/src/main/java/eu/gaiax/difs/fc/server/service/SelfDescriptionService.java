@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
-  // TODO: 13.07.2022 Need to replace mocked Data with business logic
+  //TODO: 13.07.2022 Need to replace mocked Data with business logic
 
   @Override
   public ResponseEntity<List<SelfDescription>> readSelfDescriptions(String uploadTimeRange,
@@ -53,8 +53,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     HttpHeaders responseHeaders = new HttpHeaders();
     responseHeaders.set("Content-Type", "application/ld+json");
 
-    log.debug("readSelfDescriptionByHash.exit; returning self-description by hash: {}",
-        selfDescriptionHash);
+    log.debug("readSelfDescriptionByHash.exit; returning self-description by hash: {}", selfDescriptionHash);
     return ResponseEntity.ok()
         .headers(responseHeaders)
         .body(sd);
@@ -79,8 +78,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     checkParticipantAccess(selfDescription);
     SelfDescription sdMetadata = getDefaultSdMetadata();
 
-    log.debug("addSelfDescription.exit; returning self-description metadata by hash: {}",
-        sdMetadata.getSdHash());
+    log.debug("addSelfDescription.exit; returning self-description metadata by hash: {}", sdMetadata.getSdHash());
     return new ResponseEntity<>(sdMetadata, HttpStatus.CREATED);
   }
 
@@ -93,8 +91,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
 
     SelfDescription sdMetadata = getDefaultSdMetadata();
 
-    log.debug("updateSelfDescription.exit; update self-description by hash: {}",
-        selfDescriptionHash);
+    log.debug("updateSelfDescription.exit; update self-description by hash: {}", selfDescriptionHash);
     return new ResponseEntity<>(sdMetadata, HttpStatus.OK);
   }
 
@@ -113,8 +110,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
           "checkParticipantAccess; The user does not have access to the specified participant."
               + " User participant id = {}, self-description participant id = {}.",
           sessionParticipantId, sdParticipantId);
-      throw new AccessDeniedException(
-          "The user does not have access to the specified participant.");
+      throw new AccessDeniedException("The user does not have access to the specified participant.");
     }
   }
 

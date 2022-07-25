@@ -4,5 +4,4 @@ public class ConflictException extends ServiceException {
   public ConflictException(String msg) {
     super(msg);
   }
-
 }
