@@ -6,7 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ClientException extends ServiceException {
-    public ClientException(String msg) {
-        super(msg);
-    }
+  public ClientException(String msg) {
+    super(msg);
+  }
 }

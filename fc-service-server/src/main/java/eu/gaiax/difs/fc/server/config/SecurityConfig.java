@@ -20,81 +20,83 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
 /**
- *  Note: WebSecurity adapter is deprecated in spring security 5.7 ;
- *  so we are using SecurityFilterChain for configuring security without extending  deprecated adapter.
+ * Note: WebSecurity adapter is deprecated in spring security 5.7 ;
+ * so we are using SecurityFilterChain for configuration security without extending deprecated
+ * adapter.
  */
 @Configuration
 @EnableWebSecurity //(debug = true)
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 
-public class SecurityConfig  {
-    private static final ObjectMapper mapper = new ObjectMapper();
+public class SecurityConfig {
+  private static final ObjectMapper mapper = new ObjectMapper();
 
-    private static final Error FORBIDDEN_ERROR = new Error("forbidden_error",
-            "The user does not have the permission to execute this request.");
-    @Value("${keycloak.resource}")
-    private String resourceId;
+  private static final Error FORBIDDEN_ERROR = new Error("forbidden_error",
+      "The user does not have the permission to execute this request.");
+  @Value("${keycloak.resource}")
+  private String resourceId;
 
-    /**
-     * Define security constraints for the application resources.
-     */
-    // TODO: 13.07.2022 Need to add access by scopes and by access to the participant.
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf().disable()
-                .authorizeRequests(authorization -> authorization
-                        .antMatchers(HttpMethod.GET, "/api/**", "/swagger-ui/**", "/actuator", "/actuator/**")
-                        .permitAll()
+  /**
+   * Define security constraints for the application resources.
+   */
+  // TODO: 13.07.2022 Need to add access by scopes and by access to the participant.
+  @Bean
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf().disable()
+        .authorizeRequests(authorization -> authorization
+            .antMatchers(HttpMethod.GET, "/api/**", "/swagger-ui/**", "/actuator", "/actuator/**")
+            .permitAll()
 
-                        // Schema APIs
-                        .antMatchers(HttpMethod.POST, "/schemas").hasRole("Ro-MU-CA")
-                        .antMatchers(HttpMethod.DELETE, "/schemas/**").hasRole("Ro-MU-CA")
-                        .antMatchers(HttpMethod.GET, "/schemas", "/schemas/**")
-                        .hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-Pa-A")
+            // Schema APIs
+            .antMatchers(HttpMethod.POST, "/schemas").hasRole("Ro-MU-CA")
+            .antMatchers(HttpMethod.DELETE, "/schemas/**").hasRole("Ro-MU-CA")
+            .antMatchers(HttpMethod.GET, "/schemas", "/schemas/**")
+            .hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-Pa-A")
 
-                        // Query APIs
-                        .antMatchers("/queries").permitAll()
+            // Query APIs
+            .antMatchers("/queries").permitAll()
 
-                        // Self-Description APIs
-                        .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()
-                        .antMatchers(HttpMethod.GET, "/self-descriptions/{self_description_hash}").authenticated()
-                        .antMatchers(HttpMethod.POST, "/self-descriptions")
-                        .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
-                        .antMatchers(HttpMethod.DELETE, "/self-descriptions/{self_description_hash}")
-                        .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
-                        .antMatchers(HttpMethod.POST, "/self-descriptions/{self_description_hash}/revoke")
-                        .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
+            // Self-Description APIs
+            .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()
+            .antMatchers(HttpMethod.GET, "/self-descriptions/{self_description_hash}")
+            .authenticated()
+            .antMatchers(HttpMethod.POST, "/self-descriptions")
+            .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
+            .antMatchers(HttpMethod.DELETE, "/self-descriptions/{self_description_hash}")
+            .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
+            .antMatchers(HttpMethod.POST, "/self-descriptions/{self_description_hash}/revoke")
+            .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
 
-                        // User APIs
-                        .antMatchers("/users", "users/**").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
+            // User APIs
+            .antMatchers("/users", "users/**").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
 
-                        // Roles APIs
-                        .antMatchers("/roles").authenticated()
-                        
-                        // Verification APIs
-                        .antMatchers("/verifications").authenticated()
+            // Roles APIs
+            .antMatchers("/roles").authenticated()
 
-                        .anyRequest().authenticated()
-                )
-                .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
-                .exceptionHandling()
-                .accessDeniedHandler(accessDeniedHandler())
-                .and()
-                .oauth2ResourceServer()
-                .jwt()
-                .jwtAuthenticationConverter(new CustomJwtAuthenticationConverter(resourceId));
+            // Verification APIs
+            .antMatchers("/verifications").authenticated()
 
-        return http.build();
-    }
+            .anyRequest().authenticated()
+        )
+        .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
+        .exceptionHandling()
+        .accessDeniedHandler(accessDeniedHandler())
+        .and()
+        .oauth2ResourceServer()
+        .jwt()
+        .jwtAuthenticationConverter(new CustomJwtAuthenticationConverter(resourceId));
 
-    private static AccessDeniedHandler accessDeniedHandler() {
-        return (HttpServletRequest request, HttpServletResponse response,
-                AccessDeniedException accessDeniedException) -> {
-            response.setStatus(HttpStatus.FORBIDDEN.value());
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
-            response.getWriter().write(ow.writeValueAsString(FORBIDDEN_ERROR));
-        };
-    }
+    return http.build();
+  }
+
+  private static AccessDeniedHandler accessDeniedHandler() {
+    return (HttpServletRequest request, HttpServletResponse response,
+            AccessDeniedException accessDeniedException) -> {
+      response.setStatus(HttpStatus.FORBIDDEN.value());
+      response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+      ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
+      response.getWriter().write(ow.writeValueAsString(FORBIDDEN_ERROR));
+    };
+  }
 }
