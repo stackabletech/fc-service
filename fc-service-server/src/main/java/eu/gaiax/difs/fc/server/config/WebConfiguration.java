@@ -5,6 +5,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * Defines callback methods to customize the Java-based configuration for Spring MVC.
+ * Custom implementation of the {@link WebMvcConfigurer}.
+ */
 @Configuration
 public class WebConfiguration implements WebMvcConfigurer {
   /**

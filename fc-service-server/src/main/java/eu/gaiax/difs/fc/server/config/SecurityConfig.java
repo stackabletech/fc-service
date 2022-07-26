@@ -20,7 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
 /**
- * Note: WebSecurity adapter is deprecated in spring security 5.7 ;
+ * Note: WebSecurity adapter is deprecated in spring security 5.7;
  * so we are using SecurityFilterChain for configuration security without extending deprecated adapter.
  */
 @Configuration
@@ -88,6 +88,9 @@ public class SecurityConfig {
     return http.build();
   }
 
+  /**
+   * Customize Access Denied application exception.
+   */
   private static AccessDeniedHandler accessDeniedHandler() {
     return (HttpServletRequest request, HttpServletResponse response,
             AccessDeniedException accessDeniedException) -> {

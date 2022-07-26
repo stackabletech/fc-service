@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Defines Keycloak client configurations.
+ */
 @Configuration
 public class KeycloakConfig {
   @Value("${keycloak.auth-server-url}")
@@ -19,6 +22,9 @@ public class KeycloakConfig {
   @Value("${keycloak.credentials.secret}")
   private String clientSecret;
 
+  /**
+   * The Keycloak Client bean config.
+   */
   @Bean
   public Keycloak getKeycloakClient() {
     return KeycloakBuilder.builder()
