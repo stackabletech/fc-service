@@ -1,17 +1,18 @@
 package eu.gaiax.difs.fc.server.service;
 
-import static eu.gaiax.difs.fc.server.util.SelfDescriptionParser.getParticipantIdFromSd;
 import static eu.gaiax.difs.fc.server.util.SessionUtils.getSessionParticipantId;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription.StatusEnum;
+import eu.gaiax.difs.fc.server.dao.SelfDescriptionDao;
 import eu.gaiax.difs.fc.server.exception.ClientException;
-import eu.gaiax.difs.fc.server.exception.ParserException;
 import eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate;
-import java.util.ArrayList;
+import eu.gaiax.difs.fc.server.service.validation.ValidationService;
 import java.util.List;
 import java.util.Objects;
+import javax.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,12 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
+  @Autowired
+  private ValidationService validationService;
+
+  @Autowired
+  private SelfDescriptionDao sdDao;
+
   //TODO: 13.07.2022 Need to replace mocked Data with business logic
 
   /**
@@ -51,17 +58,20 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    *        Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<SelfDescription>> readSelfDescriptions(String uploadTimeRange,
-                                                                    String statusTimeRange,
-                                                                    String issuer, String validator,
-                                                                    String status, String id,
-                                                                    String hash,
-                                                                    Integer offset, Integer limit) {
+  public ResponseEntity<List<SelfDescription>> readSelfDescriptions(String uploadTimeRange, String statusTimeRange,
+                                                                    String issuer, String validator, String status,
+                                                                    String id, String hash, Integer offset,
+                                                                    Integer limit) {
     log.debug("readSelfDescriptions.enter; got uploadTimeRange: {}, statusTimeRange: {},"
             + "issuer: {}, validator: {}, status: {}, id: {}, hash: {}, offset: {}, limit: {}",
         uploadTimeRange, statusTimeRange, issuer, validator, status, id, hash, offset, limit);
-    List<SelfDescription> selfDescriptions = new ArrayList<>();
-    selfDescriptions.add(getDefaultSdMetadata());
+
+    // TODO: 27.07.2022 Are there criteria for checking filtering parameters or do we expect this from Fraunhofer?
+    //  (From the documentation: "Validate filter parameter values")
+
+    // TODO: 27.07.2022 The method does not accept all parameters for filtering. Doing filtering at the service level?
+    List<SelfDescription> selfDescriptions = sdDao.getAllSelfDescriptions(offset, limit);
+
     log.debug("readSelfDescriptions.exit; returning: {}", selfDescriptions.size());
     return new ResponseEntity<>(selfDescriptions, HttpStatus.OK);
   }
@@ -80,13 +90,9 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   @Override
   public ResponseEntity<Object> readSelfDescriptionByHash(String selfDescriptionHash) {
     log.debug("readSelfDescriptionByHash.enter; got hash: {}", selfDescriptionHash);
-
-    String sd = "{\n"
-        + " \"@context\": \"https://json-ld.org/contexts/gaia-x.jsonld\",\n"
-        + " \"@id\": \"http://dbpedia.org/resource/MyService\",\n"
-        + " \"provider\": \"http://dbpedia.org/resource/MyProvider\",\n"
-        + " \"name\": \"https://gaia-x.catalogue.com\"\n"
-        + " }";
+    // TODO: 27.07.2022 In the provided interface, there is no method for obtaining a self-description by hash,
+    //  there is only a method for obtaining a metadata.
+    Object selfDescription = getSelfDescription();
 
     HttpHeaders responseHeaders = new HttpHeaders();
     responseHeaders.set("Content-Type", "application/ld+json");
@@ -94,7 +100,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     log.debug("readSelfDescriptionByHash.exit; returning self-description by hash: {}", selfDescriptionHash);
     return ResponseEntity.ok()
         .headers(responseHeaders)
-        .body(sd);
+        .body(selfDescription);
   }
 
   /**
@@ -110,12 +116,16 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   @Override
   public ResponseEntity<Void> deleteSelfDescription(String selfDescriptionHash) {
     log.debug("deleteSelfDescription.enter; got hash: {}", selfDescriptionHash);
+    // TODO: 27.07.2022 The method is not described in the documentation.
 
-    String selfDescription = getSelfDescriptionByHash(selfDescriptionHash);
-    checkParticipantAccess(selfDescription);
+    SelfDescription sdMetadata = sdDao.getByHash(selfDescriptionHash);
 
-    log.debug("deleteSelfDescription.exit; deleted self-description by hash: {}",
-        selfDescriptionHash);
+    checkParticipantAccess(sdMetadata.getIssuer());
+
+    // TODO: 27.07.2022 Add to the interface / a new interface for working with files
+    //  and include a method for deleting a self-description file there + Awaiting GraphDd repository interface.
+    sdDao.deleteSelfDescription(selfDescriptionHash);
+    log.debug("deleteSelfDescription.exit; deleted self-description by hash: {}", sdMetadata.getSdHash());
     return new ResponseEntity<>(HttpStatus.OK);
   }
 
@@ -134,11 +144,22 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   public ResponseEntity<SelfDescription> addSelfDescription(String selfDescription) {
     log.debug("addSelfDescription.enter; got selfDescription: {}", selfDescription);
 
-    checkParticipantAccess(selfDescription);
-    SelfDescription sdMetadata = getDefaultSdMetadata();
+    try {
+      // TODO: 27.07.2022 Need to change the description and the order of actions in the documentation
 
-    log.debug("addSelfDescription.exit; returning self-description metadata by hash: {}", sdMetadata.getSdHash());
-    return new ResponseEntity<>(sdMetadata, HttpStatus.CREATED);
+      SelfDescription sdMetadata = validationService.validateSelfDescription(selfDescription);
+      checkParticipantAccess(sdMetadata.getIssuer());
+      sdDao.storeSelfDescription(sdMetadata);
+
+      // TODO: 27.07.2022 Add to the interface / a new interface for working with files
+      //  and include a method for adding a self-description file there + Awaiting GraphDd repository interface.
+
+      log.debug("addSelfDescription.exit; returning self-description metadata by hash: {}", sdMetadata.getSdHash());
+      return new ResponseEntity<>(sdMetadata, HttpStatus.CREATED);
+    } catch (ValidationException exception) {
+      log.debug("Self-description isn't parsed due to: " + exception.getMessage(), exception);
+      throw new ClientException("Self-description isn't parsed due to: " + exception.getMessage());
+    }
   }
 
   /**
@@ -155,11 +176,17 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   @Override
   public ResponseEntity<SelfDescription> updateSelfDescription(String selfDescriptionHash) {
     log.debug("updateSelfDescription.enter; got hash: {}", selfDescriptionHash);
+    // TODO: 27.07.2022 Need to change the description and the order of actions in the documentation
 
-    String selfDescription = getSelfDescriptionByHash(selfDescriptionHash);
-    checkParticipantAccess(selfDescription);
+    SelfDescription sdMetadata = sdDao.getByHash(selfDescriptionHash);
+    checkParticipantAccess(sdMetadata.getIssuer());
 
-    SelfDescription sdMetadata = getDefaultSdMetadata();
+    if (sdMetadata.getStatus().equals(StatusEnum.ACTIVE)) {
+      sdDao.changeLifeCycleStatus(sdMetadata.getSdHash(), StatusEnum.DEPRECATED);
+    }
+
+    // TODO: 27.07.2022 Add to the interface / a new interface for working with files
+    //  and include a method for adding a self-description file there + Awaiting GraphDd repository interface.
 
     log.debug("updateSelfDescription.exit; update self-description by hash: {}", selfDescriptionHash);
     return new ResponseEntity<>(sdMetadata, HttpStatus.OK);
@@ -168,30 +195,23 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   /**
    * Internal service method for checking user access to a particular Participant.
    *
-   * @param selfDescription The verifiable SD (required).
+   * @param sdIssuer The Participant issuer of SD (required).
    */
-  private void checkParticipantAccess(String selfDescription) {
-    String sdParticipantId;
-    try {
-      sdParticipantId = getParticipantIdFromSd(selfDescription);
-    } catch (ParserException exception) {
-      log.debug(exception.getMessage(), exception);
-      throw new ClientException(exception.getMessage());
-    }
+  private void checkParticipantAccess(String sdIssuer) {
     String sessionParticipantId = getSessionParticipantId();
-    if (Objects.isNull(sdParticipantId) || Objects.isNull(sessionParticipantId)
-        || !sdParticipantId.equals(sessionParticipantId)) {
+    if (Objects.isNull(sdIssuer) || Objects.isNull(sessionParticipantId) || !sdIssuer.equals(sessionParticipantId)) {
       log.debug(
           "checkParticipantAccess; The user does not have access to the specified participant."
               + " User participant id = {}, self-description participant id = {}.",
-          sessionParticipantId, sdParticipantId);
+          sessionParticipantId, sdIssuer);
       throw new AccessDeniedException("The user does not have access to the specified participant.");
     }
   }
 
+
   // TODO: 20.07.2022 The logic must be implemented by Fraunhofer.
   //  Then the mock implementation will be changed.
-  private String getSelfDescriptionByHash(String sdHash) {
+  private String getSelfDescription() {
     return "{\n"
         + "  \"@context\": [\n"
         + "    \"https://w3id.org/gaia-x/context.jsonld\"\n"
@@ -230,19 +250,5 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
         + "    \"jws\": \"eyJhbGciOiJSUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19\"\n"
         + "  }\n"
         + "}\n";
-  }
-
-  private SelfDescription getDefaultSdMetadata() {
-    SelfDescription sdMetadata = new SelfDescription();
-    sdMetadata.setId("string");
-    sdMetadata.setSdHash("string");
-    sdMetadata.setIssuer("string");
-    sdMetadata.setStatus(StatusEnum.ACTIVE);
-    List<String> validators = new ArrayList<>();
-    validators.add("string");
-    sdMetadata.setValidators(validators);
-    sdMetadata.setStatusTime("2022-05-11T15:30:00Z");
-    sdMetadata.setUploadTime("2022-03-01T13:00:00Z");
-    return sdMetadata;
   }
 }
