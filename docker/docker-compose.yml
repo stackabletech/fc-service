@@ -28,6 +28,24 @@ services:
           '-Dkeycloak.profile.feature.upload_scripts=enabled',
           '--log-level=DEBUG,io.quarkus:INFO,liquibase:INFO,org.hibernate:INFO,org.infinispan:INFO,org.keycloak.services.scheduled:INFO,org.keycloak.transaction:INFO,io.netty.buffer.PoolThreadCache:INFO,org.keycloak.models.sessions.infinispan:INFO'
       ]
+  server:
+    container_name: "federated-catalogue-server"
+    image: "${CI_REGISTRY}/${SERVER_ARTIFACT}:${SERVER_VERSION}"
+    ports:
+      - "8081:8081"
+    networks:
+      - "gaia-x"
+    restart: unless-stopped
+
+#    we will enable this once demo-portal web app is ready
+#  portal:
+#    container_name: "federated-catalogue-portal"
+#    image: "${CI_REGISTRY}/${PORTAL_ARTIFACT}:${PORTAL_VERSION}"
+#    ports:
+#      - "8082:8082"
+#    networks:
+#      - "gaia-x"
+#    restart: unless-stopped
 
 networks:
   gaia-x:
