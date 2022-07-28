@@ -39,18 +39,15 @@ federated-catalogue:
 
 keycloak:
   auth-server-url: http://localhost:8080
+#  auth-server-url: http://key-server.gxfs.dev
   realm: master
   ssl-required: external
 #  resource: federated-catalogue
   resource: admin-cli
   credentials:
-#    secret: ${KEYCLOAK_CLIENT_SECRET:fS1bDdAX0fvTPRK6GLp4LMObE1rrwwPz}
 #    secret: fwirOT4r8s3DC45CHtUNUNthfnogLAal
     secret: 5OlXNJpIk2nFfj6lTffBBUexsHyM8AUm
-  principal-attribute: preferred_username
-#  bearer-only: false
-  bearer-only: true
-  cors: true
+#    secret: wuk19sLN8EyiTxOcuLpXUt1o19SXBaJq
 
 logging:
   level:
