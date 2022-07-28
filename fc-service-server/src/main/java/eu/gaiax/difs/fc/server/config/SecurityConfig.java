@@ -66,6 +66,12 @@ public class SecurityConfig {
           .antMatchers(HttpMethod.POST, "/self-descriptions/{self_description_hash}/revoke")
           .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
 
+          // Participants API
+          .antMatchers(HttpMethod.POST, "/participants").hasRole("Ro-MU-CA")
+          .antMatchers(HttpMethod.GET, "/participants").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-PA-A")
+          .antMatchers("/participants/*").hasAnyRole("Ro-MU-CA", "Ro-MU-A")
+          .antMatchers(HttpMethod.GET, "/participants/*/users").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
+
           // User APIs
           .antMatchers("/users", "users/**").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
 

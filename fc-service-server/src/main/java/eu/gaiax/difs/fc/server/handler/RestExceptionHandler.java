@@ -32,7 +32,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    */
   @ExceptionHandler({ClientException.class})
   protected ResponseEntity<Error> handleBadRequestException(ClientException exception) {
-    log.debug("Bad request error: ", exception);
+    log.info("handleBadRequestException; Bad request error: {}", exception.getMessage());
     return new ResponseEntity<>(new Error("client_error", exception.getMessage()), BAD_REQUEST);
   }
 
@@ -44,7 +44,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    */
   @ExceptionHandler({ConflictException.class})
   protected ResponseEntity<Error> handleConflictException(ConflictException exception) {
-    log.debug("Conflict error: ", exception);
+    log.info("handleConflictException; Conflict error: {}", exception.getMessage());
     return new ResponseEntity<>(new Error("conflict_error", exception.getMessage()), CONFLICT);
   }
 
@@ -56,7 +56,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    */
   @ExceptionHandler({ServerException.class})
   protected ResponseEntity<Error> handleServerException(ServerException exception) {
-    log.debug("Server error: ", exception);
+    log.info("handleServerException; Server error: {}", exception.getMessage());
     return new ResponseEntity<>(new Error("server_error", exception.getMessage()), INTERNAL_SERVER_ERROR);
   }
 
@@ -68,7 +68,20 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    */
   @ExceptionHandler({NotFoundException.class})
   protected ResponseEntity<Error> handleNotFoundException(NotFoundException exception) {
-    log.debug("Not found error: ", exception);
+    log.info("handleNotFoundException; Not found error: {}", exception.getMessage());
     return new ResponseEntity<>(new Error("not_found_error", exception.getMessage()), NOT_FOUND);
   }
+  
+  /**
+   * Method handles the WS RS Not Found Exception.
+   *
+   * @param exception Thrown Server Exception.
+   * @return The custom Federated Catalogue application error with status code 404.
+   */
+  @ExceptionHandler({javax.ws.rs.NotFoundException.class})
+  protected ResponseEntity<Error> handleRsNotFoundException(javax.ws.rs.NotFoundException exception) {
+    log.info("handleRsNotFoundException; Not found error: {}", exception.getMessage()); 
+    return new ResponseEntity<>(new Error("not_found_error", exception.getMessage()), NOT_FOUND);
+  }
+
 }
