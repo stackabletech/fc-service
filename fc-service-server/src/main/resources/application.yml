@@ -40,8 +40,7 @@ federated-catalogue:
 keycloak:
   auth-server-url: http://localhost:8080
 #  auth-server-url: http://key-server.gxfs.dev
-  realm: master
-  ssl-required: external
+  realm: gaia-x
 #  resource: federated-catalogue
   resource: admin-cli
   credentials:
