@@ -31,7 +31,7 @@ public class SecurityConfig {
 
   private static final Error FORBIDDEN_ERROR = new Error("forbidden_error",
       "The user does not have the permission to execute this request.");
-  @Value("${keycloak.resource}")
+  @Value("${federated-catalogue.security.resource-id}")
   private String resourceId;
 
   /**
