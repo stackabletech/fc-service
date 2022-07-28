@@ -39,7 +39,7 @@ public class QueryControllerTest {
     }
 
 
-    String QUERY_REQUEST_DUMMY="{\"query-language\":null,\"Statements\":null}";
+    String QUERY_REQUEST_DUMMY="{}"; //"{\"query-language\":null,\"Statements\":null}";
 
 
 

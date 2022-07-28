@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.UUID;
 
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
@@ -88,7 +89,7 @@ public class UsersControllerTest {
     @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
     public void addUserShouldReturnCreatedResponse() throws Exception {
         
-        User user = getTestUser("unit-test", "user22");
+        User user = getTestUser("unit-test", "user224", "did:example:holder");
         setupKeycloak(HttpStatus.SC_CREATED, user, UUID.randomUUID().toString());
 
         String response = mockMvc
@@ -113,7 +114,7 @@ public class UsersControllerTest {
     @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
     public void getUserShouldReturnSuccessResponse() throws Exception {
         
-        User user = getTestUser("unit-test", "user22");
+        User user = getTestUser("unit-test", "user22", "participant one");
         String userId = "f7e47bd2-8ae4-4fd7-8b03-6e2fdcf1c912";
         setupKeycloak(HttpStatus.SC_OK, user, userId);
 
@@ -125,9 +126,22 @@ public class UsersControllerTest {
 
     @Test
     @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    public void wrongUserShouldReturnNotFoundResponse() throws Exception {
+        
+        String userId = "unknown";
+        setupKeycloak(HttpStatus.SC_NOT_FOUND, null, userId);
+
+        mockMvc
+            .perform(MockMvcRequestBuilders.get("/users/{userId}", userId)
+            .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isNotFound());
+    }
+    
+    @Test
+    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
     public void getUsersShouldReturnCorrectNumber() throws Exception {
         
-        User user = getTestUser("unit-test", "user33");
+        User user = getTestUser("unit-test", "user33", "participant one");
         setupKeycloak(HttpStatus.SC_OK, user, null);
 
         MvcResult result = mockMvc
@@ -144,24 +158,34 @@ public class UsersControllerTest {
     @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
     public void deleteUserShouldReturnSuccessResponse() throws Exception {
         
-        User user = getTestUser("unit-test", "user11");
+        User user = getTestUser("unit-test", "user11", "ebc6f1c2");
         String userId = "0fb1eb26-4f92-4941-a782-f092e19dedcb";
         setupKeycloak(HttpStatus.SC_NO_CONTENT, user, userId);
 
-        mockMvc
-            .perform(MockMvcRequestBuilders.delete("/users/{userId}", userId)
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk());
+        String response = mockMvc
+            .perform(MockMvcRequestBuilders.delete("/users/{userId}", userId))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+        UserProfile profile = objectMapper.readValue(response, UserProfile.class);
+        assertNotNull(profile);
+        assertEquals(user.getEmail(), profile.getEmail());
+        assertEquals(user.getFirstName(), profile.getFirstName());
+        assertEquals(user.getLastName(), profile.getLastName());
+        assertEquals(user.getParticipantId(), profile.getParticipantId());
+        assertNotNull(profile.getId());
+        assertNotNull(profile.getUsername());       
     }
     
     @Test
     @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
     public void updateUserShouldReturnSuccessResponse() throws Exception {
         
-        User user = getTestUser("unit-test", "user");
+        User user = getTestUser("unit-test", "user", "participant one");
         String userId = "ae366624-8371-401d-b2c4-518d2f308a15";
         setupKeycloak(HttpStatus.SC_OK, user, userId);
-        user = getTestUser("unit-test", "changed user");
+        user = getTestUser("unit-test", "changed user", "participant one");
         
         mockMvc
             .perform(MockMvcRequestBuilders.put("/users/{userId}", userId)
@@ -174,7 +198,7 @@ public class UsersControllerTest {
     @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
     public void updateUserRolesShouldReturnSuccessResponse() throws Exception {
         
-        User user = getTestUser("unit-test", "user");
+        User user = getTestUser("unit-test", "user", "ebc6f1c2");
         String userId = "ae366624-8371-401d-b2c4-518d2f308a15";
         setupKeycloak(HttpStatus.SC_OK, user, userId);
 
@@ -190,19 +214,26 @@ public class UsersControllerTest {
         when(keycloak.realm("gaia-x")).thenReturn(realmResource);
         when(realmResource.users()).thenReturn(usersResource);
         when(usersResource.create(any())).thenReturn(Response.status(status).build());
-        when(usersResource.delete(any())).thenReturn(Response.status(status).build());
-        UserRepresentation userRepo = UserDao.toUserRepo(user);
-        userRepo.setId(id);
-        when(usersResource.list(any(), any())).thenReturn(List.of(userRepo));
-        when(usersResource.search(userRepo.getUsername())).thenReturn(List.of(userRepo));
-        when(usersResource.get(any())).thenReturn(userResource);
-        when(userResource.toRepresentation()).thenReturn(userRepo);
+        if (user == null) {
+            when(usersResource.delete(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
+            when(usersResource.list(any(), any())).thenReturn(List.of());
+            when(usersResource.search(any())).thenReturn(List.of());
+            when(usersResource.get(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
+        } else {
+            when(usersResource.delete(any())).thenReturn(Response.status(status).build());
+            UserRepresentation userRepo = UserDao.toUserRepo(user);
+            userRepo.setId(id);
+            when(usersResource.list(any(), any())).thenReturn(List.of(userRepo));
+            when(usersResource.search(userRepo.getUsername())).thenReturn(List.of(userRepo));
+            when(usersResource.get(any())).thenReturn(userResource);
+            when(userResource.toRepresentation()).thenReturn(userRepo);
+        }
     }
     
-    private User getTestUser(String firstName, String lastName) {
+    private User getTestUser(String firstName, String lastName, String groupId) {
         return new User()
             .email(firstName + "." + lastName + "@test.org")
-            .participantId("test-participant-id")
+            .participantId(groupId)
             .firstName(firstName)
             .lastName(lastName)
             .addRoleIdsItem("ROLE_test");

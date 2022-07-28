@@ -878,9 +878,9 @@ paths:
         description: Participant Self-Description
         required: true
         content:
-          application/json+d:
+          application/json:
             schema:
-              type: object
+              type: string
       responses:
         '201':
           description: Created Participant
@@ -892,6 +892,8 @@ paths:
           $ref: '#/components/responses/ClientError'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/ServerError'
       security:
@@ -944,7 +946,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              type: string
       responses:
         '200':
           description: Updated Participant
@@ -987,6 +989,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/ServerError'
       security:
