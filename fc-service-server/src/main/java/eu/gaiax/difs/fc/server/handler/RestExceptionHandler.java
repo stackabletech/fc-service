@@ -6,10 +6,10 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import eu.gaiax.difs.fc.api.generated.model.Error;
-import eu.gaiax.difs.fc.server.exception.ClientException;
-import eu.gaiax.difs.fc.server.exception.ConflictException;
-import eu.gaiax.difs.fc.server.exception.NotFoundException;
-import eu.gaiax.difs.fc.server.exception.ServerException;
+import eu.gaiax.difs.fc.core.exception.ClientException;
+import eu.gaiax.difs.fc.core.exception.ConflictException;
+import eu.gaiax.difs.fc.core.exception.NotFoundException;
+import eu.gaiax.difs.fc.core.exception.ServerException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;

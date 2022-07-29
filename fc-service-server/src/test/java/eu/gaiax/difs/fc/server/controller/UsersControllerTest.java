@@ -41,7 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
-import eu.gaiax.difs.fc.server.dao.UserDao;
+import eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -221,7 +221,7 @@ public class UsersControllerTest {
             when(usersResource.get(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
         } else {
             when(usersResource.delete(any())).thenReturn(Response.status(status).build());
-            UserRepresentation userRepo = UserDao.toUserRepo(user);
+            UserRepresentation userRepo = UserDaoImpl.toUserRepo(user);
             userRepo.setId(id);
             when(usersResource.list(any(), any())).thenReturn(List.of(userRepo));
             when(usersResource.search(userRepo.getUsername())).thenReturn(List.of(userRepo));

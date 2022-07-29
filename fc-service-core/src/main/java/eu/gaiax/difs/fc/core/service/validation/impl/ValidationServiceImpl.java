@@ -1,9 +1,9 @@
-package eu.gaiax.difs.fc.server.service.validation.impl;
+package eu.gaiax.difs.fc.core.service.validation.impl;
 
 import eu.gaiax.difs.fc.api.generated.model.Participant;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
-import eu.gaiax.difs.fc.server.service.validation.ValidationService;
+import eu.gaiax.difs.fc.core.service.validation.ValidationService;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.ValidationException;

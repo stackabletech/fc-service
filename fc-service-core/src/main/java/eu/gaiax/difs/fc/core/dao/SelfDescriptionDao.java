@@ -1,4 +1,4 @@
-package eu.gaiax.difs.fc.server.dao;
+package eu.gaiax.difs.fc.core.dao;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import java.util.List;

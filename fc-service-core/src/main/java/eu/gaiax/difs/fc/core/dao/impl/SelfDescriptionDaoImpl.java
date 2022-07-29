@@ -1,7 +1,7 @@
-package eu.gaiax.difs.fc.server.dao.impl;
+package eu.gaiax.difs.fc.core.dao.impl;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
-import eu.gaiax.difs.fc.server.dao.SelfDescriptionDao;
+import eu.gaiax.difs.fc.core.dao.SelfDescriptionDao;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Repository;

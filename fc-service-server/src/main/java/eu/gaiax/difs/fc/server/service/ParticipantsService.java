@@ -15,9 +15,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.gaiax.difs.fc.api.generated.model.Participant;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
-import eu.gaiax.difs.fc.server.dao.ParticipantDao;
-import eu.gaiax.difs.fc.server.exception.ClientException;
-import eu.gaiax.difs.fc.server.exception.NotFoundException;
+import eu.gaiax.difs.fc.core.dao.ParticipantDao;
+import eu.gaiax.difs.fc.core.exception.ClientException;
+import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.server.generated.controller.ParticipantsApiDelegate;
 import lombok.extern.slf4j.Slf4j;
 
