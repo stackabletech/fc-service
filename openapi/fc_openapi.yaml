@@ -65,14 +65,6 @@ components:
       required:
         - code
         - message
-    Statements:
-      type: object
-      properties:
-        statements:
-          type: array
-          items:
-            $ref: '#/components/schemas/Statement'
-          maxItems: 1
     Statement:
       type: object
       properties:
@@ -92,16 +84,6 @@ components:
         offset:
           type: string
           example: '5'
-    Results:
-      type: object
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Result'
-          maxItems: 1
-      required:
-        - results
     Result:
       type: object
       properties:
@@ -120,6 +102,26 @@ components:
       required:
         - columns
         - data
+    Data:
+      type: object
+      properties:
+        row:
+          type: array
+          example:
+            - value1
+            - value2
+          items:
+            type: string
+        meta:
+          type: array
+          example:
+            - meta1
+            - meta2
+          items:
+            type: string
+      required:
+        - row
+        - meta
     VerificationResult:
       type: object
       properties:
@@ -141,26 +143,6 @@ components:
         - issuer
         - issued-date
         - signatures
-    Data:
-      type: object
-      properties:
-        row:
-          type: array
-          example:
-            - value1
-            - value2
-          items:
-            type: string
-        meta:
-          type: array
-          example:
-            - meta1
-            - meta2
-          items:
-            type: string
-      required:
-        - row
-        - meta
     Participant:
       type: object
       properties:
@@ -616,7 +598,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Statements'
+              $ref: '#/components/schemas/Statement'
           application/sparql-query:
             example: ''
           application/sparql*:
@@ -627,7 +609,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Results'
+                $ref: '#/components/schemas/Result'
             application/sparql-results+xml:
               example: ''
             text/turtle:
@@ -892,8 +874,6 @@ paths:
           $ref: '#/components/responses/ClientError'
         '403':
           $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/ServerError'
       security:
@@ -989,8 +969,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/ServerError'
       security:
