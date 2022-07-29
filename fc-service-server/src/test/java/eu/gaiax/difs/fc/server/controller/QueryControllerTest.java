@@ -39,8 +39,7 @@ public class QueryControllerTest {
     }
 
 
-    String QUERY_REQUEST_DUMMY="{}"; //"{\"query-language\":null,\"Statements\":null}";
-
+    String QUERY_REQUEST_DUMMY="{\"statement\": \"Match (m:Movie) where m.released > 2000 RETURN m\", \"parameters\": null}}"; 
 
 
     @Test
@@ -50,7 +49,7 @@ public class QueryControllerTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Produces","application/json","application/sparql-results+xml", "text/turtle", "text/html")
-                        .header("Accept","application/json","application/sparql-query","application/sparql*")
+                        .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
                         .header("query-language","application/sparql-query"))
                 .andExpect(status().isOk());
     }
