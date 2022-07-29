@@ -2,7 +2,9 @@ package eu.gaiax.difs.fc.server.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.gaiax.difs.fc.server.exception.ParserException;
+
+import eu.gaiax.difs.fc.core.exception.ParserException;
+
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 

@@ -2,7 +2,7 @@ package eu.gaiax.difs.fc.server.service;
 
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
-import eu.gaiax.difs.fc.server.dao.UserDao;
+import eu.gaiax.difs.fc.core.dao.UserDao;
 import eu.gaiax.difs.fc.server.generated.controller.UsersApiDelegate;
 import java.net.URI;
 import java.util.List;

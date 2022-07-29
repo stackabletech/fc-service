@@ -24,6 +24,7 @@
     <modules>
         <module>fc-service-api</module>
         <module>fc-service-client</module>
+        <module>fc-service-core</module>
         <module>fc-service-server</module>
         <module>demo-portal</module>
     </modules>
@@ -74,6 +75,11 @@
             <dependency>
                 <groupId>eu.gaiax.difs.fc</groupId>
                 <artifactId>fc-service-api</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>eu.gaiax.difs.fc</groupId>
+                <artifactId>fc-service-core</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

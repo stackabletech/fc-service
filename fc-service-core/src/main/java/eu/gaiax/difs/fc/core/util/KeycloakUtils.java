@@ -1,4 +1,4 @@
-package eu.gaiax.difs.fc.server.dao;
+package eu.gaiax.difs.fc.core.util;
 
 import java.io.IOException;
 import java.io.InputStream;

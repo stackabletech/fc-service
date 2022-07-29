@@ -1,14 +1,17 @@
-package eu.gaiax.difs.fc.server.service.validation;
+package eu.gaiax.difs.fc.core.service.validation;
 
 import eu.gaiax.difs.fc.api.generated.model.Participant;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
 import javax.validation.ValidationException;
 
+import org.springframework.stereotype.Service;
+
 /**
  * Validation Self-Description interface.
  */
 //TODO: 26.07.2022 Awaiting approval from Fraunhofer.
+@Service
 public interface ValidationService {
 
   /**
@@ -34,4 +37,5 @@ public interface ValidationService {
    * @return a Self-Description metadata validation result. If the validation fails, the reason explains the issue.
    */
   SelfDescription validateSelfDescription(String json) throws ValidationException;
+  
 }

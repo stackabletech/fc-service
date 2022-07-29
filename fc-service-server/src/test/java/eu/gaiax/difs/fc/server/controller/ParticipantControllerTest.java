@@ -46,7 +46,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.gaiax.difs.fc.api.generated.model.Participant;
-import eu.gaiax.difs.fc.server.dao.ParticipantDao;
+import eu.gaiax.difs.fc.core.dao.impl.ParticipantDaoImpl;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -230,7 +230,7 @@ public class ParticipantControllerTest {
             when(groupsResource.groups(any(), any(), any())).thenReturn(List.of());
             when(groupsResource.groups(any(), any(), any(), anyBoolean())).thenReturn(List.of());
         } else {
-            GroupRepresentation groupRepo = ParticipantDao.toGroupRepo(part);
+            GroupRepresentation groupRepo = ParticipantDaoImpl.toGroupRepo(part);
             when(groupsResource.group(any())).thenReturn(groupResource);
             when(groupResource.members()).thenReturn(List.of()); 
             when(groupsResource.groups()).thenReturn(List.of(groupRepo));
