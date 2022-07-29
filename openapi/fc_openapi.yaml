@@ -581,10 +581,7 @@ paths:
           name: query-language
           schema:
             type: string
-            enum:
-              - openCypher
-              - application/sparql-query
-              - sparql*
+            enum: [openCypher, application/sparql-query, sparql*]
             default: openCypher
           required: true
       security:
@@ -737,16 +734,13 @@ paths:
         '200':
           description: The latest schemas of all types
           content:
-            application/json:
+            application/json: #!! schema + ld?
               schema:
-                type: array
+                type: array #!! Is 'type' part of the schema schema, or should we change this to an oject with using type:schema
                 items:
-                  type: object
+                  $ref: '#/components/schemas/SchemaFC'
         '400':
           $ref: '#/components/responses/ClientError'
-        '405':
-          description: Invalid input
-          content: {}
         '500':
           $ref: '#/components/responses/ServerError'
   /schemas/latest/{type}:
@@ -766,7 +760,9 @@ paths:
         '200':
           description: The latest schema of requested types
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaFC'
         '400':
           $ref: '#/components/responses/ClientError'
         '405':
