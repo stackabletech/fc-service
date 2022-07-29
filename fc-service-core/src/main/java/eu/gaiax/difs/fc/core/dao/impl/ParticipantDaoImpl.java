@@ -1,6 +1,6 @@
-package eu.gaiax.difs.fc.server.dao;
+package eu.gaiax.difs.fc.core.dao.impl;
 
-import static eu.gaiax.difs.fc.server.dao.KeycloakUtils.getErrorMessage;
+import static eu.gaiax.difs.fc.core.util.KeycloakUtils.getErrorMessage;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -22,12 +22,13 @@ import com.google.common.hash.Hashing;
 
 import eu.gaiax.difs.fc.api.generated.model.Participant;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
-import eu.gaiax.difs.fc.server.exception.ConflictException;
+import eu.gaiax.difs.fc.core.dao.ParticipantDao;
+import eu.gaiax.difs.fc.core.exception.ConflictException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class ParticipantDao {
+public class ParticipantDaoImpl implements ParticipantDao {
 
     private static final String ATR_NAME = "name";
     private static final String ATR_PUBLIC_KEY = "publicKey";
@@ -38,6 +39,7 @@ public class ParticipantDao {
     @Autowired
     private Keycloak keycloak;
 
+    @Override
     public Participant create(Participant part) {
 
         GroupsResource instance = keycloak.realm(realm).groups();
@@ -51,6 +53,7 @@ public class ParticipantDao {
         return part;
     }
 
+    @Override
     public Optional<Participant> select(String partId) {
 
         GroupsResource instance = keycloak.realm(realm).groups();
@@ -61,6 +64,7 @@ public class ParticipantDao {
         return Optional.of(toParticipant(groups.get(0)));
     }
 
+    @Override
     public Optional<List<UserProfile>> selectUsers(String partId) {
 
         GroupsResource instance = keycloak.realm(realm).groups();
@@ -70,9 +74,10 @@ public class ParticipantDao {
         }
         GroupRepresentation groupRepo = groups.get(0);
         return Optional.of(instance.group(groupRepo.getId())
-                .members().stream().map(ur -> UserDao.toUserProfile(ur)).collect(Collectors.toList()));
+                .members().stream().map(ur -> UserDaoImpl.toUserProfile(ur)).collect(Collectors.toList()));
     }
 
+    @Override
     public Optional<Participant> delete(String partId) {
 
         GroupsResource instance = keycloak.realm(realm).groups();
@@ -85,6 +90,7 @@ public class ParticipantDao {
         return Optional.of(toParticipant(groupRepo));
     }
 
+    @Override
     public Optional<Participant> update(String partId, Participant part) {
 
         GroupsResource instance = keycloak.realm(realm).groups();
@@ -98,6 +104,7 @@ public class ParticipantDao {
         return Optional.of(toParticipant(updated));
     }
 
+    @Override
     public List<Participant> search(Integer offset, Integer limit) {
 
         GroupsResource instance = keycloak.realm(realm).groups();

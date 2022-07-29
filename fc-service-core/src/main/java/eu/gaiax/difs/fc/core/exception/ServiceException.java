@@ -1,4 +1,4 @@
-package eu.gaiax.difs.fc.server.exception;
+package eu.gaiax.difs.fc.core.exception;
 
 /**
  * ServiceException is the main exception that can be thrown during the operations of Federated Catalogue

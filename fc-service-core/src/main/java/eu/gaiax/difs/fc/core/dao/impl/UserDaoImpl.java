@@ -1,6 +1,6 @@
-package eu.gaiax.difs.fc.server.dao;
+package eu.gaiax.difs.fc.core.dao.impl;
 
-import static eu.gaiax.difs.fc.server.dao.KeycloakUtils.getErrorMessage;
+import static eu.gaiax.difs.fc.core.util.KeycloakUtils.getErrorMessage;
 
 import java.util.List;
 import java.util.Map;
@@ -21,12 +21,13 @@ import org.springframework.stereotype.Component;
 
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
-import eu.gaiax.difs.fc.server.exception.ConflictException;
+import eu.gaiax.difs.fc.core.dao.UserDao;
+import eu.gaiax.difs.fc.core.exception.ConflictException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class UserDao {
+public class UserDaoImpl implements UserDao {
 
     // private static final String INITIAL_PASSWORD = "changeme";
     private static final String ACT_UPDATE_PASSWORD = "UPDATE_PASSWORD";
@@ -38,6 +39,7 @@ public class UserDao {
     @Autowired
     private Keycloak keycloak;
 
+    @Override
     public UserProfile create(User user) {
 
         UserRepresentation userRepo = toUserRepo(user);
@@ -53,6 +55,7 @@ public class UserDao {
         return toUserProfile(userRepo);
     }
 
+    @Override
     public UserProfile select(String userId) {
 
         UsersResource instance = keycloak.realm(realm).users();
@@ -61,6 +64,7 @@ public class UserDao {
         return toUserProfile(userRepo);
     }
 
+    @Override
     public List<UserProfile> search(String participantId, Integer offset, Integer limit) {
 
         UsersResource instance = keycloak.realm(realm).users();
@@ -73,6 +77,7 @@ public class UserDao {
         return userRepos.stream().map(u -> toUserProfile(u)).collect(Collectors.toList());
     }
 
+    @Override
     public UserProfile delete(String userId) {
 
         UsersResource instance = keycloak.realm(realm).users();
@@ -90,6 +95,7 @@ public class UserDao {
         return userPro;
     }
 
+    @Override
     public UserProfile update(String userId, User user) {
 
         UsersResource instance = keycloak.realm(realm).users();
@@ -103,6 +109,7 @@ public class UserDao {
         return toUserProfile(userRepo);
     }
 
+    @Override
     public UserProfile updateRoles(String userId, List<String> roles) {
 
         UsersResource instance = keycloak.realm(realm).users();
@@ -117,6 +124,7 @@ public class UserDao {
         return toUserProfile(userRepo);
     }
     
+    @Override
     public List<String> getAllRoles() {
         RolesResource instance = keycloak.realm(realm).roles();
         return instance.list(true).stream().map(r -> r.getName()).collect(Collectors.toList());

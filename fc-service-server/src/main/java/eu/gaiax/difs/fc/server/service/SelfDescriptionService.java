@@ -4,10 +4,10 @@ import static eu.gaiax.difs.fc.server.util.SessionUtils.getSessionParticipantId;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription.StatusEnum;
-import eu.gaiax.difs.fc.server.dao.SelfDescriptionDao;
-import eu.gaiax.difs.fc.server.exception.ClientException;
+import eu.gaiax.difs.fc.core.dao.SelfDescriptionDao;
+import eu.gaiax.difs.fc.core.exception.ClientException;
+import eu.gaiax.difs.fc.core.service.validation.ValidationService;
 import eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate;
-import eu.gaiax.difs.fc.server.service.validation.ValidationService;
 import java.util.List;
 import java.util.Objects;
 import javax.validation.ValidationException;

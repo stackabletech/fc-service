@@ -1,5 +1,6 @@
-package eu.gaiax.difs.fc.server.exception;
+package eu.gaiax.difs.fc.core.exception;
 
+import eu.gaiax.difs.fc.core.exception.ServiceException;
 import lombok.Getter;
 import lombok.Setter;
 
