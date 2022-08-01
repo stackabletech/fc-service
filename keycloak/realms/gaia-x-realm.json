@@ -6,8 +6,8 @@
   "defaultSignatureAlgorithm": "RS256",
   "revokeRefreshToken": false,
   "refreshTokenMaxReuse": 0,
-  "accessTokenLifespan": 300,
-  "accessTokenLifespanForImplicitFlow": 900,
+  "accessTokenLifespan": 900,
+  "accessTokenLifespanForImplicitFlow": 1500,
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 36000,
   "ssoSessionIdleTimeoutRememberMe": 0,
@@ -65,6 +65,29 @@
         "attributes": {}
       },
       {
+        "id": "6838e500-df21-4755-a6e3-467d432ec367",
+        "name": "Ro-MU-CA",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "Ro-MU-A",
+            "Ro-SD-A",
+            "Ro-PA-A"
+          ]
+        },
+        "clientRole": false,
+        "containerId": "gaia-x",
+        "attributes": {}
+      },
+      {
+        "id": "4eb96146-2ff7-4246-82c7-b7b6f9e6ac27",
+        "name": "Ro-PA-A",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "gaia-x",
+        "attributes": {}
+      },
+      {
         "id": "8ee7d6f7-f168-4b62-ae34-1c18ffbf631a",
         "name": "default-roles-gaia-x",
         "description": "${role_default-roles}",
@@ -78,198 +101,29 @@
         "clientRole": false,
         "containerId": "gaia-x",
         "attributes": {}
+      },
+      {
+        "id": "2941b209-9f63-4797-ae35-592066d887a4",
+        "name": "Ro-MU-A",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "gaia-x",
+        "attributes": {}
+      },
+      {
+        "id": "d1da6e3e-7121-4ad6-ac02-f47cb28c0ad5",
+        "name": "Ro-SD-A",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "gaia-x",
+        "attributes": {}
       }
     ],
     "client": {
       "federated-catalogue": [
         {
-          "id": "67a35bd2-4ae1-4e1e-b869-1bf151462be1",
-          "name": "ACT_QU_EXECUTE",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "e127a9bd-d096-499a-b5e9-9328a5628e9d",
-          "name": "Ro-MU-A",
-          "composite": true,
-          "composites": {
-            "client": {
-              "federated-catalogue": [
-                "Ro-MU-A"
-              ]
-            }
-          },
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "3633264c-9ac5-4e46-9802-6af2f7f10d34",
-          "name": "ACT_RO_EXT_REVOKE",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "d59c1742-b21f-4890-84c0-a0e1c11c2594",
-          "name": "ACT_RO_GET",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "8e797eb2-b161-4724-afd9-e4ef3daa7b16",
-          "name": "ACT_SD_VERIFY",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "0772eb2f-15c2-4170-8f18-55a2cdba94ff",
-          "name": "Ro-PA-A",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "5138aff3-51d8-4671-8494-8d407567a2dd",
-          "name": "ACT_PA_ADD",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "2e50df58-7ba3-46fb-94e5-8c80aac55e14",
-          "name": "ACT_RO_INT_REVOKE",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "2ba93f4d-fc8f-4c36-a22f-5b6d23c6633a",
-          "name": "ACT_SC_GET_LAST",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "cee22a30-7fbb-4ec4-aa44-0279d3981143",
-          "name": "ACT_SC_MANAGEMENT",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "e4163305-49c7-4446-ace9-ef67b9dd2fcf",
-          "name": "ACT_SD_SYNC",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "5ac4e738-5852-4ad4-9938-bf741f4df444",
-          "name": "Ro-MU-CA",
-          "composite": true,
-          "composites": {
-            "client": {
-              "federated-catalogue": [
-                "Ro-MU-A",
-                "Ro-PA-A",
-                "Ro-MU-CA",
-                "Ro-SD-A"
-              ]
-            }
-          },
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "594e6977-6e67-46ec-b13f-09deafdd4c2c",
-          "name": "ACT_SD_MANAGEMENT",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "edee7d62-9cd5-41fe-b155-58d85b2bffa6",
-          "name": "ACT_SD_GET",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "637bcfd9-0401-46d7-99b8-44474aebb560",
-          "name": "ACT_PA_DELETE",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "e77cd822-d85b-459d-a5e7-252bb1f7eb49",
-          "name": "ACT_PA_UPDATE",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "fd9dff7a-27d6-4ca8-93ce-dc6ee51cb07a",
-          "name": "ACT_PA_READ_USERS",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
           "id": "99dd313d-b5c1-4c87-ab50-c8a3f23d6a98",
           "name": "uma_protection",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "e13016ca-2e00-498a-9071-92373760e746",
-          "name": "ACT_PA_READ",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "32bfd3ca-aec1-42b4-920b-8850da0512c9",
-          "name": "ACT_RO_USER",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "773281ab-f908-419a-b5dc-c8eec8fba723",
-          "name": "ACT_US_MANAGEMENT",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
-          "attributes": {}
-        },
-        {
-          "id": "cdc03812-83d0-42d2-8c39-c23a79abd59f",
-          "name": "Ro-SD-A",
           "composite": false,
           "clientRole": true,
           "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
@@ -584,6 +438,15 @@
   ],
   "scopeMappings": [
     {
+      "clientScope": "gaia-x",
+      "roles": [
+        "Ro-MU-CA",
+        "Ro-MU-A",
+        "Ro-SD-A",
+        "Ro-PA-A"
+      ]
+    },
+    {
       "clientScope": "offline_access",
       "roles": [
         "offline_access"
@@ -591,17 +454,6 @@
     }
   ],
   "clientScopeMappings": {
-    "federated-catalogue": [
-      {
-        "clientScope": "gaia-x",
-        "roles": [
-          "Ro-MU-CA",
-          "Ro-MU-A",
-          "Ro-SD-A",
-          "Ro-PA-A"
-        ]
-      }
-    ],
     "account": [
       {
         "client": "account-console",
