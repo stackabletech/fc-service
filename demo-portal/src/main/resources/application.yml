@@ -1,0 +1,30 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: fc-demo-portal-app
+  mvc:
+    log-request-details: true
+  main:
+    allow-circular-references: true
+
+services:
+  identity:
+    uri:
+      internal: http://localhost:8081
+
+keycloak:
+  auth-server-url: http://localhost:8080
+  realm: gaia-x
+  resource: federated-catalogue
+  public-client: true
+  bearer-only: true
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web.client.RestTemplate: DEBUG
+    org.keycloak.adapters.OAuthRequestAuthenticator: DEBUG
