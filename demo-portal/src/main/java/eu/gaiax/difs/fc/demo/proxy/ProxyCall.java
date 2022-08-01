@@ -11,9 +11,23 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/**
+ * Utils class for request proxying.
+ */
 @Slf4j
 public class ProxyCall {
-  public static <T, R> ResponseEntity<T> retrieve(WebClient webClient, HttpServletRequest request, R rqBody) {
+  /**
+   * Proxies outgoing requests for the required Server.
+   *
+   * @param webClient Client-side component used to connect to the required Server.
+   * @param request Incoming request.
+   * @param requestBody Incoming request body (optional).
+   * @param <T> Type of the output parameter.
+   * @param <R> Request body type.
+   *
+   * @return Returns the response entity received from the server.
+   */
+  public static <T, R> ResponseEntity<T> retrieve(WebClient webClient, HttpServletRequest request, R requestBody) {
     log.debug("Retrieve request method {} by URI {}", request.getMethod(), request.getRequestURI());
     HttpMethod method = HttpMethod.valueOf(request.getMethod());
 
@@ -24,7 +38,7 @@ public class ProxyCall {
                 .queryParams(getAllQueryParams(request))
                 .build());
     if (!method.equals(HttpMethod.GET) && !method.equals(HttpMethod.DELETE)) {
-      callBuilder.bodyValue(rqBody);
+      callBuilder.bodyValue(requestBody);
     }
     final Enumeration<String> headerNames = request.getHeaderNames();
     while (headerNames.hasMoreElements()) {

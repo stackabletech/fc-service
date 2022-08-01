@@ -15,28 +15,44 @@ import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper
 import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 
+/**
+ * Specifies the application's security configuration.
+ */
 @Slf4j
 @KeycloakConfiguration
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 
+  /**
+   * Defines the session authentication strategy.
+   */
   @Override
   protected SessionAuthenticationStrategy sessionAuthenticationStrategy() {
     return new NullAuthenticatedSessionStrategy();
   }
 
+  /**
+   * Registers the KeycloakAuthenticationProvider with the authentication manager.
+   */
   @Autowired
-  public void configureGlobal(AuthenticationManagerBuilder authManagerBuilder) {
+  public void configureGlobal(AuthenticationManagerBuilder auth) {
     KeycloakAuthenticationProvider keycloakAuthenticationProvider = keycloakAuthenticationProvider();
-    keycloakAuthenticationProvider.setGrantedAuthoritiesMapper(new SimpleAuthorityMapper());
-    authManagerBuilder.authenticationProvider(keycloakAuthenticationProvider);
+    SimpleAuthorityMapper grantedAuthorityMapper = new SimpleAuthorityMapper();
+    keycloakAuthenticationProvider.setGrantedAuthoritiesMapper(grantedAuthorityMapper);
+    auth.authenticationProvider(keycloakAuthenticationProvider);
   }
 
+  /**
+   * Defines the Keycloak config resolver.
+   */
   @Bean
   public KeycloakConfigResolver keycloakConfigResolver() {
     return new KeycloakSpringBootConfigResolver();
   }
 
+  /**
+   * Define security constraints for the demo application resources.
+   */
   @Override
   protected void configure(HttpSecurity http) throws Exception {
     super.configure(http);
