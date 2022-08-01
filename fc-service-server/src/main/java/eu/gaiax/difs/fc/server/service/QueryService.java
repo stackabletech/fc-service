@@ -1,7 +1,7 @@
 package eu.gaiax.difs.fc.server.service;
 
-import eu.gaiax.difs.fc.api.generated.model.Results;
-import eu.gaiax.difs.fc.api.generated.model.Statements;
+import eu.gaiax.difs.fc.api.generated.model.Result;
+import eu.gaiax.difs.fc.api.generated.model.Statement;
 import eu.gaiax.difs.fc.server.generated.controller.QueryApiDelegate;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +27,10 @@ public class QueryService implements QueryApiDelegate {
    * @return List of {@link Results}
    */
   @Override
-  public ResponseEntity<Results> query(String queryLanguage, Statements statements) {
-    log.debug("query.enter; got queryLanguage:{},got statements:{}", queryLanguage, statements);
-    Optional<Results> results = Optional.of(new Results());
-    log.debug("query.exit; got results:{}", results);
-    return new ResponseEntity<>(results.get(), HttpStatus.OK);
+  public ResponseEntity<Result> query(String queryLanguage, Statement statement) {
+    log.debug("query.enter; got queryLanguage:{},got statement:{}", queryLanguage, statement);
+    Optional<Result> result = Optional.of(new Result());
+    log.debug("query.exit; got results:{}", result);
+    return new ResponseEntity<>(result.get(), HttpStatus.OK);
   }
 }

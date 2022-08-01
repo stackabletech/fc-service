@@ -65,14 +65,6 @@ components:
       required:
         - code
         - message
-    Statements:
-      type: object
-      properties:
-        statements:
-          type: array
-          items:
-            $ref: '#/components/schemas/Statement'
-          maxItems: 1
     Statement:
       type: object
       properties:
@@ -92,16 +84,6 @@ components:
         offset:
           type: string
           example: '5'
-    Results:
-      type: object
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Result'
-          maxItems: 1
-      required:
-        - results
     Result:
       type: object
       properties:
@@ -120,6 +102,26 @@ components:
       required:
         - columns
         - data
+    Data:
+      type: object
+      properties:
+        row:
+          type: array
+          example:
+            - value1
+            - value2
+          items:
+            type: string
+        meta:
+          type: array
+          example:
+            - meta1
+            - meta2
+          items:
+            type: string
+      required:
+        - row
+        - meta
     VerificationResult:
       type: object
       properties:
@@ -141,26 +143,6 @@ components:
         - issuer
         - issued-date
         - signatures
-    Data:
-      type: object
-      properties:
-        row:
-          type: array
-          example:
-            - value1
-            - value2
-          items:
-            type: string
-        meta:
-          type: array
-          example:
-            - meta1
-            - meta2
-          items:
-            type: string
-      required:
-        - row
-        - meta
     Participant:
       type: object
       properties:
@@ -599,10 +581,7 @@ paths:
           name: query-language
           schema:
             type: string
-            enum:
-              - openCypher
-              - application/sparql-query
-              - sparql*
+            enum: [openCypher, application/sparql-query, sparql*]
             default: openCypher
           required: true
       security:
@@ -616,7 +595,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Statements'
+              $ref: '#/components/schemas/Statement'
           application/sparql-query:
             example: ''
           application/sparql*:
@@ -627,7 +606,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Results'
+                $ref: '#/components/schemas/Result'
             application/sparql-results+xml:
               example: ''
             text/turtle:
@@ -755,16 +734,13 @@ paths:
         '200':
           description: The latest schemas of all types
           content:
-            application/json:
+            application/json: #!! schema + ld?
               schema:
-                type: array
+                type: array #!! Is 'type' part of the schema schema, or should we change this to an oject with using type:schema
                 items:
-                  type: object
+                  $ref: '#/components/schemas/SchemaFC'
         '400':
           $ref: '#/components/responses/ClientError'
-        '405':
-          description: Invalid input
-          content: {}
         '500':
           $ref: '#/components/responses/ServerError'
   /schemas/latest/{type}:
@@ -784,7 +760,9 @@ paths:
         '200':
           description: The latest schema of requested types
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaFC'
         '400':
           $ref: '#/components/responses/ClientError'
         '405':
@@ -892,8 +870,6 @@ paths:
           $ref: '#/components/responses/ClientError'
         '403':
           $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/ServerError'
       security:
@@ -989,8 +965,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/ServerError'
       security:

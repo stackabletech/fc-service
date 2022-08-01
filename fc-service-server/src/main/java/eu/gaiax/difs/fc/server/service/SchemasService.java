@@ -70,9 +70,9 @@ public class SchemasService implements SchemasApiDelegate {
    *         information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<Object>> getLatestSchemas() {
+  public ResponseEntity<List<SchemaFC>> getLatestSchemas() {
     log.debug("getLatestSchemas.enter");
-    Optional<List<Object>> schemas = Optional.of(Collections.emptyList());
+    Optional<List<SchemaFC>> schemas = Optional.of(Collections.emptyList());
     log.debug("getLatestSchemas.exit, returning {}", schemas);
     return new ResponseEntity<>(HttpStatus.OK).of(schemas);
   }
@@ -88,7 +88,7 @@ public class SchemasService implements SchemasApiDelegate {
    *         information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<Void> getLatestSchemaOfType(String type) {
+  public ResponseEntity<SchemaFC> getLatestSchemaOfType(String type) {
     log.debug("getLatestSchemaOfType.enter, got type {}", type);
     return new ResponseEntity<>(HttpStatus.OK);
   }
