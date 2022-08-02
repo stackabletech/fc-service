@@ -40,7 +40,7 @@ public interface SelfDescriptionDao {
   void deleteSelfDescription(String hash);
 
   /**
-   * Get all self descriptions, starting from the given offset, up to limit number
+   * Get all self-descriptions, starting from the given offset, up to limit number
    * of items, consistently ordered.
    *
    * @param offset How many items to skip.

@@ -37,5 +37,4 @@ public interface ValidationService {
    * @return a Self-Description metadata validation result. If the validation fails, the reason explains the issue.
    */
   SelfDescription validateSelfDescription(String json) throws ValidationException;
-  
 }
