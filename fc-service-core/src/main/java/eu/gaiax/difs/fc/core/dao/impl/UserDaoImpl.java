@@ -25,6 +25,9 @@ import eu.gaiax.difs.fc.core.dao.UserDao;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * User repository implementation.
+ */
 @Slf4j
 @Component
 public class UserDaoImpl implements UserDao {
@@ -39,6 +42,11 @@ public class UserDaoImpl implements UserDao {
     @Autowired
     private Keycloak keycloak;
 
+    /**
+     * Implementation of add user to catalogue repository.
+     * @param user User entity to be added {@link User}
+     * @return UserProfile profile of user
+     */
     @Override
     public UserProfile create(User user) {
 
@@ -55,6 +63,11 @@ public class UserDaoImpl implements UserDao {
         return toUserProfile(userRepo);
     }
 
+    /**
+     * Implementation of get user for particular userId.
+     * @param userId  Identifier of user
+     * @return UserProfile of the user
+     */
     @Override
     public UserProfile select(String userId) {
 
@@ -64,6 +77,13 @@ public class UserDaoImpl implements UserDao {
         return toUserProfile(userRepo);
     }
 
+    /**
+     * Implementation of get list of the users.
+     * @param participantId Identifier of the participant
+     * @param offset The number of items to skip before starting to collect the result set
+     * @param limit The number of items to return
+     * @return List<UserProfile> list of the Userprofile
+     */
     @Override
     public List<UserProfile> search(String participantId, Integer offset, Integer limit) {
 
@@ -77,6 +97,11 @@ public class UserDaoImpl implements UserDao {
         return userRepos.stream().map(u -> toUserProfile(u)).collect(Collectors.toList());
     }
 
+    /**
+     * Implementation of Delete the user.
+     * @param userId Identifier of user
+     * @return UserProfile of user
+     */
     @Override
     public UserProfile delete(String userId) {
 
@@ -95,6 +120,12 @@ public class UserDaoImpl implements UserDao {
         return userPro;
     }
 
+    /**
+     * Implementation of update the user.
+     * @param userId Identifier of user
+     * @param user User entity to be added {@link User}
+     * @return UserProfile of user
+     */
     @Override
     public UserProfile update(String userId, User user) {
 
@@ -109,6 +140,12 @@ public class UserDaoImpl implements UserDao {
         return toUserProfile(userRepo);
     }
 
+    /**
+     * Implementation of update user roles.
+     * @param userId Identifier of user
+     * @param roles list of roles of the user
+     * @return UserProfile of user
+     */
     @Override
     public UserProfile updateRoles(String userId, List<String> roles) {
 
@@ -123,13 +160,22 @@ public class UserDaoImpl implements UserDao {
         userRepo = userResource.toRepresentation();
         return toUserProfile(userRepo);
     }
-    
+
+    /**
+     * Implementation of Get all the roles.
+     * @return List<String> of all the roles
+     */
     @Override
     public List<String> getAllRoles() {
         RolesResource instance = keycloak.realm(realm).roles();
         return instance.list(true).stream().map(r -> r.getName()).collect(Collectors.toList());
     }
 
+    /**
+     * Utility method for Convert user to UserRepresentation.
+     * @param user User entity to be added {@link User}
+     * @return UserRepresentation of the user
+     */
     public static UserRepresentation toUserRepo(User user) {
 
         UserRepresentation userRepo = new UserRepresentation();
@@ -149,6 +195,11 @@ public class UserDaoImpl implements UserDao {
         return userRepo;
     }
 
+    /**
+     * Utility method for Convert UserRepresentation to UserProfile.
+     * @param userRepo UserRepresentation of user
+     * @return UserProfile of the user
+     */
     public static UserProfile toUserProfile(UserRepresentation userRepo) {
         List<String> partIds = userRepo.getAttributes() == null ? null
                 : userRepo.getAttributes().get(ATR_PARTICIPANT_ID);
@@ -157,10 +208,20 @@ public class UserDaoImpl implements UserDao {
                 userRepo.getRealmRoles(), userRepo.getId(), userRepo.getFirstName() + " " + userRepo.getLastName());
     }
 
+    /**
+     * Get user as string format.
+     * @param user User entity
+     * @return string formatted user
+     */
     private static String getUsername(User user) {
         return user.getParticipantId() + "{" + user.getFirstName() + " " + user.getLastName() + "}";
     }
 
+    /**
+     * Utility method for create passwordCredentials.
+     * @param password String password
+     * @return CredentialRepresentation of password
+     */
     private CredentialRepresentation createPasswordCredentials(String password) {
         CredentialRepresentation passwordCredentials = new CredentialRepresentation();
         passwordCredentials.setTemporary(false);
