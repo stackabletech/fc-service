@@ -21,6 +21,9 @@ import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.server.generated.controller.ParticipantsApiDelegate;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of the {@link ParticipantsApiDelegate} interface.
+ */
 @Slf4j
 @Service
 public class ParticipantsService implements ParticipantsApiDelegate {
@@ -32,6 +35,16 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   @Autowired
   private ObjectMapper jsonMapper;
 
+  /**
+   * POST /participants : Register a new participant in the catalogue.
+   *
+   * @param body Participant Self-Description (required)
+   * @return Created Participant (status code 201)
+   *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *         or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *         or May contain hints how to solve the error or indicate what went wrong at the server.
+   *         Must not outline any information about the internal structure of the server. (status code 500)
+   */
   @Override
   @Transactional
   public ResponseEntity<Participant> addParticipant(String body) {
@@ -42,6 +55,17 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     return ResponseEntity.created(URI.create("/participants/" + part.getId())).body(part);
   }
 
+  /**
+   * DELETE /participants/{participantId} : Delete a participant in the catalogue.
+   *
+   * @param participantId The participant to delete. (required)
+   * @return Deleted Participant (status code 200)
+   *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *         or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *         or The specified resource was not found (status code 404)
+   *         or May contain hints how to solve the error or indicate what went wrong at the server.
+   *         Must not outline any information about the internal structure of the server. (status code 500)
+   */
   @Override
   @Transactional
   public ResponseEntity<Participant> deleteParticipant(String participantId) {
@@ -52,6 +76,17 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     return ResponseEntity.ok(part);
   }
 
+  /**
+   * GET /participants/{participantId} : Get the registered participant.
+   *
+   * @param participantId The participantId to get. (required)
+   * @return The requested participant (status code 200)
+   *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *         or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *         or The specified resource was not found (status code 404)
+   *         or May contain hints how to solve the error or indicate what went wrong at the server.
+   *         Must not outline any information about the internal structure of the server. (status code 500)
+   */
   @Override
   public ResponseEntity<Participant> getParticipant(String participantId) {
     log.debug("getParticipant.enter; got participant: {}", participantId);
@@ -61,6 +96,17 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     return ResponseEntity.ok(part);
   }
 
+  /**
+   * GET /participants/{participantId}/users : Get all users of the registered participant.
+   *
+   * @param participantId The participant Id (required)
+   * @return Users of the participant (status code 200)
+   *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *         or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *         or The specified resource was not found (status code 404)
+   *         or May contain hints how to solve the error or indicate what went wrong at the server.
+   *         Must not outline any information about the internal structure of the server. (status code 500)
+   */
   @Override
   public ResponseEntity<List<UserProfile>> getParticipantUsers(String participantId) {
     log.debug("getParticipantUsers.enter; got participantId: {}", participantId);
@@ -70,9 +116,20 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     return ResponseEntity.ok(profiles);
   }
 
+  /**
+   * GET /participants : Get the registered participants.
+   *
+   * @param offset The number of items to skip before starting to collect the result set. (optional, default to 0)
+   * @param limit The number of items to return. (optional, default to 100)
+   * @param orderBy Results will be sorted by this field. (optional)
+   * @param asc Ascending/Descending ordering. (optional, default to true)
+   * @return List of registered participants (status code 200)
+   *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *         or May contain hints how to solve the error or indicate what went wrong at the server.
+   *         Must not outline any information about the internal structure of the server. (status code 500)
+   */
   @Override
-  public ResponseEntity<List<Participant>> getParticipants(Integer offset, Integer limit, String orderBy,
-                                                           Boolean ascending) {
+  public ResponseEntity<List<Participant>> getParticipants(Integer offset, Integer limit, String orderBy, Boolean asc) {
     // sorting is not supported yet by keycloak admin API
     log.debug("getParticipants.enter; got offset: {}, limit: {}", offset, limit);
     List<Participant> parts = partDao.search(offset, limit);
@@ -80,6 +137,18 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     return ResponseEntity.ok(parts);
   }
 
+  /**
+   * PUT /participants/{participantId} : Update a participant in the catalogue.
+   *
+   * @param participantId The participant to update. (required)
+   * @param body Participant Self-Description (required)
+   * @return Updated Participant (status code 200)
+   *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *         or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *         or The specified resource was not found (status code 404)
+   *         or May contain hints how to solve the error or indicate what went wrong at the server.
+   *         Must not outline any information about the internal structure of the server. (status code 500)
+   */
   @Override
   @Transactional
   public ResponseEntity<Participant> updateParticipant(String participantId, String body) {
@@ -91,6 +160,12 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     return ResponseEntity.ok(part);
   }
 
+  /**
+   * Utility method for converting Participant Self-Description to Participant metadata.
+   *
+   * @param sd Self-Description.
+   * @return Participant metadata.
+   */
   private Participant toParticipant(String sd) {
     Map<String, Object> map;
     try {
