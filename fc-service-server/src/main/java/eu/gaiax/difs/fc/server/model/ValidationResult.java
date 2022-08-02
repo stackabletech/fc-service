@@ -1,5 +1,8 @@
 package eu.gaiax.difs.fc.server.model;
 
+/**
+ * Validation result interface.
+ */
 public interface ValidationResult<R> {
   /**
    * Checks if the validation was successful or failed.
