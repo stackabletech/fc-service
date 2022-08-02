@@ -26,11 +26,11 @@ public class UsersService implements UsersApiDelegate {
    *
    * @param user User entity to be added {@link User}
    * @return Created User profile (status code 201)
-   * or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
-   * or Forbidden. The user does not have the permission to execute this request. (status code 403)
-   * or HTTP Conflict 409 (status code 409)
-   * or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
-   * any information about the internal structure of the server. (status code 500)
+   *        or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *        or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *        or HTTP Conflict 409 (status code 409)
+   *        or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
+   *        any information about the internal structure of the server. (status code 500)
    */
   @Override
   public ResponseEntity<UserProfile> addUser(User user) {
@@ -44,13 +44,13 @@ public class UsersService implements UsersApiDelegate {
    * Service method for update the user profile.
    *
    * @param userId user id of the user(required)
-   * @param user  User entity to be added {@link User}
+   * @param user   User entity to be added {@link User}
    * @return Updated user profile (status code 200)
-   * or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
-   * or Forbidden. The user does not have the permission to execute this request. (status code 403)
-   * or The specified resource was not found (status code 404)
-   * or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
-   * any information about the internal structure of the server. (status code 500)
+   *        or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *        or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *        or The specified resource was not found (status code 404)
+   *        or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
+   *        any information about the internal structure of the server. (status code 500)
    */
   @Override
   public ResponseEntity<UserProfile> updateUser(String userId, User user) {
@@ -65,12 +65,12 @@ public class UsersService implements UsersApiDelegate {
    *
    * @param userId user id of the user(required)
    * @return Deleted user profile (status code 200)
-   * or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
-   * or Forbidden. The user does not have the permission to execute this request. (status code 403)
-   * or The specified resource was not found (status code 404)
-   * or HTTP Conflict 409 (status code 409)
-   * or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
-   * any information about the internal structure of the server. (status code 500)
+   *        or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *        or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *        or The specified resource was not found (status code 404)
+   *        or HTTP Conflict 409 (status code 409)
+   *        or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
+   *        any information about the internal structure of the server. (status code 500)
    */
   @Override
   public ResponseEntity<UserProfile> deleteUser(String userId) {
@@ -85,11 +85,11 @@ public class UsersService implements UsersApiDelegate {
    *
    * @param userId user id of the user(required)
    * @return User profile (status code 200)
-   * or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
-   * or Forbidden. The user does not have the permission to execute this request. (status code 403)
-   * or The specified resource was not found (status code 404)
-   * or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
-   * any information about the internal structure of the server. (status code 500)
+   *        or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *        or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *        or The specified resource was not found (status code 404)
+   *        or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
+   *        any information about the internal structure of the server. (status code 500)
    */
   @Override
   public ResponseEntity<UserProfile> getUser(String userId) {
@@ -107,9 +107,9 @@ public class UsersService implements UsersApiDelegate {
    * @param orderBy   Results will be sorted by this field. (optional)
    * @param ascending Ascending/Descending ordering. (optional, default to true)
    * @return List of usernames (status code 200)
-   * or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
-   * or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
-   * any information about the internal structure of the server. (status code 500)
+   *        or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *        or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
+   *        any information about the internal structure of the server. (status code 500)
    */
   @Override
   public ResponseEntity<List<UserProfile>> getUsers(Integer offset, Integer limit,
@@ -126,11 +126,11 @@ public class UsersService implements UsersApiDelegate {
    *
    * @param userId user id of the user(required)
    * @return User roles (status code 200)
-   * or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
-   * or Forbidden. The user does not have the permission to execute this request. (status code 403)
-   * or The specified resource was not found (status code 404)
-   * or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
-   * any information about the internal structure of the server. (status code 500)
+   *        or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *        or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *        or The specified resource was not found (status code 404)
+   *        or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
+   *        any information about the internal structure of the server. (status code 500)
    */
   @Override
   public ResponseEntity<List<String>> getUserRoles(String userId) {
@@ -146,11 +146,11 @@ public class UsersService implements UsersApiDelegate {
    * @param userId user id of the user (required)
    * @param roles  List of roles which should be assigned to the user
    * @return All assigned roles of the user (status code 200)
-   * or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
-   * or Forbidden. The user does not have the permission to execute this request. (status code 403)
-   * or The specified resource was not found (status code 404)
-   * or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
-   * any information about the internal structure of the server. (status code 500)
+   *        or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *        or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *        or The specified resource was not found (status code 404)
+   *        or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline
+   *        any information about the internal structure of the server. (status code 500)
    */
   @Override
   public ResponseEntity<UserProfile> updateUserRoles(String userId, List<String> roles) {
@@ -159,5 +159,4 @@ public class UsersService implements UsersApiDelegate {
     log.debug("updateUserRoles.exit; returning: {}", profile);
     return ResponseEntity.ok(profile);
   }
-
 }
