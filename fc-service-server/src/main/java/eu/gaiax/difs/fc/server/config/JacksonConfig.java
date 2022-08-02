@@ -9,12 +9,11 @@ import org.springframework.context.annotation.Primary;
 
 @Configuration
 public class JacksonConfig {
-
-    @Bean
-    @Primary
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper()
-            .registerModule(new ParameterNamesModule())
-            .registerModule(new JavaTimeModule());
-    }
+  @Bean
+  @Primary
+  public ObjectMapper objectMapper() {
+    return new ObjectMapper()
+        .registerModule(new ParameterNamesModule())
+        .registerModule(new JavaTimeModule());
+  }
 }
