@@ -1,4 +1,4 @@
-package eu.gaiax.difs.fc.demo;
+package eu.gaiax.difs.fc.demo.handler;
 
 import eu.gaiax.difs.fc.api.generated.model.Error;
 import java.net.ConnectException;
@@ -20,7 +20,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  * Implementation of the {@link ResponseEntityExceptionHandler} exception.
  */
 @ControllerAdvice
-public class ErrorHandler extends ResponseEntityExceptionHandler {
+public class RestExceptionHandler extends ResponseEntityExceptionHandler {
   /**
    * Method handles the Connection Exception.
    *

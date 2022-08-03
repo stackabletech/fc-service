@@ -18,6 +18,7 @@ keycloak:
   auth-server-url: http://localhost:8080
   realm: gaia-x
   resource: federated-catalogue
+  principal-attribute: preferred_username
   public-client: true
   bearer-only: true
 
