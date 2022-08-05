@@ -1,6 +1,6 @@
 package eu.gaiax.difs.fc.demo.controller;
 
-import eu.gaiax.difs.fc.demo.proxy.ProxyCall;
+import eu.gaiax.difs.fc.demo.proxy.RequestCall;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +30,6 @@ public class RoleController {
    */
   @GetMapping
   public ResponseEntity<List<String>> getAllRoles(HttpServletRequest request) {
-    return ProxyCall.retrieve(fcServer, request, null);
+    return RequestCall.doGet(fcServer, request);
   }
 }

@@ -1,14 +1,9 @@
 package eu.gaiax.difs.fc.demo.controller;
 
 import eu.gaiax.difs.fc.api.generated.model.Participant;
-import eu.gaiax.difs.fc.demo.proxy.ProxyCall;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Schema;
+import eu.gaiax.difs.fc.demo.proxy.RequestCall;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
@@ -45,7 +40,7 @@ public class ParticipantsController {
    */
   @PostMapping
   public ResponseEntity<Participant> addParticipant(HttpServletRequest request, @RequestBody String body) {
-    return ProxyCall.retrieve(fcServer, request, body);
+    return RequestCall.doPost(fcServer, request, body);
   }
 
   /**
@@ -62,7 +57,7 @@ public class ParticipantsController {
   @DeleteMapping("{participantId}")
   public ResponseEntity<Participant> deleteParticipant(HttpServletRequest request,
                                                        @PathVariable("participantId") String id) {
-    return ProxyCall.retrieve(fcServer, request, null);
+    return RequestCall.doDelete(fcServer, request);
   }
 
   /**
@@ -78,7 +73,7 @@ public class ParticipantsController {
   @GetMapping("/{participantId}")
   public ResponseEntity<Participant> getParticipant(HttpServletRequest request,
                                                     @PathVariable("participantId") String id) {
-    return ProxyCall.retrieve(fcServer, request, null);
+    return RequestCall.doGet(fcServer, request);
   }
 
   /**
@@ -94,7 +89,7 @@ public class ParticipantsController {
   @GetMapping("/{participantId}/users")
   public ResponseEntity<Participant> getParticipantUsers(HttpServletRequest request,
                                                          @PathVariable("participantId") String id) {
-    return ProxyCall.retrieve(fcServer, request, null);
+    return RequestCall.doGet(fcServer, request);
   }
 
   /**
@@ -115,7 +110,7 @@ public class ParticipantsController {
       @RequestParam(value = "orderBy", required = false) String orderBy,
       @RequestParam(value = "ascending", required = false, defaultValue = "true") Boolean ascending,
       HttpServletRequest request) {
-    return ProxyCall.retrieve(fcServer, request, null);
+    return RequestCall.doGet(fcServer, request);
   }
 
   /**
@@ -133,6 +128,6 @@ public class ParticipantsController {
   public ResponseEntity<Participant> updateParticipant(HttpServletRequest request,
                                                        @PathVariable("participantId") String id,
                                                        @RequestBody String body) {
-    return ProxyCall.retrieve(fcServer, request, body);
+    return RequestCall.doPut(fcServer, request, body);
   }
 }

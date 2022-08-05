@@ -2,7 +2,7 @@ package eu.gaiax.difs.fc.demo.controller;
 
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
-import eu.gaiax.difs.fc.demo.proxy.ProxyCall;
+import eu.gaiax.difs.fc.demo.proxy.RequestCall;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +41,7 @@ public class UsersController {
    */
   @PostMapping
   public ResponseEntity<UserProfile> addUser(HttpServletRequest request, @RequestBody(required = false) User user) {
-    return ProxyCall.retrieve(fcServer, request, user);
+    return RequestCall.doPost(fcServer, request, user);
   }
 
   /**
@@ -58,7 +58,7 @@ public class UsersController {
   @PutMapping("/{userId}")
   public ResponseEntity<UserProfile> updateUser(HttpServletRequest request, @PathVariable("userId") String id,
                                                 @RequestBody(required = false) User user) {
-    return ProxyCall.retrieve(fcServer, request, user);
+    return RequestCall.doPut(fcServer, request, user);
   }
 
   /**
@@ -74,7 +74,7 @@ public class UsersController {
    */
   @DeleteMapping("/{userId}")
   public ResponseEntity<UserProfile> deleteUser(HttpServletRequest request, @PathVariable("userId") String id) {
-    return ProxyCall.retrieve(fcServer, request, null);
+    return RequestCall.doDelete(fcServer, request);
   }
 
   /**
@@ -89,7 +89,7 @@ public class UsersController {
    */
   @GetMapping("/{userId}")
   public ResponseEntity<UserProfile> getUser(HttpServletRequest request, @PathVariable("userId") String userId) {
-    return ProxyCall.retrieve(fcServer, request, null);
+    return RequestCall.doGet(fcServer, request);
   }
 
   /**
@@ -110,7 +110,7 @@ public class UsersController {
       @RequestParam(value = "limit", required = false, defaultValue = "100") Integer limit,
       @RequestParam(value = "orderBy", required = false) String orderBy,
       @RequestParam(value = "ascending", required = false, defaultValue = "true") Boolean ascending) {
-    return ProxyCall.retrieve(fcServer, request, null);
+    return RequestCall.doGet(fcServer, request);
   }
 
   /**
@@ -125,7 +125,7 @@ public class UsersController {
    */
   @GetMapping("/{userId}/roles")
   public ResponseEntity<List<String>> getUserRoles(HttpServletRequest request, @PathVariable("userId") String id) {
-    return ProxyCall.retrieve(fcServer, request, null);
+    return RequestCall.doGet(fcServer, request);
   }
 
   /**
@@ -142,6 +142,6 @@ public class UsersController {
   @PutMapping("/{userId}/roles")
   public ResponseEntity<List<String>> updateUserRoles(HttpServletRequest request, @PathVariable("userId") String id,
                                                       @RequestBody(required = false) List<String> roles) {
-    return ProxyCall.retrieve(fcServer, request, roles);
+    return RequestCall.doPut(fcServer, request, roles);
   }
 }
