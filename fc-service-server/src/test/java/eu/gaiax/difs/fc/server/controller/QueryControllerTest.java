@@ -44,7 +44,7 @@ public class QueryControllerTest {
 
     @Test
     public void getQueryPageShouldReturnSuccessResponse() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/queries")
+        mockMvc.perform(MockMvcRequestBuilders.get("/query")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
@@ -54,7 +54,7 @@ public class QueryControllerTest {
 
     @Test
     public void postQueriesReturnSuccessResponse() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/queries")
+        mockMvc.perform(MockMvcRequestBuilders.post("/query")
                         .content(QUERY_REQUEST_DUMMY)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
