@@ -804,7 +804,8 @@ paths:
           query  languages   but   only "application/json" is mandatory.
         content:
           application/json:
-            schema: {}
+            schema:
+              type: string
       responses:
         '200':
           description: Verification result
