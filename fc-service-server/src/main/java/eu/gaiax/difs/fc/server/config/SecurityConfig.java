@@ -53,7 +53,7 @@ public class SecurityConfig {
           .hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-Pa-A")
 
           // Query APIs
-          .antMatchers("/queries").permitAll()
+          .antMatchers("/query").permitAll()
 
           // Self-Description APIs
           .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()

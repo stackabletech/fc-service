@@ -112,8 +112,7 @@ public class UsersService implements UsersApiDelegate {
    *        any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<UserProfile>> getUsers(Integer offset, Integer limit,
-                                                    String orderBy, Boolean ascending) {
+  public ResponseEntity<List<UserProfile>> getUsers(Integer offset, Integer limit) { //String orderBy, Boolean ascending) {
     // sorting is not supported yet by keycloak admin API
     log.debug("getUsers.enter; got offset: {}, limit: {}", offset, limit);
     List<UserProfile> profiles = userDao.search(null, offset, limit);
