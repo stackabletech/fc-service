@@ -79,7 +79,7 @@ public class SecurityConfig {
           .antMatchers("/roles").authenticated()
 
           // Verification APIs
-          .antMatchers("/verifications").authenticated()
+          .antMatchers("/verifications/*").permitAll()
 
           .anyRequest().authenticated()
         )

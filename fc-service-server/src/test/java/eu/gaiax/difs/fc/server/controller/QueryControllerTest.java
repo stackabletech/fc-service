@@ -17,6 +17,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -39,8 +40,17 @@ public class QueryControllerTest {
     }
 
 
-    String QUERY_REQUEST_DUMMY="{\"statement\": \"Match (m:Movie) where m.released > 2000 RETURN m\", \"parameters\": null}}"; 
+    String QUERY_REQUEST_DUMMY="{\"statement\": \"Match (m:Movie) where m.released > 2000 RETURN m\", \"parameters\": null}}";
 
+    @Test
+    public void getQueryPageShouldReturnSuccessResponse() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/queries")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(header().stringValues("Content-Type", "text/html"));
+    }
 
     @Test
     public void postQueriesReturnSuccessResponse() throws Exception {

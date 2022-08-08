@@ -576,6 +576,7 @@
           "content": {
             "application/json": {
               "schema": {
+                "type": "string"
               }
             }
           }
@@ -1154,7 +1155,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Statements"
+                "type": "string"
               }
             },
             "application/sparql-query": {
