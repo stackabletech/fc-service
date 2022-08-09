@@ -7,12 +7,12 @@
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <style>
 
     html,body {
         height: 100%;
-     }
+    }
 
     .container {
     height: 100%;
@@ -28,17 +28,17 @@
 <body>
 <div class="container">
     <div>
-        <h2>Query SD Information</h2>
+        <h2>Discover Self-Descriptions</h2>
         <br>
         Please write your query statement in textarea:<br>
         <br>
-        <textarea id="content-target" style="width:400px;height:150px;" placeholder="Please write your query statement"></textarea>
+        <textarea id="content-target" style="width:800px;height:300px;" placeholder="Please write your query statement"></textarea>
         <br><br><br>
         <button class="btn btn-primary" onclick="querySD()">Submit</button>
         <br>
         <br>
 <!--        <label id="result" style="padding:5px; font-weight:bold; float:left; width:150px; "></label>-->
-        <textarea id="result" style="width:400px;height:150px;" placeholder="Result of your query statement"></textarea>
+        <textarea id="result" style="width:800px;height:300px;" placeholder="Result of your query statement"></textarea>
 
         <script>
 
@@ -56,7 +56,7 @@ if(document.getElementById('content-target').value=="" || document.getElementByI
 alert("Please add query");
 return;
 }
-$.ajax('/queries', {
+$.ajax('/query', {
     type: 'POST',  // http method
     contentType: "application/json;charset=utf-8",
     headers: {"query-language": "openCypher"},
