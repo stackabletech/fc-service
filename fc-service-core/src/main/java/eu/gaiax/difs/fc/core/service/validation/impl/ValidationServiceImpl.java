@@ -4,6 +4,8 @@ import eu.gaiax.difs.fc.api.generated.model.Participant;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
 import eu.gaiax.difs.fc.core.service.validation.ValidationService;
+
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.ValidationException;
@@ -53,8 +55,8 @@ public class ValidationServiceImpl implements ValidationService {
     List<String> validators = new ArrayList<>();
     validators.add("string");
     sdMetadata.setValidators(validators);
-    sdMetadata.setStatusTime("2022-05-11T15:30:00Z");
-    sdMetadata.setUploadTime("2022-03-01T13:00:00Z");
+    sdMetadata.setStatusDatetime(OffsetDateTime.parse("2022-05-11T15:30:00Z"));
+    sdMetadata.setUploadDatetime(OffsetDateTime.parse("2022-03-01T13:00:00Z"));
     return sdMetadata;
   }
 }

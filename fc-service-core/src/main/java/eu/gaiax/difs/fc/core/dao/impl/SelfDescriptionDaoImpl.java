@@ -2,6 +2,8 @@ package eu.gaiax.difs.fc.core.dao.impl;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.core.dao.SelfDescriptionDao;
+
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Repository;
@@ -79,8 +81,8 @@ public class SelfDescriptionDaoImpl implements SelfDescriptionDao {
     List<String> validators = new ArrayList<>();
     validators.add("string");
     sdMetadata.setValidators(validators);
-    sdMetadata.setStatusTime("2022-05-11T15:30:00Z");
-    sdMetadata.setUploadTime("2022-03-01T13:00:00Z");
+    sdMetadata.setStatusDatetime(OffsetDateTime.parse("2022-05-11T15:30:00Z"));
+    sdMetadata.setUploadDatetime(OffsetDateTime.parse("2022-03-01T13:00:00Z"));
     return sdMetadata;
   }
 }

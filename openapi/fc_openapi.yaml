@@ -242,12 +242,14 @@ components:
           type: array
           items:
             type: string
-        upload-time:
+        upload-datetime:
           type: string
+          format: date-time
           example: '2022-03-01T13:00:00Z'
           description: The time stamp (ISO8601) when the SD was uploaded.
-        status-time:
+        status-datetime:
           type: string
+          format: date-time
           example: '2022-05-11T15:30:00Z'
           description: >-
             The last time stamp (ISO8601) the status changed (for this
@@ -610,7 +612,7 @@ paths:
           application/sparql*:
             example: ''
       responses:
-        '200': 
+        '200':
           description: successful query
           content:
             application/json:
@@ -622,9 +624,11 @@ paths:
               example: ''
             text/html:
               example: ''
-        '400': ## Malformed Message: The receveived request cannot be processed, either because its syntax is incorrect or forbidden query clauses are used. For instance, it is not allowed to manipulate data through the query endpoint
+        '400': ## Malformed Message: The receveived request cannot be processed, either because its syntax is ## incorrect or forbidden query clauses are used. For instance, it is not allowed to manipulate data ## through the query endpoint
           $ref: '#/components/responses/ClientError'
-        '408': ## Query Timeout: the query took longer than the configured timeout interval. The client needs to rewrite the query so it can be processed faster.
+        '408': ## Query Timeout: the query took longer than the configured timeout
+          ## interval. The client needs to rewrite the query so it can be
+          ## processed faster.
           $ref: '#/components/responses/ServerError'
         '500':
           $ref: '#/components/responses/ServerError'
