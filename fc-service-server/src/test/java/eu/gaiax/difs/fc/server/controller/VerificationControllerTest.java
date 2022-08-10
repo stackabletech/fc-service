@@ -37,25 +37,6 @@ public class VerificationControllerTest {
     }
 
     @Test
-    public void getVerifyPageShouldReturnUnauthorizedResponse() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/verifications/self-descriptions")
-                        .with(csrf())
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
-    }
-
-
-    @Test
-    public void verifySDsShouldReturnUnauthorizedResponse() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/verifications/self-descriptions")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @WithMockUser
     public void getVerifyPageShouldReturnSuccessResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/verifications/self-descriptions")
                         .with(csrf())
@@ -66,7 +47,6 @@ public class VerificationControllerTest {
     }
 
     @Test
-    @WithMockUser
     public void verifySDsShouldReturnSuccessResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/verifications/self-descriptions")
                         .with(csrf())

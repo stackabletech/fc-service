@@ -1,7 +1,7 @@
 package eu.gaiax.difs.fc.server.service;
 
 
-import eu.gaiax.difs.fc.api.generated.model.SchemaFC;
+import eu.gaiax.difs.fc.api.generated.model.OntologySchema;
 import eu.gaiax.difs.fc.server.generated.controller.SchemasApiDelegate;
 import java.util.Collections;
 import java.util.List;
@@ -31,9 +31,9 @@ public class SchemasService implements SchemasApiDelegate {
    *         information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<SchemaFC> getSchema(String schemaId) {
+  public ResponseEntity<OntologySchema> getSchema(String schemaId) {
     log.debug("getSchema.enter, got schemaId {}", schemaId);
-    Optional<SchemaFC> schema = Optional.of(new SchemaFC());
+    Optional<OntologySchema> schema = Optional.of(new OntologySchema());
     log.debug("getSchema.exit, returning {}", schema);
     return new ResponseEntity<>(HttpStatus.OK).of(schema);
   }
@@ -51,11 +51,9 @@ public class SchemasService implements SchemasApiDelegate {
    *         information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<SchemaFC>> getSchemas(Integer offset, Integer limit, String orderBy,
-                                                   Boolean ascending) {
-    log.debug("getSchemas.enter, got offset {}, got limit {}, got orderBy {}, got ascending {}",
-        offset, limit, orderBy, ascending);
-    Optional<List<SchemaFC>> schemas = Optional.of(Collections.emptyList());
+  public ResponseEntity<List<OntologySchema>> getSchemas(Integer offset, Integer limit) { // String orderBy, Boolean ascending) {
+    log.debug("getSchemas.enter, got offset {}, got limit {}", offset, limit);
+    Optional<List<OntologySchema>> schemas = Optional.of(Collections.emptyList());
     log.debug("getSchema.exit, returning {}", schemas);
     return new ResponseEntity<>(HttpStatus.OK).of(schemas);
   }
@@ -70,9 +68,9 @@ public class SchemasService implements SchemasApiDelegate {
    *         information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<SchemaFC>> getLatestSchemas() {
+  public ResponseEntity<List<OntologySchema>> getLatestSchemas() {
     log.debug("getLatestSchemas.enter");
-    Optional<List<SchemaFC>> schemas = Optional.of(Collections.emptyList());
+    Optional<List<OntologySchema>> schemas = Optional.of(Collections.emptyList());
     log.debug("getLatestSchemas.exit, returning {}", schemas);
     return new ResponseEntity<>(HttpStatus.OK).of(schemas);
   }
@@ -88,7 +86,7 @@ public class SchemasService implements SchemasApiDelegate {
    *         information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<SchemaFC> getLatestSchemaOfType(String type) {
+  public ResponseEntity<OntologySchema> getLatestSchemaOfType(String type) {
     log.debug("getLatestSchemaOfType.enter, got type {}", type);
     return new ResponseEntity<>(HttpStatus.OK);
   }
@@ -104,7 +102,7 @@ public class SchemasService implements SchemasApiDelegate {
    *         information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<Void> addSchema(SchemaFC schema) {
+  public ResponseEntity<Void> addSchema(OntologySchema schema) {
     log.debug("addSchema.enter, got schema {}", schema);
     return new ResponseEntity<>(HttpStatus.CREATED);
   }

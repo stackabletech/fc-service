@@ -108,7 +108,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<UserProfile>> getParticipantUsers(String participantId) {
+  public ResponseEntity<List<UserProfile>> getParticipantUsers(String participantId, Integer offset, Integer limit) {
     log.debug("getParticipantUsers.enter; got participantId: {}", participantId);
     List<UserProfile> profiles = partDao.selectUsers(participantId)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
@@ -129,7 +129,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<Participant>> getParticipants(Integer offset, Integer limit, String orderBy, Boolean asc) {
+  public ResponseEntity<List<Participant>> getParticipants(Integer offset, Integer limit) { //, String orderBy, Boolean asc) {
     // sorting is not supported yet by keycloak admin API
     log.debug("getParticipants.enter; got offset: {}, limit: {}", offset, limit);
     List<Participant> parts = partDao.search(offset, limit);
