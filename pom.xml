@@ -13,7 +13,7 @@
     <groupId>eu.gaiax.difs.fc</groupId>
     <artifactId>fc-service</artifactId>
     <packaging>pom</packaging>
-    <version>${revision}</version>
+    <version>0.0.1-SNAPSHOT</version>
 
     <name>fc-service</name>
     <description>GAIA-X Federated Catalogue Service</description>
@@ -30,7 +30,6 @@
     </modules>
 
     <properties>
-        <revision>0.0.1-SNAPSHOT</revision>
         <!-- java -->
         <java.version>11</java.version>
         <maven.compiler.source>11</maven.compiler.source>
@@ -45,7 +44,7 @@
         <security.test-addons.version>3.0.1</security.test-addons.version>
         <springdoc.version>1.6.8</springdoc.version>
         <lombok.version>1.18.22</lombok.version>
-        <keycloak.version>18.0.2</keycloak.version>
+        <keycloak.version>17.0.1</keycloak.version>
         <micrometer.version>1.9.0</micrometer.version>
         <!-- plugins -->
         <plugin.jib.version>3.2.1</plugin.jib.version>
@@ -75,12 +74,12 @@
             <dependency>
                 <groupId>eu.gaiax.difs.fc</groupId>
                 <artifactId>fc-service-api</artifactId>
-                <version>${revision}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.gaiax.difs.fc</groupId>
                 <artifactId>fc-service-core</artifactId>
-                <version>${revision}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
