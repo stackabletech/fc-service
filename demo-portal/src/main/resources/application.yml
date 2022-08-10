@@ -1,0 +1,37 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: fc-demo-portal-app
+  mvc:
+    log-request-details: true
+  main:
+    allow-circular-references: true
+  security:
+    oauth2:
+      client:
+        registration:
+          fc-client-oidc:
+            provider: keycloak
+            client-id: federated-catalogue 
+            client-secret: sAQFwN0ImAcx5LjAMJe2402TsQCpShuf
+            authorization-grant-type: authorization_code
+#            redirect-uri: "http://127.0.0.1:8080/login/oauth2/code/{registrationId}"
+#            scope: openid
+#            client-name: fc-client-oidc
+        provider:
+          keycloak:
+            issuer-uri: http://key-server:8080/realms/gaia-x
+#            jwk-set-uri: http://key-server:8080/realms/gaia-x/protocol/openid-connect/certs
+
+federated-catalogue:
+  base-uri: http://localhost:8081
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web.client.RestTemplate: DEBUG
+    org.keycloak.adapters.OAuthRequestAuthenticator: DEBUG

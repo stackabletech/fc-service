@@ -7,11 +7,10 @@
     <parent>
         <groupId>eu.gaiax.difs.fc</groupId>
         <artifactId>fc-service</artifactId>
-        <version>${revision}</version>
+        <version>0.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>fc-service-server</artifactId>
-    <version>${revision}</version>
     <packaging>jar</packaging>
     <name>fc-service-server</name>
     <description>GAIA-X Federated Catalogue Server Application</description>

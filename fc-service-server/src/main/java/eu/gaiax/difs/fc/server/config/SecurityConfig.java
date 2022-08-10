@@ -30,8 +30,9 @@ public class SecurityConfig {
   private static final ObjectMapper mapper = new ObjectMapper();
 
   private static final Error FORBIDDEN_ERROR = new Error("forbidden_error",
-      "The user does not have the permission to execute this request.");
-  @Value("${keycloak.resource}")
+      "User does not have permission to execute this request.");
+  
+  @Value("${federated-catalogue.security.resource-id}")
   private String resourceId;
 
   /**
@@ -69,6 +70,7 @@ public class SecurityConfig {
           // Participants API
           .antMatchers(HttpMethod.POST, "/participants").hasRole("Ro-MU-CA")
           .antMatchers(HttpMethod.GET, "/participants").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-PA-A")
+          //.antMatchers(HttpMethod.GET, "/participants").hasAuthority("SCOPE_gaia-x")
           .antMatchers("/participants/*").hasAnyRole("Ro-MU-CA", "Ro-MU-A")
           .antMatchers(HttpMethod.GET, "/participants/*/users").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
 
