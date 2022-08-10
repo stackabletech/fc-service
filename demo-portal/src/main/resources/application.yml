@@ -8,19 +8,32 @@ spring:
     log-request-details: true
   main:
     allow-circular-references: true
+  security:
+    oauth2:
+      client:
+        registration:
+          demo-app-oidc:
+            provider: keycloak
+            client-id: federated-catalogue #demo-app
+            client-secret: sAQFwN0ImAcx5LjAMJe2402TsQCpShuf
+            #scope: openid
+        provider:
+          keycloak:
+            issuer-uri: http://key-server:8080/realms/gaia-x
+#            jwk-set-uri: http://key-server:8080/realms/gaia-x/protocol/openid-connect/certs
 
 services:
   identity:
     uri:
       internal: http://localhost:8081
 
-keycloak:
-  auth-server-url: http://localhost:8080
-  realm: gaia-x
-  resource: federated-catalogue
-  principal-attribute: preferred_username
-  public-client: true
-  bearer-only: true
+#keycloak:
+#  auth-server-url: http://localhost:8080
+#  realm: gaia-x
+#  resource: federated-catalogue
+#  principal-attribute: preferred_username
+#  public-client: true
+#  bearer-only: true
 
 logging:
   level:

@@ -21,8 +21,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/gaia-x
-          jwk-set-uri: http://localhost:8080/realms/gaia-x/protocol/openid-connect/certs
+          issuer-uri: http://key-server:8080/realms/gaia-x
+          jwk-set-uri: http://key-server:8080/realms/gaia-x/protocol/openid-connect/certs
 
 openapi:
   gaiaXCatalogue:

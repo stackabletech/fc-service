@@ -24,7 +24,7 @@ public class RequestCall {
    * @return Returns the response entity received from the server.
    */
   public static <T> ResponseEntity<T> doGet(WebClient webClient, HttpServletRequest request) {
-    log.debug("GET request method by URI {}", request.getRequestURI());
+    log.debug("doGet.enter; GET request method by URI {}", request.getRequestURI());
 
     final WebClient.RequestHeadersSpec<?> callBuilder = webClient
         .get()

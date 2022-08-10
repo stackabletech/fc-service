@@ -1,5 +1,7 @@
 package eu.gaiax.difs.fc.demo.controller;
 
+import static org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction.oauth2AuthorizedClient;
+
 import eu.gaiax.difs.fc.api.generated.model.Participant;
 import eu.gaiax.difs.fc.demo.proxy.RequestCall;
 import java.util.List;
@@ -7,6 +9,8 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,7 +26,7 @@ import org.springframework.web.reactive.function.client.WebClient;
  * Participants API Controller.
  */
 @RestController
-@RequestMapping("participants")
+@RequestMapping("parts")
 public class ParticipantsController {
   @Autowired
   @Qualifier("fcServer")
@@ -103,16 +107,29 @@ public class ParticipantsController {
    *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
-  @GetMapping
-  public ResponseEntity<List<Participant>> getParticipants(
-      @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset,
-      @RequestParam(value = "limit", required = false, defaultValue = "100") Integer limit,
-      @RequestParam(value = "orderBy", required = false) String orderBy,
-      @RequestParam(value = "ascending", required = false, defaultValue = "true") Boolean ascending,
-      HttpServletRequest request) {
-    return RequestCall.doGet(fcServer, request);
-  }
+  //@GetMapping
+  //public ResponseEntity<List<Participant>> getParticipants(
+  //    @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset,
+  //    @RequestParam(value = "limit", required = false, defaultValue = "100") Integer limit,
+  //    @RequestParam(value = "orderBy", required = false) String orderBy,
+  //    @RequestParam(value = "ascending", required = false, defaultValue = "true") Boolean ascending,
+  //    HttpServletRequest request) {
+  //  return RequestCall.doGet(fcServer, request);
+  //}
 
+  @GetMapping
+  public Participant[] getParticipants(
+    @RegisteredOAuth2AuthorizedClient("demo-app-oidc") OAuth2AuthorizedClient authorizedClient
+  ) {
+      return this.fcServer
+        .get()
+        .uri("http://localhost:8081/participants")
+        .attributes(oauth2AuthorizedClient(authorizedClient))
+        .retrieve()
+        .bodyToMono(Participant[].class)
+        .block();
+  }
+  
   /**
    * PUT /participants/{participantId} : Update a participant in the catalogue.
    *
