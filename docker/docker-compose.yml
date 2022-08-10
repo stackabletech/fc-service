@@ -30,22 +30,21 @@ services:
       ]
   server:
     container_name: "federated-catalogue-server"
-    image: "${CI_REGISTRY}/${SERVER_ARTIFACT}:${SERVER_VERSION}"
+    image: "${CI_REGISTRY}/fc-service-server:0.0.1-SNAPSHOT"
     ports:
       - "8081:8081"
     networks:
       - "gaia-x"
     restart: unless-stopped
 
-#    we will enable this once demo-portal web app is ready
-#  portal:
-#    container_name: "federated-catalogue-portal"
-#    image: "${CI_REGISTRY}/${PORTAL_ARTIFACT}:${PORTAL_VERSION}"
-#    ports:
-#      - "8082:8082"
-#    networks:
-#      - "gaia-x"
-#    restart: unless-stopped
+  portal:
+    container_name: "federated-catalogue-portal"
+    image: "${CI_REGISTRY}/fc-demo-portal:0.0.1-SNAPSHOT"
+    ports:
+      - "8088:8088"
+    networks:
+      - "gaia-x"
+    restart: unless-stopped
 
 networks:
   gaia-x:

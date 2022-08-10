@@ -21,8 +21,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/gaia-x
-          jwk-set-uri: http://localhost:8080/realms/gaia-x/protocol/openid-connect/certs
+          issuer-uri: http://key-server:8080/realms/gaia-x
+          jwk-set-uri: http://key-server:8080/realms/gaia-x/protocol/openid-connect/certs
 
 openapi:
   gaiaXCatalogue:
@@ -33,16 +33,16 @@ springdoc:
     path: /api/docs
     enabled: true
 
+federated-catalogue:
+  security:
+    resource-id: federated-catalogue
+
 keycloak:
-  auth-server-url: http://localhost:8080
-#  auth-server-url: http://key-server.gxfs.dev
+  auth-server-url: http://key-server:8080
   realm: gaia-x
-#  resource: federated-catalogue
   resource: admin-cli
   credentials:
-#    secret: fwirOT4r8s3DC45CHtUNUNthfnogLAal
-    secret: 5OlXNJpIk2nFfj6lTffBBUexsHyM8AUm
-#    secret: wuk19sLN8EyiTxOcuLpXUt1o19SXBaJq
+    secret: mLUXF9VoPi7sZc1DcONWdMSFYH7JdCXT
 
 logging:
   level:
