@@ -22,35 +22,25 @@ public class WebClientConfig {
   /**
    * Defines the web client bean used to connect to the Federated Catalogue Server.
    *
-   * @param externalUri Federated directory URI.
-   */
-  //@Bean(name = "fcServer")
-  //public WebClient fcServer(@Value("${services.identity.uri.internal}") final String externalUri) {
-  //  return WebClient.builder()
-  //      .baseUrl(externalUri)
-  //      .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-  //      .build();
-  //}
-  
+   * @param fcUri Federated Catalog URI.
+   */ 
   @Bean(name = "fcServer")
   public WebClient webClient(OAuth2AuthorizedClientManager authorizedClientManager,
-          @Value("${services.identity.uri.internal}") final String externalUri) {
+          @Value("${federated-catalogue.base-uri}") final String fcUri) {
       ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2Client =
         new ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
       return WebClient.builder()
         .apply(oauth2Client.oauth2Configuration())
-        .baseUrl(externalUri)
+        .baseUrl(fcUri)
         .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
         .build();
   }  
   
   @Bean
-  OAuth2AuthorizedClientManager authorizedClientManager(
-          ClientRegistrationRepository clientRegistrationRepository,
+  OAuth2AuthorizedClientManager authorizedClientManager(ClientRegistrationRepository clientRegistrationRepository,
           OAuth2AuthorizedClientRepository authorizedClientRepository) {
 
-      OAuth2AuthorizedClientProvider authorizedClientProvider =
-        OAuth2AuthorizedClientProviderBuilder.builder()
+      OAuth2AuthorizedClientProvider authorizedClientProvider = OAuth2AuthorizedClientProviderBuilder.builder()
           .authorizationCode()
           .refreshToken()
           .build();

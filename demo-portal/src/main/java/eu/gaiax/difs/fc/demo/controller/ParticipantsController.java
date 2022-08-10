@@ -3,12 +3,13 @@ package eu.gaiax.difs.fc.demo.controller;
 import static org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction.oauth2AuthorizedClient;
 
 import eu.gaiax.difs.fc.api.generated.model.Participant;
-import eu.gaiax.difs.fc.demo.proxy.RequestCall;
+import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -28,10 +28,17 @@ import org.springframework.web.reactive.function.client.WebClient;
 @RestController
 @RequestMapping("parts")
 public class ParticipantsController {
+
+  private static final ParameterizedTypeReference<List<Participant>> PART_LIST_TYPE_REF = new ParameterizedTypeReference<List<Participant>>() {};
+  private static final ParameterizedTypeReference<List<UserProfile>> USER_LIST_TYPE_REF = new ParameterizedTypeReference<List<UserProfile>>() {};
+
+  @Value("${federated-catalogue.base-uri}")
+  private String baseUri;
+  
   @Autowired
   @Qualifier("fcServer")
   private WebClient fcServer;
-
+  
   /**
    * POST /participants : Register a new participant in the catalogue.
    *
@@ -43,8 +50,17 @@ public class ParticipantsController {
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
   @PostMapping
-  public ResponseEntity<Participant> addParticipant(HttpServletRequest request, @RequestBody String body) {
-    return RequestCall.doPost(fcServer, request, body);
+  public Participant addParticipant(
+          @RegisteredOAuth2AuthorizedClient("fc-client-oidc") OAuth2AuthorizedClient authorizedClient,
+          @RequestBody String body) {
+      return this.fcServer
+                .post()
+                .uri(baseUri + "/participants")
+                .attributes(oauth2AuthorizedClient(authorizedClient))
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(Participant.class)
+                .block();
   }
 
   /**
@@ -58,10 +74,17 @@ public class ParticipantsController {
    *         or HTTP Conflict 409 (status code 409)
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
-  @DeleteMapping("{participantId}")
-  public ResponseEntity<Participant> deleteParticipant(HttpServletRequest request,
-                                                       @PathVariable("participantId") String id) {
-    return RequestCall.doDelete(fcServer, request);
+  @DeleteMapping("{id}")
+  public Participant deleteParticipant(
+          @RegisteredOAuth2AuthorizedClient("fc-client-oidc") OAuth2AuthorizedClient authorizedClient,
+          @PathVariable("id") String id) {
+      return this.fcServer
+              .delete()
+              .uri(baseUri + "/participants/" + id)
+              .attributes(oauth2AuthorizedClient(authorizedClient))
+              .retrieve()
+              .bodyToMono(Participant.class)
+              .block();
   }
 
   /**
@@ -74,10 +97,17 @@ public class ParticipantsController {
    *         or The specified resource was not found (status code 404)
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
-  @GetMapping("/{participantId}")
-  public ResponseEntity<Participant> getParticipant(HttpServletRequest request,
-                                                    @PathVariable("participantId") String id) {
-    return RequestCall.doGet(fcServer, request);
+  @GetMapping("/{id}")
+  public Participant getParticipant(
+          @RegisteredOAuth2AuthorizedClient("fc-client-oidc") OAuth2AuthorizedClient authorizedClient,
+          @PathVariable("id") String id) {
+      return this.fcServer
+              .get()
+              .uri(baseUri + "/participants/" + id)
+              .attributes(oauth2AuthorizedClient(authorizedClient))
+              .retrieve()
+              .bodyToMono(Participant.class)
+              .block();
   }
 
   /**
@@ -90,43 +120,36 @@ public class ParticipantsController {
    *         or The specified resource was not found (status code 404)
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
-  @GetMapping("/{participantId}/users")
-  public ResponseEntity<Participant> getParticipantUsers(HttpServletRequest request,
-                                                         @PathVariable("participantId") String id) {
-    return RequestCall.doGet(fcServer, request);
+  @GetMapping("/{id}/users")
+  public List<UserProfile> getParticipantUsers(
+          @RegisteredOAuth2AuthorizedClient("fc-client-oidc") OAuth2AuthorizedClient authorizedClient,
+          @PathVariable("id") String id) {
+      return this.fcServer
+              .get()
+              .uri(baseUri + "/participants/" + id + "/users")
+              .attributes(oauth2AuthorizedClient(authorizedClient))
+              .retrieve()
+              .bodyToMono(USER_LIST_TYPE_REF)
+              .block();
   }
 
   /**
    * GET /participants : Get the registered participants.
    *
-   * @param offset The number of items to skip before starting to collect the result set. (optional, default to 0)
-   * @param limit The number of items to return. (optional, default to 100)
-   * @param orderBy Results will be sorted by this field. (optional)
-   * @param ascending Ascending/Descending ordering. (optional, default to true)
    * @return List of registered participants (status code 200)
    *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
-  //@GetMapping
-  //public ResponseEntity<List<Participant>> getParticipants(
-  //    @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset,
-  //    @RequestParam(value = "limit", required = false, defaultValue = "100") Integer limit,
-  //    @RequestParam(value = "orderBy", required = false) String orderBy,
-  //    @RequestParam(value = "ascending", required = false, defaultValue = "true") Boolean ascending,
-  //    HttpServletRequest request) {
-  //  return RequestCall.doGet(fcServer, request);
-  //}
-
   @GetMapping
-  public Participant[] getParticipants(
-    @RegisteredOAuth2AuthorizedClient("demo-app-oidc") OAuth2AuthorizedClient authorizedClient
+  public List<Participant> getParticipants(
+    @RegisteredOAuth2AuthorizedClient("fc-client-oidc") OAuth2AuthorizedClient authorizedClient
   ) {
       return this.fcServer
         .get()
-        .uri("http://localhost:8081/participants")
+        .uri(baseUri + "/participants?offset=0&limit=50")
         .attributes(oauth2AuthorizedClient(authorizedClient))
         .retrieve()
-        .bodyToMono(Participant[].class)
+        .bodyToMono(PART_LIST_TYPE_REF)
         .block();
   }
   
@@ -142,9 +165,16 @@ public class ParticipantsController {
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
   @PutMapping("/{participantId}")
-  public ResponseEntity<Participant> updateParticipant(HttpServletRequest request,
-                                                       @PathVariable("participantId") String id,
-                                                       @RequestBody String body) {
-    return RequestCall.doPut(fcServer, request, body);
+  public Participant updateParticipant(
+          @RegisteredOAuth2AuthorizedClient("fc-client-oidc") OAuth2AuthorizedClient authorizedClient,
+          @PathVariable("id") String id,
+          @RequestBody String body) {
+      return this.fcServer
+              .put()
+              .uri(baseUri + "/participants/" + id)
+              .attributes(oauth2AuthorizedClient(authorizedClient))
+              .retrieve()
+              .bodyToMono(Participant.class)
+              .block();
   }
 }

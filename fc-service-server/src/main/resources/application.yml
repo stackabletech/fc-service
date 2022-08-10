@@ -38,12 +38,11 @@ federated-catalogue:
     resource-id: federated-catalogue
 
 keycloak:
-  auth-server-url: http://localhost:8080
-#  auth-server-url: http://key-server.gxfs.dev
+  auth-server-url: http://key-server:8080
   realm: gaia-x
   resource: admin-cli
   credentials:
-    secret: 5OlXNJpIk2nFfj6lTffBBUexsHyM8AUm
+    secret: mLUXF9VoPi7sZc1DcONWdMSFYH7JdCXT
 
 logging:
   level:

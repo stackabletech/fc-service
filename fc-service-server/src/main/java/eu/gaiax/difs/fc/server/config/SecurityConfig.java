@@ -24,7 +24,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
  * so we are using SecurityFilterChain for configuration security without extending deprecated adapter.
  */
 @Configuration
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity //(debug = true)
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
   private static final ObjectMapper mapper = new ObjectMapper();
