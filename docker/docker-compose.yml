@@ -13,8 +13,6 @@ services:
     networks:
       - "gaia-x"
     restart: unless-stopped
-    extra_hosts:
-      - "auth-server:127.0.0.1"
     volumes:
       - "../keycloak/providers:/opt/keycloak/providers"
       - "../keycloak/realms:/tmp/import"
@@ -28,22 +26,36 @@ services:
           '-Dkeycloak.profile.feature.upload_scripts=enabled',
           '--log-level=DEBUG,io.quarkus:INFO,liquibase:INFO,org.hibernate:INFO,org.infinispan:INFO,org.keycloak.services.scheduled:INFO,org.keycloak.transaction:INFO,io.netty.buffer.PoolThreadCache:INFO,org.keycloak.models.sessions.infinispan:INFO'
       ]
+
   server:
     container_name: "federated-catalogue-server"
     image: "${CI_REGISTRY}/fc-service-server:0.0.1-SNAPSHOT"
+#    build:
+#      context: ../fc-service-server
+#      dockerfile: Dockerfile
+    environment:
+      KEYCLOAK_CREDENTIALS_SECRET: "${KEYCLOAK_ADMIN_CLI_SECRET}"
     ports:
       - "8081:8081"
     networks:
       - "gaia-x"
+    extra_hosts:
+      - "key-server:host-gateway"
+      - "localhost:127.0.0.1"
     restart: unless-stopped
 
   portal:
     container_name: "federated-catalogue-portal"
-    image: "${CI_REGISTRY}/fc-demo-portal:0.0.1-SNAPSHOT"
+    image: "${CI_REGISTRY}/demo-portal:0.0.1-SNAPSHOT"
+    environment:
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FC_CLIENT_OIDC_CLIENT_SECRET: "${FC_CLIENT_SECRET}"
     ports:
       - "8088:8088"
     networks:
       - "gaia-x"
+    extra_hosts:
+      - "key-server:host-gateway"
+      - "localhost:host-gateway"
     restart: unless-stopped
 
 networks:
