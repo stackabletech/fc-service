@@ -10,18 +10,32 @@ import org.springframework.security.oauth2.jwt.Jwt;
 @Slf4j
 public class SessionUtils {
   /**
-   * Public static method to get the Participant ID from the active user session.
+   * Public static method to get Participant ID from the active user session.
    *
    * @return Returns either the Participant ID or null if the user session doesn't contain Participant ID attribute.
    */
   public static String getSessionParticipantId() {
+    String participantId = null;
     Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     if (principal instanceof Jwt) {
-      String participantId = ((Jwt) principal).getClaim("participant_id");
-      log.debug("getSessionParticipantId.exit; got participant id = {} from principal information: {}", participantId,
-          principal);
-      return participantId;
+      participantId = ((Jwt) principal).getClaim("participant_id");
     }
-    return null;
+    log.debug("getSessionParticipantId.exit; got participant id {} from principal: {}", participantId, principal);
+    return participantId;
+  }
+
+  /**
+   * Public static method to get User ID from the active user session.
+   * 
+   * @return
+   */
+  public static String getSessionUserId() {
+    String userId = null;
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    if (principal instanceof Jwt) {
+      userId = ((Jwt) principal).getSubject();
+    }
+    log.debug("getSessionUserId.exit; got user id {} from principal: {}", userId, principal);
+    return userId;
   }
 }

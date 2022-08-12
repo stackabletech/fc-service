@@ -42,12 +42,12 @@ keycloak:
   realm: gaia-x
   resource: admin-cli
   credentials:
-    secret: mLUXF9VoPi7sZc1DcONWdMSFYH7JdCXT
+    secret: yP4Eka2ByUM8zVEsZeebujZ92YDO1UiO
 
 logging:
   level:
     root: INFO
-    eu.gaiax.difs.fc.server: DEBUG
+    eu.gaiax.difs.fc: DEBUG
     org.springframework.web: DEBUG
     org.springframework.security: DEBUG
     org.springframework.web.client.RestTemplate: DEBUG

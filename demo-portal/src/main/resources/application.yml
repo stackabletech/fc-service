@@ -15,7 +15,7 @@ spring:
           fc-client-oidc:
             provider: keycloak
             client-id: federated-catalogue 
-            client-secret: sAQFwN0ImAcx5LjAMJe2402TsQCpShuf
+            client-secret: vZo1equicRl1UdxJDWCNNJWe6vJcm2Cg
             authorization-grant-type: authorization_code
 #            redirect-uri: "http://127.0.0.1:8080/login/oauth2/code/{registrationId}"
 #            scope: openid

@@ -47,6 +47,9 @@ services:
   portal:
     container_name: "federated-catalogue-portal"
     image: "${CI_REGISTRY}/demo-portal:0.0.1-SNAPSHOT"
+#    build:
+#      context: ../demo-portal
+#      dockerfile: Dockerfile
     environment:
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FC_CLIENT_OIDC_CLIENT_SECRET: "${FC_CLIENT_SECRET}"
     ports:
