@@ -56,6 +56,9 @@ public class SecurityConfig {
           // Query APIs
           .antMatchers("/query").permitAll()
 
+          // Verification APIs
+          .antMatchers("/verifications/*").permitAll()
+          
           // Self-Description APIs
           .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()
           .antMatchers(HttpMethod.GET, "/self-descriptions/{self_description_hash}")
@@ -70,7 +73,6 @@ public class SecurityConfig {
           // Participants API
           .antMatchers(HttpMethod.POST, "/participants").hasRole("Ro-MU-CA")
           .antMatchers(HttpMethod.GET, "/participants").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-PA-A")
-          //.antMatchers(HttpMethod.GET, "/participants").hasAuthority("SCOPE_gaia-x")
           .antMatchers("/participants/*").hasAnyRole("Ro-MU-CA", "Ro-MU-A")
           .antMatchers(HttpMethod.GET, "/participants/*/users").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
 
@@ -80,9 +82,9 @@ public class SecurityConfig {
           // Roles APIs
           .antMatchers("/roles").authenticated()
 
-          // Verification APIs
-          .antMatchers("/verifications/*").permitAll()
-
+          // Session APIs
+          .antMatchers("/session").authenticated()
+          
           .anyRequest().authenticated()
         )
         .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
