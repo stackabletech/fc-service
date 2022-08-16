@@ -1,13 +1,10 @@
 package eu.gaiax.difs.fc.demo.controller;
 
-import eu.gaiax.difs.fc.api.generated.model.User;
-import eu.gaiax.difs.fc.api.generated.model.UserProfile;
-import eu.gaiax.difs.fc.demo.proxy.RequestCall;
 import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,7 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.reactive.function.client.WebClient;
+
+import eu.gaiax.difs.fc.api.generated.model.User;
+import eu.gaiax.difs.fc.api.generated.model.UserProfile;
+import eu.gaiax.difs.fc.client.UserClient;
 
 /**
  * Users API Controller.
@@ -25,9 +25,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 @RestController
 @RequestMapping("users")
 public class UsersController {
+
   @Autowired
-  @Qualifier("fcServer")
-  private WebClient fcServer;
+  private UserClient userClient;
 
   /**
    * POST /users : Register a new user to the associated participant in the catalogue.
@@ -40,8 +40,8 @@ public class UsersController {
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
   @PostMapping
-  public ResponseEntity<UserProfile> addUser(HttpServletRequest request, @RequestBody(required = false) User user) {
-    return RequestCall.doPost(fcServer, request, user);
+  public UserProfile addUser(@RequestBody(required = false) User user) {
+    return userClient.addUser(user);
   }
 
   /**
@@ -56,9 +56,9 @@ public class UsersController {
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
   @PutMapping("/{userId}")
-  public ResponseEntity<UserProfile> updateUser(HttpServletRequest request, @PathVariable("userId") String id,
+  public UserProfile updateUser(@PathVariable("userId") String id,
                                                 @RequestBody(required = false) User user) {
-    return RequestCall.doPut(fcServer, request, user);
+    return userClient.updateUser(id, user);
   }
 
   /**
@@ -73,8 +73,8 @@ public class UsersController {
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
   @DeleteMapping("/{userId}")
-  public ResponseEntity<UserProfile> deleteUser(HttpServletRequest request, @PathVariable("userId") String id) {
-    return RequestCall.doDelete(fcServer, request);
+  public UserProfile deleteUser(@PathVariable("userId") String id) {
+    return userClient.deleteUser(id);
   }
 
   /**
@@ -88,8 +88,8 @@ public class UsersController {
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
   @GetMapping("/{userId}")
-  public ResponseEntity<UserProfile> getUser(HttpServletRequest request, @PathVariable("userId") String userId) {
-    return RequestCall.doGet(fcServer, request);
+  public UserProfile getUser(HttpServletRequest request, @PathVariable("userId") String userId) {
+    return userClient.getUser(userId);
   }
 
   /**
@@ -104,13 +104,10 @@ public class UsersController {
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
   @GetMapping
-  public ResponseEntity<List<UserProfile>> getUsers(
-      HttpServletRequest request,
+  public List<UserProfile> getUsers(
       @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset,
-      @RequestParam(value = "limit", required = false, defaultValue = "100") Integer limit,
-      @RequestParam(value = "orderBy", required = false) String orderBy,
-      @RequestParam(value = "ascending", required = false, defaultValue = "true") Boolean ascending) {
-    return RequestCall.doGet(fcServer, request);
+      @RequestParam(value = "limit", required = false, defaultValue = "100") Integer limit) {
+    return userClient.getUsers(offset, limit);
   }
 
   /**
@@ -124,8 +121,8 @@ public class UsersController {
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
   @GetMapping("/{userId}/roles")
-  public ResponseEntity<List<String>> getUserRoles(HttpServletRequest request, @PathVariable("userId") String id) {
-    return RequestCall.doGet(fcServer, request);
+  public List<String> getUserRoles(HttpServletRequest request, @PathVariable("userId") String id) {
+    return userClient.getUserRoles(id);
   }
 
   /**
@@ -140,8 +137,8 @@ public class UsersController {
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
   @PutMapping("/{userId}/roles")
-  public ResponseEntity<List<String>> updateUserRoles(HttpServletRequest request, @PathVariable("userId") String id,
+  public List<String> updateUserRoles(HttpServletRequest request, @PathVariable("userId") String id,
                                                       @RequestBody(required = false) List<String> roles) {
-    return RequestCall.doPut(fcServer, request, roles);
+    return userClient.updateUserRoles(id, roles);
   }
 }
