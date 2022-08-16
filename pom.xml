@@ -78,6 +78,11 @@
             </dependency>
             <dependency>
                 <groupId>eu.gaiax.difs.fc</groupId>
+                <artifactId>fc-service-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>eu.gaiax.difs.fc</groupId>
                 <artifactId>fc-service-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -94,6 +99,11 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-security</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-oauth2-client</artifactId>
                 <version>${spring-boot.version}</version>
             </dependency>
             <dependency>
