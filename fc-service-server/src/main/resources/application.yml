@@ -33,16 +33,12 @@ springdoc:
     path: /api/docs
     enabled: true
 
-federated-catalogue:
-  security:
-    resource-id: federated-catalogue
-
 keycloak:
   auth-server-url: http://key-server:8080
   realm: gaia-x
-  resource: admin-cli
+  resource: federated-catalogue
   credentials:
-    secret: yP4Eka2ByUM8zVEsZeebujZ92YDO1UiO
+    secret: vZo1equicRl1UdxJDWCNNJWe6vJcm2Cg
 
 logging:
   level:
