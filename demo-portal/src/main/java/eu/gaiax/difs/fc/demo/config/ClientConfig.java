@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.json.Jackson2JsonDecoder;
+import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
@@ -21,6 +23,11 @@ import org.springframework.security.oauth2.client.web.reactive.function.client.S
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction;
 import org.springframework.security.oauth2.client.web.server.ServerOAuth2AuthorizedClientRepository;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 /**
  * Defines additional configuration fot the web demo-application.
@@ -56,12 +63,25 @@ public class ClientConfig {
   @Bean(name = "fcServer")
   public WebClient webClient(OAuth2AuthorizedClientManager authorizedClientManager,
           @Value("${federated-catalogue.base-uri}") final String fcUri) {
+      
+      ObjectMapper mapper = new ObjectMapper()
+              //.findAndRegisterModules()   // 
+              .registerModule(new ParameterNamesModule())
+              .registerModule(new JavaTimeModule())
+              .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+      
       ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2Client = new ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
       oauth2Client.setDefaultOAuth2AuthorizedClient(true);
       //oauth2Client.setDefaultClientRegistrationId("fc-client-oidc");
+
       return WebClient.builder()
         .apply(oauth2Client.oauth2Configuration())
         .baseUrl(fcUri)
+        .codecs(configurer -> {
+            configurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(mapper, MediaType.APPLICATION_JSON));
+            configurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(mapper, MediaType.APPLICATION_JSON));
+        })
+        .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
         .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
         .build();
   }

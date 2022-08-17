@@ -19,7 +19,7 @@ public class RoleClient extends ServiceClient {
         if (limit == 0) {
             limit = 50;
         }
-        return doGet(baseUrl + "/roles?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit));
+        return doGet(baseUrl + "/roles?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit), List.class);
     }
     
 }
