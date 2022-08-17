@@ -17,11 +17,11 @@ public class SessionClient extends ServiceClient {
     }
     
     public Session getCurrentSession() {
-        return doGet(baseUrl + "/session", Map.of());
+        return doGet(baseUrl + "/session", Map.of(), Session.class);
     }
 
     public void deleteCurrentSession() {
-        doDelete(baseUrl + "/session", Map.of());
+        doDelete(baseUrl + "/session", Map.of(), Void.class);
     }
 
 }

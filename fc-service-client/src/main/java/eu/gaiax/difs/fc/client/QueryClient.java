@@ -18,7 +18,7 @@ public class QueryClient extends ServiceClient {
     }
     
     public Result query(Statement statement) {
-        return doPost(baseUrl + "/query", statement, Map.of());
+        return doPost(baseUrl + "/query", statement, Map.of(), Result.class);
     }
 
 }

@@ -19,34 +19,34 @@ public class UserClient extends ServiceClient {
     }
     
     public UserProfile getUser(String userId) {
-        return doGet(baseUrl + "/users/{userId}", Map.of("userId", userId));
+        return doGet(baseUrl + "/users/{userId}", Map.of("userId", userId), UserProfile.class);
     }
     
     public List<UserProfile> getUsers(int offset, int limit) {
         if (limit == 0) {
             limit = 50;
         }
-        return doGet(baseUrl + "/users?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit));
+        return doGet(baseUrl + "/users?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit), List.class);
     }
 
     public List<String> getUserRoles(String userId) {
-        return doGet(baseUrl + "/users/{userId}/roles", Map.of("userId", userId));
+        return doGet(baseUrl + "/users/{userId}/roles", Map.of("userId", userId), List.class);
     }
     
     public UserProfile addUser(User user) {
-        return doPost(baseUrl + "/users", user, Map.of());
+        return doPost(baseUrl + "/users", user, Map.of(), UserProfile.class);
     }
     
     public UserProfile deleteUser(String userId) {
-        return doDelete(baseUrl + "/users/{userId}", Map.of("userId", userId));
+        return doDelete(baseUrl + "/users/{userId}", Map.of("userId", userId), UserProfile.class);
     }
 
     public UserProfile updateUser(String userId, User user) {
-        return doPut(baseUrl + "/users/{userId}", user, Map.of("userId", userId));
+        return doPut(baseUrl + "/users/{userId}", user, Map.of("userId", userId), UserProfile.class);
     }
     
     public List<String> updateUserRoles(String userId, List<String> roles) {
-        return doPut(baseUrl + "/users/{userId}/roles", roles, Map.of("userId", userId));
+        return doPut(baseUrl + "/users/{userId}/roles", roles, Map.of("userId", userId), List.class);
     }
     
 }
