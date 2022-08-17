@@ -15,8 +15,8 @@ import org.springframework.context.annotation.Configuration;
 public class KeycloakConfig {
   @Value("${keycloak.auth-server-url}")
   private String serverUrl;
-  //@Value("${keycloak.realm}")
-  private String realm = "master";
+  @Value("${keycloak.realm}")
+  private String realm;
   @Value("${keycloak.resource}")
   private String clientId;
   @Value("${keycloak.credentials.secret}")

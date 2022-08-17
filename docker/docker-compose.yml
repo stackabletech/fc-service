@@ -29,12 +29,12 @@ services:
 
   server:
     container_name: "federated-catalogue-server"
-    image: "${CI_REGISTRY}/fc-service-server:0.0.1-SNAPSHOT"
-#    build:
-#      context: ../fc-service-server
-#      dockerfile: Dockerfile
+#    image: "${CI_REGISTRY}/fc-service-server:0.0.1-SNAPSHOT"
+    build:
+      context: ../fc-service-server
+      dockerfile: Dockerfile
     environment:
-      KEYCLOAK_CREDENTIALS_SECRET: "${KEYCLOAK_ADMIN_CLI_SECRET}"
+      KEYCLOAK_CREDENTIALS_SECRET: "${FC_CLIENT_SECRET}"
     ports:
       - "8081:8081"
     networks:
@@ -46,10 +46,10 @@ services:
 
   portal:
     container_name: "federated-catalogue-portal"
-    image: "${CI_REGISTRY}/demo-portal:0.0.1-SNAPSHOT"
-#    build:
-#      context: ../demo-portal
-#      dockerfile: Dockerfile
+#    image: "${CI_REGISTRY}/demo-portal:0.0.1-SNAPSHOT"
+    build:
+      context: ../demo-portal
+      dockerfile: Dockerfile
     environment:
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FC_CLIENT_OIDC_CLIENT_SECRET: "${FC_CLIENT_SECRET}"
     ports:
