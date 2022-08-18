@@ -1,7 +1,6 @@
 package eu.gaiax.difs.fc.core.service.graphdb;
 
 import eu.gaiax.difs.fc.core.pojo.GraphQuery;
-import eu.gaiax.difs.fc.core.pojo.SdClaim;
 
 import java.util.List;
 import java.util.Map;
