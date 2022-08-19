@@ -2,11 +2,12 @@ package eu.gaiax.difs.fc.server;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 
 /**
  * The Application class.
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = HibernateJpaAutoConfiguration.class) // HibernateJpaAutoConfiguration breaks the Participant API implementation
 public class CatalogueServerApplication {
   /**
    * The main Method.
