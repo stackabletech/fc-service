@@ -1,28 +1,19 @@
 package eu.gaiax.difs.fc.core.service.graphdb;
 
-import apoc.ApocConfig;
+
 import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
-import eu.gaiax.difs.fc.core.service.graphdb.impl.GraphConnect;
-import org.apache.jena.sparql.pfunction.library.container;
+import eu.gaiax.difs.fc.core.service.graphdb.impl.SDStoreImplement;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.*;
 import org.junit.runners.MethodSorters;
-import org.neo4j.driver.AuthTokens;
-import org.neo4j.driver.GraphDatabase;
-import org.neo4j.graphdb.factory.GraphDatabaseSettings;
-import org.neo4j.harness.ServerControls;
-import org.neo4j.harness.TestServerBuilders;
-import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.containers.Neo4jContainer;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,37 +24,33 @@ import java.util.Map;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class GraphTest {
 
-    GraphConnect graphGaia;
+    SDStoreImplement graphGaia;
 
-    private static Neo4j neo4j;
-    private static Driver driver;
+    @Container
+    final static Neo4jContainer<?> container = new Neo4jContainer<>("neo4j:4.4.5")
+            .withNeo4jConfig("dbms.security.procedures.unrestricted", "apoc.*,n10s.*")
+            .withEnv("NEO4JLABS_PLUGINS", "[\"apoc\",\"n10s\"]")
+            .withEnv("NEO4J_dbms_security_procedures_unrestricted", "apoc.*")
+            .withEnv("apoc.import.file.enabled", "true")
+            .withEnv("apoc.import.file.use_neo4j_config", "false")
+            .withAdminPassword("12345");
 
     @BeforeAll
-    static void initializeNeo4j() {
-        // Make sure that the plugins folder is listed in -cp
-        Path pluginDirContainingApocJar = Paths.get("src/main/resources/neo4j-plugins/");
+    void setupContainer() {
+        container.start();
+        String url = container.getBoltUrl();
+        String testurl = container.getHttpUrl();
+        String user = "neo4j";
+        String password = "12345";
+        graphGaia = new SDStoreImplement(url, user, password);
 
-        if (!Files.exists(pluginDirContainingApocJar)) {
-            throw new IllegalArgumentException("Invalid path to plugins directory");
-        }
 
-        neo4j = Neo4jBuilders
-                .newInProcessBuilder()
-                .withDisabledServer()
-                .withFixture("CREATE (p1:Person)-[:knows]->(p2:Person)-[:knows]->(p3:Person)")
-                .withConfig(GraphDatabaseSettings.plugin_dir, pluginDirContainingApocJar)
-                .withConfig(GraphDatabaseSettings.procedure_unrestricted, List.of("apoc.*"))
-                .build();
-        driver = GraphDatabase.driver(neo4j.boltURI(), AuthTokens.none());
-        graphGaia = new GraphConnect(url, user, password);
     }
 
     @AfterAll
-    static void stopNeo4j() {
-        driver.close();
-        neo4j.close();
+    void stopContainer() {
+        container.stop();
     }
-
 
 
     @Test
@@ -76,9 +63,9 @@ public class GraphTest {
         String url = container.getBoltUrl();
         String user = "neo4j";
         String password = "12345";
-        //GraphConnect graphGaia = new GraphConnect(url,user,password);
+        //SDStoreImplement graphGaia = new SDStoreImplement(url,user,password);
         try {
-            //graphGaia = new GraphConnect(url,user,password);
+            //graphGaia = new SDStoreImplement(url,user,password);
             File rootDirectory = new File("./");
             String rootDirectoryPath = rootDirectory.getCanonicalPath();
             String path = "/src/test/resources/Databases/neo4j/data/Triples/testData2.nt";
