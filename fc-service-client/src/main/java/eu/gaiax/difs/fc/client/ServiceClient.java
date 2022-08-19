@@ -77,6 +77,14 @@ public abstract class ServiceClient {
             .block();
     }
 
+    protected <T> T doPost(String path, Map<String, Object> params, Class<T> reType) {
+        return client
+            .post()
+            .uri(path, builder -> builder.build(params))
+            .retrieve()
+            .bodyToMono(reType)
+            .block();
+    }
     protected <T> T doPost(String path, Object body, Map<String, Object> params, Class<T> reType, OAuth2AuthorizedClient authorizedClient) {
         return client
             .post()

@@ -83,7 +83,7 @@ public class SecurityConfig {
           .antMatchers("/roles").authenticated()
 
           // Session APIs
-          .antMatchers("/session").authenticated()
+          .antMatchers("/session" ,"/session/**").authenticated()
           
           .anyRequest().authenticated()
         )

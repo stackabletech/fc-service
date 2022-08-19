@@ -125,7 +125,7 @@ public class ParticipantsController {
   @PutMapping("/{participantId}")
   public Participant updateParticipant(
           @RegisteredOAuth2AuthorizedClient("fc-client-oidc") OAuth2AuthorizedClient authorizedClient,
-          @PathVariable("id") String id,
+          @PathVariable("participantId") String id,
           @RequestBody String body) {
       return partClient.updateParticipant(id, body, authorizedClient);
   }

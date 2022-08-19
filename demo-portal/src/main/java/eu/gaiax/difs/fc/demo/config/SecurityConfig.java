@@ -20,6 +20,7 @@ public class SecurityConfig {
           .csrf()
           .disable()
           .authorizeRequests()
+          .antMatchers("/","/index.html","/css/styles.css","/js/scripts.js").permitAll()
           .anyRequest()
           .authenticated()
           .and()
