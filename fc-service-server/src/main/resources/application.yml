@@ -23,6 +23,8 @@ spring:
         jwt:
           issuer-uri: http://key-server:8080/realms/gaia-x
 #          jwk-set-uri: http://key-server:8080/realms/gaia-x/protocol/openid-connect/certs
+  liquibase:
+    change-log: classpath:/liquibase/master-changelog.xml
 
 openapi:
   gaiaXCatalogue:
@@ -39,6 +41,17 @@ keycloak:
   resource: federated-catalogue
   credentials:
     secret: vZo1equicRl1UdxJDWCNNJWe6vJcm2Cg
+
+datastore:
+  database-driver: org.h2.Driver
+  database-url: jdbc:h2:mem:testdb;SCHEMA=PUBLIC;DB_CLOSE_DELAY=-1
+  database-username: example
+  database-password: example
+  file-path: target
+#  database-driver: org.postgresql.Driver
+#  database-url: jdbc:postgresql://localhost:5432/catalog
+#  database-username: gaiax
+#  database-password: gaiax
 
 logging:
   level:
