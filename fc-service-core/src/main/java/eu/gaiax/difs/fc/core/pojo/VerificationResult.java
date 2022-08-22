@@ -50,5 +50,4 @@ public class VerificationResult extends eu.gaiax.difs.fc.api.generated.model.Ver
   public void setClaims(List<SdClaim> claims) {
     this.claims = claims;
   }
-
 }
