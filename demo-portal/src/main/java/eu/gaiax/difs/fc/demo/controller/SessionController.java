@@ -3,6 +3,7 @@ package eu.gaiax.difs.fc.demo.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,6 +25,10 @@ public class SessionController {
   @DeleteMapping
   public void dropSession() { //@RegisteredOAuth2AuthorizedClient("fc-client-oidc") OAuth2AuthorizedClient authorizedClient) {
       ssnClient.deleteCurrentSession();
+  }
+
+  @PostMapping
+  public void logoutSession() { ssnClient.logoutCurrentSession();
   }
 
 }
