@@ -4,9 +4,11 @@ import static eu.gaiax.difs.fc.server.util.SessionUtils.getSessionParticipantId;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription.StatusEnum;
+import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
 import eu.gaiax.difs.fc.core.dao.SelfDescriptionDao;
 import eu.gaiax.difs.fc.core.exception.ClientException;
-import eu.gaiax.difs.fc.core.service.validation.ValidationService;
+import eu.gaiax.difs.fc.core.service.sdstore.impl.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate;
 import java.util.List;
 import java.util.Objects;
@@ -26,7 +28,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   @Autowired
-  private ValidationService validationService;
+  private VerificationService verificationService;
 
   @Autowired
   private SelfDescriptionDao sdDao;
@@ -146,8 +148,8 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
 
     try {
       // TODO: 27.07.2022 Need to change the description and the order of actions in the documentation
-
-      SelfDescription sdMetadata = validationService.validateSelfDescription(selfDescription);
+      VerificationResult result = verificationService.verifySelfDescription(new ContentAccessorDirect(selfDescription));
+      SelfDescription sdMetadata = new SelfDescription();
       checkParticipantAccess(sdMetadata.getIssuer());
       sdDao.storeSelfDescription(sdMetadata);
 

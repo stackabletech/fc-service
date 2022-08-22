@@ -2,7 +2,7 @@ package eu.gaiax.difs.fc.server.service;
 
 import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
 import eu.gaiax.difs.fc.core.exception.ServerException;
-import eu.gaiax.difs.fc.core.service.validation.ValidationService;
+import eu.gaiax.difs.fc.core.service.sdstore.impl.ContentAccessorDirect;
 import eu.gaiax.difs.fc.server.generated.controller.VerificationApiDelegate;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,7 +26,7 @@ public class VerificationService implements VerificationApiDelegate {
   // TODO: 18.07.2022 Need to replace mocked Data with business logic
 
   @Autowired
-  private ValidationService validationService;
+  private eu.gaiax.difs.fc.core.service.verification.VerificationService verificationService;
 
   @Autowired
   private ResourceLoader resourceLoader;
@@ -47,7 +47,7 @@ public class VerificationService implements VerificationApiDelegate {
   @Override
   public ResponseEntity<VerificationResult> verify(String selfDescription) {
     log.debug("verify.enter; got self-description: {}", selfDescription);
-    VerificationResult verificationResult = validationService.verifySelfDescription(selfDescription);
+    VerificationResult verificationResult = verificationService.verifySelfDescription(new ContentAccessorDirect(selfDescription));
     log.debug("verify.exit; returning result {} ", verificationResult);
     return new ResponseEntity<>(verificationResult, HttpStatus.OK);
 
