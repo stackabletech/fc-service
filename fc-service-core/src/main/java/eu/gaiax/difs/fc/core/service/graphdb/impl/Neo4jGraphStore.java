@@ -1,6 +1,7 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -116,16 +117,24 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
      * {@inheritDoc}
      */
     @Override
-    public List<Map<String, Object>> queryData(GraphQuery sdQuery) {
+    public List<Map<String, String>> queryData(GraphQuery sdQuery) {
 
         try (Session session = driver.session(); Transaction tx = session.beginTransaction()) {
-            List<Map<String, Object>> resultList = new ArrayList<>();
+            List<Map<String, String>> resultList = new ArrayList<>();
             log.debug("Beginning transaction");
             Result result = tx.run(sdQuery.getQuery());
             while (result.hasNext()) {
                 org.neo4j.driver.Record record = result.next();
                 Map<String, Object> map = record.asMap();
-                resultList.add(map);
+                Map<String,String>  outputMap= new HashMap<String,String>();
+                for (var entry : map.entrySet()) {
+                    if( entry.getValue() instanceof String ) {
+                        outputMap.put(entry.getKey(), entry.getValue().toString());
+                    } else if (entry.getValue() == null) {
+                        outputMap.put(entry.getKey(), null);
+                    }
+                }
+                resultList.add(outputMap);
             }
             log.debug("Query executed successfully ");
             return resultList;

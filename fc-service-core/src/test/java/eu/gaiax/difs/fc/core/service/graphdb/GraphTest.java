@@ -34,6 +34,7 @@ public class GraphTest {
 			.withEnv("NEO4JLABS_PLUGINS", "[\"apoc\",\"n10s\", \"graph-data-science\"]")
 			.withEnv("NEO4J_dbms_security_procedures_unrestricted", "apoc.*,gds.*,graph-data-science.*")
 			.withEnv("apoc.import.file.enabled", "true")
+			.withEnv("dbms.connector.bolt.listen_address",":7687")
 			.withEnv("apoc.import.file.use_neo4j_config", "false")
 			.withAdminPassword("12345")
 			.withStartupTimeout(Duration.ofMinutes(5));
@@ -41,26 +42,10 @@ public class GraphTest {
 	@BeforeAll
 	void setupContainer() throws Exception {
 		container.start();
-		Properties prop = new Properties();
-		Resource resource = new ClassPathResource("/graphdb.properties");
-		try (InputStream is = resource.getInputStream()) {
-			prop.load(is);
-			System.out.println(prop.getProperty("uri"));
-			prop.setProperty("uri",container.getBoltUrl());
-			System.out.println(prop.getProperty("uri"));
-			FileOutputStream out = new FileOutputStream(resource.getFile());
-			prop.store(out, null);
-			out.close();
-
-		}
 		GraphDbConfig graphDbConfig = new GraphDbConfig();
 		graphDbConfig.setUri(container.getBoltUrl());
 		graphDbConfig.setUser("neo4j");
 		graphDbConfig.setPassword("12345");
-		String url = container.getBoltUrl();
-		String testurl = container.getHttpUrl();
-		String user = "neo4j";
-		String password = "12345";
 		graphGaia = new Neo4jGraphStore(graphDbConfig);
 
 	}
@@ -114,14 +99,14 @@ public class GraphTest {
 		List<SdClaim> sdClaimList = loadTestClaims();
 		Assertions.assertEquals("SUCCESS", graphGaia.uploadSelfDescription(sdClaimList));
 
-		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
-		Map<String, Object> map = new HashMap<String, Object>();
+		List<Map<String, String>> resultList = new ArrayList<Map<String, String>>();
+		Map<String, String> map = new HashMap<String, String>();
 		map.put("n.ns0__country", null);
 		map.put("n.ns0__legalName", "CompanyWebServicesEMEASARL");
 		resultList.add(map);
 		GraphQuery query = new GraphQuery(
 				"match(n{ns0__legalName: 'CompanyWebServicesEMEASARL'}) return n.ns0__country, n.ns0__legalName;");
-		List<Map<String, Object>> response = graphGaia.queryData(query);
+		List<Map<String, String>> response = graphGaia.queryData(query);
 		Assertions.assertEquals(resultList, response);
 
 	}

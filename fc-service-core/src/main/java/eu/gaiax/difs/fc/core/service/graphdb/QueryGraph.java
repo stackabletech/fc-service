@@ -15,7 +15,7 @@ public interface QueryGraph {
      * @param sdQuery Query to execute
      * @return List of Maps
      */
-    public List<Map<String, Object>> queryData(GraphQuery sdQuery);
+    public List<Map<String, String>> queryData(GraphQuery sdQuery);
 
 
 }
