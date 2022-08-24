@@ -12,6 +12,8 @@ import java.util.List;
  */
 public interface SelfDescriptionStore {
 
+  String STORE_NAME = "sdFiles";
+    
   /**
    * Get all self descriptions, starting from the given offset, up to limit
    * number of items, consistently ordered.

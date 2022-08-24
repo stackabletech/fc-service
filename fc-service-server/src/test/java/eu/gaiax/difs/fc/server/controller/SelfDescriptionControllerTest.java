@@ -1,6 +1,10 @@
 package eu.gaiax.difs.fc.server.controller;
 
 import com.c4_soft.springaddons.security.oauth2.test.annotations.*;
+
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
+
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ExtendWith(SpringExtension.class)
+@AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 public class SelfDescriptionControllerTest {
     // TODO: 14.07.2022 After adding business logic, need to fix/add tests, taking into account exceptions
     @Autowired
