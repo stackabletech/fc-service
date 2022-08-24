@@ -12,7 +12,7 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
-import eu.gaiax.difs.fc.core.service.sdstore.impl.ContentAccessorFile;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import static eu.gaiax.difs.fc.core.util.HashUtils.HASH_PATTERN;
 import java.io.FileNotFoundException;
