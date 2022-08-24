@@ -50,13 +50,13 @@ public class SdMetaRecord implements Serializable {
   /**
    * The time stamp (ISO8601) when the SD was uploaded.
    */
-  @Column(name = "upload_time", nullable = false)
+  @Column(name = "uploadtime", nullable = false)
   private Instant uploadTime;
 
   /**
    * The last time stamp (ISO8601) the status changed (for this Catalogue).
    */
-  @Column(name = "status_time", nullable = false)
+  @Column(name = "statustime", nullable = false)
   private Instant statusTime;
 
   /**
