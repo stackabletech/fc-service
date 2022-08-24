@@ -30,7 +30,8 @@ public class DatabaseConfig {
     LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
     sessionFactory.setDataSource(dataSource);
     sessionFactory.setPackagesToScan(
-            "eu.gaiax.difs.fc.core.service.sdstore.impl"
+            "eu.gaiax.difs.fc.core.service.sdstore.impl",
+            "eu.gaiax.difs.fc.core.service.schemaManagement.impl"
     );
     sessionFactory.setHibernateProperties(hibernateProperties());
     return sessionFactory;

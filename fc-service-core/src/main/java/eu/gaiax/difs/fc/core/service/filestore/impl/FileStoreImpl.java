@@ -55,8 +55,16 @@ public class FileStoreImpl {
   }
 
   public void storeFile(String storeName, String hash, ContentAccessor content) throws IOException {
+    saveFile(storeName, hash, content, false);
+  }
+
+  public void replaceFile(String storeName, String hash, ContentAccessor content) throws IOException {
+    saveFile(storeName, hash, content, true);
+  }
+
+  private void saveFile(String storeName, String hash, ContentAccessor content, boolean overwrite) throws IOException {
     File file = getFileForStoreHash(storeName, validateFileName(hash));
-    if (file.exists()) {
+    if (file.exists() && !overwrite) {
       throw new FileExistsException("A file for the hash " + hash + " already exists.");
     }
     try ( FileOutputStream os = FileUtils.openOutputStream(file)) {
