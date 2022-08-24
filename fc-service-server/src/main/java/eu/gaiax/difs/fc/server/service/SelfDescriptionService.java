@@ -7,6 +7,7 @@ import eu.gaiax.difs.fc.api.generated.model.SelfDescription.StatusEnum;
 import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
 import eu.gaiax.difs.fc.core.dao.SelfDescriptionDao;
 import eu.gaiax.difs.fc.core.exception.ClientException;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate;
 import java.util.List;

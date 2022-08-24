@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.server.service;
 
 import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
 import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.server.generated.controller.VerificationApiDelegate;
 import java.io.IOException;
 import java.io.InputStreamReader;
