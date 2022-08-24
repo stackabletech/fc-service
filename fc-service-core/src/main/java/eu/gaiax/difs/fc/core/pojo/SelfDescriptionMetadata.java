@@ -1,11 +1,14 @@
 package eu.gaiax.difs.fc.core.pojo;
 
+import static eu.gaiax.difs.fc.core.util.HashUtils.calculateSha256AsHex;
+import static java.time.OffsetDateTime.now;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 
 /**
  * Class for handling the metadata of a Self-Description, and optionally a
  * reference to a content accessor.
- *
  */
 @lombok.AllArgsConstructor
 @lombok.NoArgsConstructor
@@ -20,4 +23,8 @@ public class SelfDescriptionMetadata extends eu.gaiax.difs.fc.api.generated.mode
   @JsonIgnore
   private ContentAccessor selfDescription;
 
+  public SelfDescriptionMetadata(ContentAccessorDirect contentAccessor, String id, String issuer, List<String> validators) {
+    super(calculateSha256AsHex(contentAccessor.getContentAsString()), id, StatusEnum.ACTIVE, issuer, validators, now(), now());
+    this.selfDescription = contentAccessor;
+  }
 }
