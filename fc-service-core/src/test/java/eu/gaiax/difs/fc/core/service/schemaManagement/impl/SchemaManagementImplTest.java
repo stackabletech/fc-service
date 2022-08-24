@@ -7,6 +7,8 @@ import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.core.service.schemaManagement.SchemaStore.SchemaType;
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImplTest;
 import eu.gaiax.difs.fc.core.util.HashUtils;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 @DirtiesContext
 @Transactional
 @Slf4j
+@AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 public class SchemaManagementImplTest {
 
   @Autowired
