@@ -1,11 +1,10 @@
-package eu.gaiax.difs.fc.core.service.sdstore.impl;
+package eu.gaiax.difs.fc.core.pojo;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.FileUtils;
-import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import java.util.Objects;
 
 /**
