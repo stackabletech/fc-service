@@ -58,19 +58,19 @@ public class VerificationServiceImpl implements VerificationService {
     String lifecycleStatus = "";
     String participantID = "";
     LocalDate issuedDate = null;
-    List<Signature> signatures = null;
-    List<SdClaim> claims = null;
+    List<Signature> signatures = new ArrayList<>();
+    List<SdClaim> claims = new ArrayList<>();
 
     //Verify Syntax and parse json
     Map<String, Object> parsedSD = parseSD(payload);
 
     //TODO: Verify Cryptographic FIT-WI
     participantID = getParticipantIDFromSD(parsedSD);
-    signatures = validateCryptographic(parsedSD);
+//    signatures = validateCryptographic(parsedSD);
 
     //TODO: Check if API-User is allowed to submit the self-description FIT-WI
 
-    parsedSD = cleanSD(parsedSD);
+//    parsedSD = cleanSD(parsedSD);
 
     //TODO: Verify Schema FIT-DSAI
 
