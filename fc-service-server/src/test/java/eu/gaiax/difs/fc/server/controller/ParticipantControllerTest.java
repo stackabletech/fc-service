@@ -47,10 +47,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.gaiax.difs.fc.api.generated.model.Participant;
 import eu.gaiax.difs.fc.core.dao.impl.ParticipantDaoImpl;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ExtendWith(SpringExtension.class)
+@AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 public class ParticipantControllerTest {
 
     private static final TypeReference<List<?>> LIST_TYPE_REF = new TypeReference<List<?>>() {

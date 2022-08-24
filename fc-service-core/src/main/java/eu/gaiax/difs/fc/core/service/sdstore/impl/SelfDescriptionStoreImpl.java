@@ -29,8 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
-  public static final String STORE_NAME = "sdFiles";
-
   /**
    * The fileStore to use. TODO: figure out how to configure the implementation
    * at run time.

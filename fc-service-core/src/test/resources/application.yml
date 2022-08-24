@@ -2,25 +2,16 @@ spring:
   config:
     activate:
       on-profile: tests-sdstore
+   
   liquibase:
     change-log: classpath:/liquibase/master-changelog.xml
     contexts: test
+    
 datastore:
   file-path: target
-  database-driver: org.h2.Driver
-  database-url: jdbc:h2:mem:testdb;SCHEMA=PUBLIC;DB_CLOSE_DELAY=-1
-  database-username: example
-  database-password: example
-#  database-driver: org.postgresql.Driver
-#  database-url: jdbc:postgresql://localhost:5432/catalog
-#  database-username: gaiax
-#  database-password: gaiax
+
 logging:
   level:
     root: INFO
     liquibase: INFO
-    eu.gaiax.difs.fc.server: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.security: DEBUG
-    org.springframework.web.client.RestTemplate: DEBUG
-    org.keycloak.adapters.OAuthRequestAuthenticator: DEBUG
+    eu.gaiax.difs.fc: DEBUG
