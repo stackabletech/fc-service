@@ -43,7 +43,7 @@ public class VerificationControllerTest {
 
     @Test
     public void getVerifyPageShouldReturnSuccessResponse() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/verifications/self-descriptions")
+        mockMvc.perform(MockMvcRequestBuilders.get("/verification")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
@@ -54,7 +54,7 @@ public class VerificationControllerTest {
     @Test
     @Disabled("Test fails even though the behavior is desired")
     public void verifySDsShouldReturnSuccessResponse() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/verifications/self-descriptions")
+        mockMvc.perform(MockMvcRequestBuilders.post("/verification")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))

@@ -108,7 +108,7 @@ public class SessionControllerTest {
         setupKeycloak(HttpStatus.SC_OK, id);
         
         mockMvc
-            .perform(MockMvcRequestBuilders.post("/session/logout")
+            .perform(MockMvcRequestBuilders.delete("/session")
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
     }

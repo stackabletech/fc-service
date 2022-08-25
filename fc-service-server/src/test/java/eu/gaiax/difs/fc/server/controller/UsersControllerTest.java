@@ -41,6 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
+import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
@@ -152,9 +153,9 @@ public class UsersControllerTest {
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andReturn();
-        List<?> users = objectMapper.readValue(result.getResponse().getContentAsString(), LIST_TYPE_REF);
+        UserProfiles users = objectMapper.readValue(result.getResponse().getContentAsString(), UserProfiles.class);
         assertNotNull(users);
-        assertEquals(1, users.size());
+        assertEquals(1, users.getItems().size());
     }
     
     @Test

@@ -2,12 +2,15 @@ package eu.gaiax.difs.fc.server.controller;
 
 import com.c4_soft.springaddons.security.oauth2.test.annotations.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import java.time.OffsetDateTime;
+
+import javax.transaction.Transactional;
+
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -40,6 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ExtendWith(SpringExtension.class)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
+//@Transactional
 public class SelfDescriptionControllerTest {
     // TODO: 14.07.2022 After adding business logic, need to fix/add tests, taking into account exceptions
     private static SelfDescriptionMetadata sdMeta;
@@ -97,8 +101,8 @@ public class SelfDescriptionControllerTest {
         sdStore.storeSelfDescription(sdMeta, null);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions/" + sdMeta.getSdHash())
-                .with(csrf())
-                .accept("application/ld+json"))
+                .with(csrf()))
+                //.accept("application/ld+json"))
             .andExpect(status().isOk());
         sdStore.deleteSelfDescription(sdMeta.getSdHash());
     }
@@ -211,7 +215,7 @@ public class SelfDescriptionControllerTest {
         sdMeta.setId("test id");
         sdMeta.setIssuer("http://example.org/test-issuer");
         sdMeta.setSdHash(HashUtils.calculateSha256AsHex("test hash"));
-        sdMeta.setStatus(SelfDescription.StatusEnum.ACTIVE);
+        sdMeta.setStatus(SelfDescriptionStatus.ACTIVE);
         sdMeta.setStatusDatetime(OffsetDateTime.parse("2022-01-01T12:00:00Z"));
         sdMeta.setUploadDatetime(OffsetDateTime.parse("2022-01-02T12:00:00Z"));
         sdMeta.setSelfDescription(new ContentAccessorDirect("test content"));

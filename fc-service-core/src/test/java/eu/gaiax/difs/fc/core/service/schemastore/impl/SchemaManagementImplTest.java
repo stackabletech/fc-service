@@ -1,10 +1,11 @@
-package eu.gaiax.difs.fc.core.service.schemaManagement.impl;
+package eu.gaiax.difs.fc.core.service.schemastore.impl;
 
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
-import eu.gaiax.difs.fc.core.service.schemaManagement.SchemaStore.SchemaType;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
+import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImplTest;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;

@@ -1,4 +1,4 @@
-package eu.gaiax.difs.fc.core.service.schemaManagement.impl;
+package eu.gaiax.difs.fc.core.service.schemastore.impl;
 
 import com.google.common.base.Strings;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
@@ -8,7 +8,7 @@ import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
-import eu.gaiax.difs.fc.core.service.schemaManagement.SchemaStore;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import java.io.IOException;
 import java.time.Instant;
@@ -244,7 +244,7 @@ public class SchemaStoreImpl implements SchemaStore {
   public Map<SchemaType, List<String>> getSchemaList() {
     Session currentSession = sessionFactory.getCurrentSession();
     Map<SchemaType, List<String>> result = new HashMap<>();
-    currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemaManagement.impl.SchemaTypeIdPair(s.type, s.schemaId) from SchemaRecord s", SchemaTypeIdPair.class)
+    currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaTypeIdPair(s.type, s.schemaId) from SchemaRecord s", SchemaTypeIdPair.class)
             .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
     return result;
   }
@@ -269,7 +269,7 @@ public class SchemaStoreImpl implements SchemaStore {
   public Map<SchemaType, List<String>> getSchemasForTerm(String entity) {
     Session currentSession = sessionFactory.getCurrentSession();
     Map<SchemaType, List<String>> result = new HashMap<>();
-    currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemaManagement.impl.SchemaTypeIdPair(s.type, s.schemaId) from SchemaRecord s join s.terms as t where t.term=?1", SchemaTypeIdPair.class)
+    currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaTypeIdPair(s.type, s.schemaId) from SchemaRecord s join s.terms as t where t.term=?1", SchemaTypeIdPair.class)
             .setParameter(1, entity)
             .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
     return result;

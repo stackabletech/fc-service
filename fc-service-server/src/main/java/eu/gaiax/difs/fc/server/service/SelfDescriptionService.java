@@ -4,7 +4,8 @@ import static eu.gaiax.difs.fc.server.util.SelfDescriptionHelper.parseTimeRange;
 import static eu.gaiax.difs.fc.server.util.SessionUtils.getSessionParticipantId;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
-import eu.gaiax.difs.fc.api.generated.model.SelfDescription.StatusEnum;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptions;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
@@ -63,8 +64,8 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    *        or May contain hints how to solve the error or indicate what went wrong at the server.
    *        Must not outline any information about the internal structure of the server. (status code 500)
    */
-  public ResponseEntity<List<SelfDescription>> readSelfDescriptions(String uploadTr, String statusTr, String issuer,
-                                                                    String validator, String status, String id,
+  public ResponseEntity<SelfDescriptions> readSelfDescriptions(String uploadTr, String statusTr, String issuer,
+                                                                    String validator, SelfDescriptionStatus status, String id,
                                                                     String hash, Integer offset, Integer limit) {
     log.debug("readSelfDescriptions.enter; got uploadTimeRange: {}, statusTimeRange: {},"
             + "issuer: {}, validator: {}, status: {}, id: {}, hash: {}, offset: {}, limit: {}",
@@ -78,9 +79,8 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
       selfDescriptions = sdStore.getAllSelfDescriptions(offset, limit);
     }
     log.debug("readSelfDescriptions.exit; returning: {}", selfDescriptions.size());
-    return new ResponseEntity<>(
-        (List<SelfDescription>) (List<? extends SelfDescription>) selfDescriptions,
-        HttpStatus.OK);
+    // TODO: set total count
+    return ResponseEntity.ok(new SelfDescriptions(0, (List) selfDescriptions));
   }
 
   /**
@@ -95,12 +95,12 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<Object> readSelfDescriptionByHash(String selfDescriptionHash) {
+  public ResponseEntity<String> readSelfDescriptionByHash(String selfDescriptionHash) {
     log.debug("readSelfDescriptionByHash.enter; got hash: {}", selfDescriptionHash);
     SelfDescriptionMetadata sdMetadata = sdStore.getByHash(selfDescriptionHash);
 
     HttpHeaders responseHeaders = new HttpHeaders();
-    responseHeaders.set("Content-Type", "application/ld+json");
+    //responseHeaders.set("Content-Type", "application/ld+json");
 
     log.debug("readSelfDescriptionByHash.exit; returning self-description by hash: {}", selfDescriptionHash);
     return ResponseEntity.ok()
@@ -164,6 +164,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
       sdStore.storeSelfDescription(sdMetadata, verificationResult);
 
       log.debug("addSelfDescription.exit; returning self-description by hash: {}", sdMetadata.getSdHash());
+      // TODO: with CREATED we must properly set Location header
       return new ResponseEntity<>(sdMetadata, HttpStatus.CREATED);
     } catch (ValidationException exception) {
       log.debug("Self-description isn't parsed due to: " + exception.getMessage(), exception);
@@ -192,8 +193,8 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
 
     checkParticipantAccess(sdMetadata.getIssuer());
 
-    if (sdMetadata.getStatus().equals(StatusEnum.ACTIVE)) {
-      sdStore.changeLifeCycleStatus(sdMetadata.getSdHash(), StatusEnum.DEPRECATED);
+    if (sdMetadata.getStatus().equals(SelfDescriptionStatus.ACTIVE)) {
+      sdStore.changeLifeCycleStatus(sdMetadata.getSdHash(), SelfDescriptionStatus.DEPRECATED);
     }
 
     // TODO: 23.07.2022 Add to the interface / a new interface for working with files
@@ -222,14 +223,14 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     return Arrays.stream(objs).anyMatch(x-> !Objects.isNull(x));
   }
 
-  private SdFilter setupSdFilter(String id, String hash, Integer limit, Integer offset, String status, String issuer,
+  private SdFilter setupSdFilter(String id, String hash, Integer limit, Integer offset, SelfDescriptionStatus status, String issuer,
                                  String validator, String uploadTr, String statusTr) {
     SdFilter filterParams = new SdFilter();
     filterParams.setId(id);
     filterParams.setHash(hash);
     filterParams.setLimit(limit);
     filterParams.setOffset(offset);
-    filterParams.setStatus(StatusEnum.fromValue(status));
+    filterParams.setStatus(status);
     filterParams.setIssuer(issuer);
     filterParams.setValidator(validator);
     if (uploadTr != null) {

@@ -1,4 +1,4 @@
-package eu.gaiax.difs.fc.core.service.schemaManagement.impl;
+package eu.gaiax.difs.fc.core.service.schemastore.impl;
 
 import java.io.Serializable;
 import javax.persistence.Column;

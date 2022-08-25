@@ -31,7 +31,7 @@ public class DatabaseConfig {
     sessionFactory.setDataSource(dataSource);
     sessionFactory.setPackagesToScan(
             "eu.gaiax.difs.fc.core.service.sdstore.impl",
-            "eu.gaiax.difs.fc.core.service.schemaManagement.impl"
+            "eu.gaiax.difs.fc.core.service.schemastore.impl"
     );
     sessionFactory.setHibernateProperties(hibernateProperties());
     return sessionFactory;

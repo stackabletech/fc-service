@@ -1,7 +1,7 @@
 package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
-import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
@@ -74,7 +74,7 @@ public class SelfDescriptionStoreImplTest {
     sdMeta.setId(id);
     sdMeta.setIssuer(issuer);
     sdMeta.setSdHash(hash);
-    sdMeta.setStatus(SelfDescription.StatusEnum.ACTIVE);
+    sdMeta.setStatus(SelfDescriptionStatus.ACTIVE);
     sdMeta.setStatusDatetime(sdt);
     sdMeta.setUploadDatetime(udt);
     sdMeta.setSelfDescription(new ContentAccessorDirect(content));
@@ -147,7 +147,7 @@ public class SelfDescriptionStoreImplTest {
     assertEquals(2, count, "Storing two files should result in exactly two files in the store.");
 
     SelfDescriptionMetadata byHash1 = sdStore.getByHash(hash1);
-    assertEquals(SelfDescription.StatusEnum.DEPRECATED, byHash1.getStatus(), "First SelfDescription should have been depricated.");
+    assertEquals(SelfDescriptionStatus.DEPRECATED, byHash1.getStatus(), "First SelfDescription should have been depricated.");
     Assertions.assertTrue(byHash1.getStatusDatetime().isAfter(sdMeta1.getStatusDatetime()));
     SelfDescriptionMetadata byHash2 = sdStore.getByHash(hash2);
     assertEquals(sdMeta2, byHash2);
@@ -206,7 +206,7 @@ public class SelfDescriptionStoreImplTest {
     }
 
     SelfDescriptionMetadata byHash1 = sdStore.getByHash(hash1);
-    assertEquals(SelfDescription.StatusEnum.ACTIVE, byHash1.getStatus(), "First SelfDescription should not have been depricated.");
+    assertEquals(SelfDescriptionStatus.ACTIVE, byHash1.getStatus(), "First SelfDescription should not have been depricated.");
 
     sdStore.deleteSelfDescription(hash1);
     count = 0;
@@ -244,15 +244,15 @@ public class SelfDescriptionStoreImplTest {
     SelfDescriptionMetadata byHash = sdStore.getByHash(hash);
     assertEquals(sdMeta, byHash);
 
-    sdStore.changeLifeCycleStatus(hash, SelfDescription.StatusEnum.REVOKED);
+    sdStore.changeLifeCycleStatus(hash, SelfDescriptionStatus.REVOKED);
     byHash = sdStore.getByHash(hash);
-    assertEquals(SelfDescription.StatusEnum.REVOKED, byHash.getStatus(), "Status should have been changed to 'revoked'");
+    assertEquals(SelfDescriptionStatus.REVOKED, byHash.getStatus(), "Status should have been changed to 'revoked'");
 
     Assertions.assertThrows(ConflictException.class, () -> {
-      sdStore.changeLifeCycleStatus(hash, SelfDescription.StatusEnum.ACTIVE);
+      sdStore.changeLifeCycleStatus(hash, SelfDescriptionStatus.ACTIVE);
     });
     byHash = sdStore.getByHash(hash);
-    assertEquals(SelfDescription.StatusEnum.REVOKED, byHash.getStatus(), "Status should not have been changed from 'revoked' to 'active'.");
+    assertEquals(SelfDescriptionStatus.REVOKED, byHash.getStatus(), "Status should not have been changed from 'revoked' to 'active'.");
 
     sdStore.deleteSelfDescription(hash);
     count = 0;
@@ -305,7 +305,7 @@ public class SelfDescriptionStoreImplTest {
   public void testChangeLifeCycleStatus() {
     System.out.println("changeLifeCycleStatus");
     String hash = "";
-    SelfDescription.StatusEnum targetStatus = null;
+    SelfDescriptionStatus targetStatus = null;
     sdStore.changeLifeCycleStatus(hash, targetStatus);
     // TODO review the generated test code and remove the default call to fail.
     fail("The test case is a prototype.");
