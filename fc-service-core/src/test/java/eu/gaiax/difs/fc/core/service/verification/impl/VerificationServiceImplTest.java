@@ -1,8 +1,7 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
 import eu.gaiax.difs.fc.core.exception.VerificationException;
-import eu.gaiax.difs.fc.core.service.sdstore.impl.ContentAccessorDirect;
-import eu.gaiax.difs.fc.core.service.sdstore.impl.ContentAccessorFile;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

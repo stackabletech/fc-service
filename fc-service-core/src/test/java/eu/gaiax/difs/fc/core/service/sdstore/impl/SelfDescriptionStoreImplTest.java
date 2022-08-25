@@ -1,20 +1,22 @@
 package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
-import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
-import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImplTest.TestApplication;
 import eu.gaiax.difs.fc.core.util.HashUtils;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
+
 import java.io.File;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import javax.persistence.EntityExistsException;
+
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -40,10 +42,13 @@ import org.springframework.transaction.annotation.Transactional;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
-@ContextConfiguration(classes = {TestApplication.class, SelfDescriptionStoreImplTest.class, SelfDescriptionStoreImpl.class, FileStoreImpl.class, DatabaseConfig.class})
+@ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, DatabaseConfig.class, //SelfDescriptionStoreImplTest.class, 
+        SelfDescriptionStoreImpl.class, FileStoreImpl.class})
 @DirtiesContext
 @Transactional
 @Slf4j
+@AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
+//@Import(EmbeddedPostgresConfig.class)
 public class SelfDescriptionStoreImplTest {
 
   @SpringBootApplication
@@ -69,7 +74,7 @@ public class SelfDescriptionStoreImplTest {
     sdMeta.setId(id);
     sdMeta.setIssuer(issuer);
     sdMeta.setSdHash(hash);
-    sdMeta.setStatus(SelfDescription.StatusEnum.ACTIVE);
+    sdMeta.setStatus(SelfDescriptionStatus.ACTIVE);
     sdMeta.setStatusDatetime(sdt);
     sdMeta.setUploadDatetime(udt);
     sdMeta.setSelfDescription(new ContentAccessorDirect(content));
@@ -90,7 +95,7 @@ public class SelfDescriptionStoreImplTest {
     sdStore.storeSelfDescription(sdMeta, null);
 
     int count = 0;
-    for (File file : fileStore.getFileIterable(SelfDescriptionStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME)) {
       count++;
     }
     assertEquals(1, count, "Storing one file should result in exactly one file in the store.");
@@ -100,7 +105,7 @@ public class SelfDescriptionStoreImplTest {
 
     sdStore.deleteSelfDescription(hash);
     count = 0;
-    for (File file : fileStore.getFileIterable(SelfDescriptionStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME)) {
       count++;
     }
     assertEquals(0, count, "Deleting the last file should result in exactly 0 files in the store.");
@@ -126,7 +131,7 @@ public class SelfDescriptionStoreImplTest {
     sdStore.storeSelfDescription(sdMeta1, null);
 
     int count = 0;
-    for (File file : fileStore.getFileIterable(SelfDescriptionStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME)) {
       count++;
     }
     assertEquals(1, count, "Storing one file should result in exactly one file in the store.");
@@ -136,13 +141,13 @@ public class SelfDescriptionStoreImplTest {
     sdStore.storeSelfDescription(sdMeta2, null);
 
     count = 0;
-    for (File file : fileStore.getFileIterable(SelfDescriptionStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME)) {
       count++;
     }
     assertEquals(2, count, "Storing two files should result in exactly two files in the store.");
 
     SelfDescriptionMetadata byHash1 = sdStore.getByHash(hash1);
-    assertEquals(SelfDescription.StatusEnum.DEPRECATED, byHash1.getStatus(), "First SelfDescription should have been depricated.");
+    assertEquals(SelfDescriptionStatus.DEPRECATED, byHash1.getStatus(), "First SelfDescription should have been depricated.");
     Assertions.assertTrue(byHash1.getStatusDatetime().isAfter(sdMeta1.getStatusDatetime()));
     SelfDescriptionMetadata byHash2 = sdStore.getByHash(hash2);
     assertEquals(sdMeta2, byHash2);
@@ -150,7 +155,7 @@ public class SelfDescriptionStoreImplTest {
     sdStore.deleteSelfDescription(hash1);
     sdStore.deleteSelfDescription(hash2);
     count = 0;
-    for (File file : fileStore.getFileIterable(SelfDescriptionStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME)) {
       count++;
     }
     assertEquals(0, count, "Storing all files should result in exactly 0 files in the store.");
@@ -173,7 +178,7 @@ public class SelfDescriptionStoreImplTest {
     sdStore.storeSelfDescription(sdMeta1, null);
 
     int count = 0;
-    for (File file : fileStore.getFileIterable(SelfDescriptionStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME)) {
       count++;
     }
     assertEquals(1, count, "Storing one file should result in exactly one file in the store.");
@@ -191,7 +196,7 @@ public class SelfDescriptionStoreImplTest {
     });
 
     count = 0;
-    for (File file : fileStore.getFileIterable(SelfDescriptionStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME)) {
       count++;
     }
     assertEquals(1, count, "Second file should not have been stored.");
@@ -201,11 +206,11 @@ public class SelfDescriptionStoreImplTest {
     }
 
     SelfDescriptionMetadata byHash1 = sdStore.getByHash(hash1);
-    assertEquals(SelfDescription.StatusEnum.ACTIVE, byHash1.getStatus(), "First SelfDescription should not have been depricated.");
+    assertEquals(SelfDescriptionStatus.ACTIVE, byHash1.getStatus(), "First SelfDescription should not have been depricated.");
 
     sdStore.deleteSelfDescription(hash1);
     count = 0;
-    for (File file : fileStore.getFileIterable(SelfDescriptionStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME)) {
       count++;
     }
     assertEquals(0, count, "Storing all files should result in exactly 0 files in the store.");
@@ -231,7 +236,7 @@ public class SelfDescriptionStoreImplTest {
     sdStore.storeSelfDescription(sdMeta, null);
 
     int count = 0;
-    for (File file : fileStore.getFileIterable(SelfDescriptionStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME)) {
       count++;
     }
     assertEquals(1, count, "Storing one file should result in exactly one file in the store.");
@@ -239,19 +244,19 @@ public class SelfDescriptionStoreImplTest {
     SelfDescriptionMetadata byHash = sdStore.getByHash(hash);
     assertEquals(sdMeta, byHash);
 
-    sdStore.changeLifeCycleStatus(hash, SelfDescription.StatusEnum.REVOKED);
+    sdStore.changeLifeCycleStatus(hash, SelfDescriptionStatus.REVOKED);
     byHash = sdStore.getByHash(hash);
-    assertEquals(SelfDescription.StatusEnum.REVOKED, byHash.getStatus(), "Status should have been changed to 'revoked'");
+    assertEquals(SelfDescriptionStatus.REVOKED, byHash.getStatus(), "Status should have been changed to 'revoked'");
 
     Assertions.assertThrows(ConflictException.class, () -> {
-      sdStore.changeLifeCycleStatus(hash, SelfDescription.StatusEnum.ACTIVE);
+      sdStore.changeLifeCycleStatus(hash, SelfDescriptionStatus.ACTIVE);
     });
     byHash = sdStore.getByHash(hash);
-    assertEquals(SelfDescription.StatusEnum.REVOKED, byHash.getStatus(), "Status should not have been changed from 'revoked' to 'active'.");
+    assertEquals(SelfDescriptionStatus.REVOKED, byHash.getStatus(), "Status should not have been changed from 'revoked' to 'active'.");
 
     sdStore.deleteSelfDescription(hash);
     count = 0;
-    for (File file : fileStore.getFileIterable(SelfDescriptionStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME)) {
       count++;
     }
     assertEquals(0, count, "Deleting the last file should result in exactly 0 files in the store.");
@@ -262,7 +267,7 @@ public class SelfDescriptionStoreImplTest {
   }
 
   /**
-   * Test of getAllSelfDescriptions method, of class SelfDescriptionStoreImpl.
+   * Test of getAllSelfDescriptions method, of class SelfDescriptionStore.
    */
   @Test
   @Disabled
@@ -270,55 +275,51 @@ public class SelfDescriptionStoreImplTest {
     System.out.println("getAllSelfDescriptions");
     int offset = 0;
     int limit = 0;
-    SelfDescriptionStoreImpl instance = new SelfDescriptionStoreImpl();
     List<SelfDescriptionMetadata> expResult = null;
-    List<SelfDescriptionMetadata> result = instance.getAllSelfDescriptions(offset, limit);
+    List<SelfDescriptionMetadata> result = sdStore.getAllSelfDescriptions(offset, limit);
     assertEquals(expResult, result);
     // TODO review the generated test code and remove the default call to fail.
     fail("The test case is a prototype.");
   }
 
   /**
-   * Test of getByFilter method, of class SelfDescriptionStoreImpl.
+   * Test of getByFilter method, of class SelfDescriptionStore.
    */
   @Test
   @Disabled
   public void testGetByFilter() {
     System.out.println("getByFilter");
     SdFilter filterParams = null;
-    SelfDescriptionStoreImpl instance = new SelfDescriptionStoreImpl();
     List<SelfDescriptionMetadata> expResult = null;
-    List<SelfDescriptionMetadata> result = instance.getByFilter(filterParams);
+    List<SelfDescriptionMetadata> result = sdStore.getByFilter(filterParams);
     assertEquals(expResult, result);
     // TODO review the generated test code and remove the default call to fail.
     fail("The test case is a prototype.");
   }
 
   /**
-   * Test of changeLifeCycleStatus method, of class SelfDescriptionStoreImpl.
+   * Test of changeLifeCycleStatus method, of class SelfDescriptionStore.
    */
   @Test
   @Disabled
   public void testChangeLifeCycleStatus() {
     System.out.println("changeLifeCycleStatus");
     String hash = "";
-    SelfDescription.StatusEnum targetStatus = null;
-    SelfDescriptionStoreImpl instance = new SelfDescriptionStoreImpl();
-    instance.changeLifeCycleStatus(hash, targetStatus);
+    SelfDescriptionStatus targetStatus = null;
+    sdStore.changeLifeCycleStatus(hash, targetStatus);
     // TODO review the generated test code and remove the default call to fail.
     fail("The test case is a prototype.");
   }
 
   /**
-   * Test of deleteSelfDescription method, of class SelfDescriptionStoreImpl.
+   * Test of deleteSelfDescription method, of class SelfDescriptionStore.
    */
   @Test
   @Disabled
   public void testDeleteSelfDescription() {
     System.out.println("deleteSelfDescription");
     String hash = "";
-    SelfDescriptionStoreImpl instance = new SelfDescriptionStoreImpl();
-    instance.deleteSelfDescription(hash);
+    sdStore.deleteSelfDescription(hash);
     // TODO review the generated test code and remove the default call to fail.
     fail("The test case is a prototype.");
   }

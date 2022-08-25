@@ -57,7 +57,7 @@ public class SecurityConfig {
           .antMatchers("/query").permitAll()
 
           // Verification APIs
-          .antMatchers("/verifications/*").permitAll()
+          .antMatchers("/verification").permitAll()
           
           // Self-Description APIs
           .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()
@@ -83,7 +83,7 @@ public class SecurityConfig {
           .antMatchers("/roles").authenticated()
 
           // Session APIs
-          .antMatchers("/session" ,"/session/**").authenticated()
+          .antMatchers("/session").authenticated()
           
           .anyRequest().authenticated()
         )

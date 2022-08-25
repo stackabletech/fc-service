@@ -18,10 +18,10 @@
                 <constraints  nullable="false" />
             </column>
             <column name="issuer" type="java.sql.Types.VARCHAR(255)"/>
-            <column name="upload_time" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+            <column name="uploadtime" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
                 <constraints nullable="false" />
             </column>
-            <column name="status_time" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+            <column name="statustime" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
                 <constraints nullable="false" />
             </column>
             <column name="status" type="java.sql.Types.INTEGER">

@@ -31,6 +31,7 @@ public class ContentAccessorDirect implements ContentAccessor {
         }
         if (obj instanceof ContentAccessor) {
             ContentAccessor ca = (ContentAccessor) obj;
+            // TODO: This comparison is expensive, test if it is used in normal operation and optimise if it is.
             return content.equals(ca.getContentAsString());
         }
         return false;

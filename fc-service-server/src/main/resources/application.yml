@@ -9,12 +9,27 @@ server:
   tomcat:
     mbeanregistry:
       enabled: true
+    threads:
+      max: 200
+      min-spare: 20
+  shutdown: graceful
 
 spring:
-  profiles:
-    active: ${APPLICATION_PROFILES:default}
   application:
-    name: ${APPLICATION_NAME:federated-catalogue-service-app}
+    name: federated-catalogue-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres #catalogdb
+    username: postgres
+    password: postgres
+    platform: postgresql
+    hikari:
+      connectionTimeout: 30000
+      idleTimeout: 600000
+      maxLifetime: 1800000
+      minimumIdle: 5
+      maximumPoolSize: 25
+  liquibase:
+    change-log: classpath:/liquibase/master-changelog.xml
   mvc:
     log-request-details: true
   security:
@@ -23,8 +38,6 @@ spring:
         jwt:
           issuer-uri: http://key-server:8080/realms/gaia-x
 #          jwk-set-uri: http://key-server:8080/realms/gaia-x/protocol/openid-connect/certs
-  liquibase:
-    change-log: classpath:/liquibase/master-changelog.xml
 
 openapi:
   gaiaXCatalogue:
@@ -43,15 +56,7 @@ keycloak:
     secret: vZo1equicRl1UdxJDWCNNJWe6vJcm2Cg
 
 datastore:
-  database-driver: org.h2.Driver
-  database-url: jdbc:h2:mem:testdb;SCHEMA=PUBLIC;DB_CLOSE_DELAY=-1
-  database-username: example
-  database-password: example
   file-path: target
-#  database-driver: org.postgresql.Driver
-#  database-url: jdbc:postgresql://localhost:5432/catalog
-#  database-username: gaiax
-#  database-password: gaiax
 
 logging:
   level:
@@ -59,5 +64,4 @@ logging:
     eu.gaiax.difs.fc: DEBUG
     org.springframework.web: DEBUG
     org.springframework.security: DEBUG
-    org.springframework.web.client.RestTemplate: DEBUG
-    org.keycloak.adapters.OAuthRequestAuthenticator: DEBUG
+#    org.springframework.web.client.RestTemplate: DEBUG

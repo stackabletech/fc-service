@@ -46,12 +46,17 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.gaiax.difs.fc.api.generated.model.Participant;
+import eu.gaiax.difs.fc.api.generated.model.Participants;
+import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.impl.ParticipantDaoImpl;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ExtendWith(SpringExtension.class)
-public class ParticipantControllerTest {
+@AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
+public class ParticipantsControllerTest {
 
     private static final TypeReference<List<?>> LIST_TYPE_REF = new TypeReference<List<?>>() {
     };
@@ -151,9 +156,11 @@ public class ParticipantControllerTest {
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andReturn();
-        List<?> parts = objectMapper.readValue(result.getResponse().getContentAsString(), LIST_TYPE_REF);
+        Participants parts = objectMapper.readValue(result.getResponse().getContentAsString(), Participants.class);
         assertNotNull(parts);
-        assertEquals(1, parts.size());
+        assertEquals(1, parts.getItems().size());
+        // TODO:
+        //assertEquals(1, parts.getTotalCount());
     }
     
     @Test
@@ -168,9 +175,9 @@ public class ParticipantControllerTest {
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andReturn();
-        List<?> users = objectMapper.readValue(result.getResponse().getContentAsString(), LIST_TYPE_REF);
+        UserProfiles users = objectMapper.readValue(result.getResponse().getContentAsString(), UserProfiles.class);
         assertNotNull(users);
-        assertEquals(0, users.size());
+        assertEquals(0, users.getItems().size());
     }
     
     @Test
@@ -241,7 +248,7 @@ public class ParticipantControllerTest {
     }
     
     public static String readFileFromResources(String filename) { 
-        URL resource = ParticipantControllerTest.class.getClassLoader().getResource(filename);  
+        URL resource = ParticipantsControllerTest.class.getClassLoader().getResource(filename);  
         byte[] bytes;
         try {
             bytes = Files.readAllBytes(Paths.get(resource.toURI()));

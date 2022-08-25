@@ -12,7 +12,7 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
-import eu.gaiax.difs.fc.core.service.sdstore.impl.ContentAccessorFile;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import static eu.gaiax.difs.fc.core.util.HashUtils.HASH_PATTERN;
 import java.io.FileNotFoundException;
@@ -55,8 +55,16 @@ public class FileStoreImpl {
   }
 
   public void storeFile(String storeName, String hash, ContentAccessor content) throws IOException {
+    saveFile(storeName, hash, content, false);
+  }
+
+  public void replaceFile(String storeName, String hash, ContentAccessor content) throws IOException {
+    saveFile(storeName, hash, content, true);
+  }
+
+  private void saveFile(String storeName, String hash, ContentAccessor content, boolean overwrite) throws IOException {
     File file = getFileForStoreHash(storeName, validateFileName(hash));
-    if (file.exists()) {
+    if (file.exists() && !overwrite) {
       throw new FileExistsException("A file for the hash " + hash + " already exists.");
     }
     try ( FileOutputStream os = FileUtils.openOutputStream(file)) {

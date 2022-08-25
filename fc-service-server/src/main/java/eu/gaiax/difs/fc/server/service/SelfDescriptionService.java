@@ -1,15 +1,22 @@
 package eu.gaiax.difs.fc.server.service;
 
+import static eu.gaiax.difs.fc.server.util.SelfDescriptionHelper.parseTimeRange;
 import static eu.gaiax.difs.fc.server.util.SessionUtils.getSessionParticipantId;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
-import eu.gaiax.difs.fc.api.generated.model.SelfDescription.StatusEnum;
-import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
-import eu.gaiax.difs.fc.core.dao.SelfDescriptionDao;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptions;
 import eu.gaiax.difs.fc.core.exception.ClientException;
-import eu.gaiax.difs.fc.core.service.sdstore.impl.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.SdFilter;
+import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
+import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
+import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import javax.validation.ValidationException;
@@ -31,17 +38,15 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   private VerificationService verificationService;
 
   @Autowired
-  private SelfDescriptionDao sdDao;
-
-  //TODO: 13.07.2022 Need to replace mocked Data with business logic
+  private SelfDescriptionStore sdStore;
 
   /**
    * Service method for GET /self-descriptions : Get the list of metadata of SD in the Catalogue.
    *
-   * @param uploadTimeRange Filter for the time range when the SD was uploaded to the catalogue.
+   * @param uploadTr Filter for the time range when the SD was uploaded to the catalogue.
    *                        The time range has to be specified as start time and end time as ISO8601 timestamp
    *                        separated by a &#x60;/&#x60;. (optional)
-   * @param statusTimeRange Filter for the time range when the status of the SD was last changed in the catalogue.
+   * @param statusTr Filter for the time range when the status of the SD was last changed in the catalogue.
    *                        The time range has to be specified as start time and end time as ISO8601 timestamp
    *                        separated by a &#x60;/&#x60;. (optional)
    * @param issuer          Filter for the issuer of the SD. This is the unique ID of the Participant
@@ -59,23 +64,23 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    *        or May contain hints how to solve the error or indicate what went wrong at the server.
    *        Must not outline any information about the internal structure of the server. (status code 500)
    */
-  @Override
-  public ResponseEntity<List<SelfDescription>> readSelfDescriptions(String uploadTimeRange, String statusTimeRange,
-                                                                    String issuer, String validator, String status,
-                                                                    String id, String hash, Integer offset,
-                                                                    Integer limit) {
+  public ResponseEntity<SelfDescriptions> readSelfDescriptions(String uploadTr, String statusTr, String issuer,
+                                                                    String validator, SelfDescriptionStatus status, String id,
+                                                                    String hash, Integer offset, Integer limit) {
     log.debug("readSelfDescriptions.enter; got uploadTimeRange: {}, statusTimeRange: {},"
             + "issuer: {}, validator: {}, status: {}, id: {}, hash: {}, offset: {}, limit: {}",
-        uploadTimeRange, statusTimeRange, issuer, validator, status, id, hash, offset, limit);
+        uploadTr, statusTr, issuer, validator, status, id, hash, offset, limit);
 
-    // TODO: 27.07.2022 Are there criteria for checking filtering parameters or do we expect this from Fraunhofer?
-    //  (From the documentation: "Validate filter parameter values")
-
-    // TODO: 27.07.2022 The method does not accept all parameters for filtering. Doing filtering at the service level?
-    List<SelfDescription> selfDescriptions = sdDao.getAllSelfDescriptions(offset, limit);
-
+    List<SelfDescriptionMetadata> selfDescriptions;
+    if (isNotNullObjects(id, hash, issuer, validator, uploadTr, statusTr)) {
+      SdFilter filter = setupSdFilter(id, hash, limit, offset, status, issuer, validator, uploadTr, statusTr);
+      selfDescriptions = sdStore.getByFilter(filter);
+    } else {
+      selfDescriptions = sdStore.getAllSelfDescriptions(offset, limit);
+    }
     log.debug("readSelfDescriptions.exit; returning: {}", selfDescriptions.size());
-    return new ResponseEntity<>(selfDescriptions, HttpStatus.OK);
+    // TODO: set total count
+    return ResponseEntity.ok(new SelfDescriptions(0, (List) selfDescriptions));
   }
 
   /**
@@ -90,19 +95,17 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<Object> readSelfDescriptionByHash(String selfDescriptionHash) {
+  public ResponseEntity<String> readSelfDescriptionByHash(String selfDescriptionHash) {
     log.debug("readSelfDescriptionByHash.enter; got hash: {}", selfDescriptionHash);
-    // TODO: 27.07.2022 In the provided interface, there is no method for obtaining a self-description by hash,
-    //  there is only a method for obtaining a metadata.
-    Object selfDescription = getSelfDescription();
+    SelfDescriptionMetadata sdMetadata = sdStore.getByHash(selfDescriptionHash);
 
     HttpHeaders responseHeaders = new HttpHeaders();
-    responseHeaders.set("Content-Type", "application/ld+json");
+    //responseHeaders.set("Content-Type", "application/ld+json");
 
     log.debug("readSelfDescriptionByHash.exit; returning self-description by hash: {}", selfDescriptionHash);
     return ResponseEntity.ok()
         .headers(responseHeaders)
-        .body(selfDescription);
+        .body(sdMetadata.getSelfDescription().getContentAsString());
   }
 
   /**
@@ -120,13 +123,11 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     log.debug("deleteSelfDescription.enter; got hash: {}", selfDescriptionHash);
     // TODO: 27.07.2022 The method is not described in the documentation.
 
-    SelfDescription sdMetadata = sdDao.getByHash(selfDescriptionHash);
+    SelfDescriptionMetadata sdMetadata = sdStore.getByHash(selfDescriptionHash);
 
     checkParticipantAccess(sdMetadata.getIssuer());
 
-    // TODO: 27.07.2022 Add to the interface / a new interface for working with files
-    //  and include a method for deleting a self-description file there + Awaiting GraphDd repository interface.
-    sdDao.deleteSelfDescription(selfDescriptionHash);
+    sdStore.deleteSelfDescription(selfDescriptionHash);
     log.debug("deleteSelfDescription.exit; deleted self-description by hash: {}", sdMetadata.getSdHash());
     return new ResponseEntity<>(HttpStatus.OK);
   }
@@ -147,16 +148,23 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     log.debug("addSelfDescription.enter; got selfDescription: {}", selfDescription);
 
     try {
-      // TODO: 27.07.2022 Need to change the description and the order of actions in the documentation
-      VerificationResult result = verificationService.verifySelfDescription(new ContentAccessorDirect(selfDescription));
-      SelfDescription sdMetadata = new SelfDescription();
+     // TODO: 27.07.2022 Need to change the description and the order of actions in the documentation.
+     //  The FH scheme is different from the real process.
+      ContentAccessorDirect contentAccessor = new ContentAccessorDirect(selfDescription);
+
+      VerificationResultOffering verificationResult = verificationService.verifyOfferingSelfDescription(contentAccessor);
+
+      // TODO: 24.08.2022 Need to set a validator
+      SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor,
+          verificationResult.getId(), verificationResult.getIssuer(), new ArrayList<>());
+
       checkParticipantAccess(sdMetadata.getIssuer());
-      sdDao.storeSelfDescription(sdMetadata);
 
-      // TODO: 27.07.2022 Add to the interface / a new interface for working with files
-      //  and include a method for adding a self-description file there + Awaiting GraphDd repository interface.
+      // TODO: 23.08.2022 The docs states that metadata is returned from this method when SD added.
+      sdStore.storeSelfDescription(sdMetadata, verificationResult);
 
-      log.debug("addSelfDescription.exit; returning self-description metadata by hash: {}", sdMetadata.getSdHash());
+      log.debug("addSelfDescription.exit; returning self-description by hash: {}", sdMetadata.getSdHash());
+      // TODO: with CREATED we must properly set Location header
       return new ResponseEntity<>(sdMetadata, HttpStatus.CREATED);
     } catch (ValidationException exception) {
       log.debug("Self-description isn't parsed due to: " + exception.getMessage(), exception);
@@ -179,15 +187,17 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   public ResponseEntity<SelfDescription> updateSelfDescription(String selfDescriptionHash) {
     log.debug("updateSelfDescription.enter; got hash: {}", selfDescriptionHash);
     // TODO: 27.07.2022 Need to change the description and the order of actions in the documentation
+    //  (The documentation specifies a search by credential object, not by hash.)
 
-    SelfDescription sdMetadata = sdDao.getByHash(selfDescriptionHash);
+    SelfDescriptionMetadata sdMetadata = sdStore.getByHash(selfDescriptionHash);
+
     checkParticipantAccess(sdMetadata.getIssuer());
 
-    if (sdMetadata.getStatus().equals(StatusEnum.ACTIVE)) {
-      sdDao.changeLifeCycleStatus(sdMetadata.getSdHash(), StatusEnum.DEPRECATED);
+    if (sdMetadata.getStatus().equals(SelfDescriptionStatus.ACTIVE)) {
+      sdStore.changeLifeCycleStatus(sdMetadata.getSdHash(), SelfDescriptionStatus.DEPRECATED);
     }
 
-    // TODO: 27.07.2022 Add to the interface / a new interface for working with files
+    // TODO: 23.07.2022 Add to the interface / a new interface for working with files
     //  and include a method for adding a self-description file there + Awaiting GraphDd repository interface.
 
     log.debug("updateSelfDescription.exit; update self-description by hash: {}", selfDescriptionHash);
@@ -199,58 +209,40 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    *
    * @param sdIssuer The Participant issuer of SD (required).
    */
+  // TODO: 24.08.2022 It is required to rewrite the logic when the SD parsing methods are ready.
   private void checkParticipantAccess(String sdIssuer) {
     String sessionParticipantId = getSessionParticipantId();
     if (Objects.isNull(sdIssuer) || Objects.isNull(sessionParticipantId) || !sdIssuer.equals(sessionParticipantId)) {
-      log.debug(
-          "checkParticipantAccess; The user does not have access to the specified participant."
-              + " User participant id = {}, self-description participant id = {}.",
-          sessionParticipantId, sdIssuer);
+      log.debug("checkParticipantAccess; The user does not have access to the specified participant."
+          + " User participant id = {}, self-description participant id = {}.", sessionParticipantId, sdIssuer);
       throw new AccessDeniedException("The user does not have access to the specified participant.");
     }
   }
 
+  private boolean isNotNullObjects(Object... objs) {
+    return Arrays.stream(objs).anyMatch(x-> !Objects.isNull(x));
+  }
 
-  // TODO: 20.07.2022 The logic must be implemented by Fraunhofer.
-  //  Then the mock implementation will be changed.
-  private String getSelfDescription() {
-    return "{\n"
-        + "  \"@context\": [\n"
-        + "    \"https://w3id.org/gaia-x/context.jsonld\"\n"
-        + "  ],\n"
-        + "  \"type\": \"VerifiablePresentation\",\n"
-        + "  \"verifiableCredential\": [\n"
-        + "    {\n"
-        + "      \"@context\": [\n"
-        + "        \"https://w3id.org/gaia-x/context.jsonld\"\n"
-        + "      ],\n"
-        + "      \"id\": \"http://example.edu/credentials/1872\",\n"
-        + "      \"type\": \"VerifiableCredential\",\n"
-        + "      \"issuer\": \"https://www.handelsregister.de/\",\n"
-        + "      \"issuanceDate\": \"2010-01-01T19:73:24Z\",\n"
-        + "      \"credentialSubject\": {\n"
-        + "        \"@id\": \"http://example.org/test-provider\",\n"
-        + "        \"@type\": \"gax:Provider\",\n"
-        + "        \"gax:hasLegallyBindingName\": \"My example provider\"\n"
-        + "      },\n"
-        + "      \"proof\": {\n"
-        + "        \"type\": \"RsaSignature2018\",\n"
-        + "        \"created\": \"2017-06-18T21:19:10Z\",\n"
-        + "        \"proofPurpose\": \"assertionMethod\",\n"
-        + "        \"verificationMethod\": \"https://example.edu/issuers/keys/1\",\n"
-        + "        \"jws\": \"eyJhbGciOiJSUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19\"\n"
-        + "      }\n"
-        + "    }\n"
-        + "  ],\n"
-        + "  \"proof\": {\n"
-        + "    \"type\": \"RsaSignature2018\",\n"
-        + "    \"created\": \"2018-09-14T21:19:10Z\",\n"
-        + "    \"proofPurpose\": \"authentication\",\n"
-        + "    \"verificationMethod\": \"did:example:ebfeb1f712ebc6f1c276e12ec21#keys1\",\n"
-        + "    \"challenge\": \"1f44d55f-f161-4938-a659-f8026467f126\",\n"
-        + "    \"domain\": \"4jt78h47fh47\",\n"
-        + "    \"jws\": \"eyJhbGciOiJSUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19\"\n"
-        + "  }\n"
-        + "}\n";
+  private SdFilter setupSdFilter(String id, String hash, Integer limit, Integer offset, SelfDescriptionStatus status, String issuer,
+                                 String validator, String uploadTr, String statusTr) {
+    SdFilter filterParams = new SdFilter();
+    filterParams.setId(id);
+    filterParams.setHash(hash);
+    filterParams.setLimit(limit);
+    filterParams.setOffset(offset);
+    filterParams.setStatus(status);
+    filterParams.setIssuer(issuer);
+    filterParams.setValidator(validator);
+    if (uploadTr != null) {
+      String[] timeRanges = parseTimeRange(uploadTr);
+      filterParams.setUploadTimeStart(Instant.parse(timeRanges[0]));
+      filterParams.setUploadTimeEnd(Instant.parse(timeRanges[1]));
+    }
+    if (statusTr != null) {
+      String[] timeRanges = parseTimeRange(statusTr);
+      filterParams.setStatusTimeStart(Instant.parse(timeRanges[0]));
+      filterParams.setStatusTimeEnd(Instant.parse(timeRanges[1]));
+    }
+    return filterParams;
   }
 }

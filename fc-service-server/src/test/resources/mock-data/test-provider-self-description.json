@@ -15,7 +15,7 @@
       "issuer": "https://www.handelsregister.de/",
       "issuanceDate": "2010-01-01T19:73:24Z",
       "credentialSubject": {
-        "@id": "http://example.org/test-provider",
+        "@id": "http://example.org/test-issuer",
         "@type": "gax:Provider",
         "gax:hasLegallyBindingName": "My example provider",
         "gax:hasLegallyBindingAddress": {
