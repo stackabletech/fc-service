@@ -1,7 +1,7 @@
 package eu.gaiax.difs.fc.core.pojo;
 
 /**
- * POJO Class for holding a Chipher Query.
+ * POJO Class for holding a Cypher Query.
  */
 @lombok.AllArgsConstructor
 @lombok.EqualsAndHashCode
