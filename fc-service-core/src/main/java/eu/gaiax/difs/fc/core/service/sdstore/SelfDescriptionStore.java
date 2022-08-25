@@ -8,68 +8,61 @@ import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import java.util.List;
 
 /**
+ * A store for storing and retrieving self-description meta data objects.
  *
  * @author hylke
+ * @author j_reuter
  */
 public interface SelfDescriptionStore {
 
   String STORE_NAME = "sdFiles";
-    
-  /**
-   * Get all self descriptions, starting from the given offset, up to limit
-   * number of items, consistently ordered.
-   *
-   * @param offset How many items to skip.
-   * @param limit The maximum number of items to return.
-   * @return
-   */
-  List<SelfDescriptionMetadata> getAllSelfDescriptions(int offset, int limit);
 
   /**
-   * Fetch a SelfDescription and its metadata by hash.
+   * Fetch a self-description file by its hash value.
    *
-   * @param hash
-   * @return
-   */
-  SelfDescriptionMetadata getByHash(String hash);
-
-  /**
-   * Fetch a SelfDescription file by hash.
-   *
-   * @param hash
-   * @return The SelfDescription file
+   * @param hash The hash value that identifies the self-description meta data.
+   * @return The self-description file.
    */
   ContentAccessor getSDFileByHash(String hash);
 
   /**
-   * Fetch all SelfDescriptions that match the filter parameters.
+   * Fetch a self-description and its meta data by its hash value.
    *
-   * @param filterParams
-   * @return
+   * @param hash The hash value that identifies the self-description meta data.
+   * @return The self-description meta data object with the specified hash value.
    */
-  List<SelfDescriptionMetadata> getByFilter(SdFilter filterParams);
+  SelfDescriptionMetadata getByHash(String hash);
 
   /**
-   * Store the given SelfDescription.
+   * Fetch all self-descriptions that match the filter parameters.
    *
-   * @param selfDescription The Self-Description to store.
+   * @param filter The filter to match all self-descriptions against.
+   * @return List of all self-description meta data objects that match the
+   *         specified filter.
+   */
+  List<SelfDescriptionMetadata> getByFilter(SdFilter filter);
+
+  /**
+   * Store the given self-description.
+   *
+   * @param selfDescription       The self-description to store.
    * @param sdVerificationResults The results of the verification of the
-   * Self-Description.
+   *                              self-description.
    */
   void storeSelfDescription(SelfDescriptionMetadata selfDescription, VerificationResult sdVerificationResults);
 
   /**
-   * Change the life cycle status of the self description with the given hash.
+   * Change the life cycle status of the self-description with the given hash.
    *
-   * @param hash The hash of the SD to work on.
+   * @param hash         The hash of the self-description to work on.
    * @param targetStatus The new status.
    */
   void changeLifeCycleStatus(String hash, SelfDescriptionStatus targetStatus);
 
   /**
-   * Remove the Self-Description with the given hash from the store.
+   * Remove the self-description with the given hash from the store.
    *
-   * @param hash The hash of the SD to work on.
+   * @param hash The hash of the self-description to work on.
    */
   void deleteSelfDescription(String hash);
 

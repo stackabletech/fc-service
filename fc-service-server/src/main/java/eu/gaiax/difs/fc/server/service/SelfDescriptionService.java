@@ -71,13 +71,15 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
             + "issuer: {}, validator: {}, status: {}, id: {}, hash: {}, offset: {}, limit: {}",
         uploadTr, statusTr, issuer, validator, status, id, hash, offset, limit);
 
-    List<SelfDescriptionMetadata> selfDescriptions;
+    final SdFilter filter;
     if (isNotNullObjects(id, hash, issuer, validator, uploadTr, statusTr)) {
-      SdFilter filter = setupSdFilter(id, hash, limit, offset, status, issuer, validator, uploadTr, statusTr);
-      selfDescriptions = sdStore.getByFilter(filter);
+      filter = setupSdFilter(id, hash, limit, offset, status, issuer, validator, uploadTr, statusTr);
     } else {
-      selfDescriptions = sdStore.getAllSelfDescriptions(offset, limit);
+      filter = new SdFilter();
+      filter.setLimit(limit);
+      filter.setOffset(offset);
     }
+    final List<SelfDescriptionMetadata> selfDescriptions = sdStore.getByFilter(filter);
     log.debug("readSelfDescriptions.exit; returning: {}", selfDescriptions.size());
     // TODO: set total count
     return ResponseEntity.ok(new SelfDescriptions(0, (List) selfDescriptions));
