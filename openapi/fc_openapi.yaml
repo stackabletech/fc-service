@@ -259,22 +259,23 @@ components:
       type: object
       properties:
         ontologies:
-          description: Ontologies defining the terms of a schema,
+          description: 'SchemaIds of ontologies, defining the terms of a schema'
           type: array
           items:
             type: string
+            example: schemaId
         shapes:
-          description: >-
-            Shapes used to validate instances against the schema. SHACL Shapes
-            Constraint Language
+          description: 'SchemaIds of shapes (SHACL Shapes Constraint Language) used to validate instances against the schema.'
           type: array
           items:
             type: string
+            example: schemaId
         vocabularies:
-          description: Controlled vocabularies used in the scema
+          description: 'SchemaIds of controlled vocabularies used in the schema'
           type: array
           items:
             type: string
+            example: schemaId
     ResultPage:
       type: object
       properties:
@@ -658,48 +659,51 @@ paths:
     get:
       tags:
         - Schemas
-      summary: Get the full list of schemas
+      summary: 'Get the full list of ontologies, shapes and vocabularies.'
+      description: 'The schema identifiers, returned by this endpoint can be used to download the schema files.'
       operationId: getSchemas
       parameters:
         - $ref: '#/components/parameters/OffsetParam'
         - $ref: '#/components/parameters/LimitParam'
-#        - $ref: '#/components/parameters/OrderByParam'
-#        - $ref: '#/components/parameters/AscendingParam'
       responses:
         '200':
-          description: All schemas
+          description: 'References to ontologies, shapes and vocabularies.'
           content:
             application/json:
-              schema: #!! How can a user see the version/state of a schema? Or does this only give active ones?
-                type: array #!! Is 'type' part of the schema schema, or should we change this to an oject with using type:schema
+              schema:
+                type: array
                 items:
                   $ref: '#/components/schemas/OntologySchema'
         '400':
           $ref: '#/components/responses/ClientError'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/ServerError'          
     post:
       tags:
         - Schemas
-      summary: >-
-        Add a new Schema to the catalogue, or replace an existing schema that
-        has the same URI,
-      operationId: addSchema,
+      summary: 'Add a new Schema to the catalogue.'
+      description: 'This endpoint accepts either an ontology (OWL file), shape (SHACL file) or controlled vocabulary (SKOS file), which is added to the schemas of the catalogue.'
+      operationId: addSchema
       security:
         - jwt: []
       requestBody:
-        description: The new Schema,
+        description: 'The file of the new schema. either an ontology (OWL file), shape (SHACL file) or controlled vocabulary (SKOS file).'
         content:
-          application/json:
+          application/rdf+xml:
             schema:
-              $ref: '#/components/schemas/OntologySchema'
+              type: string
+              description: 'OWL file describing the ontology of the schema or SKOS file describing the controlled vocabulary.'
+          text/turtle:
+            schema:
+              type: string
+              description: 'SHACL file describing the ontology of the schema.'
         required: true
       responses:
         '201':
-          description: Created,
+          description: 'Created'
           headers:
             location:
-              description: URL of the added Schema
+              description: 'URL of the added Schema.'
               schema:
                 type: string
         '400':
@@ -717,88 +721,121 @@ paths:
       parameters:
         - name: schemaId
           in: path
-          description: Identifier of the Schema
+          description: 'Identifier of the Schema.'
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: A specific Schema
+          description: 'The schema for the given identifier. Depending on the type of the schema, either an ontology, shape graph or controlled vocabulary is returned.'
           content:
-            application/json:
+            application/rdf+xml:
               schema:
-                $ref: '#/components/schemas/OntologySchema'
+                type: string
+                description: 'OWL file describing the ontology of the schema or SKOS file describing the controlled vocabulary.'
+            text/turtle:
+              schema:
+                type: string
+                description: 'SHACL file describing the ontology of the schema.'
         '400':
           $ref: '#/components/responses/ClientError'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags:
+        - Schemas
+      summary: 'Replace a schema. This is only allowed for ontologies with the same IRI.'
+      operationId: updateSchema
+      parameters:
+        - name: schemaId
+          in: path
+          description: 'Identifier of the Schema.'
+          required: true
+          schema:
+            type: string
+      security:
+        - jwt: [ ]
+      requestBody:
+        description: 'The new ontology (OWL file).'
+        content:
+          application/rdf+xml:
+            schema:
+              type: string
+              description: 'OWL file describing the ontology.'
+        required: true
+      responses:
+        '200':
+          description: 'Updated.'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/ServerError'
     delete:
       tags:
         - Schemas
-      summary: Delete a Schema
+      summary: 'Delete a Schema'
       operationId: deleteSchema
+      security:
+        - jwt: [ ]
       parameters:
         - name: schemaId
           in: path
-          description: Identifier of the Schema
+          description: 'Identifier of the Schema'
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: Deleted Schema
+          description: 'Deleted Schema'
         '400':
           $ref: '#/components/responses/ClientError'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/ServerError'          
   /schemas/latest:
-    get: #!! wo kommen neue schema her?
+    get: 
       tags:
         - Schemas
-      summary: Get the latest schema of all types
-      operationId: getLatestSchemas
-      responses:
-        '200':
-          description: The latest schemas of all types
-          content:
-            application/json: #!! schema + ld?
-              schema:
-                type: array #!! Is 'type' part of the schema schema, or should we change this to an oject with using type:schema
-                items:
-                  $ref: '#/components/schemas/OntologySchema'
-        '400':
-          $ref: '#/components/responses/ClientError'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  /schemas/latest/{type}: #!! What is a schema type?
-    get:
-      tags:
-        - Schemas
-      summary: Get latest schemas of a specific type
-      operationId: getLatestSchemaOfType
+      summary: 'Get the latest schema for a given type. If no term is specified, then the composite schema is returned.'
+      operationId: getLatestSchema
       parameters:
         - name: type
-          in: path
-          description: Type of the requested Self-Description schema e.g. Service
-          required: true
+          in: query
+          description: 'Type of the schema.'
+          required: false
+          schema:
+            type: string
+            enum:
+              - ontology
+              - shape
+              - vocabulary
+        - name: term
+          in: query
+          description: 'The URI of the term of the requested Self-Description schema e.g. `http://w3id.org/gaia-x/service#ServiceOffering`'
+          required: false
           schema:
             type: string
       responses:
         '200':
-          description: The latest schema of requested types
+          description: 'The latest schemas for the given type or term.'
           content:
-            application/json:
+            application/rdf+xml:
               schema:
-                $ref: '#/components/schemas/OntologySchema'
+                type: string
+                description: 'OWL file describing the ontology of the schema or SKOS file describing the controlled vocabulary.'
+            text/turtle:
+              schema:
+                type: string
+                description: 'SHACL file describing the ontology of the schema.'
         '400':
           $ref: '#/components/responses/ClientError'
-        '405':
-          description: Invalid input
-          content: {}
         '500':
           $ref: '#/components/responses/ServerError'
   /verification:
