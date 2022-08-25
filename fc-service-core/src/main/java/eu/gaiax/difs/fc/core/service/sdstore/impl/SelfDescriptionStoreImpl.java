@@ -1,7 +1,7 @@
 package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
-import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
@@ -42,7 +42,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
   @Override
   public List<SelfDescriptionMetadata> getAllSelfDescriptions(int offset, int limit) {
     var resultList = sessionFactory.getCurrentSession().createQuery("select sd from SdMetaRecord sd where sd.status=?1 order by sd.statusTime desc, sd.sdHash", SdMetaRecord.class)
-            .setParameter(1, SelfDescription.StatusEnum.ACTIVE)
+            .setParameter(1, SelfDescriptionStatus.ACTIVE)
             .setFirstResult(offset)
             .setMaxResults(limit)
             .getResultList();
@@ -90,7 +90,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
             .setLockMode(LockModeType.PESSIMISTIC_WRITE)
             .setTimeout(1)
             .setParameter(1, selfDescription.getId())
-            .setParameter(2, SelfDescription.StatusEnum.ACTIVE)
+            .setParameter(2, SelfDescriptionStatus.ACTIVE)
             .uniqueResult();
 
     SdMetaRecord record = new SdMetaRecord(selfDescription);
@@ -98,7 +98,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     // TODO: Add validators/signatures to the record once the Signature class is clarified.
 
     if (existingSd != null) {
-      existingSd.setStatus(SelfDescription.StatusEnum.DEPRECATED);
+      existingSd.setStatus(SelfDescriptionStatus.DEPRECATED);
       existingSd.setStatusTime(Instant.now());
       currentSession.update(existingSd);
       currentSession.flush();
@@ -117,7 +117,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     }
 
     if (existingSd != null) {
-      existingSd.setStatus(SelfDescription.StatusEnum.DEPRECATED);
+      existingSd.setStatus(SelfDescriptionStatus.DEPRECATED);
       existingSd.setStatusTime(Instant.now());
 
       // TODO: Claims from existing SD need to be removed from the GraphDB.
@@ -131,7 +131,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
   }
 
   @Override
-  public void changeLifeCycleStatus(String hash, SelfDescription.StatusEnum targetStatus) {
+  public void changeLifeCycleStatus(String hash, SelfDescriptionStatus targetStatus) {
     final Session currentSession = sessionFactory.getCurrentSession();
     // Get a lock on the record.
     // TODO: Investigate lock-less update.
@@ -139,7 +139,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     if (record == null) {
       throw new NotFoundException("There is no SelfDescription with hash " + hash);
     }
-    if (record.getStatus() != SelfDescription.StatusEnum.ACTIVE) {
+    if (record.getStatus() != SelfDescriptionStatus.ACTIVE) {
       throw new ConflictException("Can not change status of SD with hash " + hash + " because status is not Active but '" + record.getStatus() + "'");
     }
     record.setStatus(targetStatus);

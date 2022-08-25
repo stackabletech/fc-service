@@ -1,6 +1,5 @@
-package eu.gaiax.difs.fc.core.service.schemaManagement.impl;
+package eu.gaiax.difs.fc.core.service.schemastore.impl;
 
-import eu.gaiax.difs.fc.core.service.schemaManagement.SchemaStore.SchemaType;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.List;
@@ -11,6 +10,8 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
 
 /**
  *

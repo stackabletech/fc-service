@@ -14,7 +14,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.gaiax.difs.fc.api.generated.model.Participant;
+import eu.gaiax.difs.fc.api.generated.model.Participants;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
+import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.ParticipantDao;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
@@ -108,12 +110,13 @@ public class ParticipantsService implements ParticipantsApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<UserProfile>> getParticipantUsers(String participantId, Integer offset, Integer limit) {
+  public ResponseEntity<UserProfiles> getParticipantUsers(String participantId, Integer offset, Integer limit) {
     log.debug("getParticipantUsers.enter; got participantId: {}", participantId);
     List<UserProfile> profiles = partDao.selectUsers(participantId)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
     log.debug("getParticipantUsers.exit; returning: {}", profiles.size());
-    return ResponseEntity.ok(profiles);
+    // TODO: set total count
+    return ResponseEntity.ok(new UserProfiles(0, profiles));
   }
 
   /**
@@ -129,12 +132,13 @@ public class ParticipantsService implements ParticipantsApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<Participant>> getParticipants(Integer offset, Integer limit) { //, String orderBy, Boolean asc) {
+  public ResponseEntity<Participants> getParticipants(Integer offset, Integer limit) { //, String orderBy, Boolean asc) {
     // sorting is not supported yet by keycloak admin API
     log.debug("getParticipants.enter; got offset: {}, limit: {}", offset, limit);
     List<Participant> parts = partDao.search(offset, limit);
     log.debug("getParticipants.exit; returning: {}", parts.size());
-    return ResponseEntity.ok(parts);
+    // TODO: set total count
+    return ResponseEntity.ok(new Participants(0, parts));
   }
 
   /**

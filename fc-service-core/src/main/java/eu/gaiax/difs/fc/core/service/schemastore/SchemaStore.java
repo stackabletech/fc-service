@@ -1,4 +1,4 @@
-package eu.gaiax.difs.fc.core.service.schemaManagement;
+package eu.gaiax.difs.fc.core.service.schemastore;
 
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import java.util.List;

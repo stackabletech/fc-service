@@ -1,6 +1,6 @@
 package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
-import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import java.io.Serializable;
 import java.time.Instant;
@@ -39,7 +39,7 @@ public class SdMetaRecord implements Serializable {
    * Status of the SelfDescription in the catalogue.
    */
   @Column(name = "status", nullable = false)
-  private SelfDescription.StatusEnum status;
+  private SelfDescriptionStatus status;
 
   /**
    * credentialSubject (subject) of the participant owning this SD.

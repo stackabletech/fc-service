@@ -1,6 +1,6 @@
-package eu.gaiax.difs.fc.core.service.schemaManagement.impl;
+package eu.gaiax.difs.fc.core.service.schemastore.impl;
 
-import eu.gaiax.difs.fc.core.service.schemaManagement.SchemaStore.SchemaType;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
 
 /**
  *
