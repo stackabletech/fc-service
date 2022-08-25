@@ -4,78 +4,125 @@ import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import java.time.Instant;
 
 /**
- * Filter parameters for searching Self-Description meta data. If multiple items
+ * Filter parameters for searching self description meta data. If multiple items
  * are present, they are combined with an 'AND' semantic.
  */
 @lombok.Getter
-@lombok.Setter
 public class SdFilter {
 
   /**
-   * Start time for the time range filter when the Self-Description was uploaded
+   * Start time for the time range filter when the self description was uploaded
    * to the catalogue.
    */
   private Instant uploadTimeStart;
 
   /**
-   * End time for the time range filter when the Self-Description was uploaded
-   * to the catalogue.
+   * End time for the time range filter when the self description was uploaded to
+   * the catalogue.
    */
   private Instant uploadTimeEnd;
 
   /**
-   * Start time for the time range filter when the status of the
-   * Self-Description was last changed in the catalogue.
+   * Start time for the time range filter when the status of the self description
+   * was last changed in the catalogue.
    */
   private Instant statusTimeStart;
 
   /**
-   * End time for the time range filter when the status of the Self-Description
+   * End time for the time range filter when the status of the self description
    * was last changed in the catalogue.
    */
   private Instant statusTimeEnd;
 
   /**
-   * Filter for the issuer of the Self-Description. This is the unique ID
+   * Filter for the issuer of the self description. This is the unique ID
    * (credentialSubject) of the Participant that has prepared the
    * Self-Description.
    */
+  @lombok.Setter
   private String issuer;
 
   /**
-   * Filter for a validator of the Self-Description. This is the unique ID
+   * Filter for a validator of the self description. This is the unique ID
    * (credentialSubject) of the Participant that validated (part of) the
    * Self-Description.
    */
+  @lombok.Setter
   private String validator;
 
   /**
-   * Filter for the status of the Self-Description.
+   * Filter for the status of the self description.
    */
+  @lombok.Setter
   private SelfDescriptionStatus status;
 
   /**
-   * Filter for a id/credentialSubject of the Self-Description.
+   * Filter for a id/credentialSubject of the self description.
    */
+  @lombok.Setter
   private String id;
 
   /**
-   * Filter for a hash of the Self-Description.
+   * Filter for a hash of the self description.
    */
+  @lombok.Setter
   private String hash;
 
   /**
-   * Filter for the issuer of the Self-Description. This is the unique ID
-   * (credentialSubject) of the Participant that has prepared the
-   * Self-Description.
+   * The offset to start returning results when applying this filter.
    */
-  private Integer offset;
+  @lombok.Setter
+  private int offset;
 
   /**
-   * Filter for the issuer of the Self-Description. This is the unique ID
-   * (credentialSubject) of the Participant that has prepared the
-   * Self-Description.
+   * Maximum number of results to return when applying this filter. When set to 0,
+   * no limit applies.
    */
-  private Integer limit;
+  @lombok.Setter
+  private int limit;
 
+  /**
+   * Sets the upload time range that the filter will check for a self description
+   * record to match. The upload time specifies when the self description was
+   * uploaded to the catalogue. Start time and end time must be either both
+   * {@code null} or both non-{@code null}. Note: For not imposing any upper limit
+   * in time, {@code Instant.MAX} is <em>not</em> usable, since Hibernate will not
+   * accept this value and throw an exception.
+   *
+   * @param uploadTimeStart Start time of the time range that this filter will
+   *                        check for a self description record to match.
+   * @param uploadTimeEnd   End time of the time range that this filter will check
+   *                        for a self description record to match.
+   * @throws IllegalArgumentException If either start time or end time is
+   *                                  {@code null}, while the other is
+   *                                  non-{@code null}.
+   */
+  public void setUploadTimeRange(final Instant uploadTimeStart, final Instant uploadTimeEnd) {
+    if ((uploadTimeStart == null) ^ (uploadTimeEnd == null)) {
+      throw new IllegalArgumentException("start time and end time may be both null, but not just one of them");
+    }
+    this.uploadTimeStart = uploadTimeStart;
+    this.uploadTimeEnd = uploadTimeEnd;
+  }
+
+  /**
+   * Sets the status time range that the filter will check for a self description
+   * record to match. The status time specifies when the self description was last
+   * changed in the catalogue. Start time and end time must be either both
+   * {@code null} or both non-{@code null}. Note: For not imposing any upper limit
+   * in time, {@code Instant.MAX} is <em>not</em> usable, since Hibernate will not
+   * accept this value and throw an exception.
+   *
+   * @param statusTimeStart Start time of the time range that this filter will
+   *                        check for a self description record to match.
+   * @param statusTimeEnd   End time of the time range that this filter will check
+   *                        for a self description record to match.
+   */
+  public void setStatusTimeRange(final Instant statusTimeStart, final Instant statusTimeEnd) {
+    if ((statusTimeStart == null) ^ (statusTimeEnd == null)) {
+      throw new IllegalArgumentException("start time and end time may be both null, but not just one of them");
+    }
+    this.statusTimeStart = statusTimeStart;
+    this.statusTimeEnd = statusTimeEnd;
+  }
 }
