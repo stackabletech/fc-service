@@ -308,6 +308,15 @@ components:
               type: array
               items: 
                 $ref: '#/components/schemas/UserProfile'
+    OntologySchemas:
+      allOf:
+        - $ref: '#/components/schemas/ResultPage'
+        - type: object
+          properties:
+            items: 
+              type: array
+              items: 
+                $ref: '#/components/schemas/OntologySchema'
           
   parameters:
     OffsetParam:
@@ -671,11 +680,11 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OntologySchema'
+                $ref: '#/components/schemas/OntologySchemas'
         '400':
           $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'          
     post:
@@ -739,6 +748,8 @@ paths:
                 description: 'SHACL file describing the ontology of the schema.'
         '400':
           $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -772,6 +783,8 @@ paths:
           $ref: '#/components/responses/ClientError'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
         '500':
@@ -795,6 +808,8 @@ paths:
           description: 'Deleted Schema'
         '400':
           $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -836,6 +851,8 @@ paths:
                 description: 'SHACL file describing the ontology of the schema.'
         '400':
           $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
   /verification:
