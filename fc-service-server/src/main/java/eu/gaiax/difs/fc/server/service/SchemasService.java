@@ -5,6 +5,7 @@ import eu.gaiax.difs.fc.api.generated.model.OntologySchema;
 import eu.gaiax.difs.fc.server.generated.controller.SchemasApiDelegate;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -103,4 +104,11 @@ public class SchemasService implements SchemasApiDelegate {
     log.debug("deleteSchema.enter, got schemaId {}", schemaId);
     return ResponseEntity.ok(null);
   }
+
+  @Override
+  public ResponseEntity<Void> updateSchema(String schemaId, String body) {
+    log.debug("updateSchema.enter, got schemaId {}", schemaId);
+    return ResponseEntity.ok(null);
+  }
+
 }

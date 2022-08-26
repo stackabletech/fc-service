@@ -86,6 +86,7 @@ public class SchemaControllerTest {
     @Test
     @WithMockUser(roles = {"Ro-MU-CA","Ro-MU-A"})
     public void getLatestSchemasShouldReturnSuccessResponse() throws Exception {
+        // request for latest schemas without params should return 400 BAD_REQUEST
         mockMvc.perform(MockMvcRequestBuilders.get("/schemas/latest")
                         .with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
