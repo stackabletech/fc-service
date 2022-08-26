@@ -4,7 +4,7 @@ $(document).ready(function() {
       var partDataTable = $('#usersTable').DataTable({
             ajax: {
                 url: 'users',
-                dataSrc: ''
+                dataSrc: 'items'
              },
             columns: [
                   { data: 'id' } ,
@@ -15,11 +15,13 @@ $(document).ready(function() {
                   { data: 'roleIds' },
                   { data: 'username' },
                   {
+                        orderable: false,
                       "render": function (data) {
                         return '<div><button type="button" class="btn btn-success" id="editButton">Edit</button></div>'
                      }
                   },
                   {
+                        orderable: false,
                       "render": function (data) {
                         return '<div><button type="button" class="btn btn-danger" id="deleteButton">Delete</button></div>'
                         }

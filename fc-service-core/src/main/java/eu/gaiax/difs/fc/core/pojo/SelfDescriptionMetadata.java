@@ -5,8 +5,11 @@ import static java.time.OffsetDateTime.now;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -16,7 +19,7 @@ import java.util.List;
 @lombok.AllArgsConstructor
 @lombok.NoArgsConstructor
 @lombok.EqualsAndHashCode(callSuper = true)
-public class SelfDescriptionMetadata extends eu.gaiax.difs.fc.api.generated.model.SelfDescription {
+public class SelfDescriptionMetadata extends SelfDescription {
 
   /**
    * A reference to the self description content.
@@ -29,5 +32,13 @@ public class SelfDescriptionMetadata extends eu.gaiax.difs.fc.api.generated.mode
   public SelfDescriptionMetadata(ContentAccessorDirect contentAccessor, String id, String issuer, List<String> validators) {
     super(calculateSha256AsHex(contentAccessor.getContentAsString()), id, SelfDescriptionStatus.ACTIVE, issuer, validators, now(), now());
     this.selfDescription = contentAccessor;
+  }
+
+  public SelfDescriptionMetadata(ContentAccessorDirect contentAccessorDirect, VerificationResultParticipant verificationResult) {
+    super(calculateSha256AsHex(contentAccessorDirect.getContentAsString()), verificationResult.getId(), SelfDescriptionStatus.ACTIVE,
+         verificationResult.getIssuer(),Collections.<String>emptyList(),verificationResult.getVerificationTimestamp(),
+        verificationResult.getVerificationTimestamp());
+
+    this.selfDescription = contentAccessorDirect;
   }
 }

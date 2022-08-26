@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.client;
 
+import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import java.util.List;
 import java.util.Map;
 
@@ -22,11 +23,11 @@ public class UserClient extends ServiceClient {
         return doGet(baseUrl + "/users/{userId}", Map.of("userId", userId), UserProfile.class);
     }
     
-    public List<UserProfile> getUsers(int offset, int limit) {
+    public UserProfiles getUsers(int offset, int limit) {
         if (limit == 0) {
             limit = 50;
         }
-        return doGet(baseUrl + "/users?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit), List.class);
+        return doGet(baseUrl + "/users?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit), UserProfiles.class);
     }
 
     public List<String> getUserRoles(String userId) {
