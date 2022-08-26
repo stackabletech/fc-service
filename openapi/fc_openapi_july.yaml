@@ -75,21 +75,23 @@ components:
           $ref: '#/components/schemas/Parameters'
       required:
         - statement
-    Parameters: #!! why is this a parameter --> ggf ins Statement packen -> Julius ok
+    Parameters:
       type: object
       properties:
         limit:
-          type: integer
-          example: 10
+          type: string
+          example: '10'
         offset:
-          type: integer
-          example: 5
+          type: string
+          example: '5'
     Result:
       type: object
       properties:
         columns:
           type: array
-          example: ["column name 1", "column name 2"]
+          example:
+            - column name 1
+            - column name 2
           items:
             type: string
             example: column names
@@ -123,30 +125,23 @@ components:
     VerificationResult:
       type: object
       properties:
-        verificationTimestamp:
+        verification-timestamp:
           type: string
-          format : date-time
-        lifecycleStatus: #!! is not known when verifying external SDs -> Julius: You are supposed to compute the status (active, invalid, etc.) from the available information. That is the result of the validation. Maybe rename to just status
-          type: string # does the self-description have a lifecycle status in this catalogue?
-          description: Lifecycle-state an SD would get, if it would be added to the catalogue.
-        issuer: #!! Is this the participant? -> Julius: Yes, the participant that created the SD
-          type: string # contains the id of the issuers self-description if available  #!! NOT FURTHER SPECIFIED
-          description: ID of the issues Self-Description, if available.
-        issuedDate:
+        lifecycle-status:
           type: string
-          format: date
+        issuer:
+          type: object
+        issued-date:
+          type: string
         signatures:
           type: array
           items:
-            type: array
-            items:
-              type: object
-            description: All proofs inside the Self-Description.
+            type: object
       required:
-        - verificationTimestamp
-        - lifecycleStatus #!! is not known when verifying external SDs. Remove from required -> Julius: You are supposed to compute the status (active, invalid, etc.) from the available information. That is the result of the validation. Maybe rename to just status
-        - issuer #!! Comment on issuer: if available, but still required?? Remove from required -> Julius: required
-        - issuedDate
+        - verification-timestamp
+        - lifecycle-status
+        - issuer
+        - issued-date
         - signatures
     Participant:
       type: object
@@ -156,9 +151,9 @@ components:
           description: Global ID of the participant
         name:
           type: string
-        publicKey: #!! Can this be changed? If it is changed, are all SDs signed by the old key invalid? -> Julius: For the first version you can assume that SD go invalid when the TrustAnchor or participant key change
+        public-key:
           type: string
-        selfDescription:
+        self-description:
           type: string
     User:
       type: object
@@ -199,7 +194,7 @@ components:
           required:
             - id
             - username
-    Role: #!! Changed Role from an object with a single String property to simply a String
+    Role:
       type: string
       example: Ro-MU-CA
     Session:
@@ -207,26 +202,29 @@ components:
       properties:
         userId:
           type: string
-        creationDatetime:
+        creationDate:
           type: string
-          format: date-time
-        status: #!! What is a status?
+        status:
           type: string
-#        seed: #!! We must have a seed to do pagination, user must be able to set it? -> Julius: ok
-#          type: string
         roleIds:
           type: array
           items:
             $ref: '#/components/schemas/Role'
-    SelfDescription:
+    Self-Description:
       type: object
       properties:
-        sdHash:
+        sd-hash:
           type: string
-        id: #!! Added id / credentialSubject
+        id:
           type: string
         status:
-          $ref: '#/components/schemas/SelfDescriptionStatus'
+          type: string
+          enum:
+            - active
+            - eol
+            - deprecated
+            - revoked
+          example: active
         issuer:
           type: string
         validators:
@@ -236,88 +234,36 @@ components:
           type: array
           items:
             type: string
-        uploadDatetime:
+        upload-time:
           type: string
-          format: date-time
           example: '2022-03-01T13:00:00Z'
           description: The time stamp (ISO8601) when the SD was uploaded.
-        statusDatetime:
+        status-time:
           type: string
-          format: date-time
           example: '2022-05-11T15:30:00Z'
           description: >-
             The last time stamp (ISO8601) the status changed (for this
             Catalogue)
-    SelfDescriptionStatus:
-      type: string
-      enum:
-        - active
-        - eol
-        - deprecated
-        - revoked
-    OntologySchema:
+    SchemaFC:
       type: object
       properties:
         ontologies:
-          description: 'SchemaIds of ontologies, defining the terms of a schema'
+          description: Ontologies defining the terms of a schema,
           type: array
           items:
             type: string
-            example: schemaId
         shapes:
-          description: 'SchemaIds of shapes (SHACL Shapes Constraint Language) used to validate instances against the schema.'
+          description: >-
+            Shapes used to validate instances against the schema. SHACL Shapes
+            Constraint Language
           type: array
           items:
             type: string
-            example: schemaId
         vocabularies:
-          description: 'SchemaIds of controlled vocabularies used in the schema'
+          description: Controlled vocabularies used in the scema
           type: array
           items:
             type: string
-            example: schemaId
-    ResultPage:
-      type: object
-      properties:
-        totalCount:
-          type: integer
-    SelfDescriptions:
-      allOf:
-        - $ref: '#/components/schemas/ResultPage'
-        - type: object
-          properties:
-            items: 
-              type: array
-              items: 
-                $ref: '#/components/schemas/SelfDescription'
-    Participants:
-      allOf:
-        - $ref: '#/components/schemas/ResultPage'
-        - type: object
-          properties:
-            items: 
-              type: array
-              items: 
-                $ref: '#/components/schemas/Participant'
-    UserProfiles:
-      allOf:
-        - $ref: '#/components/schemas/ResultPage'
-        - type: object
-          properties:
-            items: 
-              type: array
-              items: 
-                $ref: '#/components/schemas/UserProfile'
-    OntologySchemas:
-      allOf:
-        - $ref: '#/components/schemas/ResultPage'
-        - type: object
-          properties:
-            items: 
-              type: array
-              items: 
-                $ref: '#/components/schemas/OntologySchema'
-          
   parameters:
     OffsetParam:
       name: offset
@@ -371,6 +317,15 @@ tags:
       url: http://gaiax.io
   - name: Query
     description: Send graph queries to this Catalogue.
+  - name: Sandbox
+    description: >-
+      Try changes to the JSON-LD Self-Descriptions against the catalogue in a
+      sandbox, i.e. the changes are not really applied. But the error messages
+      allow the debugging of Self-Descriptions wrt trust and validation of the
+      content on a syntactical and semantic level.
+    externalDocs:
+      description: Find out more
+      url: http://gaiax.io
   - name: Schemas
     description: >-
       The format of the self-descriptions are defined by schemas in the
@@ -392,8 +347,8 @@ paths:
         - SelfDescriptions
       summary: Get the list of metadata of Self-Descriptions in the Catalogue
       operationId: readSelfDescriptions
-      parameters: #!! Added filter parameters for all(?) metadata fields
-        - name: uploadTimerange
+      parameters:
+        - name: upload-timerange
           in: query
           description: >-
             Filter for the time range when the Self-Description was uploaded to
@@ -403,7 +358,7 @@ paths:
           example: 2022-03-01T13:00:00Z/2022-05-11T15:30:00Z
           schema:
             type: string
-        - name: statusTimerange
+        - name: status-timerange
           in: query
           description: >-
             Filter for the time range when the status of the Self-Description
@@ -434,8 +389,14 @@ paths:
           in: query
           description: Filter for the status of the Self-Description.
           required: false
-          schema:          
-            $ref: '#/components/schemas/SelfDescriptionStatus'
+          schema:
+            type: string
+            default: active
+            enum:
+              - active
+              - eol
+              - deprecated
+              - revoked
         - name: id
           in: query
           description: Filter for a id/credentialSubject of the Self-Description.
@@ -456,7 +417,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SelfDescriptions'
+                type: array
+                items:
+                  $ref: '#/components/schemas/Self-Description'
         '400':
           $ref: '#/components/responses/ClientError'
         '500':
@@ -464,12 +427,12 @@ paths:
     post:
       tags:
         - SelfDescriptions
-      summary: Add a new SelfDescription to the catalogue
+      summary: Add a new Self-Description to the catalogue
       operationId: addSelfDescription
       security:
         - jwt: []
       requestBody:
-        description: The new SelfDescription
+        description: The new Self-Description
         content:
           application/json:
             schema:
@@ -486,7 +449,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SelfDescription'
+                $ref: '#/components/schemas/Self-Description'
         '202':
           description: The request was accepted but the validation is not finished yet.
           headers:
@@ -518,7 +481,7 @@ paths:
       parameters:
         - name: self_description_hash
           in: path
-          description: Hash of the SelfDescription
+          description: Hash of the self-description
           required: true
           schema:
             type: string
@@ -526,15 +489,15 @@ paths:
         - jwt: []
       responses:
         '200':
-          description: The requested SelfDescription
+          description: The requested Self-Description
           content:
-            application/json:
+            application/ld+json:
               schema:
-                type: string
+                type: object
         '400':
           $ref: '#/components/responses/ClientError'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: Self-Description not found
         '500':
           $ref: '#/components/responses/ServerError'
     delete:
@@ -545,7 +508,7 @@ paths:
       parameters:
         - name: self_description_hash
           in: path
-          description: Hash of the SelfDescription
+          description: Hash of the self-description
           required: true
           schema:
             type: string
@@ -556,20 +519,18 @@ paths:
           $ref: '#/components/responses/ClientError'
         '403':
           $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
   /self-descriptions/{self_description_hash}/revoke:
     post:
       tags:
         - SelfDescriptions
-      summary: Change the lifecycle state of a SelfDescription to revoked.
+      summary: Change the lifecycle state of a Self-Description to revoked.
       operationId: updateSelfDescription
       parameters:
         - name: self_description_hash
           in: path
-          description: Hash of the SelfDescription
+          description: Hash of the self-description
           required: true
           schema:
             type: string
@@ -578,23 +539,20 @@ paths:
           description: Revoked
           headers:
             location:
-              description: URL of the added SelfDescription
+              description: URL of the added Self-Description
               schema:
                 type: string
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SelfDescription'
+                $ref: '#/components/schemas/Self-Description'
         '400':
           $ref: '#/components/responses/ClientError'
         '403':
           $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
-
-  /query: #!! Suggestion: rename to query, and allow only a single query. If multiple queries are ever added in the future, add an endpoint queries. -> Julius: ok
+  /queries:
     get:
       tags:
         - Query
@@ -655,12 +613,13 @@ paths:
               example: ''
             text/html:
               example: ''
-        '400': ## Malformed Message: The receveived request cannot be processed, either because its syntax is ## incorrect or forbidden query clauses are used. For instance, it is not allowed to manipulate data ## through the query endpoint
+        '400':
           $ref: '#/components/responses/ClientError'
-        '408': ## Query Timeout: the query took longer than the configured timeout
-          ## interval. The client needs to rewrite the query so it can be
-          ## processed faster.
-          $ref: '#/components/responses/ServerError'
+        '408':
+          description: >-
+            Query Timeout: the query took longer than the configured timeout
+            interval. The client needs to rewrite the query so it can be
+            processed faster.
         '500':
           $ref: '#/components/responses/ServerError'
           
@@ -668,51 +627,48 @@ paths:
     get:
       tags:
         - Schemas
-      summary: 'Get the full list of ontologies, shapes and vocabularies.'
-      description: 'The schema identifiers, returned by this endpoint can be used to download the schema files.'
+      summary: Get the full list of schemas
       operationId: getSchemas
       parameters:
         - $ref: '#/components/parameters/OffsetParam'
         - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OrderByParam'
+        - $ref: '#/components/parameters/AscendingParam'
       responses:
         '200':
-          description: 'References to ontologies, shapes and vocabularies.'
+          description: All schemas
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OntologySchemas'
+                type: array
+                items:
+                  $ref: '#/components/schemas/SchemaFC'
         '400':
           $ref: '#/components/responses/ClientError'
-        '403':
-          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '#/components/responses/ServerError'          
+          $ref: '#/components/responses/ServerError'
     post:
       tags:
         - Schemas
-      summary: 'Add a new Schema to the catalogue.'
-      description: 'This endpoint accepts either an ontology (OWL file), shape (SHACL file) or controlled vocabulary (SKOS file), which is added to the schemas of the catalogue.'
-      operationId: addSchema
+      summary: >-
+        Add a new Schema to the catalogue, or replace an existing schema that
+        has the same URI,
+      operationId: addSchema,
       security:
         - jwt: []
       requestBody:
-        description: 'The file of the new schema. either an ontology (OWL file), shape (SHACL file) or controlled vocabulary (SKOS file).'
+        description: The new Schema,
         content:
-          application/rdf+xml:
+          application/json:
             schema:
-              type: string
-              description: 'OWL file describing the ontology of the schema or SKOS file describing the controlled vocabulary.'
-          text/turtle:
-            schema:
-              type: string
-              description: 'SHACL file describing the ontology of the schema.'
+              $ref: '#/components/schemas/SchemaFC'
         required: true
       responses:
         '201':
-          description: 'Created'
+          description: Created,
           headers:
             location:
-              description: 'URL of the added Schema.'
+              description: URL of the added Schema
               schema:
                 type: string
         '400':
@@ -730,132 +686,91 @@ paths:
       parameters:
         - name: schemaId
           in: path
-          description: 'Identifier of the Schema.'
+          description: Identifier of the Schema
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: 'The schema for the given identifier. Depending on the type of the schema, either an ontology, shape graph or controlled vocabulary is returned.'
+          description: A specific Schema
           content:
-            application/rdf+xml:
+            application/json:
               schema:
-                type: string
-                description: 'OWL file describing the ontology of the schema or SKOS file describing the controlled vocabulary.'
-            text/turtle:
-              schema:
-                type: string
-                description: 'SHACL file describing the ontology of the schema.'
+                $ref: '#/components/schemas/SchemaFC'
         '400':
           $ref: '#/components/responses/ClientError'
-        '403':
-          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
-    put:
-      tags:
-        - Schemas
-      summary: 'Replace a schema. This is only allowed for ontologies with the same IRI.'
-      operationId: updateSchema
-      parameters:
-        - name: schemaId
-          in: path
-          description: 'Identifier of the Schema.'
-          required: true
-          schema:
-            type: string
-      security:
-        - jwt: [ ]
-      requestBody:
-        description: 'The new ontology (OWL file).'
-        content:
-          application/rdf+xml:
-            schema:
-              type: string
-              description: 'OWL file describing the ontology.'
-        required: true
-      responses:
-        '200':
-          description: 'Updated.'
-        '400':
-          $ref: '#/components/responses/ClientError'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/ServerError'
     delete:
       tags:
         - Schemas
-      summary: 'Delete a Schema'
+      summary: Delete a Schema
       operationId: deleteSchema
-      security:
-        - jwt: [ ]
       parameters:
         - name: schemaId
           in: path
-          description: 'Identifier of the Schema'
+          description: Identifier of the Schema
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: 'Deleted Schema'
+          description: Deleted Schema
         '400':
           $ref: '#/components/responses/ClientError'
-        '403':
-          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'          
+          $ref: '#/components/responses/ServerError'
   /schemas/latest:
-    get: 
+    get:
       tags:
         - Schemas
-      summary: 'Get the latest schema for a given type. If no term is specified, then the composite schema is returned.'
-      operationId: getLatestSchema
+      summary: Get the latest schema of all types
+      operationId: getLatestSchemas
+      responses:
+        '200':
+          description: The latest schemas of all types
+          content:
+            application/json: #!! schema + ld?
+              schema:
+                type: array #!! Is 'type' part of the schema schema, or should we change this to an oject with using type:schema
+                items:
+                  $ref: '#/components/schemas/SchemaFC'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /schemas/latest/{type}:
+    get:
+      tags:
+        - Schemas
+      summary: Get latest schemas of a specific type
+      operationId: getLatestSchemaOfType
       parameters:
         - name: type
-          in: query
-          description: 'Type of the schema.'
-          required: false
-          schema:
-            type: string
-            enum:
-              - ontology
-              - shape
-              - vocabulary
-        - name: term
-          in: query
-          description: 'The URI of the term of the requested Self-Description schema e.g. `http://w3id.org/gaia-x/service#ServiceOffering`'
-          required: false
+          in: path
+          description: Type of the requested Self-Description schema e.g. Service
+          required: true
           schema:
             type: string
       responses:
         '200':
-          description: 'The latest schemas for the given type or term.'
+          description: The latest schema of requested types
           content:
-            application/rdf+xml:
+            application/json:
               schema:
-                type: string
-                description: 'OWL file describing the ontology of the schema or SKOS file describing the controlled vocabulary.'
-            text/turtle:
-              schema:
-                type: string
-                description: 'SHACL file describing the ontology of the schema.'
+                $ref: '#/components/schemas/SchemaFC'
         '400':
           $ref: '#/components/responses/ClientError'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+        '405':
+          description: Invalid input
+          content: {}
         '500':
           $ref: '#/components/responses/ServerError'
-  /verification:
+  /verifications/self-descriptions:
     get:
       tags:
         - Verification
@@ -889,8 +804,7 @@ paths:
           query  languages   but   only "application/json" is mandatory.
         content:
           application/json:
-            schema:
-              type: string
+            schema: {}
       responses:
         '200':
           description: Verification result
@@ -908,23 +822,25 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
   /participants:
-    get: #!! Needs pagination; Should this really include the entire Participant SD, or only the hash?
+    get:
       tags:
         - Participants
       summary: Get the registered participants
       operationId: getParticipants
-      parameters: #!! Added pagination parameters
+      parameters:
         - $ref: '#/components/parameters/OffsetParam'
         - $ref: '#/components/parameters/LimitParam'
-#        - $ref: '#/components/parameters/OrderByParam'
-#        - $ref: '#/components/parameters/AscendingParam'
+        - $ref: '#/components/parameters/OrderByParam'
+        - $ref: '#/components/parameters/AscendingParam'
       responses:
         '200':
           description: List of registered participants
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Participants'
+                type: array
+                items:
+                  $ref: '#/components/schemas/Participant'
         '400':
           $ref: '#/components/responses/ClientError'
         '500':
@@ -943,18 +859,13 @@ paths:
           application/json:
             schema:
               type: string
-      responses: #!! Should contain a Location header with the link to the new participant?
+      responses:
         '201':
           description: Created Participant
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Participant'
-          headers: #!! Added location header with participant URL
-            location: 
-              description: 'URL of the added Participant'
-              schema: 
-                type: string
         '400':
           $ref: '#/components/responses/ClientError'
         '403':
@@ -998,14 +909,14 @@ paths:
         - Participants
       summary: Update a participant in the catalogue
       operationId: updateParticipant
-      parameters: #!! fehlt da nicht irgendwie das update?
+      parameters:
         - in: path
           name: participantId
           required: true
           description: The participant to update.
           schema:
             type: string
-      requestBody: #!! Added participant as request body
+      requestBody:
         description: Participant Self-Description
         required: true
         content:
@@ -1071,16 +982,15 @@ paths:
           description: The participant Id
           schema:
             type: string
-        #!! Added pagination parameters
-        - $ref: '#/components/parameters/OffsetParam'
-        - $ref: '#/components/parameters/LimitParam'
       responses:
         '200':
           description: Users of the participant
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserProfiles'
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
         '400':
           $ref: '#/components/responses/ClientError'
         '403':
@@ -1091,24 +1001,26 @@ paths:
           $ref: '#/components/responses/ServerError'
       security:
         - jwt: []
-  /users: #!! This may conflict with an SSO setup using an external auth provider
-    get: #!! potentially long list needs pagination
+  /users:
+    get:
       tags:
         - Users
       summary: List the registered users
       operationId: getUsers
-      parameters: #!! Added pagination parameters
+      parameters:
         - $ref: '#/components/parameters/OffsetParam'
         - $ref: '#/components/parameters/LimitParam'
-#        - $ref: '#/components/parameters/OrderByParam'
-#        - $ref: '#/components/parameters/AscendingParam'
+        - $ref: '#/components/parameters/OrderByParam'
+        - $ref: '#/components/parameters/AscendingParam'
       responses:
         '200':
           description: List of usernames
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserProfiles'
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
         '400':
           $ref: '#/components/responses/ClientError'
         '500':
@@ -1131,11 +1043,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserProfile'
-          headers: #!! Added location header with user URL
-            location: 
-              description: 'URL of the added User'
-              schema: 
-                type: string
         '400':
           $ref: '#/components/responses/ClientError'
         '403':
@@ -1183,9 +1090,8 @@ paths:
           schema:
             type: string
       requestBody:
-        description: 'Updated user data, Participant ID will be ignored if provided.'
-        required: true
-        content: #!! Participant ID should be ignored if provided
+        description: User profile
+        content:
           application/json:
             schema:
               $ref: '#/components/schemas/User'
@@ -1250,7 +1156,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array #!! Changed to array, since roles implies plural
+                type: array
                 items:
                   $ref: '#/components/schemas/Role'
         '400':
@@ -1277,7 +1183,7 @@ paths:
         content:
           application/json:
             schema:
-              type: array #!! Changed to array, since roles implies plural
+              type: array
               items:
                 $ref: '#/components/schemas/Role'
       responses:
@@ -1307,19 +1213,17 @@ paths:
           content:
             application/json:
               schema:
-                type: array #!! Changed to array, since roles implies plural
+                type: array
                 items:
                   $ref: '#/components/schemas/Role'
         '400':
           $ref: '#/components/responses/ClientError'
         '500':
           $ref: '#/components/responses/ServerError'
-
-  /session: #!! Changed to singular, since a user has only 1 session, and the get response is only one session.
+  /sessions:
     get:
       tags:
         - Session
-      operationId: getCurrentSession
       responses:
         '200':
           description: Get information on the current session
@@ -1327,14 +1231,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Session'
-        '500':
-          $ref: '#/components/responses/ServerError'
-    delete: #!! This should be an implementation detail, logout is SSO-system dependent
+  /sessions/logout:
+    get:
       tags:
         - Session
-      operationId: logoutCurrentSession
       responses:
         '200':
           description: The current session was closed
-        '500':
-          $ref: '#/components/responses/ServerError'
