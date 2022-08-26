@@ -1,0 +1,1240 @@
+openapi: 3.0.1
+info:
+  title: Gaia-X Federated Catalogue
+  description: REST API of the Gaia-X catalogue
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+  - url: https://fc.gxfs.dev
+    description: Gaia-X test environment
+components:
+  responses:
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: >-
+        Forbidden. The user does not have the permission to execute this
+        request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServerError:
+      description: >-
+        May contain hints how to solve the error or indicate what went wrong at
+        the server. Must not outline any information about the internal
+        structure of the server.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ClientError:
+      description: >-
+        May contain hints how to solve the error or indicate what was wrong in
+        the request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: HTTP Conflict 409
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+        - code
+        - message
+    Statement:
+      type: object
+      properties:
+        statement:
+          type: string
+          example: Match (m:Movie) where m.released > 2000 RETURN m
+        parameters:
+          $ref: '#/components/schemas/Parameters'
+      required:
+        - statement
+    Parameters:
+      type: object
+      properties:
+        limit:
+          type: string
+          example: '10'
+        offset:
+          type: string
+          example: '5'
+    Result:
+      type: object
+      properties:
+        columns:
+          type: array
+          example:
+            - column name 1
+            - column name 2
+          items:
+            type: string
+            example: column names
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Data'
+      required:
+        - columns
+        - data
+    Data:
+      type: object
+      properties:
+        row:
+          type: array
+          example:
+            - value1
+            - value2
+          items:
+            type: string
+        meta:
+          type: array
+          example:
+            - meta1
+            - meta2
+          items:
+            type: string
+      required:
+        - row
+        - meta
+    VerificationResult:
+      type: object
+      properties:
+        verification-timestamp:
+          type: string
+        lifecycle-status:
+          type: string
+        issuer:
+          type: object
+        issued-date:
+          type: string
+        signatures:
+          type: array
+          items:
+            type: object
+      required:
+        - verification-timestamp
+        - lifecycle-status
+        - issuer
+        - issued-date
+        - signatures
+    Participant:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Global ID of the participant
+        name:
+          type: string
+        public-key:
+          type: string
+        self-description:
+          type: string
+    User:
+      type: object
+      properties:
+        participantId:
+          type: string
+          description: Global ID of the associated participant
+          example: ExampleCompany
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        email:
+          type: string
+        roleIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+      required:
+        - participantId
+        - firstName
+        - lastName
+        - email
+    UserProfile:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: Internal catalogue user id
+              example: ExampleCompany-John-Doe
+            username:
+              type: string
+              example: John Doe
+          required:
+            - id
+            - username
+    Role:
+      type: string
+      example: Ro-MU-CA
+    Session:
+      type: object
+      properties:
+        userId:
+          type: string
+        creationDate:
+          type: string
+        status:
+          type: string
+        roleIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+    Self-Description:
+      type: object
+      properties:
+        sd-hash:
+          type: string
+        id:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - eol
+            - deprecated
+            - revoked
+          example: active
+        issuer:
+          type: string
+        validators:
+          description: >-
+            The credentialSubjects of the parties that validated (parts of) the
+            Self-Description
+          type: array
+          items:
+            type: string
+        upload-time:
+          type: string
+          example: '2022-03-01T13:00:00Z'
+          description: The time stamp (ISO8601) when the SD was uploaded.
+        status-time:
+          type: string
+          example: '2022-05-11T15:30:00Z'
+          description: >-
+            The last time stamp (ISO8601) the status changed (for this
+            Catalogue)
+    SchemaFC:
+      type: object
+      properties:
+        ontologies:
+          description: Ontologies defining the terms of a schema,
+          type: array
+          items:
+            type: string
+        shapes:
+          description: >-
+            Shapes used to validate instances against the schema. SHACL Shapes
+            Constraint Language
+          type: array
+          items:
+            type: string
+        vocabularies:
+          description: Controlled vocabularies used in the scema
+          type: array
+          items:
+            type: string
+  parameters:
+    OffsetParam:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      required: false
+      description: The number of items to skip before starting to collect the result set.
+    LimitParam:
+      in: query
+      name: limit
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 100
+      required: false
+      description: The number of items to return.
+    OrderByParam:
+      in: query
+      name: orderBy
+      schema:
+        type: string
+      required: false
+      description: Results will be sorted by this field.
+    AscendingParam:
+      in: query
+      name: ascending
+      schema:
+        type: boolean
+        default: true
+      required: false
+      description: Ascending/Descending ordering.
+  securitySchemes:
+    jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+tags:
+  - name: SelfDescriptions
+    description: >-
+      Retrieving Self-Descriptions from the Catalogue. All Self-Descriptions are
+      JSON-LD files. They are referenced by their sha256 hash. Catalogues
+      synchronize by downloading changesets (lists of hashes) from known other
+      Catalogues and reading the full Self-Descriptions of entries that are
+      unknown to them.
+    externalDocs:
+      description: Find out more
+      url: http://gaiax.io
+  - name: Query
+    description: Send graph queries to this Catalogue.
+  - name: Sandbox
+    description: >-
+      Try changes to the JSON-LD Self-Descriptions against the catalogue in a
+      sandbox, i.e. the changes are not really applied. But the error messages
+      allow the debugging of Self-Descriptions wrt trust and validation of the
+      content on a syntactical and semantic level.
+    externalDocs:
+      description: Find out more
+      url: http://gaiax.io
+  - name: Schemas
+    description: >-
+      The format of the self-descriptions are defined by schemas in the
+      catalogue. Here you get information about the latest schema.
+  - name: Verification
+    description: The Catalogue provides a verification service for e.g. checking the syntax
+  - name: Participants
+    description: Participant Management operations
+  - name: Users
+    description: User Management operations
+  - name: Roles
+    description: Role Managemet operations
+  - name: Session
+    description: Management for auth sessions in the catalogue
+paths:
+  /self-descriptions:
+    get:
+      tags:
+        - SelfDescriptions
+      summary: Get the list of metadata of Self-Descriptions in the Catalogue
+      operationId: readSelfDescriptions
+      parameters:
+        - name: upload-timerange
+          in: query
+          description: >-
+            Filter for the time range when the Self-Description was uploaded to
+            the catalogue. The time range has to be specified as start time and
+            end time as ISO8601 timestamp separated by a `/`.
+          required: false
+          example: 2022-03-01T13:00:00Z/2022-05-11T15:30:00Z
+          schema:
+            type: string
+        - name: status-timerange
+          in: query
+          description: >-
+            Filter for the time range when the status of the Self-Description
+            was last changed in the catalogue. The time range has to be
+            specified as start time and end time as ISO8601 timestamp separated
+            by a `/`.
+          required: false
+          example: 2022-03-01T13:00:00Z/2022-05-11T15:30:00Z
+          schema:
+            type: string
+        - name: issuer
+          in: query
+          description: >-
+            Filter for the issuer of the Self-Description. This is the unique ID
+            of the Participant that has prepared the Self-Description.
+          required: false
+          schema:
+            type: string
+        - name: validator
+          in: query
+          description: >-
+            Filter for a validator of the Self-Description. This is the unique
+            ID of the Participant that validated (part of) the Self-Description.
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter for the status of the Self-Description.
+          required: false
+          schema:
+            type: string
+            default: active
+            enum:
+              - active
+              - eol
+              - deprecated
+              - revoked
+        - name: id
+          in: query
+          description: Filter for a id/credentialSubject of the Self-Description.
+          required: false
+          schema:
+            type: string
+        - name: hash
+          in: query
+          description: Filter for a hash of the Self-Description.
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: List of meta data of available Self-Descriptions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Self-Description'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags:
+        - SelfDescriptions
+      summary: Add a new Self-Description to the catalogue
+      operationId: addSelfDescription
+      security:
+        - jwt: []
+      requestBody:
+        description: The new Self-Description
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        '201':
+          description: Created
+          headers:
+            location:
+              description: URL of the added Self-Description.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Self-Description'
+        '202':
+          description: The request was accepted but the validation is not finished yet.
+          headers:
+            location:
+              description: The URL of the status page.
+              schema:
+                type: string
+            retry-after:
+              description: >-
+                The delay the client have to wait before requesting the status
+                page.
+              schema:
+                type: integer
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /self-descriptions/{self_description_hash}:
+    get:
+      tags:
+        - SelfDescriptions
+      summary: >-
+        Read a Self-Description by its hash. This returns the content of the
+        self-description.
+      description: Returns a single Self-Description
+      operationId: readSelfDescriptionByHash
+      parameters:
+        - name: self_description_hash
+          in: path
+          description: Hash of the self-description
+          required: true
+          schema:
+            type: string
+      security:
+        - jwt: []
+      responses:
+        '200':
+          description: The requested Self-Description
+          content:
+            application/ld+json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '404':
+          description: Self-Description not found
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags:
+        - SelfDescriptions
+      summary: Completely delete a self-description
+      operationId: deleteSelfDescription
+      parameters:
+        - name: self_description_hash
+          in: path
+          description: Hash of the self-description
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /self-descriptions/{self_description_hash}/revoke:
+    post:
+      tags:
+        - SelfDescriptions
+      summary: Change the lifecycle state of a Self-Description to revoked.
+      operationId: updateSelfDescription
+      parameters:
+        - name: self_description_hash
+          in: path
+          description: Hash of the self-description
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Revoked
+          headers:
+            location:
+              description: URL of the added Self-Description
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Self-Description'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /queries:
+    get:
+      tags:
+        - Query
+      summary: Retrieve an HTML website to send openCypher queries to the Catalogue
+      operationId: querywebsite
+      security:
+        - jwt: []
+      responses:
+        '200':
+          description: HTML document that contains a query field for openCypher queries.
+          content:
+            text/html:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags:
+        - Query
+      summary: Send a query to the Catalogue
+      operationId: query
+      parameters:
+        - in: header
+          name: query-language
+          schema:
+            type: string
+            enum: [openCypher, application/sparql-query, sparql*]
+            default: openCypher
+          required: true
+      security:
+        - jwt: []
+      requestBody:
+        description: >-
+          JSON object to send queries. Use "application/json" for openCypher
+          queries. A Catalogue may also support the other content types
+          depending on its supported query languages but only "application/json"
+          is mandatory.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Statement'
+          application/sparql-query:
+            example: ''
+          application/sparql*:
+            example: ''
+      responses:
+        '200':
+          description: successful query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Result'
+            application/sparql-results+xml:
+              example: ''
+            text/turtle:
+              example: ''
+            text/html:
+              example: ''
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '408':
+          description: >-
+            Query Timeout: the query took longer than the configured timeout
+            interval. The client needs to rewrite the query so it can be
+            processed faster.
+        '500':
+          $ref: '#/components/responses/ServerError'
+          
+  /schemas:
+    get:
+      tags:
+        - Schemas
+      summary: Get the full list of schemas
+      operationId: getSchemas
+      parameters:
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OrderByParam'
+        - $ref: '#/components/parameters/AscendingParam'
+      responses:
+        '200':
+          description: All schemas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SchemaFC'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags:
+        - Schemas
+      summary: >-
+        Add a new Schema to the catalogue, or replace an existing schema that
+        has the same URI,
+      operationId: addSchema,
+      security:
+        - jwt: []
+      requestBody:
+        description: The new Schema,
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchemaFC'
+        required: true
+      responses:
+        '201':
+          description: Created,
+          headers:
+            location:
+              description: URL of the added Schema
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /schemas/{schemaId}:
+    get:
+      tags:
+        - Schemas
+      summary: Get a specific schema.
+      operationId: getSchema
+      parameters:
+        - name: schemaId
+          in: path
+          description: Identifier of the Schema
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A specific Schema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaFC'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags:
+        - Schemas
+      summary: Delete a Schema
+      operationId: deleteSchema
+      parameters:
+        - name: schemaId
+          in: path
+          description: Identifier of the Schema
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted Schema
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /schemas/latest:
+    get:
+      tags:
+        - Schemas
+      summary: Get the latest schema of all types
+      operationId: getLatestSchemas
+      responses:
+        '200':
+          description: The latest schemas of all types
+          content:
+            application/json: #!! schema + ld?
+              schema:
+                type: array #!! Is 'type' part of the schema schema, or should we change this to an oject with using type:schema
+                items:
+                  $ref: '#/components/schemas/SchemaFC'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /schemas/latest/{type}:
+    get:
+      tags:
+        - Schemas
+      summary: Get latest schemas of a specific type
+      operationId: getLatestSchemaOfType
+      parameters:
+        - name: type
+          in: path
+          description: Type of the requested Self-Description schema e.g. Service
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The latest schema of requested types
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaFC'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '405':
+          description: Invalid input
+          content: {}
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /verifications/self-descriptions:
+    get:
+      tags:
+        - Verification
+      summary: Show a HTML page to verify (portions of) a signed Self-Description
+      operationId: verifyPage
+      responses:
+        '200':
+          description: >-
+            HTML document that contains a query field to verify (portions of)
+            Self-Descriptions.
+          content:
+            text/html:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags:
+        - Verification
+      summary: >-
+        Send a JSON-LD document to verify with the information from the
+        Catalogue
+      operationId: verify
+      requestBody:
+        description: >-
+          JSON-LD document to be verified object to send queries. Use
+          "application/json" for openCypher queries. A Catalogue may also
+          support the other content   types  depending   on   its   supported  
+          query  languages   but   only "application/json" is mandatory.
+        content:
+          application/json:
+            schema: {}
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResult'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '408':
+          description: >-
+            Query Timeout: the query took longer than the configured timeout
+            interval. The client needs to rewrite the query so it can be
+            processed faster.
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /participants:
+    get:
+      tags:
+        - Participants
+      summary: Get the registered participants
+      operationId: getParticipants
+      parameters:
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OrderByParam'
+        - $ref: '#/components/parameters/AscendingParam'
+      responses:
+        '200':
+          description: List of registered participants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Participant'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+    post:
+      tags:
+        - Participants
+      summary: Register a new participant in the catalogue
+      operationId: addParticipant
+      requestBody:
+        description: Participant Self-Description
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        '201':
+          description: Created Participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Participant'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /participants/{participantId}:
+    get:
+      tags:
+        - Participants
+      summary: Get the registered participant
+      operationId: getParticipant
+      parameters:
+        - in: path
+          name: participantId
+          required: true
+          description: The participantId to get.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The requested participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Participant'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+    put:
+      tags:
+        - Participants
+      summary: Update a participant in the catalogue
+      operationId: updateParticipant
+      parameters:
+        - in: path
+          name: participantId
+          required: true
+          description: The participant to update.
+          schema:
+            type: string
+      requestBody:
+        description: Participant Self-Description
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Updated Participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Participant'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+    delete:
+      tags:
+        - Participants
+      summary: Delete a participant in the catalogue
+      operationId: deleteParticipant
+      parameters:
+        - in: path
+          name: participantId
+          required: true
+          description: The participant to delete.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted Participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Participant'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /participants/{participantId}/users:
+    get:
+      tags:
+        - Participants
+      summary: Get all users of the registered participant
+      operationId: getParticipantUsers
+      parameters:
+        - in: path
+          name: participantId
+          required: true
+          description: The participant Id
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Users of the participant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /users:
+    get:
+      tags:
+        - Users
+      summary: List the registered users
+      operationId: getUsers
+      parameters:
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OrderByParam'
+        - $ref: '#/components/parameters/AscendingParam'
+      responses:
+        '200':
+          description: List of usernames
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags:
+        - Users
+      summary: Register a new user to the associated participant in the catalogue
+      operationId: addUser
+      requestBody:
+        description: User profile
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Created User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /users/{userId}:
+    get:
+      tags:
+        - Users
+      summary: Get the user profile
+      operationId: getUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags:
+        - Users
+      summary: Update the user profile
+      operationId: updateUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: User profile
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags:
+        - Users
+      summary: Delete a user
+      operationId: deleteUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /users/{userId}/roles:
+    get:
+      tags:
+        - Users
+      summary: Get roles of the user
+      operationId: getUserRoles
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags:
+        - Users
+      summary: Update roles of the user
+      operationId: updateUserRoles
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: List of roles which should be assigned to the user
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Role'
+      responses:
+        '200':
+          description: All assigned roles of the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /roles:
+    get:
+      tags:
+        - Roles
+      summary: Get all registered roles in the catalogue
+      operationId: getAllRoles
+      responses:
+        '200':
+          description: All roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /sessions:
+    get:
+      tags:
+        - Session
+      responses:
+        '200':
+          description: Get information on the current session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+  /sessions/logout:
+    get:
+      tags:
+        - Session
+      responses:
+        '200':
+          description: The current session was closed

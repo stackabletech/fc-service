@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.server.service;
 
 
 import eu.gaiax.difs.fc.api.generated.model.OntologySchema;
+import eu.gaiax.difs.fc.api.generated.model.OntologySchemas;
 import eu.gaiax.difs.fc.server.generated.controller.SchemasApiDelegate;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -49,11 +50,11 @@ public class SchemasService implements SchemasApiDelegate {
    *         information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<OntologySchema>> getSchemas(Integer offset, Integer limit) { // String orderBy, Boolean ascending) {
+  public ResponseEntity<OntologySchemas> getSchemas(Integer offset, Integer limit) { // String orderBy, Boolean ascending) {
     log.debug("getSchemas.enter, got offset {}, got limit {}", offset, limit);
     List<OntologySchema> schemas = List.of();
     log.debug("getSchema.exit, returning {}", schemas);
-    return ResponseEntity.ok(schemas);
+    return ResponseEntity.ok(new OntologySchemas(0, schemas));
   }
 
   /**
