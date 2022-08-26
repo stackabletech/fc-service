@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.client;
 
+import eu.gaiax.difs.fc.api.generated.model.Participants;
 import java.util.List;
 import java.util.Map;
 
@@ -44,15 +45,14 @@ public class ParticipantClient extends ServiceClient {
         Class<List<Participant>> reType = (Class<List<Participant>>)(Class<?>) List.class;
         return doGet(baseUrl + "/participants?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit), reType);
     }
-    
-    public List<Participant> getParticipants(int offset, int limit, OAuth2AuthorizedClient authorizedClient) {
+
+    public Participants getParticipants(int offset, int limit, OAuth2AuthorizedClient authorizedClient) {
         if (limit == 0) {
             limit = 50;
         }
-        Class<List<Participant>> reType = (Class<List<Participant>>)(Class<?>) List.class;
-        return doGet(baseUrl + "/participants?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit), reType, authorizedClient);
+        return doGet(baseUrl + "/participants?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit), Participants.class, authorizedClient);
     }
-    
+
     public Participant addParticipant(String participantSD) {
         return doPost(baseUrl + "/participants", participantSD, Map.of(), Participant.class);
     }

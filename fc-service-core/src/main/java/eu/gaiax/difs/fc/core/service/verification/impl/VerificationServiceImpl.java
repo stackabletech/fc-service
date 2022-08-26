@@ -33,10 +33,15 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResultParticipant verifyParticipantSelfDescription(ContentAccessor payload) throws VerificationException {
+    Map<String, Object> parsed = parseSD(payload);
+    String id = (String) parsed.get("id");
+    String name = (String) parsed.get("holder");
+    Map<String, Object> proof = (Map<String, Object>) parsed.get("proof");
+    String key = (String) proof.get("verificationMethod");
     return new VerificationResultParticipant(
-            "name",
-            "id",
-            "key",
+            name,
+            id,
+            key,
             OffsetDateTime.now(),
             "lifecycle",
             LocalDate.MIN,

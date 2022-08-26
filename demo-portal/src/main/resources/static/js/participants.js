@@ -5,20 +5,29 @@ $(document).ready(function() {
       var partDataTable = $('#participantTable').DataTable({
             ajax: {
                 url: 'parts',
-                dataSrc: ''
+                dataSrc: 'items'
              },
+            order: [[1, 'asc']],
             columns: [
+                   {
+                            class: 'details-control',
+                            orderable: false,
+                            data: null,
+                            defaultContent: '',
+                  },
                   { data: 'id' } ,
                   { data: 'name' },
-                  { data: 'public-key' },
-                  { data: 'self-description' },
+                  { data: 'publicKey' },
+                  { data: 'selfDescription' ,'visible' : false},
                   {
-                     "width": "250px", "render": function (data) {
+                       orderable: false,
+                      "render": function (data) {
                         return '<div><button type="button" class="btn btn-success" id="editButton">Edit</button></div>'
                      }
                   },
                   {
-                     "width": "250px", "render": function (data) {
+                      orderable: false,
+                      "render": function (data) {
                         return '<div><button type="button" class="btn btn-danger" id="deleteButton">Delete</button></div>'
                         }
                   }
@@ -27,13 +36,47 @@ $(document).ready(function() {
 
             } );
 
+
+            // Array to track the ids of the details displayed rows
+                var detailRows = [];
+
+                $('#participantTable tbody').on('click', 'tr td.details-control', function () {
+                    var tr = $(this).closest('tr');
+                    var row = partDataTable.row(tr);
+                    var idx = detailRows.indexOf(tr.attr('id'));
+
+                    if (row.child.isShown()) {
+                        tr.removeClass('details');
+                        row.child.hide();
+
+                        // Remove from the 'open' array
+                        detailRows.splice(idx, 1);
+                    } else {
+                        tr.addClass('details');
+                        row.child(format(row.data())).show();
+
+                        // Add to the 'open' array
+                        if (idx === -1) {
+                            detailRows.push(tr.attr('id'));
+                        }
+                    }
+                });
+
+                // On each draw, loop over the `detailRows` array and show any child rows
+                partDataTable.on('draw', function () {
+                    detailRows.forEach(function(id, i) {
+                        $('#' + id + ' td.details-control').trigger('click');
+                    });
+                });
+
             //Edit button show div
             $('#participantTable').on('click', '#editButton',function(e){
                  e.preventDefault();
                  var data = partDataTable.row( $(this).parents('tr')).data();
                 //console.log("edit call"+JSON.stringify(data));
-                $("#editData").val(JSON.stringify(data,null, ' '));
-//                $("#editData").val(JSON.stringify(data));
+                var sdData=JSON.parse(data['selfDescription']);
+                $("#editData").val(JSON.stringify(sdData,undefined, 4));
+//                $("#editData").val(data['self-description']);
                 $('#editModal').modal('show');
             });
 
@@ -56,7 +99,8 @@ $(document).ready(function() {
 
                                     },
                                     error: function (jqXhr, textStatus, errorMessage) {
-                                        console.log("post delete failure");
+                                        console.log("post delete failure"+jqXhr);
+                                         alert(JSON.stringify(jqXhr));
 
                                     }
                                 });
@@ -87,7 +131,8 @@ $(document).ready(function() {
                               partDataTable.ajax.reload();
                             },
                             error: function (jqXhr, textStatus, errorMessage) {
-                             console.log("post edit failure");
+                             console.log("post edit failure:"+jqXhr+"textStatus:"+textStatus+"errorMessage : "+errorMessage);
+                             alert(JSON.stringify(jqXhr));
                             }
                      });
              });
@@ -109,7 +154,8 @@ $(document).ready(function() {
                               partDataTable.ajax.reload();
                             },
                             error: function (jqXhr, textStatus, errorMessage) {
-                             console.log("post edit failure");
+                             console.log("post Add failure:"+jqXhr+"textStatus:"+textStatus+"errorMessage : "+errorMessage);
+                              alert(JSON.stringify(jqXhr));
                             }
                      });
              });
@@ -131,3 +177,12 @@ $(document).ready(function() {
             });
 
  });
+
+
+ function format(d) {
+ //console.log(d);
+     return (
+         'Self-Description: ' +
+         d['selfDescription']
+     );
+ }

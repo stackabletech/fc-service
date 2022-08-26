@@ -1,9 +1,9 @@
 package eu.gaiax.difs.fc.core.dao;
 
+import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
 import java.util.List;
 import java.util.Optional;
 
-import eu.gaiax.difs.fc.api.generated.model.Participant;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 
 /**
@@ -16,7 +16,7 @@ public interface ParticipantDao {
    * @param participant Participant entity.
    * @return Created participant.
    */
-  Participant create(Participant participant);
+  ParticipantMetaData create(ParticipantMetaData participant);
 
   /**
    * Get an Optional Participant by id.
@@ -24,7 +24,7 @@ public interface ParticipantDao {
    * @param participantId Participant id.
    * @return Optional Participant.
    */
-  Optional<Participant> select(String participantId);
+  Optional<ParticipantMetaData> select(String participantId);
 
   /**
    * Get list of users by participant id.
@@ -40,7 +40,7 @@ public interface ParticipantDao {
    * @param participantId Participant id.
    * @return Removed optional participant.
    */
-  Optional<Participant> delete(String participantId);
+  Optional<ParticipantMetaData> delete(String participantId);
 
   /**
    * Update the Participant with the given id.
@@ -49,7 +49,7 @@ public interface ParticipantDao {
    * @param participant Participant model.
    * @return Updated optional participant.
    */
-  Optional<Participant> update(String participantId, Participant participant);
+  Optional<ParticipantMetaData> update(String participantId, ParticipantMetaData participant);
 
   /**
    * Get participants by filtered params.
@@ -58,5 +58,5 @@ public interface ParticipantDao {
    * @param limit The maximum number of items to return.
    * @return List of filtered participants.
    */
-  List<Participant> search(Integer offset, Integer limit);
+  List<ParticipantMetaData> search(Integer offset, Integer limit);
 }
