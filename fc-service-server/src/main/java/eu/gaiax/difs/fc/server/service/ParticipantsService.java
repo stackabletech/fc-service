@@ -47,6 +47,8 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   @Autowired
   private ObjectMapper jsonMapper;
 
+  private final String catalogueAdminRole="ROLE_Ro-MU-CA";
+
   /**
    * POST /participants : Register a new participant in the catalogue.
    *
@@ -84,7 +86,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     log.debug("deleteParticipant.enter; got participant: {}", participantId);
     ParticipantMetaData part = partDao.select(participantId)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
-    if(!part.getId().equals(SessionUtils.getSessionParticipantId())) {
+    if(!SessionUtils.sessionUserHasRole(catalogueAdminRole) && !part.getId().equals(SessionUtils.getSessionParticipantId())) {
       throw new ForbiddenException("User has no permissions to delete participant : " + participantId);
     }
     selfDescriptionStore.deleteSelfDescription(part.getSdHash());
@@ -190,7 +192,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
 
     log.debug("updateParticipant.existing participant got : {}", partExisting);
     log.debug("updateParticipant.verificationResultParticipant.got : {}", verificationResultParticipant);
-    if(!partExisting.getId().equals(SessionUtils.getSessionParticipantId())) {
+    if(!SessionUtils.sessionUserHasRole(catalogueAdminRole)  && !partExisting.getId().equals(SessionUtils.getSessionParticipantId())) {
       throw new ForbiddenException("User has no permissions to update participant : " + participantId);
     }
     ParticipantMetaData participantUpdated = getParticipantExtWithValidationAndStore(contentAccessorDirect.getContentAsString());
