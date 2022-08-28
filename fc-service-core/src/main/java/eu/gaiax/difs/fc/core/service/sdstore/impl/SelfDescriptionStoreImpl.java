@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
+import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
@@ -64,7 +65,17 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       sdmd.setSelfDescription(fileStore.readFile(STORE_NAME, hash));
       return sdmd;
     } catch (IOException ex) {
-      log.error("Failed to read SD file with registerd hash {}", hash);
+      log.error("Failed to read SD file with registered hash {}", hash);
+      return null;
+    }
+  }
+
+  @Override
+  public ContentAccessor getSDFileByHash(String hash) {
+    try {
+      return fileStore.readFile(STORE_NAME, hash);
+    } catch (IOException ex) {
+      log.error("Failed to read SD file with registered hash {}", hash);
       return null;
     }
   }
