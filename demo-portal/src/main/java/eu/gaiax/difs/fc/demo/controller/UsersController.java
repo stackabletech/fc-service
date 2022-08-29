@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.demo.controller;
 
+import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -97,14 +98,12 @@ public class UsersController {
    *
    * @param offset The number of items to skip before starting to collect the result set. (optional, default to 0)
    * @param limit The number of items to return. (optional, default to 100)
-   * @param orderBy Results will be sorted by this field. (optional)
-   * @param ascending Ascending/Descending ordering. (optional, default to true)
    * @return List of usernames (status code 200)
    *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
   @GetMapping
-  public List<UserProfile> getUsers(
+  public UserProfiles getUsers(
       @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset,
       @RequestParam(value = "limit", required = false, defaultValue = "100") Integer limit) {
     return userClient.getUsers(offset, limit);

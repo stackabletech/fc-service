@@ -1,6 +1,7 @@
 package eu.gaiax.difs.fc.demo.controller;
 
 import eu.gaiax.difs.fc.api.generated.model.Participant;
+import eu.gaiax.difs.fc.api.generated.model.Participants;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.client.ParticipantClient;
 
@@ -105,7 +106,7 @@ public class ParticipantsController {
    *         or May contain hints how to solve the error or indicate what went wrong at the server. (status code 500)
    */
   @GetMapping
-  public List<Participant> getParticipants(
+  public Participants getParticipants(
     @RegisteredOAuth2AuthorizedClient("fc-client-oidc") OAuth2AuthorizedClient authorizedClient
   ) {
       return partClient.getParticipants(0, 50, authorizedClient);
@@ -125,7 +126,7 @@ public class ParticipantsController {
   @PutMapping("/{participantId}")
   public Participant updateParticipant(
           @RegisteredOAuth2AuthorizedClient("fc-client-oidc") OAuth2AuthorizedClient authorizedClient,
-          @PathVariable("id") String id,
+          @PathVariable("participantId") String id,
           @RequestBody String body) {
       return partClient.updateParticipant(id, body, authorizedClient);
   }
