@@ -1,8 +1,7 @@
 package eu.gaiax.difs.fc.core.pojo;
 
-import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import java.time.Instant;
-import java.util.Optional;
 
 /**
  * Filter parameters for searching Self-Description meta data. If multiple items
@@ -53,7 +52,7 @@ public class SdFilter {
   /**
    * Filter for the status of the Self-Description.
    */
-  private SelfDescription.StatusEnum status;
+  private SelfDescriptionStatus status;
 
   /**
    * Filter for a id/credentialSubject of the Self-Description.

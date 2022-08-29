@@ -8,6 +8,10 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ComponentScan(basePackages = {"eu.gaiax.difs.fc.core"})
-public class CoreConfig {
-
+public class CoreConfig {    
+    
+    //@Bean
+    //public FileStoreImpl fileStore() {
+    //    return new FileStoreImpl();
+    //}
 }

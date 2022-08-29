@@ -1,0 +1,17 @@
+spring:
+  config:
+    activate:
+      on-profile: tests-sdstore
+   
+  liquibase:
+    change-log: classpath:/liquibase/master-changelog.xml
+    contexts: test
+    
+datastore:
+  file-path: target
+
+logging:
+  level:
+    root: INFO
+    liquibase: INFO
+    eu.gaiax.difs.fc: DEBUG

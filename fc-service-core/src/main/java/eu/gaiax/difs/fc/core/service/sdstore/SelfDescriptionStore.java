@@ -1,6 +1,6 @@
 package eu.gaiax.difs.fc.core.service.sdstore;
 
-import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
@@ -12,6 +12,8 @@ import java.util.List;
  */
 public interface SelfDescriptionStore {
 
+  String STORE_NAME = "sdFiles";
+    
   /**
    * Get all self descriptions, starting from the given offset, up to limit
    * number of items, consistently ordered.
@@ -53,7 +55,7 @@ public interface SelfDescriptionStore {
    * @param hash The hash of the SD to work on.
    * @param targetStatus The new status.
    */
-  void changeLifeCycleStatus(String hash, SelfDescription.StatusEnum targetStatus);
+  void changeLifeCycleStatus(String hash, SelfDescriptionStatus targetStatus);
 
   /**
    * Remove the Self-Description with the given hash from the store.
