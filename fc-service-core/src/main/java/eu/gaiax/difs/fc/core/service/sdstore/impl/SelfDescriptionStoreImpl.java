@@ -3,10 +3,11 @@ package eu.gaiax.difs.fc.core.service.sdstore.impl;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
+import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
+import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
-import eu.gaiax.difs.fc.core.exception.ServiceException;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
@@ -54,6 +55,12 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
   @Autowired
   private SessionFactory sessionFactory;
+
+  /*
+  @Autowired
+  private Neo4jGraphStore graphDb;
+  */
+  final GraphStore graphDb = new Neo4jGraphStore();
 
   @Override
   public ContentAccessor getSDFileByHash(final String hash) {
@@ -234,7 +241,10 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
   @Override
   public void storeSelfDescription(final SelfDescriptionMetadata selfDescription,
-      final VerificationResult sdVerificationResults) {
+      final VerificationResult verificationResult) {
+    if (verificationResult == null) {
+      throw new IllegalArgumentException("verification result must not be null");
+    }
     final Session currentSession = sessionFactory.getCurrentSession();
 
     final SdMetaRecord existingSd = currentSession
@@ -275,13 +285,11 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       existingSd.setStatus(SelfDescriptionStatus.DEPRECATED);
       existingSd.setStatusTime(Instant.now());
 
-      // TODO: Claims from existing SD need to be removed from the GraphDB.
-
+      graphDb.deleteClaims(STORE_NAME);
       currentSession.update(existingSd);
     }
 
-    // TODO: Send sdVerificationResults.getClaims() to the GraphDB
-
+    graphDb.addClaims(verificationResult.getClaims(), STORE_NAME);
     currentSession.flush();
   }
 
@@ -304,8 +312,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     currentSession.update(sdmRecord);
     currentSession.flush();
 
-    // TODO: Claims from existing SD need to be removed from the GraphDB.
-
+    graphDb.deleteClaims(STORE_NAME);
   }
 
   @Override
@@ -314,6 +321,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     // Get a lock on the record.
     final SdMetaRecord sdmRecord = currentSession.find(SdMetaRecord.class, hash);
     checkNonNull(sdmRecord, hash);
+    final SelfDescriptionStatus status = sdmRecord.getStatus();
     currentSession.delete(sdmRecord);
     currentSession.flush();
     try {
@@ -324,9 +332,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       log.error("failed to delete self-description file with hash {}", hash, exc);
     }
 
-    // TODO: Claims from existing SD need to be removed from the GraphDB if existing
-    // SD was active.
-
+    if (status == SelfDescriptionStatus.ACTIVE) {
+      graphDb.deleteClaims(hash);
+    }
   }
 
   @Override
