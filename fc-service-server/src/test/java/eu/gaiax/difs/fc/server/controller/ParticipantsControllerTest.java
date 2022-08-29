@@ -9,6 +9,15 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.c4_soft.springaddons.security.oauth2.test.annotations.Claims;
+import com.c4_soft.springaddons.security.oauth2.test.annotations.OpenIdClaims;
+import com.c4_soft.springaddons.security.oauth2.test.annotations.StringClaim;
+import com.c4_soft.springaddons.security.oauth2.test.annotations.WithMockJwtAuth;
+import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
+import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
+import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
+
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -20,7 +29,10 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -42,24 +54,27 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import eu.gaiax.difs.fc.api.generated.model.Participant;
+import eu.gaiax.difs.fc.api.generated.model.Participants;
+import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.impl.ParticipantDaoImpl;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ExtendWith(SpringExtension.class)
-public class ParticipantControllerTest {
+@AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+public class ParticipantsControllerTest {
 
-    private static final TypeReference<List<?>> LIST_TYPE_REF = new TypeReference<List<?>>() {
-    };
-    
     @Autowired
     private WebApplicationContext context;
     @Autowired
     private MockMvc mockMvc;
+    @Autowired
+    private FileStoreImpl fileStore;
 
     @MockBean
     private KeycloakBuilder builder;
@@ -92,11 +107,18 @@ public class ParticipantControllerTest {
     
     @Test
     @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @Order(10)
     public void addParticipantShouldReturnCreatedResponse() throws Exception {
         
         String json = readFileFromResources("new_participant.json");
-        Participant part = new Participant("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
+        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
         setupKeycloak(HttpStatus.SC_CREATED, part);
+        
+        try {
+            fileStore.deleteFile(SelfDescriptionStore.STORE_NAME, part.getSdHash());
+        } catch(FileNotFoundException ex) {
+            // possible..
+        }
 
         String response = mockMvc
             .perform(MockMvcRequestBuilders.post("/participants")
@@ -106,7 +128,7 @@ public class ParticipantControllerTest {
             .andReturn()
             .getResponse()
             .getContentAsString();
-        part = objectMapper.readValue(response, Participant.class);
+        part = objectMapper.readValue(response, ParticipantMetaData.class);
         assertNotNull(part);
         assertEquals("ebc6f1c2", part.getId());
         assertEquals("did:example:holder", part.getName());
@@ -115,9 +137,11 @@ public class ParticipantControllerTest {
 
     @Test
     @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @Order(20)
     public void getParticipantShouldReturnSuccessResponse() throws Exception {
-        
-        Participant part = new Participant("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", "empty SD");
+
+        String json = readFileFromResources("new_participant.json");
+        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
         mockMvc
@@ -128,6 +152,7 @@ public class ParticipantControllerTest {
 
     @Test
     @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @Order(20)
     public void wrongParticipantShouldReturnNotFoundResponse() throws Exception {
         
         String partId = "unknown";
@@ -141,9 +166,11 @@ public class ParticipantControllerTest {
     
     @Test
     @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @Order(20)
     public void getParticipantsShouldReturnCorrectNumber() throws Exception {
-        
-        Participant part = new Participant("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", "empty SD");
+
+        String json = readFileFromResources("new_participant.json");
+        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
         MvcResult result = mockMvc
@@ -151,16 +178,19 @@ public class ParticipantControllerTest {
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andReturn();
-        List<?> parts = objectMapper.readValue(result.getResponse().getContentAsString(), LIST_TYPE_REF);
+        Participants parts = objectMapper.readValue(result.getResponse().getContentAsString(), Participants.class);
         assertNotNull(parts);
-        assertEquals(1, parts.size());
+        assertEquals(1, parts.getItems().size());
+        // TODO:
+        //assertEquals(1, parts.getTotalCount());
     }
     
     @Test
     @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @Order(20)
     public void getParticipantUsersShouldReturnCorrectNumber() throws Exception {
-        
-        Participant part = new Participant("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", "empty SD");
+
+        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", "empty SD");
         setupKeycloak(HttpStatus.SC_OK, part);
 
         MvcResult result = mockMvc
@@ -168,39 +198,28 @@ public class ParticipantControllerTest {
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andReturn();
-        List<?> users = objectMapper.readValue(result.getResponse().getContentAsString(), LIST_TYPE_REF);
+        UserProfiles users = objectMapper.readValue(result.getResponse().getContentAsString(), UserProfiles.class);
         assertNotNull(users);
-        assertEquals(0, users.size());
+        assertEquals(0, users.getItems().size());
     }
     
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
-    public void deleteParticipantShouldReturnSuccessResponse() throws Exception {
-        
-        Participant part = new Participant("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", "empty SD");
-        setupKeycloak(HttpStatus.SC_OK, part);
-
-        String response = mockMvc
-            .perform(MockMvcRequestBuilders.delete("/participants/{participantId}", part.getId()))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
-        part = objectMapper.readValue(response, Participant.class);
-        assertNotNull(part);
-        assertEquals("ebc6f1c2", part.getId());
-        assertEquals("did:example:holder", part.getName());
-        assertEquals("did:example:holder#key-1", part.getPublicKey());
-    }
-    
-    @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
+        claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
+            {@StringClaim(name = "participant_id", value = "ebc6f1c2")})))
+    @Order(30)
     public void updateParticipantShouldReturnSuccessResponse() throws Exception {
         
         String json = readFileFromResources("update_participant.json");
-        Participant part = new Participant("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
+        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
         setupKeycloak(HttpStatus.SC_OK, part);
         
+        try {
+            fileStore.deleteFile(SelfDescriptionStore.STORE_NAME, part.getSdHash());
+        } catch(FileNotFoundException ex) {
+            // possible..
+        }
+
         String response = mockMvc
             .perform(MockMvcRequestBuilders.put("/participants/{participantId}", part.getId())
             .contentType(MediaType.APPLICATION_JSON)
@@ -209,7 +228,31 @@ public class ParticipantControllerTest {
             .andReturn()
             .getResponse()
             .getContentAsString();
-        part = objectMapper.readValue(response, Participant.class);
+        part = objectMapper.readValue(response, ParticipantMetaData.class);
+        assertNotNull(part);
+        assertEquals("ebc6f1c2", part.getId());
+        assertEquals("did:example:updated-holder", part.getName());
+        assertEquals("did:example:holder#key-2", part.getPublicKey());
+    }
+    
+    @Test
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
+        claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
+            {@StringClaim(name = "participant_id", value = "ebc6f1c2")})))
+    @Order(40)
+    public void deleteParticipantShouldReturnSuccessResponse() throws Exception {
+        
+        String json = readFileFromResources("update_participant.json");
+        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:updated-holder", "did:example:holder#key-2", json);
+        setupKeycloak(HttpStatus.SC_OK, part);
+
+        String response = mockMvc
+            .perform(MockMvcRequestBuilders.delete("/participants/{participantId}", part.getId()))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+        part = objectMapper.readValue(response, ParticipantMetaData.class);
         assertNotNull(part);
         assertEquals("ebc6f1c2", part.getId());
         assertEquals("did:example:updated-holder", part.getName());
@@ -217,7 +260,7 @@ public class ParticipantControllerTest {
     }
     
 
-    private void setupKeycloak(int status, Participant part) {
+    private void setupKeycloak(int status, ParticipantMetaData part) {
         when(builder.build()).thenReturn(keycloak);
         when(keycloak.realm("gaia-x")).thenReturn(realmResource);
         when(realmResource.groups()).thenReturn(groupsResource);
@@ -241,7 +284,7 @@ public class ParticipantControllerTest {
     }
     
     public static String readFileFromResources(String filename) { 
-        URL resource = ParticipantControllerTest.class.getClassLoader().getResource(filename);  
+        URL resource = ParticipantsControllerTest.class.getClassLoader().getResource(filename);
         byte[] bytes;
         try {
             bytes = Files.readAllBytes(Paths.get(resource.toURI()));

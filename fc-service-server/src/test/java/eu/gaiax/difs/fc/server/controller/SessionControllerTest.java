@@ -42,10 +42,13 @@ import org.springframework.web.context.WebApplicationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.gaiax.difs.fc.api.generated.model.Session;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ExtendWith(SpringExtension.class)
+@AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 public class SessionControllerTest {
     
     @Autowired
@@ -105,7 +108,7 @@ public class SessionControllerTest {
         setupKeycloak(HttpStatus.SC_OK, id);
         
         mockMvc
-            .perform(MockMvcRequestBuilders.post("/session/logout")
+            .perform(MockMvcRequestBuilders.delete("/session")
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
     }

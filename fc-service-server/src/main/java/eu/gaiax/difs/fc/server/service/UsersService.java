@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.server.service;
 
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
+import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.UserDao;
 import eu.gaiax.difs.fc.server.generated.controller.UsersApiDelegate;
 import java.net.URI;
@@ -112,12 +113,13 @@ public class UsersService implements UsersApiDelegate {
    *        any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<UserProfile>> getUsers(Integer offset, Integer limit) { //String orderBy, Boolean ascending) {
+  public ResponseEntity<UserProfiles> getUsers(Integer offset, Integer limit) { //String orderBy, Boolean ascending) {
     // sorting is not supported yet by keycloak admin API
     log.debug("getUsers.enter; got offset: {}, limit: {}", offset, limit);
     List<UserProfile> profiles = userDao.search(null, offset, limit);
     log.debug("getUsers.exit; returning: {}", profiles.size());
-    return ResponseEntity.ok(profiles);
+    // TODO: set total count
+    return ResponseEntity.ok(new UserProfiles(0, profiles));
   }
 
   /**

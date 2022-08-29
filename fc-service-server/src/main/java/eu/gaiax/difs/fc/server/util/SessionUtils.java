@@ -1,6 +1,8 @@
 package eu.gaiax.difs.fc.server.util;
 
+import java.util.Collection;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
@@ -37,5 +39,18 @@ public class SessionUtils {
     }
     log.debug("getSessionUserId.exit; got user id {} from principal: {}", userId, principal);
     return userId;
+  }
+
+  public static boolean sessionUserHasRole(String role) {
+    Collection<GrantedAuthority> authorities = (Collection<GrantedAuthority>)
+        SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+    boolean hasRole = false;
+    for (GrantedAuthority authority : authorities) {
+      hasRole = authority.getAuthority().equals(role);
+      if (hasRole) {
+        break;
+      }
+    }
+    return hasRole;
   }
 }

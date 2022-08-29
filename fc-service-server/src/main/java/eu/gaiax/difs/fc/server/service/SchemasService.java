@@ -2,12 +2,11 @@ package eu.gaiax.difs.fc.server.service;
 
 
 import eu.gaiax.difs.fc.api.generated.model.OntologySchema;
+import eu.gaiax.difs.fc.api.generated.model.OntologySchemas;
 import eu.gaiax.difs.fc.server.generated.controller.SchemasApiDelegate;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -31,11 +30,11 @@ public class SchemasService implements SchemasApiDelegate {
    *         information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<OntologySchema> getSchema(String schemaId) {
+  public ResponseEntity<String> getSchema(String schemaId) {
     log.debug("getSchema.enter, got schemaId {}", schemaId);
-    Optional<OntologySchema> schema = Optional.of(new OntologySchema());
+    String schema = ""; 
     log.debug("getSchema.exit, returning {}", schema);
-    return new ResponseEntity<>(HttpStatus.OK).of(schema);
+    return ResponseEntity.ok(schema);
   }
 
   /**
@@ -51,11 +50,11 @@ public class SchemasService implements SchemasApiDelegate {
    *         information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<OntologySchema>> getSchemas(Integer offset, Integer limit) { // String orderBy, Boolean ascending) {
+  public ResponseEntity<OntologySchemas> getSchemas(Integer offset, Integer limit) { // String orderBy, Boolean ascending) {
     log.debug("getSchemas.enter, got offset {}, got limit {}", offset, limit);
-    Optional<List<OntologySchema>> schemas = Optional.of(Collections.emptyList());
+    List<OntologySchema> schemas = List.of();
     log.debug("getSchema.exit, returning {}", schemas);
-    return new ResponseEntity<>(HttpStatus.OK).of(schemas);
+    return ResponseEntity.ok(new OntologySchemas(0, schemas));
   }
 
   /**
@@ -68,27 +67,11 @@ public class SchemasService implements SchemasApiDelegate {
    *         information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<List<OntologySchema>> getLatestSchemas() {
+  public ResponseEntity<String> getLatestSchema(String type, String term) {
     log.debug("getLatestSchemas.enter");
-    Optional<List<OntologySchema>> schemas = Optional.of(Collections.emptyList());
-    log.debug("getLatestSchemas.exit, returning {}", schemas);
-    return new ResponseEntity<>(HttpStatus.OK).of(schemas);
-  }
-
-  /**
-   *  Get the latest schemas of a specific type .
-   *
-   * @param type Type of the requested Self-Description schema e.g. Service (required)
-   * @return The latest schema of requested types (status code 200)
-   *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
-   *         or Invalid input (status code 405)
-   *         or May contain hints how to solve the error or indicate what went wrong at the server. Must not outline any
-   *         information about the internal structure of the server. (status code 500)
-   */
-  @Override
-  public ResponseEntity<OntologySchema> getLatestSchemaOfType(String type) {
-    log.debug("getLatestSchemaOfType.enter, got type {}", type);
-    return new ResponseEntity<>(HttpStatus.OK);
+    String schema = "";
+    log.debug("getLatestSchemas.exit, returning {}", schema);
+    return ResponseEntity.ok(schema);
   }
 
   /**
@@ -102,9 +85,9 @@ public class SchemasService implements SchemasApiDelegate {
    *         information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<Void> addSchema(OntologySchema schema) {
+  public ResponseEntity<Void> addSchema(String schema) {
     log.debug("addSchema.enter, got schema {}", schema);
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    return ResponseEntity.ok(null);
   }
 
   /**
@@ -120,6 +103,13 @@ public class SchemasService implements SchemasApiDelegate {
   @Override
   public ResponseEntity<Void> deleteSchema(String schemaId) {
     log.debug("deleteSchema.enter, got schemaId {}", schemaId);
-    return new ResponseEntity<>(HttpStatus.OK);
+    return ResponseEntity.ok(null);
   }
+
+  @Override
+  public ResponseEntity<Void> updateSchema(String schemaId, String body) {
+    log.debug("updateSchema.enter, got schemaId {}", schemaId);
+    return ResponseEntity.ok(null);
+  }
+
 }
