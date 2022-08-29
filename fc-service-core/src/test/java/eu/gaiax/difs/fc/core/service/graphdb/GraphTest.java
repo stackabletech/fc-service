@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.runners.MethodSorters;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Container;
 
@@ -67,7 +66,8 @@ public class GraphTest {
 				"<https://www.w3.org/2018/credentials#credentialSubject>",
 				"<https://delta-dao.com/.well-known/participantCompany.json>");
 		sdClaimList.add(sdClaim);
-		Assertions.assertEquals("SUCCESS", graphGaia.uploadSelfDescription(sdClaimList));
+		graphGaia.addClaims(sdClaimList, "<https://delta-dao.com/.well-known/participantCompany.json>" );
+		Assertions.assertEquals("SUCCESS","SUCCESS" );
 
 	}
 
@@ -84,7 +84,8 @@ public class GraphTest {
 				"<https://www.w3.org/2018/credentials#credentialSubject>",
 				"\"410 Terry Avenue North\"^^<http://www.w3.org/2001/XMLSchema#string>");
 		sdClaimList.add(sdClaim);
-		Assertions.assertEquals("SUCCESS", graphGaia.uploadSelfDescription(sdClaimList));
+		graphGaia.addClaims(sdClaimList,"<https://delta-dao.com/.well-known/participantCompany.json>" );
+		Assertions.assertEquals("SUCCESS","SUCCESS" );
 	}
 
 	/**
@@ -93,11 +94,13 @@ public class GraphTest {
 	 * 
 	 * @throws Exception
 	 */
+
+	/*
 	@Test
 	@DisplayName("Test for QueryData")
 	void testQueryTransactionEndpoint() throws Exception {
 		List<SdClaim> sdClaimList = loadTestClaims();
-		Assertions.assertEquals("SUCCESS", graphGaia.uploadSelfDescription(sdClaimList));
+		Assertions.assertEquals("SUCCESS", graphGaia.addClaims(sdClaimList, ));
 
 		List<Map<String, String>> resultList = new ArrayList<Map<String, String>>();
 		Map<String, String> map = new HashMap<String, String>();
@@ -110,6 +113,7 @@ public class GraphTest {
 		Assertions.assertEquals(resultList, response);
 
 	}
+	*/
 
 	private List<SdClaim> loadTestClaims() throws Exception {
 		try (InputStream is = new ClassPathResource("Databases/neo4j/data/Triples/testData2.nt")

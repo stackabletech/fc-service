@@ -12,10 +12,11 @@ public interface GraphStore {
      * objects containing subject, predicate and object in the form of ntriples
      * format stored in individual strings.
      *
-     * @param sdClaimList List of claims to add to the Graph DB.
+     * @param sdClaimList       List of claims to add to the Graph DB.
+     * @param credentialSubject
      * @return String SUCCESS or FAIL
      */
-    public String uploadSelfDescription(List<SdClaim> sdClaimList);
+    public void addClaims(List<SdClaim> sdClaimList, String credentialSubject);
 
 
 }

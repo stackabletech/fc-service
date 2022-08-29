@@ -90,7 +90,7 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
      * {@inheritDoc}
      */
     @Override
-    public String uploadSelfDescription(List<SdClaim> sdClaimList) {
+    public void addClaims(List<SdClaim> sdClaimList, String credentialSubject) {
         String payload = "";
 
         try (Session session = driver.session()) {
@@ -106,7 +106,6 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
 
             log.debug("Query; " + query);
             session.run(query);
-            return "SUCCESS";
         } catch (Exception e) {
             log.error("Could not update list of self description claims");
             throw e;
