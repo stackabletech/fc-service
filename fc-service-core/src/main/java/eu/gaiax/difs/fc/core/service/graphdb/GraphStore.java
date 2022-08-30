@@ -27,6 +27,12 @@ public interface GraphStore {
      */
     void deleteClaims(String credentialSubject);
 
+    /**
+     * Updates all claims in the Graph DB of a given self-description
+     * @param credentialSubject contains a self-description unique identifier
+     */
+    void updateClaims(List<SdClaim> sdClaimList, String credentialSubject);
+
 
 
 }
