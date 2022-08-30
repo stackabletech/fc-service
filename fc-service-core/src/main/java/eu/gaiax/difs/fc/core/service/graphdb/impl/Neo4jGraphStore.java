@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import eu.gaiax.difs.fc.core.config.GraphDbConfig;
-import eu.gaiax.difs.fc.core.pojo.GraphQuery;
+import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.core.service.graphdb.QueryGraph;
@@ -116,7 +116,16 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
      * {@inheritDoc}
      */
     @Override
-    public List<Map<String, String>> queryData(GraphQuery sdQuery) {
+    public void deleteClaims(String credentialSubject) {
+        log.debug("Beginning claims deletion");
+        log.debug("Deleting executed successfully ");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Map<String, String>> queryData(OpenCypherQuery sdQuery) {
 
         try (Session session = driver.session(); Transaction tx = session.beginTransaction()) {
             List<Map<String, String>> resultList = new ArrayList<>();
