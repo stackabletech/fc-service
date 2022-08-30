@@ -4,6 +4,7 @@ import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
@@ -102,6 +103,9 @@ public class SelfDescriptionStoreImplTest {
 
     SelfDescriptionMetadata byHash = sdStore.getByHash(hash);
     assertEquals(sdMeta, byHash);
+
+    ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
+    assertEquals(sdfileByHash, sdMeta.getSelfDescription(), "Getting the SD file by hash is equal to the stored SD file");
 
     sdStore.deleteSelfDescription(hash);
     count = 0;
