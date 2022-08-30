@@ -1,26 +1,20 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.neo4j.driver.AuthTokens;
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.GraphDatabase;
-import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
-import org.neo4j.driver.Transaction;
-import org.neo4j.driver.Value;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import eu.gaiax.difs.fc.core.config.GraphDbConfig;
 import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.core.service.graphdb.QueryGraph;
 import lombok.extern.log4j.Log4j2;
+import org.neo4j.driver.*;
+import org.neo4j.driver.internal.InternalNode;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @Component
@@ -95,10 +89,14 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
 
         try (Session session = driver.session()) {
             for (SdClaim sdClaim : sdClaimList) {
-                payload = payload + sdClaim.getSubject() + " " + sdClaim.getPredicate() + " " + sdClaim.getObject()
-                        + "	. \n";
-
+                String subject=sdClaim.getSubject().substring(1,sdClaim.getSubject().length()-1);
+                if (subject.equals(credentialSubject)){
+                    payload = payload + sdClaim.getSubject() + " " + sdClaim.getPredicate() + " " + sdClaim.getObject()
+                            + "	. \n";
+                }
             }
+
+            payload = payload +"<"+ credentialSubject+">"+" "+"<gx-participant:hasURI>"+" "+"\""+credentialSubject+"\"^^<http://www.w3.org/2001/XMLSchema#string>"+ "	. \n";
 
             String query = " WITH '\n" + payload + "' as payload\n"
                     + "CALL n10s.rdf.import.inline(payload,\"N-Triples\") YIELD terminationStatus, triplesLoaded\n"
@@ -118,6 +116,11 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
     @Override
     public void deleteClaims(String credentialSubject) {
         log.debug("Beginning claims deletion");
+        String query = "MATCH (n{uri: '"+credentialSubject+"'})\n" +
+                "DELETE n";
+        try (Session session = driver.session()) {
+            session.run(query);
+        }
         log.debug("Deleting executed successfully ");
     }
 
@@ -140,6 +143,10 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
                         outputMap.put(entry.getKey(), entry.getValue().toString());
                     } else if (entry.getValue() == null) {
                         outputMap.put(entry.getKey(), null);
+                    }
+                    else if( entry.getValue() instanceof InternalNode){
+                        InternalNode SDNode= (InternalNode) entry.getValue();
+                        outputMap.put("n.uri", SDNode.get("uri").toString().replace("\"", ""));
                     }
                 }
                 resultList.add(outputMap);
