@@ -1,11 +1,8 @@
 package eu.gaiax.difs.fc.core.service.verification;
 
-import eu.gaiax.difs.fc.api.generated.model.Participant;
-import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
-import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
-
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
+import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import org.springframework.stereotype.Service;
