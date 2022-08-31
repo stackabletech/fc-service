@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.server.service;
 
+import com.github.jsonldjava.utils.JsonUtils;
 import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
@@ -7,6 +8,7 @@ import eu.gaiax.difs.fc.server.generated.controller.VerificationApiDelegate;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -45,9 +47,9 @@ public class VerificationService implements VerificationApiDelegate {
    *       Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<VerificationResult> verify(String selfDescription) {
-    log.debug("verify.enter; got self-description: {}", selfDescription);
-    VerificationResult verificationResult = verificationService.verifySelfDescription(new ContentAccessorDirect(selfDescription));
+  public ResponseEntity<VerificationResult> verify(String jsonSelfDescription) {
+    log.debug("verify.enter; got body: {}", jsonSelfDescription);
+    VerificationResult verificationResult = verificationService.verifySelfDescription(new ContentAccessorDirect(jsonSelfDescription));
     log.debug("verify.exit; returning result {} ", verificationResult);
     return new ResponseEntity<>(verificationResult, HttpStatus.OK);
 
@@ -65,7 +67,7 @@ public class VerificationService implements VerificationApiDelegate {
   public ResponseEntity<String> verifyPage() {
     log.debug("verifyPage.enter");
 
-    final Resource resource = resourceLoader.getResource("classpath:static/verify.html");
+    final Resource resource = resourceLoader.getResource("classpath:static/verification.html");
     String page;
     try {
       Reader reader = new InputStreamReader(resource.getInputStream());
