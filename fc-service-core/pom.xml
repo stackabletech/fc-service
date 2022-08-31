@@ -15,7 +15,14 @@
     <name>fc-service-core</name>
     <description>GAIA-X Federated Catalogue Core Integration Services</description>
 
-    <dependencies>
+	<properties>
+		<!-- dependencies -->
+        <neo4j-java-driver-spring-boot-starter.version>4.3.6.0</neo4j-java-driver-spring-boot-starter.version>
+        <neo4j.neosemantics.version>4.4.0.1</neo4j.neosemantics.version>
+        <neo4j.gds.version>2.0.5</neo4j.gds.version>
+	</properties>
+
+	<dependencies>
         <dependency>
             <groupId>eu.gaiax.difs.fc</groupId>
             <artifactId>fc-service-api</artifactId>
@@ -28,10 +35,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
-        <!--dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
-        </dependency-->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -54,11 +57,6 @@
             <artifactId>postgresql</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -78,6 +76,44 @@
             <artifactId>jsonld-java</artifactId>
             <version>${jsonld.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.neo4j.test</groupId>
+            <artifactId>neo4j-harness</artifactId>
+            <version>4.4.10</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>slf4j-nop</artifactId>
+                    <!-- Since 4.0.1 -->
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver-spring-boot-starter</artifactId>
+            <version>${neo4j-java-driver-spring-boot-starter.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver-test-harness-spring-boot-autoconfigure</artifactId>
+            <version>${neo4j-java-driver-spring-boot-starter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neosemantics</artifactId>
+            <version>${neo4j.neosemantics.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.gds</groupId>
+            <artifactId>proc</artifactId>
+            <version>${neo4j.gds.version}</version>
+        </dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
     </dependencies>
 
     <build>
@@ -107,5 +143,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

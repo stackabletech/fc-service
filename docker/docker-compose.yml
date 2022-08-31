@@ -72,6 +72,16 @@ services:
       - "5432:5432"
 #    volumes:
 #      - pgdata:/var/lib/postgresql/data/
+  neo4j:
+    image: neo4j:latest
+#    volumes:
+#      - '$HOME/neo4j/data:/data'
+#      - '$HOME/neo4j/conf/:/conf/'
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    restart: always
+    command: neo4j
 
 networks:
   gaia-x:
