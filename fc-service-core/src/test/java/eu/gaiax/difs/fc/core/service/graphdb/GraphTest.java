@@ -5,12 +5,7 @@ import java.time.Duration;
 import java.util.*;
 
 import org.junit.FixMethodOrder;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.junit.runners.MethodSorters;
 import org.springframework.core.io.ClassPathResource;
 import org.testcontainers.containers.Neo4jContainer;
@@ -46,7 +41,7 @@ public class GraphTest {
         graphDbConfig.setUser("neo4j");
         graphDbConfig.setPassword("12345");
         graphGaia = new Neo4jGraphStore(graphDbConfig);
-
+        graphGaia.initialiseGraph();
     }
 
     @AfterAll
@@ -61,7 +56,7 @@ public class GraphTest {
      * to graph.
      */
     @Test
-    void simpleGraphUpload() throws Exception {
+    void simpleGraphUpload() {
         List<SdClaim> sdClaimList = new ArrayList<>();
         SdClaim sdClaim = new SdClaim("<https://delta-dao.com/.well-known/participantCompany.json>",
                 "<https://www.w3.org/2018/credentials#credentialSubject>",
