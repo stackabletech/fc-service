@@ -85,14 +85,14 @@ if(document.getElementById('content-target').value=="" || document.getElementByI
 alert("Please add Self-Description");
 return;
 }
-$.ajax('/verifications/self-descriptions', {
+$.ajax('/verification', {
     type: 'POST',  // http method
     contentType: "application/json;charset=utf-8",
    // beforeSend: function(xhr){xhr.setRequestHeader('Authorization', Authorization);}, //to enable token header with value
-    data: JSON.stringify({ body: document.getElementById('content-target').value }),  // data to submit
+    data: JSON.stringify(JSON.parse(document.getElementById('content-target').value)),  // data to submit
     success: function (data, status, xhr) {
     console.log("post verify success");
-        $('#result').append('status: ' + status + ', Result: ' + JSON.stringify({data}));
+        $('#result').append('Status: ' + status + ', Result: ' + JSON.stringify({data}));
     },
     error: function (jqXhr, textStatus, errorMessage) {
     console.log("post verify failure");
