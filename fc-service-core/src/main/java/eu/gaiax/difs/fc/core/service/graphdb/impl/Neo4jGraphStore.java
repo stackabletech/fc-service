@@ -90,14 +90,14 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
 
         try (Session session = driver.session()) {
             for (SdClaim sdClaim : sdClaimList) {
-                String subject=sdClaim.getSubject().substring(1,sdClaim.getSubject().length()-1);
-                if (subject.equals(credentialSubject)){
+                String subject = sdClaim.getSubject().substring(1, sdClaim.getSubject().length() - 1);
+                if (subject.equals(credentialSubject)) {
                     payload = payload + sdClaim.getSubject() + " " + sdClaim.getPredicate() + " " + sdClaim.getObject()
                             + "	. \n";
                 }
             }
 
-            payload = payload +"<"+ credentialSubject+">"+" "+"<gx-participant:hasURI>"+" "+"\""+credentialSubject+"\"^^<http://www.w3.org/2001/XMLSchema#string>"+ "	. \n";
+            payload = payload + "<" + credentialSubject + ">" + " " + "<gx-participant:hasURI>" + " " + "\"" + credentialSubject + "\"^^<http://www.w3.org/2001/XMLSchema#string>" + "	. \n";
 
             String query = " WITH '\n" + payload + "' as payload\n"
                     + "CALL n10s.rdf.import.inline(payload,\"N-Triples\") YIELD terminationStatus, triplesLoaded\n"
@@ -117,12 +117,23 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
     @Override
     public void deleteClaims(String credentialSubject) {
         log.debug("Beginning claims deletion");
-        String query = "MATCH (n{uri: '"+credentialSubject+"'})\n" +
+        String query = "MATCH (n{uri: '" + credentialSubject + "'})\n" +
                 "DELETE n";
+        String checkClaim = "match(n) where n.uri ='" + credentialSubject + "' return n;";
+        OpenCypherQuery checkQuery = new OpenCypherQuery(checkClaim);
+        List<Map<String, String>> result = queryData(checkQuery);
+        Map<String, String> resultCheck = result.get(0);
+        String claim = resultCheck.entrySet().iterator().next().getValue();
+
         try (Session session = driver.session()) {
-            session.run(query);
+            if (claim.equals(credentialSubject)) {
+                session.run(query);
+                log.debug("Deleting executed successfully ");
+            } else {
+                log.debug("Claim doe not exist in GraphDB ");
+            }
+
         }
-        log.debug("Deleting executed successfully ");
     }
 
     /**
@@ -137,15 +148,14 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
             while (result.hasNext()) {
                 org.neo4j.driver.Record record = result.next();
                 Map<String, Object> map = record.asMap();
-                Map<String,String>  outputMap= new HashMap<String,String>();
+                Map<String, String> outputMap = new HashMap<String, String>();
                 for (var entry : map.entrySet()) {
-                    if( entry.getValue() instanceof String ) {
+                    if (entry.getValue() instanceof String) {
                         outputMap.put(entry.getKey(), entry.getValue().toString());
                     } else if (entry.getValue() == null) {
                         outputMap.put(entry.getKey(), null);
-                    }
-                    else if( entry.getValue() instanceof InternalNode){
-                        InternalNode SDNode= (InternalNode) entry.getValue();
+                    } else if (entry.getValue() instanceof InternalNode) {
+                        InternalNode SDNode = (InternalNode) entry.getValue();
                         outputMap.put("n.uri", SDNode.get("uri").toString().replace("\"", ""));
                     }
                 }
