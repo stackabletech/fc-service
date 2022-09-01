@@ -1,71 +1,73 @@
 package eu.gaiax.difs.fc.core.service.graphdb;
 
-import java.io.*;
-import java.time.Duration;
-import java.util.*;
-
-import org.junit.FixMethodOrder;
-import org.junit.jupiter.api.*;
-import org.junit.runners.MethodSorters;
-import org.springframework.core.io.ClassPathResource;
-import org.testcontainers.containers.Neo4jContainer;
-import org.testcontainers.junit.jupiter.Container;
-
+import eu.gaiax.difs.fc.core.config.GraphDbConfig;
 import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
-import eu.gaiax.difs.fc.core.config.GraphDbConfig;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import n10s.graphconfig.GraphConfigProcedures;
+import n10s.rdf.load.RDFLoadProcedures;
+import org.junit.FixMethodOrder;
+import org.junit.jupiter.api.*;
+import org.junit.runners.MethodSorters;
+import org.neo4j.configuration.GraphDatabaseSettings;
+import org.neo4j.configuration.connectors.BoltConnector;
+import org.neo4j.configuration.helpers.SocketAddress;
+import org.neo4j.driver.Config;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.springframework.boot.test.autoconfigure.Neo4jTestHarnessAutoConfiguration;
+import org.neo4j.gds.catalog.GraphExistsProc;
+import org.neo4j.gds.catalog.GraphListProc;
+import org.neo4j.gds.catalog.GraphProjectProc;
+import org.neo4j.harness.Neo4j;
+import org.neo4j.harness.Neo4jBuilders;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
+@EnableAutoConfiguration(exclude = {Neo4jTestHarnessAutoConfiguration.class})
 public class GraphTest {
-
+    private static Neo4j embeddedDatabaseServer;
     private Neo4jGraphStore graphGaia;
-
-    @Container
-    final static Neo4jContainer<?> container = new Neo4jContainer<>("neo4j:4.4.5")
-            .withNeo4jConfig("dbms.security.procedures.unrestricted", "apoc.*,n10s.*,gds.*,graph-data-science.*")
-            .withEnv("NEO4JLABS_PLUGINS", "[\"apoc\",\"n10s\", \"graph-data-science\"]")
-            .withEnv("NEO4J_dbms_security_procedures_unrestricted", "apoc.*,gds.*,graph-data-science.*")
-            .withEnv("apoc.import.file.enabled", "true")
-            .withEnv("dbms.connector.bolt.listen_address", ":7687")
-            .withEnv("apoc.import.file.use_neo4j_config", "false")
-            .withAdminPassword("12345")
-            .withStartupTimeout(Duration.ofMinutes(5));
+    private Driver driver;
 
     @BeforeAll
-    void setupContainer() throws Exception {
-        container.start();
+    void initializeNeo4j() throws Exception {
+        embeddedDatabaseServer = Neo4jBuilders.newInProcessBuilder()
+                .withDisabledServer()
+                .withConfig(GraphDatabaseSettings.procedure_allowlist, List.of("gds.*", "n10s.*"))
+                .withConfig(BoltConnector.listen_address, new SocketAddress(7687))
+                .withConfig(GraphDatabaseSettings.procedure_unrestricted, List.of("gds.*", "n10s.*"))
+                // will be user for gds procedure
+                .withProcedure(GraphExistsProc.class) // gds.graph.exists procedure
+                .withProcedure(GraphListProc.class)
+                .withProcedure(GraphProjectProc.class)
+                // will be used for neo-semantics
+                .withProcedure(GraphConfigProcedures.class) // n10s.graphconfig.*
+                .withProcedure(RDFLoadProcedures.class)
+                .build();
+
         GraphDbConfig graphDbConfig = new GraphDbConfig();
-        graphDbConfig.setUri(container.getBoltUrl());
+        graphDbConfig.setUri(embeddedDatabaseServer.boltURI().toString());
         graphDbConfig.setUser("neo4j");
-        graphDbConfig.setPassword("12345");
+        graphDbConfig.setPassword("");
         graphGaia = new Neo4jGraphStore(graphDbConfig);
         graphGaia.initialiseGraph();
+        this.driver = GraphDatabase.driver(embeddedDatabaseServer.boltURI(), Config.builder().withoutEncryption().build());
     }
 
     @AfterAll
-    void stopContainer() {
-        container.stop();
+    void closeNeo4j() {
+        embeddedDatabaseServer.close();
     }
 
-    /**
-     * Data hardcoded for claims and upload to Graph . Given set of credentials,
-     * connect to graph and upload self description. Instantiate list of claims
-     * from file with subject predicate and object in N-triples form and upload
-     * to graph.
-     */
-    @Test
-    void simpleGraphUpload() {
-        List<SdClaim> sdClaimList = new ArrayList<>();
-        SdClaim sdClaim = new SdClaim("<https://delta-dao.com/.well-known/participantCompany.json>",
-                "<https://www.w3.org/2018/credentials#credentialSubject>",
-                "<https://delta-dao.com/.well-known/participantCompany.json>");
-        sdClaimList.add(sdClaim);
-        graphGaia.addClaims(sdClaimList, "<https://delta-dao.com/.well-known/participantCompany.json>");
-        Assertions.assertEquals("SUCCESS", "SUCCESS");
-
-    }
 
     /**
      * Data hardcoded for claims and upload to Graph . Given set of credentials,
@@ -92,7 +94,6 @@ public class GraphTest {
         List<Map<String, String>> response = graphGaia.queryData(query);
         Assertions.assertEquals(resultList, response);
     }
-
 
     /**
      * Instantiate a query without specifying property. Function should return
@@ -133,49 +134,5 @@ public class GraphTest {
 
     }
 
-
-    /**
-     * Query to graph using Query endpoint by instantiating query object and
-     * passing query string as parameter. THe result is a list of maps
-     *
-     * @throws Exception
-     */
-
-	/*
-	@Test
-	@DisplayName("Test for QueryData")
-	void testQueryTransactionEndpoint() throws Exception {
-		List<SdClaim> sdClaimList = loadTestClaims();
-		Assertions.assertEquals("SUCCESS", graphGaia.addClaims(sdClaimList, ));
-
-		List<Map<String, String>> resultList = new ArrayList<Map<String, String>>();
-		Map<String, String> map = new HashMap<String, String>();
-		map.put("n.ns0__country", null);
-		map.put("n.ns0__legalName", "CompanyWebServicesEMEASARL");
-		resultList.add(map);
-		GraphQuery query = new GraphQuery(
-				"match(n{ns0__legalName: 'CompanyWebServicesEMEASARL'}) return n.ns0__country, n.ns0__legalName;");
-		List<Map<String, String>> response = graphGaia.queryData(query);
-		Assertions.assertEquals(resultList, response);
-
-	}
-	*/
-    private List<SdClaim> loadTestClaims() throws Exception {
-        try (InputStream is = new ClassPathResource("Databases/neo4j/data/Triples/testData2.nt")
-                .getInputStream()) {
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
-            String strLine;
-            List<SdClaim> sdClaimList = new ArrayList<>();
-            while ((strLine = br.readLine()) != null) {
-                String[] split = strLine.split("\\s+");
-                SdClaim sdClaim = new SdClaim(split[0], split[1], split[2]);
-                sdClaimList.add(sdClaim);
-
-            }
-            return sdClaimList;
-        } catch (Exception e) {
-            throw e;
-        }
-    }
 
 }
