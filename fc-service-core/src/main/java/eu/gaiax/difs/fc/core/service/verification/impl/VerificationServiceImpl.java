@@ -1,7 +1,6 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
 import com.github.jsonldjava.utils.JsonUtils;
-import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.*;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
