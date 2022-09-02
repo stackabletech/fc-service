@@ -97,8 +97,6 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
                 }
             }
 
-            payload = payload + "<" + credentialSubject + ">" + " " + "<gx-participant:hasURI>" + " " + "\"" + credentialSubject + "\"^^<http://www.w3.org/2001/XMLSchema#string>" + "	. \n";
-
             String query = " WITH '\n" + payload + "' as payload\n"
                     + "CALL n10s.rdf.import.inline(payload,\"N-Triples\") YIELD terminationStatus, triplesLoaded\n"
                     + "RETURN terminationStatus, triplesLoaded";
