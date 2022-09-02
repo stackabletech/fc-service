@@ -9,6 +9,6 @@ public class FileReaderHelper {
     public static String getMockFileDataAsString(String filename) throws IOException {
         Path resourceDirectory = Paths.get("src", "test", "resources", "mock-data");
         String absolutePath = resourceDirectory.toFile().getAbsolutePath();
-        return new String(Files.readAllBytes(Paths.get(absolutePath + "/" + filename + ".json")));
+        return new String(Files.readAllBytes(Paths.get(absolutePath + "/" + filename )));
     }
 }

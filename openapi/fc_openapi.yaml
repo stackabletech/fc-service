@@ -308,16 +308,7 @@ components:
               type: array
               items: 
                 $ref: '#/components/schemas/UserProfile'
-    OntologySchemas:
-      allOf:
-        - $ref: '#/components/schemas/ResultPage'
-        - type: object
-          properties:
-            items: 
-              type: array
-              items: 
-                $ref: '#/components/schemas/OntologySchema'
-          
+
   parameters:
     OffsetParam:
       name: offset
@@ -680,7 +671,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OntologySchemas'
+                $ref: '#/components/schemas/OntologySchema'
         '400':
           $ref: '#/components/responses/ClientError'
         '403':
@@ -824,7 +815,7 @@ paths:
         - name: type
           in: query
           description: 'Type of the schema.'
-          required: false
+          required: true
           schema:
             type: string
             enum:
