@@ -23,11 +23,17 @@ import org.neo4j.gds.catalog.GraphProjectProc;
 import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.core.io.ClassPathResource;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -60,7 +66,6 @@ public class GraphTest {
         graphDbConfig.setPassword("");
         graphGaia = new Neo4jGraphStore(graphDbConfig);
         graphGaia.initialiseGraph();
-        this.driver = GraphDatabase.driver(embeddedDatabaseServer.boltURI(), Config.builder().withoutEncryption().build());
     }
 
     @AfterAll
@@ -68,70 +73,96 @@ public class GraphTest {
         embeddedDatabaseServer.close();
     }
 
-
     /**
-     * Data hardcoded for claims and upload to Graph . Given set of credentials,
-     * connect to graph and upload self description. Instantiate list of claims
-     * with subject predicate and object in N-triples form and upload to graph.
-     * Verify if the claim has been uploaded using query service
+     * Given set of credentials connect to graph and upload self description.
+     * Instantiate list of claims with subject predicate and object in N-triples
+     * form and upload to graph. Verify if the claim has been uploaded using
+     * query service
      */
-    @Test
-    void testLiteralGraphUpload() {
 
-        List<SdClaim> sdClaimList = new ArrayList<>();
-        SdClaim sdClaim = new SdClaim("<https://delta-dao.com/.well-known/participantCompany.json>",
-                "<https://www.w3.org/2018/credentials#credentialSubject>",
-                "\"410 Terry Avenue North\"^^<http://www.w3.org/2001/XMLSchema#string>");
-        sdClaimList.add(sdClaim);
-        List<Map<String, String>> resultList = new ArrayList<Map<String, String>>();
-        Map<String, String> map = new HashMap<String, String>();
-        map.put("n.uri", "https://delta-dao.com/.well-known/participantCompany.json");
-        map.put("n.ns0__credentialSubject", "410 Terry Avenue North");
-        resultList.add(map);
-        graphGaia.addClaims(sdClaimList, "https://delta-dao.com/.well-known/participantCompany.json");
-        OpenCypherQuery query = new OpenCypherQuery(
-                "match(n) where n.uri ='https://delta-dao.com/.well-known/participantCompany.json' return n.uri, n.ns0__credentialSubject;");
-        List<Map<String, String>> response = graphGaia.queryData(query);
-        Assertions.assertEquals(resultList, response);
+    @Test
+    void testCypherQueriesFull() throws Exception {
+
+        List<SdClaim> sdClaimFile = loadTestClaims("Databases/neo4j/data/Triples/claim.nt");
+        List<Map<String, String>> resultListFull = new ArrayList<Map<String, String>>();
+        Map<String, String> mapFull = new HashMap<String, String>();
+        mapFull.put("n.uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal.json");
+        resultListFull.add(mapFull);
+        Map<String, String> mapFullES = new HashMap<String, String>();
+        mapFullES.put("n.uri", "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
+        resultListFull.add(mapFullES);
+        for (SdClaim sdClaim : sdClaimFile) {
+            List<SdClaim> sdClaimList = new ArrayList<>();
+            sdClaimList.add(sdClaim);
+            String credentialSubject = sdClaimList.get(0).getSubject();
+            graphGaia.addClaims(sdClaimList, credentialSubject.substring(1, credentialSubject.length() - 1));
+        }
+        OpenCypherQuery queryFull = new OpenCypherQuery(
+                "MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 25");
+        List<Map<String, String>> responseFull = graphGaia.queryData(queryFull);
+        Assertions.assertEquals(resultListFull, responseFull);
     }
 
     /**
-     * Instantiate a query without specifying property. Function should return
-     * uri of claim subject
+     * Given set of credentials connect to graph and upload self description.
+     * Instantiate list of claims with subject predicate and object in N-triples
+     * form along with literals and upload to graph. Verify if the claim has been uploaded using
+     * query service
      */
+
     @Test
-    void testNoPropertyQuery() {
-        List<SdClaim> sdClaimList = new ArrayList<>();
-        SdClaim sdClaim = new SdClaim("<https://delta-dao.com/.well-known/participantCompany.json>",
-                "<https://www.w3.org/2018/credentials#credentialSubject>",
-                "\"410 Terry Avenue North\"^^<http://www.w3.org/2001/XMLSchema#string>");
-        sdClaimList.add(sdClaim);
-        List<Map<String, String>> resultList = new ArrayList<Map<String, String>>();
-        Map<String, String> map = new HashMap<String, String>();
-        map.put("n.uri", "https://delta-dao.com/.well-known/participantCompany.json");
-        resultList.add(map);
-        graphGaia.addClaims(sdClaimList, "https://delta-dao.com/.well-known/participantCompany.json");
-        OpenCypherQuery query = new OpenCypherQuery(
-                "match(n) where n.uri ='https://delta-dao.com/.well-known/participantCompany.json' return n;");
-        List<Map<String, String>> response = graphGaia.queryData(query);
-        Assertions.assertEquals(resultList, response);
+    void testCypherDelta() throws Exception {
+
+        List<SdClaim> sdClaimFile = loadTestClaims("Databases/neo4j/data/Triples/claim.nt");
+        List<Map<String, String>> resultListDelta = new ArrayList<Map<String, String>>();
+        Map<String, String> mapDelta = new HashMap<String, String>();
+        mapDelta.put("n.uri", "https://delta-dao.com/.well-known/participant.json");
+        resultListDelta.add(mapDelta);
+        for (SdClaim sdClaim : sdClaimFile) {
+            List<SdClaim> sdClaimList = new ArrayList<>();
+            sdClaimList.add(sdClaim);
+            String credentialSubject = sdClaimList.get(0).getSubject();
+            graphGaia.addClaims(sdClaimList, credentialSubject.substring(1, credentialSubject.length() - 1));
+        }
+        OpenCypherQuery queryDelta = new OpenCypherQuery(
+                "MATCH (n:ns1__LegalPerson) WHERE n.ns1__name = \"deltaDAO AG\" RETURN n LIMIT 25");
+        List<Map<String, String>> responseDelta = graphGaia.queryData(queryDelta);
+        Assertions.assertEquals(resultListDelta, responseDelta);
     }
 
-    @Test
-    void testDeleteClaim() {
-        List<SdClaim> sdClaimList = new ArrayList<>();
-        SdClaim sdClaim = new SdClaim("<https://delta-dao.com/.well-known/participantCompany.json>",
-                "<https://www.w3.org/2018/credentials#credentialSubject>",
-                "\"410 Terry Avenue North\"^^<http://www.w3.org/2001/XMLSchema#string>");
-        sdClaimList.add(sdClaim);
-        graphGaia.addClaims(sdClaimList, "https://delta-dao.com/.well-known/participantCompany.json");
-        List<Map<String, String>> resultList = new ArrayList<Map<String, String>>();
-        graphGaia.deleteClaims("https://delta-dao.com/.well-known/participantCompany.json");
-        OpenCypherQuery query = new OpenCypherQuery(
-                "match(n) where n.uri ='https://delta-dao.com/.well-known/participantCompany.json' return n;");
-        List<Map<String, String>> response = graphGaia.queryData(query);
-        Assertions.assertEquals(resultList, response);
 
+    private List<SdClaim> loadTestClaims(String Path) throws Exception {
+        List credentialSubjectList = new ArrayList();
+        try (InputStream is = new ClassPathResource(Path)
+                .getInputStream()) {
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            String strLine;
+            List<SdClaim> sdClaimList = new ArrayList<>();
+            while ((strLine = br.readLine()) != null) {
+                String[] split = strLine.split("\\s+");
+                Pattern regex = Pattern.compile("[^\\s\"']+|\"[^\"]*\"|'[^']*'");
+                Matcher regexMatcher = regex.matcher(strLine);
+                int i = 0;
+                String subject = "";
+                String predicate = "";
+                String object = "";
+                while (regexMatcher.find()) {
+                    if (i == 0) {
+                        subject = regexMatcher.group().toString();
+                    } else if (i == 1) {
+                        predicate = regexMatcher.group().toString();
+                    } else if (i == 2) {
+                        object = regexMatcher.group().toString();
+                    }
+                    i++;
+                }
+                SdClaim sdClaim = new SdClaim(subject, predicate, object);
+                sdClaimList.add(sdClaim);
+            }
+            return sdClaimList;
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
 
