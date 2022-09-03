@@ -39,6 +39,11 @@ spring:
           issuer-uri: http://key-server:8080/realms/gaia-x
 #          jwk-set-uri: http://key-server:8080/realms/gaia-x/protocol/openid-connect/certs
 
+scheduler:
+  sd:
+    cron:
+      expression: 0 1 0 * * *
+
 openapi:
   gaiaXCatalogue:
     base-path: ""

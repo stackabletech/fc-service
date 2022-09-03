@@ -72,4 +72,11 @@ public interface SelfDescriptionStore {
    * @param hash The hash of the SD to work on.
    */
   void deleteSelfDescription(String hash);
+
+  /**
+   * Invalidate expired Self-descriptions in the store.
+   *
+   * @return Number of expired Self-descriptions found.
+   */
+  int invalidateSelfDescriptions();
 }

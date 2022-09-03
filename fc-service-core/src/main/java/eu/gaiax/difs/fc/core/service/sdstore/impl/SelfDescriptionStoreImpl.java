@@ -334,4 +334,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
   }
 
+  @Override
+  public int invalidateSelfDescriptions() {
+    // TODO: Implementation Required
+    return 0;
+  }
 }
