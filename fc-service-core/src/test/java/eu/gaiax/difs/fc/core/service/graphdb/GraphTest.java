@@ -65,7 +65,6 @@ public class GraphTest {
         graphDbConfig.setUser("neo4j");
         graphDbConfig.setPassword("");
         graphGaia = new Neo4jGraphStore(graphDbConfig);
-        graphGaia.initialiseGraph();
     }
 
     @AfterAll

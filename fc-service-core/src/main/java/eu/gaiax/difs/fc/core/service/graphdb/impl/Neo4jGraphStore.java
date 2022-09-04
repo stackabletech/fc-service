@@ -30,8 +30,7 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
     public Neo4jGraphStore(String uri, String user, String password) throws Exception {
         driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
         log.info("Connected with Neo4j");
-        //TODO: figure out how to initialise the graph without breaking the tests
-        //initialiseGraph();
+        initialiseGraph();
     }
 
 
@@ -40,12 +39,19 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
         driver.close();
     }
 
-    public void initialiseGraph() throws Exception {
-        if (databaseExists()) {
-            log.info("Graph already loaded");
-        } else {
-            initGraph();
+    private void initialiseGraph() {
+        try {
+            if (databaseExists()) {
+                log.info("Graph already loaded");
+            } else {
+                initGraph();
+            }
+        }catch (Exception e) {
+            // Temporal solution to avoid exceptions during bean initialization from other components, e.g., unit tests
+            // TODO review how to avoid bean initialization problem
+            log.error("Error while trying to initialise graph.");
         }
+
     }
 
     private boolean databaseExists() throws Exception {

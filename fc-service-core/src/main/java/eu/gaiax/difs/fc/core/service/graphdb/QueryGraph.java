@@ -19,7 +19,7 @@ public interface QueryGraph {
      * @param sdQuery is the query to be executed
      * @return List of Maps
      */
-    public List<Map<String, String>> queryData(OpenCypherQuery sdQuery);
+    List<Map<String, String>> queryData(OpenCypherQuery sdQuery);
 
 
 }
