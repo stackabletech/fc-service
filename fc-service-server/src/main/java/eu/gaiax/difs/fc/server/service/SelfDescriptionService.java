@@ -235,13 +235,11 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     filterParams.setValidator(validator);
     if (uploadTr != null) {
       String[] timeRanges = parseTimeRange(uploadTr);
-      filterParams.setUploadTimeStart(Instant.parse(timeRanges[0]));
-      filterParams.setUploadTimeEnd(Instant.parse(timeRanges[1]));
+      filterParams.setUploadTimeRange(Instant.parse(timeRanges[0]), Instant.parse(timeRanges[1]));
     }
     if (statusTr != null) {
       String[] timeRanges = parseTimeRange(statusTr);
-      filterParams.setStatusTimeStart(Instant.parse(timeRanges[0]));
-      filterParams.setStatusTimeEnd(Instant.parse(timeRanges[1]));
+      filterParams.setStatusTimeRange(Instant.parse(timeRanges[0]), Instant.parse(timeRanges[1]));
     }
     return filterParams;
   }

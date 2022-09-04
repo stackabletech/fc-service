@@ -153,7 +153,7 @@ public class SelfDescriptionControllerTest {
     @WithMockUser
     public void addSDReturnForbiddenResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
-                        .content(getMockFileDataAsString("test-provider-self-description"))
+                        .content(getMockFileDataAsString("test-provider-self-description.json"))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
@@ -168,7 +168,7 @@ public class SelfDescriptionControllerTest {
     public void addSDReturnSuccessResponse() throws Exception {
         assertThrows(AssertionError.class, () ->
             mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
-                .content(getMockFileDataAsString("test-provider-self-description"))
+                .content(getMockFileDataAsString("test-provider-self-description.json"))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))

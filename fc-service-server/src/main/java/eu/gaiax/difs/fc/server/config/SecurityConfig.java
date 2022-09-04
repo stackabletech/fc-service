@@ -50,6 +50,7 @@ public class SecurityConfig {
           // Schema APIs
           .antMatchers(HttpMethod.POST, "/schemas").hasRole("Ro-MU-CA")
           .antMatchers(HttpMethod.DELETE, "/schemas/**").hasRole("Ro-MU-CA")
+          .antMatchers(HttpMethod.PUT, "/schemas").hasRole("Ro-MU-CA")
           .antMatchers(HttpMethod.GET, "/schemas", "/schemas/**")
           .hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-Pa-A")
 
