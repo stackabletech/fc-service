@@ -4,7 +4,6 @@ import eu.gaiax.difs.fc.core.config.GraphDbConfig;
 import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
-import eu.gaiax.difs.fc.core.service.graphdb.QueryGraph;
 import lombok.extern.log4j.Log4j2;
 import org.neo4j.driver.*;
 import org.neo4j.driver.internal.InternalNode;
@@ -18,7 +17,7 @@ import java.util.Map;
 
 @Log4j2
 @Component
-public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
+public class Neo4jGraphStore implements AutoCloseable, GraphStore {
 
     private final Driver driver;
 
@@ -54,25 +53,26 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
 
     }
 
-    private boolean databaseExists() throws Exception {
+    private boolean databaseExists() {
         try (Session session = driver.session()) {
             Result result = session.run("CALL gds.graph.exists('neo4j');");
             if (result.hasNext()) {
                 org.neo4j.driver.Record record = result.next();
                 Value value = record.get("exists");
                 if (value == null) {
-                    throw new Exception(
-                            "Did not get the info whether or not the corresponding database in neo4j exists.");
+                    log.error("Did not get the info whether or not the corresponding database in neo4j exists.");
+                    return false;
                 } else {
                     return value.asBoolean();
                 }
             } else {
-                throw new Exception("Did not get the info whether or not the corresponding database in neo4j exists.");
+                log.error("Did not get the info whether or not the corresponding database in neo4j exists.");
+                return false;
             }
 
         } catch (Exception e) {
             log.error("Tried to access neo4j querying for graph exists.");
-            throw e;
+            return false;
         }
     }
 
