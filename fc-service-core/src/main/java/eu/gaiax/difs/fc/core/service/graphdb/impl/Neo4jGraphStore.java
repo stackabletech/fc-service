@@ -5,16 +5,21 @@ import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.core.service.graphdb.QueryGraph;
+import liquibase.repackaged.org.apache.commons.lang3.StringUtils;
 import lombok.extern.log4j.Log4j2;
+import org.neo4j.cypherdsl.core.*;
+import org.neo4j.cypherdsl.parser.ExpressionCreatedEventType;
+import org.neo4j.cypherdsl.parser.Options;
 import org.neo4j.driver.*;
 import org.neo4j.driver.internal.InternalNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
+import org.neo4j.cypherdsl.parser.CypherParser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 @Log4j2
 @Component
@@ -140,6 +145,41 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
         }
     }
 
+
+    public boolean validateQuery(String query) {
+        query=query.toLowerCase();
+        if (StringUtils.containsIgnoreCase(query,"delete") || StringUtils.containsIgnoreCase(query,"create") || StringUtils.containsIgnoreCase(query,"set") || StringUtils.containsIgnoreCase(query,"remove") || StringUtils.containsIgnoreCase(query,"merge")  ) {
+            throw new RuntimeException("Not allowed to remove or add nodes!");
+        }
+        try {
+            var userStatement = CypherParser.parse(query);
+        }catch (Exception e) {
+            throw e;
+        }
+        return true;
+    }
+
+    public List<Map<String, String>> processResults(Result result)
+    {
+        List<Map<String, String>> resultList = new ArrayList<>();
+        while (result.hasNext()) {
+            org.neo4j.driver.Record record = result.next();
+            Map<String, Object> map = record.asMap();
+            Map<String, String> outputMap = new HashMap<String, String>();
+            for (var entry : map.entrySet()) {
+                if (entry.getValue() instanceof String) {
+                    outputMap.put(entry.getKey(), entry.getValue().toString());
+                } else if (entry.getValue() == null) {
+                    outputMap.put(entry.getKey(), null);
+                } else if (entry.getValue() instanceof InternalNode) {
+                    InternalNode SDNode = (InternalNode) entry.getValue();
+                    outputMap.put("n.uri", SDNode.get("uri").toString().replace("\"", ""));
+                }
+            }
+            resultList.add(outputMap);
+        }
+        return resultList;
+    }
     /**
      * {@inheritDoc}
      */
@@ -148,29 +188,19 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
         try (Session session = driver.session(); Transaction tx = session.beginTransaction()) {
             List<Map<String, String>> resultList = new ArrayList<>();
             log.debug("Beginning transaction");
-            Result result = tx.run(sdQuery.getQuery());
-            while (result.hasNext()) {
-                org.neo4j.driver.Record record = result.next();
-                Map<String, Object> map = record.asMap();
-                Map<String, String> outputMap = new HashMap<String, String>();
-                for (var entry : map.entrySet()) {
-                    if (entry.getValue() instanceof String) {
-                        outputMap.put(entry.getKey(), entry.getValue().toString());
-                    } else if (entry.getValue() == null) {
-                        outputMap.put(entry.getKey(), null);
-                    } else if (entry.getValue() instanceof InternalNode) {
-                        InternalNode SDNode = (InternalNode) entry.getValue();
-                        outputMap.put("n.uri", SDNode.get("uri").toString().replace("\"", ""));
-                    }
-                }
-                resultList.add(outputMap);
+            String cypherQuery = sdQuery.getQuery();
+            boolean validQuery = validateQuery(cypherQuery);
+            if (validQuery) {
+                Result result = tx.run(sdQuery.getQuery());
+                resultList = processResults(result);
+                log.debug("Query executed successfully ");
+                return resultList;
+            } else {
+                return null;
             }
-            log.debug("Query executed successfully ");
-            return resultList;
         } catch (Exception e) {
             log.debug("Query unsuccessful " + e);
             throw e;
         }
     }
-
 }
