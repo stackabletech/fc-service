@@ -13,9 +13,7 @@ import org.junit.runners.MethodSorters;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.helpers.SocketAddress;
-import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.springframework.boot.test.autoconfigure.Neo4jTestHarnessAutoConfiguration;
 import org.neo4j.gds.catalog.GraphExistsProc;
 import org.neo4j.gds.catalog.GraphListProc;
@@ -82,7 +80,7 @@ public class GraphTest {
     @Test
     void testCypherQueriesFull() throws Exception {
 
-        List<SdClaim> sdClaimFile = loadTestClaims("Databases/neo4j/data/Triples/claim.nt");
+        List<SdClaim> sdClaimFile = loadTestClaims("Claims-Tests/claimsForQuery.nt");
         List<Map<String, String>> resultListFull = new ArrayList<Map<String, String>>();
         Map<String, String> mapFull = new HashMap<String, String>();
         mapFull.put("n.uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal.json");
@@ -112,7 +110,7 @@ public class GraphTest {
     @Test
     void testCypherDelta() throws Exception {
 
-        List<SdClaim> sdClaimFile = loadTestClaims("Databases/neo4j/data/Triples/claim.nt");
+        List<SdClaim> sdClaimFile = loadTestClaims("Claims-Tests/claimsForQuery.nt");
         List<Map<String, String>> resultListDelta = new ArrayList<Map<String, String>>();
         Map<String, String> mapDelta = new HashMap<String, String>();
         mapDelta.put("n.uri", "https://delta-dao.com/.well-known/participant.json");
