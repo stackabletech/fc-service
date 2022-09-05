@@ -14,7 +14,7 @@
             <column name="sdhash" type="java.sql.Types.VARCHAR(64)">
                 <constraints primaryKey="true" primaryKeyName="sdfiles_pkey" nullable="false"/>
             </column>
-            <column name="subject" type="java.sql.Types.VARCHAR(255)">
+            <column name="subjectid" type="java.sql.Types.VARCHAR(255)">
                 <constraints  nullable="false" />
             </column>
             <column name="issuer" type="java.sql.Types.VARCHAR(255)"/>
@@ -28,8 +28,8 @@
                 <constraints nullable="false" />
             </column>
         </createTable>
-        <sql dbms="postgresql">create unique index idx_sd_file_is_active on sdfiles(subject) where status=0</sql>
-        
+        <sql dbms="postgresql">create unique index idx_sd_file_is_active on sdfiles(subjectid) where status=0</sql>
+
         <createTable tableName="validators">
             <column name="sdhash" type="java.sql.Types.VARCHAR(64)">
                 <constraints nullable="false" />
@@ -47,4 +47,3 @@
     </changeSet>
 
 </databaseChangeLog>
-
