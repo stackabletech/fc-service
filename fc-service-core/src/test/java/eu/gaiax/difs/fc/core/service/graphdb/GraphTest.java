@@ -22,7 +22,8 @@ import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.core.io.ClassPathResource;
-
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -101,6 +102,63 @@ public class GraphTest {
     }
 
     /**
+     * Check if Query Endpoint allows Deletion
+     */
+
+    @Test
+    void testQueryTransaction() throws Exception {
+
+        List<SdClaim> sdClaimFile = loadTestClaims("Claims-Tests/claimsForQuery.nt");
+        List<Map<String, String>> resultListDelta = new ArrayList<Map<String, String>>();
+        Map<String, String> mapDelta = new HashMap<String, String>();
+        mapDelta.put("n.uri", "https://delta-dao.com/.well-known/participant.json");
+        resultListDelta.add(mapDelta);
+        for (SdClaim sdClaim : sdClaimFile) {
+            List<SdClaim> sdClaimList = new ArrayList<>();
+            sdClaimList.add(sdClaim);
+            String credentialSubject = sdClaimList.get(0).getSubject();
+            graphGaia.addClaims(sdClaimList, credentialSubject.substring(1, credentialSubject.length() - 1));
+        }
+        OpenCypherQuery queryDelete = new OpenCypherQuery(
+                "MATCH (n) DETACH DELETE n;");
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            graphGaia.queryData(queryDelete);
+        });
+        String expectedMessage = "Not allowed to remove or add nodes!";
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
+    }
+
+
+    /**
+     * Check if Query Endpoint allows Invalid Query
+     */
+
+    @Test
+    void testinvalidQuery() throws Exception {
+
+        List<SdClaim> sdClaimFile = loadTestClaims("Claims-Tests/claimsForQuery.nt");
+        List<Map<String, String>> resultListDelta = new ArrayList<Map<String, String>>();
+        Map<String, String> mapDelta = new HashMap<String, String>();
+        mapDelta.put("n.uri", "https://delta-dao.com/.well-known/participant.json");
+        resultListDelta.add(mapDelta);
+        for (SdClaim sdClaim : sdClaimFile) {
+            List<SdClaim> sdClaimList = new ArrayList<>();
+            sdClaimList.add(sdClaim);
+            String credentialSubject = sdClaimList.get(0).getSubject();
+            graphGaia.addClaims(sdClaimList, credentialSubject.substring(1, credentialSubject.length() - 1));
+        }
+        OpenCypherQuery queryDelete = new OpenCypherQuery(
+                "MTCH (n:ns0__ServiceOffering) RETURN n LIMIT 25");
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            graphGaia.queryData(queryDelete);
+        });
+        String expectedMessage = "Not allowed to remove or add nodes!";
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
+    }
+
+    /**
      * Given set of credentials connect to graph and upload self description.
      * Instantiate list of claims with subject predicate and object in N-triples
      * form along with literals and upload to graph. Verify if the claim has been uploaded using
@@ -126,7 +184,6 @@ public class GraphTest {
         List<Map<String, String>> responseDelta = graphGaia.queryData(queryDelta);
         Assertions.assertEquals(resultListDelta, responseDelta);
     }
-
 
     private List<SdClaim> loadTestClaims(String Path) throws Exception {
         List credentialSubjectList = new ArrayList();
