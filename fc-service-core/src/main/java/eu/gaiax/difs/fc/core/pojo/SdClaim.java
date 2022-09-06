@@ -13,4 +13,12 @@ public class SdClaim {
   private final String predicate;
   private final String object;
 
+  public String stripSubject() {
+    return subject.substring(1, subject.length() - 1);
+  }
+  
+  public String asTriple() {
+    return String.format("%s %s %s . \n", subject, predicate, object );
+  }
+  
 }

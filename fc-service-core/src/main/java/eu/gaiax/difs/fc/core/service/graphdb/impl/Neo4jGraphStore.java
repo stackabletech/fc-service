@@ -36,10 +36,9 @@ public class Neo4jGraphStore implements GraphStore {
         int cnt = 0;
         try (Session session = driver.session()) {
             for (SdClaim sdClaim : sdClaimList) {
-                String subject = sdClaim.getSubject().substring(1, sdClaim.getSubject().length() - 1);
+                String subject = sdClaim.stripSubject();
                 if (subject.equals(credentialSubject)) {
-                    payload = payload + sdClaim.getSubject() + " " + sdClaim.getPredicate() + " " + sdClaim.getObject()
-                            + " . \n";
+                    payload = payload + sdClaim.asTriple();
                     cnt++;
                 }
             }
