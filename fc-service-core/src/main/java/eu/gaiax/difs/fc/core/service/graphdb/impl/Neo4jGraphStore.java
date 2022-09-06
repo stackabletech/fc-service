@@ -1,29 +1,26 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
-import eu.gaiax.difs.fc.core.config.GraphDbConfig;
-import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
-import eu.gaiax.difs.fc.core.pojo.SdClaim;
-import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
-import eu.gaiax.difs.fc.core.service.graphdb.QueryGraph;
-import liquibase.repackaged.org.apache.commons.lang3.StringUtils;
-import lombok.extern.log4j.Log4j2;
-import org.neo4j.cypherdsl.core.*;
-import org.neo4j.cypherdsl.parser.ExpressionCreatedEventType;
-import org.neo4j.cypherdsl.parser.Options;
-import org.neo4j.driver.*;
-import org.neo4j.driver.internal.InternalNode;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.neo4j.cypherdsl.parser.CypherParser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.UnaryOperator;
+
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.Transaction;
+import org.neo4j.driver.internal.InternalNode;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.SdClaim;
+import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
+import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Component
-public class Neo4jGraphStore implements GraphStore, QueryGraph {
+public class Neo4jGraphStore implements GraphStore {
 
     @Autowired
     private Driver driver;
@@ -33,24 +30,7 @@ public class Neo4jGraphStore implements GraphStore, QueryGraph {
         // not sure we must close it here
     //    driver.close();
     //}
-/*
-    private void initialiseGraph() {
-        try {
-            if (databaseExists()) {
-                log.info("Graph already loaded");
-            } else {
-                initGraph();
-            }
-        }catch (Exception e) {
-            // Temporal solution to avoid exceptions during bean initialization from other components, e.g., unit tests
-            // TODO review how to avoid bean initialization problem
-            log.error("Error while trying to initialise graph.");
-        }
 
-    }
-
-*/
-    
     /**
      * {@inheritDoc}
      */
@@ -104,41 +84,6 @@ public class Neo4jGraphStore implements GraphStore, QueryGraph {
         }
     }
 
-
-    public boolean validateQuery(String query) {
-        query=query.toLowerCase();
-        if (StringUtils.containsIgnoreCase(query,"delete") || StringUtils.containsIgnoreCase(query,"create") || StringUtils.containsIgnoreCase(query,"set") || StringUtils.containsIgnoreCase(query,"remove") || StringUtils.containsIgnoreCase(query,"merge")  ) {
-            throw new RuntimeException("Not allowed to remove or add nodes!");
-        }
-        try {
-            var userStatement = CypherParser.parse(query);
-        }catch (Exception e) {
-            throw e;
-        }
-        return true;
-    }
-
-    public List<Map<String, String>> processResults(Result result)
-    {
-        List<Map<String, String>> resultList = new ArrayList<>();
-        while (result.hasNext()) {
-            org.neo4j.driver.Record record = result.next();
-            Map<String, Object> map = record.asMap();
-            Map<String, String> outputMap = new HashMap<String, String>();
-            for (var entry : map.entrySet()) {
-                if (entry.getValue() instanceof String) {
-                    outputMap.put(entry.getKey(), entry.getValue().toString());
-                } else if (entry.getValue() == null) {
-                    outputMap.put(entry.getKey(), null);
-                } else if (entry.getValue() instanceof InternalNode) {
-                    InternalNode SDNode = (InternalNode) entry.getValue();
-                    outputMap.put("n.uri", SDNode.get("uri").toString().replace("\"", ""));
-                }
-            }
-            resultList.add(outputMap);
-        }
-        return resultList;
-    }
     /**
      * {@inheritDoc}
      */
@@ -147,19 +92,30 @@ public class Neo4jGraphStore implements GraphStore, QueryGraph {
         try (Session session = driver.session(); Transaction tx = session.beginTransaction()) {
             List<Map<String, String>> resultList = new ArrayList<>();
             log.debug("Beginning transaction");
-            String cypherQuery = sdQuery.getQuery();
-            boolean validQuery = validateQuery(cypherQuery);
-            if (validQuery) {
-                Result result = tx.run(sdQuery.getQuery());
-                resultList = processResults(result);
-                log.debug("Query executed successfully ");
-                return resultList;
-            } else {
-                return null;
+            Result result = tx.run(sdQuery.getQuery());
+            while (result.hasNext()) {
+                org.neo4j.driver.Record record = result.next();
+                Map<String, Object> map = record.asMap();
+                Map<String, String> outputMap = new HashMap<String, String>();
+                for (var entry : map.entrySet()) {
+                    if (entry.getValue() instanceof String) {
+                        outputMap.put(entry.getKey(), entry.getValue().toString());
+                    } else if (entry.getValue() == null) {
+                        outputMap.put(entry.getKey(), null);
+                    } else if (entry.getValue() instanceof InternalNode) {
+                        InternalNode SDNode = (InternalNode) entry.getValue();
+                        outputMap.put("n.uri", SDNode.get("uri").toString().replace("\"", ""));
+                    }
+                }
+                resultList.add(outputMap);
             }
+            log.debug("Query executed successfully ");
+            return resultList;
         } catch (Exception e) {
             log.debug("Query unsuccessful " + e);
             throw e;
         }
     }
+
 }
+
