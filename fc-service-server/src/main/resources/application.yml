@@ -30,6 +30,8 @@ spring:
       maximumPoolSize: 25
   liquibase:
     change-log: classpath:/liquibase/master-changelog.xml
+  main:
+    allow-bean-definition-overriding: true    
   mvc:
     log-request-details: true
   security:
@@ -67,6 +69,7 @@ graphstore:
   uri: bolt://localhost:7687
   user: neo4j
   password: 12345
+  scope: test
 
 logging:
   level:

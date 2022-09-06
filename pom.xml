@@ -9,7 +9,7 @@
         <version>2.7.0</version>
         <relativePath/>
     </parent>
-
+    
     <groupId>eu.gaiax.difs.fc</groupId>
     <artifactId>fc-service</artifactId>
     <packaging>pom</packaging>
@@ -49,6 +49,11 @@
         <embedded.postgres.version>2.0.1</embedded.postgres.version>
         <embedded.postgres.test.version>2.1.2</embedded.postgres.test.version>
         <jsonld.version>0.13.4</jsonld.version>
+
+        <neo4j-java-driver-spring-boot-starter.version>4.3.6.0</neo4j-java-driver-spring-boot-starter.version>
+        <neo4j.neosemantics.version>4.4.0.1</neo4j.neosemantics.version>
+        <neo4j.gds.version>2.0.5</neo4j.gds.version>
+        <neo4j.test-harness.version>4.4.10</neo4j.test-harness.version>
         <!-- plugins -->
         <plugin.jib.version>3.2.1</plugin.jib.version>
         <plugin.openapi-generator.version>5.4.0</plugin.openapi-generator.version>
@@ -173,6 +178,33 @@
                 <artifactId>embedded-database-spring-test</artifactId>
                 <version>${embedded.postgres.test.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.neo4j.test</groupId>
+                <artifactId>neo4j-harness</artifactId>
+                <version>${neo4j.test-harness.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.neo4j.driver</groupId>
+                <artifactId>neo4j-java-driver-spring-boot-starter</artifactId>
+                <version>${neo4j-java-driver-spring-boot-starter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.neo4j.driver</groupId>
+                <artifactId>neo4j-java-driver-test-harness-spring-boot-autoconfigure</artifactId>
+                <version>${neo4j-java-driver-spring-boot-starter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.neo4j</groupId>
+                <artifactId>neosemantics</artifactId>
+                <version>${neo4j.neosemantics.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.neo4j.gds</groupId>
+                <artifactId>proc</artifactId>
+                <version>${neo4j.gds.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

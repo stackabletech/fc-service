@@ -16,6 +16,7 @@ import com.c4_soft.springaddons.security.oauth2.test.annotations.WithMockJwtAuth
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
+import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -44,6 +45,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.event.annotation.BeforeTestClass;
@@ -67,6 +69,7 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 @ExtendWith(SpringExtension.class)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Import(EmbeddedNeo4JConfig.class)
 public class ParticipantsControllerTest {
 
     @Autowired

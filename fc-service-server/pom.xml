@@ -90,6 +90,36 @@
             <artifactId>embedded-database-spring-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.neo4j.test</groupId>
+            <artifactId>neo4j-harness</artifactId>
+            <version>4.4.10</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>slf4j-nop</artifactId>
+                    <!-- Since 4.0.1 -->
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver-test-harness-spring-boot-autoconfigure</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neosemantics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.gds</groupId>
+            <artifactId>proc</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

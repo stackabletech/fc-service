@@ -7,6 +7,8 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
+import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
+
 import java.time.OffsetDateTime;
 
 import javax.transaction.Transactional;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.event.annotation.BeforeTestClass;
@@ -38,12 +41,12 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // TODO: 23.08.2022 Add a test file storage
-@Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
 @ExtendWith(SpringExtension.class)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 //@Transactional
+//@Import(EmbeddedNeo4JConfig.class)
 public class SelfDescriptionControllerTest {
     // TODO: 14.07.2022 After adding business logic, need to fix/add tests, taking into account exceptions
     private static SelfDescriptionMetadata sdMeta;
