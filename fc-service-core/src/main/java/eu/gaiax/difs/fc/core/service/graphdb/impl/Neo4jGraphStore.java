@@ -23,27 +23,17 @@ import java.util.function.UnaryOperator;
 
 @Log4j2
 @Component
-public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
-
-    private final Driver driver;
+public class Neo4jGraphStore implements GraphStore, QueryGraph {
 
     @Autowired
-    public Neo4jGraphStore(GraphDbConfig config) throws Exception {
-        this(config.getUri(), config.getUser(), config.getPassword());
-    }
+    private Driver driver;
 
-    public Neo4jGraphStore(String uri, String user, String password) throws Exception {
-        driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
-        log.info("Connected with Neo4j");
-        initialiseGraph();
-    }
-
-
-    @Override
-    public void close() throws Exception {
-        driver.close();
-    }
-
+    //@Override
+    //public void close() throws Exception {
+        // not sure we must close it here
+    //    driver.close();
+    //}
+/*
     private void initialiseGraph() {
         try {
             if (databaseExists()) {
@@ -59,39 +49,8 @@ public class Neo4jGraphStore implements AutoCloseable, GraphStore, QueryGraph {
 
     }
 
-    private boolean databaseExists() throws Exception {
-        try (Session session = driver.session()) {
-            Result result = session.run("CALL gds.graph.exists('neo4j');");
-            if (result.hasNext()) {
-                org.neo4j.driver.Record record = result.next();
-                Value value = record.get("exists");
-                if (value == null) {
-                    throw new Exception(
-                            "Did not get the info whether or not the corresponding database in neo4j exists.");
-                } else {
-                    return value.asBoolean();
-                }
-            } else {
-                throw new Exception("Did not get the info whether or not the corresponding database in neo4j exists.");
-            }
-
-        } catch (Exception e) {
-            log.error("Tried to access neo4j querying for graph exists.");
-            throw e;
-        }
-    }
-
-    private void initGraph() {
-        try (Session session = driver.session()) {
-            session.run("CALL n10s.graphconfig.init();"); /// run only when creating a new graph
-            session.run("CREATE CONSTRAINT n10s_unique_uri ON (r:Resource) ASSERT r.uri IS UNIQUE");
-            log.info("n10 procedure and Constraints are loaded successfully");
-        } catch (org.neo4j.driver.exceptions.ClientException e) {
-            log.error("Could not initialize Neo4j Graph");
-            throw e;
-        }
-    }
-
+*/
+    
     /**
      * {@inheritDoc}
      */
