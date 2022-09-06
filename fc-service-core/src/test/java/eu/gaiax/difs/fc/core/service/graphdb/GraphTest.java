@@ -80,7 +80,7 @@ public class GraphTest {
         OpenCypherQuery queryFull = new OpenCypherQuery(
                 "MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 25");
         List<Map<String, String>> responseFull = graphGaia.queryData(queryFull);
-        //Assertions.assertEquals(resultListFull, responseFull);
+        Assertions.assertEquals(resultListFull, responseFull);
     }
 
     /**
@@ -107,7 +107,7 @@ public class GraphTest {
         OpenCypherQuery queryDelta = new OpenCypherQuery(
                 "MATCH (n:ns1__LegalPerson) WHERE n.ns1__name = \"deltaDAO AG\" RETURN n LIMIT 25");
         List<Map<String, String>> responseDelta = graphGaia.queryData(queryDelta);
-        //Assertions.assertEquals(resultListDelta, responseDelta);
+        Assertions.assertEquals(resultListDelta, responseDelta);
     }
 
 

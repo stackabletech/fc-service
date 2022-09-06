@@ -6,7 +6,7 @@ package eu.gaiax.difs.fc.core.pojo;
 @lombok.AllArgsConstructor
 @lombok.EqualsAndHashCode
 @lombok.Getter
-@lombok.Setter
+@lombok.ToString
 public class SdClaim {
 
   private final String subject;

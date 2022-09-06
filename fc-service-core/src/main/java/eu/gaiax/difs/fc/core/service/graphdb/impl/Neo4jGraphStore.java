@@ -13,6 +13,7 @@ import org.neo4j.driver.internal.InternalNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
@@ -25,37 +26,34 @@ public class Neo4jGraphStore implements GraphStore {
     @Autowired
     private Driver driver;
 
-    //@Override
-    //public void close() throws Exception {
-        // not sure we must close it here
-    //    driver.close();
-    //}
-
     /**
      * {@inheritDoc}
      */
     @Override
     public void addClaims(List<SdClaim> sdClaimList, String credentialSubject) {
+        log.debug("addClaims.enter; got claims: {}, subject: {}", sdClaimList, credentialSubject);
         String payload = "";
-
+        int cnt = 0;
         try (Session session = driver.session()) {
             for (SdClaim sdClaim : sdClaimList) {
                 String subject = sdClaim.getSubject().substring(1, sdClaim.getSubject().length() - 1);
                 if (subject.equals(credentialSubject)) {
                     payload = payload + sdClaim.getSubject() + " " + sdClaim.getPredicate() + " " + sdClaim.getObject()
-                            + "	. \n";
+                            + " . \n";
+                    cnt++;
                 }
             }
 
             String query = " WITH '\n" + payload + "' as payload\n"
-                    + "CALL n10s.rdf.import.inline(payload,\"N-Triples\") YIELD terminationStatus, triplesLoaded\n"
-                    + "RETURN terminationStatus, triplesLoaded";
+                    + "CALL n10s.rdf.import.inline(payload,\"N-Triples\") YIELD terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo\n"
+                    + "RETURN terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo";
 
-            log.debug("Query; " + query);
-            session.run(query);
+            log.debug("addClaims; Query: {}", query);
+            Result rs = session.run(query);
+            log.debug("addClaims.exit; claims added: {}, results: {}", cnt, rs.list());
         } catch (Exception e) {
-            log.error("Could not update list of self description claims");
-            throw e;
+            log.error("addClaims.error", e);
+            throw new ServerException("error adding claims: " + e.getMessage());
         }
     }
 
@@ -64,7 +62,7 @@ public class Neo4jGraphStore implements GraphStore {
      */
     @Override
     public void deleteClaims(String credentialSubject) {
-        log.debug("Beginning claims deletion");
+        log.debug("deleteClaims.enter; Beginning claims deletion, subject: {}", credentialSubject);
         String query = "MATCH (n{uri: '" + credentialSubject + "'})\n" +
                 "DELETE n";
         String checkClaim = "match(n) where n.uri ='" + credentialSubject + "' return n;";
@@ -76,11 +74,10 @@ public class Neo4jGraphStore implements GraphStore {
         try (Session session = driver.session()) {
             if (claim.equals(credentialSubject)) {
                 session.run(query);
-                log.debug("Deleting executed successfully ");
+                log.debug("deleteClaims.exit; Deleting executed successfully ");
             } else {
-                log.debug("Claim doe not exist in GraphDB ");
+                log.debug("deleteClaims.exit; Claim does not exist in GraphDB ");
             }
-
         }
     }
 
@@ -89,13 +86,15 @@ public class Neo4jGraphStore implements GraphStore {
      */
     @Override
     public List<Map<String, String>> queryData(OpenCypherQuery sdQuery) {
+        log.debug("queryData.enter; got query: {}", sdQuery);
         try (Session session = driver.session(); Transaction tx = session.beginTransaction()) {
             List<Map<String, String>> resultList = new ArrayList<>();
-            log.debug("Beginning transaction");
             Result result = tx.run(sdQuery.getQuery());
+            log.debug("queryData; got result: {}", result.keys());
             while (result.hasNext()) {
                 org.neo4j.driver.Record record = result.next();
                 Map<String, Object> map = record.asMap();
+                log.debug("queryData; record: {}", map);
                 Map<String, String> outputMap = new HashMap<String, String>();
                 for (var entry : map.entrySet()) {
                     if (entry.getValue() instanceof String) {
@@ -109,11 +108,11 @@ public class Neo4jGraphStore implements GraphStore {
                 }
                 resultList.add(outputMap);
             }
-            log.debug("Query executed successfully ");
+            log.debug("queryData.exit; returning: {}", resultList);
             return resultList;
         } catch (Exception e) {
-            log.debug("Query unsuccessful " + e);
-            throw e;
+            log.error("queryData.error", e);
+            throw new ServerException("error querying data " + e.getMessage());
         }
     }
 
