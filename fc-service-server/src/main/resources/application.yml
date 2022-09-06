@@ -69,7 +69,7 @@ graphstore:
   uri: bolt://localhost:7687
   user: neo4j
   password: 12345
-  scope: test
+  scope: runtime
 
 logging:
   level:
