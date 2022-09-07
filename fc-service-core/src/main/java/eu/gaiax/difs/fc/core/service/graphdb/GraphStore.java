@@ -1,13 +1,15 @@
 package eu.gaiax.difs.fc.core.service.graphdb;
 
+import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 
 import java.util.List;
+import java.util.Map;
 
 /**
-* Defines the required functions to add, update and delete active claims extracted from self-descriptions
-* @author nacharya
-*/
+ * Defines the required functions to add, query, update and delete active claims extracted from self-descriptions
+ * @author nacharya
+ */
 public interface GraphStore {
 
 
@@ -26,6 +28,15 @@ public interface GraphStore {
      * @param credentialSubject contains a self-description unique identifier
      */
     void deleteClaims(String credentialSubject);
+
+    /**
+     * Query the graph when Cypher query is passed in query object and this
+     * returns list of Maps with key value pairs as a result.
+     *
+     * @param sdQuery is the query to be executed
+     * @return List of Maps
+     */
+    List<Map<String, String>> queryData(OpenCypherQuery sdQuery);
 
 }
 

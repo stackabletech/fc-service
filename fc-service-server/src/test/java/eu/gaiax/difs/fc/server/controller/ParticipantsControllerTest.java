@@ -21,6 +21,8 @@ import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
+import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
+
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
@@ -35,9 +37,11 @@ import java.nio.file.Paths;
 import java.util.List;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
@@ -46,12 +50,15 @@ import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.event.annotation.BeforeTestClass;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -62,9 +69,12 @@ import org.springframework.web.context.WebApplicationContext;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(SpringExtension.class)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Import(EmbeddedNeo4JConfig.class)
 public class ParticipantsControllerTest {
 
     @Autowired
@@ -76,6 +86,14 @@ public class ParticipantsControllerTest {
 
     @Autowired
     private SelfDescriptionStoreImpl selfDescriptionStore;
+
+    @Autowired
+    private Neo4j embeddedDatabaseServer;
+
+    @AfterAll
+    void closeNeo4j() {
+        embeddedDatabaseServer.close();
+    }
 
     @MockBean
     private KeycloakBuilder builder;

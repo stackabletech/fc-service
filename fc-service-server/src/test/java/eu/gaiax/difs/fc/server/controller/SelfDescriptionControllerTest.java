@@ -7,23 +7,27 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
+import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
+
 import java.time.OffsetDateTime;
 
-import javax.transaction.Transactional;
-
-import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.event.annotation.BeforeTestClass;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -38,13 +42,23 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // TODO: 23.08.2022 Add a test file storage
-@Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 //@Transactional
+@Import(EmbeddedNeo4JConfig.class)
 public class SelfDescriptionControllerTest {
+    @Autowired
+    private Neo4j embeddedDatabaseServer;
+
+    @AfterAll
+    void closeNeo4j() {
+        embeddedDatabaseServer.close();
+    }
+
     // TODO: 14.07.2022 After adding business logic, need to fix/add tests, taking into account exceptions
     private static SelfDescriptionMetadata sdMeta;
 
