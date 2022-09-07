@@ -20,4 +20,14 @@ public class ServerException extends ServiceException {
   public ServerException(String message) {
     super(message);
   }
+
+  /**
+   * Constructs a new Server exception with the specified detail message and cause.
+   *
+   * @param message Detailed message about the thrown exception.
+   * @param cause Case of the thrown exception. (A null value is permitted, and indicates that the cause is unknown.)
+   */
+  public ServerException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

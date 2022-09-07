@@ -27,6 +27,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Implementation of the {@link eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate} interface.
@@ -64,6 +66,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    *        or May contain hints how to solve the error or indicate what went wrong at the server.
    *        Must not outline any information about the internal structure of the server. (status code 500)
    */
+  @Override
   public ResponseEntity<SelfDescriptions> readSelfDescriptions(String uploadTr, String statusTr, String issuer,
                                                                     String validator, SelfDescriptionStatus status, String id,
                                                                     String hash, Integer offset, Integer limit) {
@@ -121,6 +124,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
+  @Transactional
   public ResponseEntity<Void> deleteSelfDescription(String selfDescriptionHash) {
     log.debug("deleteSelfDescription.enter; got hash: {}", selfDescriptionHash);
     // TODO: 27.07.2022 The method is not described in the documentation.
@@ -146,6 +150,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public ResponseEntity<SelfDescription> addSelfDescription(String selfDescription) {
     log.debug("addSelfDescription.enter; got selfDescription: {}", selfDescription);
 
@@ -186,6 +191,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
+  @Transactional
   public ResponseEntity<SelfDescription> updateSelfDescription(String selfDescriptionHash) {
     log.debug("updateSelfDescription.enter; got hash: {}", selfDescriptionHash);
     // TODO: 27.07.2022 Need to change the description and the order of actions in the documentation

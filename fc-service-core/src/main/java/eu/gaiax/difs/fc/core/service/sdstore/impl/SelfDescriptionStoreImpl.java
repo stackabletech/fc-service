@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
+import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
@@ -23,6 +24,7 @@ import javax.persistence.EntityExistsException;
 import javax.persistence.LockModeType;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.commons.io.FileExistsException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -57,9 +59,13 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
   public ContentAccessor getSDFileByHash(final String hash) {
     try {
       return fileStore.readFile(STORE_NAME, hash);
+    } catch (final FileNotFoundException exc) {
+      log.error("Error in getSDFileByHash method: ", exc);
+      return null;
     } catch (final IOException exc) {
       log.error("failed reading self-description file with hash {}", hash);
-      return null;
+      // TODO: Need correct error handling if we get something other than FileNotFoundException
+      throw new ServerException("Failed reading self-description file with hash " + hash, exc);
     }
   }
 
@@ -78,7 +84,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     // returned; but NotFoundException will be propagated to caller.
     final ContentAccessor sdFile = getSDFileByHash(hash);
     if (sdFile == null) {
-      return null;
+      throw new ServerException("Self-Description with hash " + hash + " not found in the file storage.");
     }
     final SelfDescriptionMetadata sdmData = sdmRecord.asSelfDescriptionMetadata();
     sdmData.setSelfDescription(sdFile);
@@ -259,8 +265,10 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     }
     try {
       fileStore.storeFile(STORE_NAME, selfDescription.getSdHash(), selfDescription.getSelfDescription());
+    } catch (FileExistsException e) {
+      throw new ConflictException("The SD file with the hash " + selfDescription.getSdHash() + " already exists in the file storage.", e);
     } catch (final IOException exc) {
-      throw new ServiceException(exc);
+      throw new ServerException("Error while adding SD to file storage: " + exc.getMessage());
     }
 
     if (existingSd != null) {
