@@ -12,20 +12,25 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
+import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.generated.controller.ParticipantsApiDelegate;
 import eu.gaiax.difs.fc.server.util.SessionUtils;
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.ws.rs.ForbiddenException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Implementation of the {@link ParticipantsApiDelegate} interface.
@@ -37,6 +42,9 @@ public class ParticipantsService implements ParticipantsApiDelegate {
 
   @Autowired
   private ParticipantDao partDao;
+
+  @Autowired
+  private FileStoreImpl fileStore;
 
   @Autowired
   private SelfDescriptionStore selfDescriptionStore;
@@ -63,11 +71,19 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   @Transactional
   public ResponseEntity<Participant> addParticipant(String body) {
     log.debug("addParticipant.enter; got participant: {}", body); // it can be JWT?
-    ParticipantMetaData part = getParticipantExtWithValidationAndStore(body);
-    part = partDao.create(part);
-    log.debug("addParticipant.exit; returning: {}", part);
-    return ResponseEntity.created(URI.create("/participants/" + part.getId())).body(part);
+    Pair<VerificationResultParticipant,SelfDescriptionMetadata> pairResult = validateSelfDescription(body);
+    VerificationResultParticipant verificationResult = pairResult.getLeft();
+    SelfDescriptionMetadata selfDescriptionMetadata = pairResult.getRight();
+
+    selfDescriptionStore.storeSelfDescription(selfDescriptionMetadata, verificationResult);
+
+    ParticipantMetaData participantMetaData = toParticipantMetaData(verificationResult, selfDescriptionMetadata);
+    registerRollBackForFileStoreManuallyIfTransactionFail(participantMetaData);
+
+    participantMetaData = partDao.create(participantMetaData);
+    return ResponseEntity.created(URI.create("/participants/" + participantMetaData.getId())).body(participantMetaData);
   }
+
 
   /**
    * DELETE /participants/{participantId} : Delete a participant in the catalogue.
@@ -84,11 +100,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   @Transactional
   public ResponseEntity<Participant> deleteParticipant(String participantId) {
     log.debug("deleteParticipant.enter; got participant: {}", participantId);
-    ParticipantMetaData part = partDao.select(participantId)
-        .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
-    if(!SessionUtils.sessionUserHasRole(catalogueAdminRole) && !part.getId().equals(SessionUtils.getSessionParticipantId())) {
-      throw new ForbiddenException("User has no permissions to delete participant : " + participantId);
-    }
+    ParticipantMetaData part = checkUserAndRolePermission(participantId);
     selfDescriptionStore.deleteSelfDescription(part.getSdHash());
     partDao.delete(participantId)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
@@ -183,19 +195,17 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   @Transactional
   public ResponseEntity<Participant> updateParticipant(String participantId, String body) {
     log.debug("updateParticipant.enter; got participant: {}", participantId);
-    ParticipantMetaData partExisting = partDao.select(participantId)
-        .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
 
-    ContentAccessorDirect contentAccessorDirect = new ContentAccessorDirect(body);
-    VerificationResultParticipant verificationResultParticipant =
-        verificationService.verifyParticipantSelfDescription(contentAccessorDirect);
+    checkUserAndRolePermission(participantId);
 
-    log.debug("updateParticipant.existing participant got : {}", partExisting);
-    log.debug("updateParticipant.verificationResultParticipant.got : {}", verificationResultParticipant);
-    if(!SessionUtils.sessionUserHasRole(catalogueAdminRole)  && !partExisting.getId().equals(SessionUtils.getSessionParticipantId())) {
-      throw new ForbiddenException("User has no permissions to update participant : " + participantId);
-    }
-    ParticipantMetaData participantUpdated = getParticipantExtWithValidationAndStore(contentAccessorDirect.getContentAsString());
+    Pair<VerificationResultParticipant,SelfDescriptionMetadata> pairResult = validateSelfDescription(body);
+    VerificationResultParticipant verificationResult = pairResult.getLeft();
+    SelfDescriptionMetadata selfDescriptionMetadata = pairResult.getRight();
+
+    selfDescriptionStore.storeSelfDescription(selfDescriptionMetadata,verificationResult);
+
+    ParticipantMetaData participantUpdated = toParticipantMetaData(verificationResult,selfDescriptionMetadata);
+    registerRollBackForFileStoreManuallyIfTransactionFail(participantUpdated);
 
     ParticipantMetaData participantMetaData = partDao.update(participantId, participantUpdated)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
@@ -204,20 +214,75 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   }
 
   /**
-   * Utility method for converting Participant Self-Description to ParticipantExt metadata.
-   *
-   * @param body Self-Description.
-   * @return ParticipantExt ParticipantExt.
+   * Utility method to return {@link ParticipantMetaData}
+   * @param verificationResult result of validation
+   * @param selfDescriptionMetadata metadata of self-description
+   * @return ParticipantMetaData
    */
-  private ParticipantMetaData getParticipantExtWithValidationAndStore(String body) {
-    ContentAccessorDirect contentAccessorDirect = new ContentAccessorDirect(body);
-    VerificationResultParticipant verificationResult = verificationService.verifyParticipantSelfDescription(contentAccessorDirect);
-    log.debug("getParticipantExtWithValidationAndStore.got VerificationResultParticipant: {}",verificationResult);
-    SelfDescriptionMetadata selfDescriptionMetadata = new SelfDescriptionMetadata(contentAccessorDirect, verificationResult);
-    log.debug("getParticipantExtWithValidationAndStore.got SelfDescriptionMetadata: {}",selfDescriptionMetadata);
-    selfDescriptionStore.storeSelfDescription(selfDescriptionMetadata, verificationResult);
+  private ParticipantMetaData toParticipantMetaData(VerificationResultParticipant verificationResult,
+                                                    SelfDescriptionMetadata selfDescriptionMetadata) {
     return new ParticipantMetaData(verificationResult.getId(), verificationResult.getParticipantName(),
-            verificationResult.getParticipantPublicKey(), selfDescriptionMetadata.getSelfDescription().getContentAsString(),
-            selfDescriptionMetadata.getSdHash());
+        verificationResult.getParticipantPublicKey(), selfDescriptionMetadata.getSelfDescription().getContentAsString(),
+        selfDescriptionMetadata.getSdHash());
   }
+
+  /**
+   * Catalogue-admin user has All permission and for others Check if session user id has same with the existing
+   * participant id.
+   * @param participantId id of the participant
+   */
+  private ParticipantMetaData checkUserAndRolePermission(String participantId) {
+    ParticipantMetaData partExisting = partDao.select(participantId)
+        .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
+    log.debug("checkUserAndRolePermission.existing participant got : {}", partExisting);
+    if(!SessionUtils.sessionUserHasRole(catalogueAdminRole)  &&
+        !partExisting.getId().equals(SessionUtils.getSessionParticipantId())) {
+      throw new ForbiddenException("User has no permissions to operate participant : " + participantId);
+    }
+    return partExisting;
+  }
+
+  /**
+   * Validate self-Description.
+   * @param body self description
+   * @return DTO object containing result and metadata of self-description
+   */
+  private Pair<VerificationResultParticipant,SelfDescriptionMetadata> validateSelfDescription(String body){
+
+    ContentAccessorDirect contentAccessorDirect = new ContentAccessorDirect(body);
+    VerificationResultParticipant verificationResultParticipant =
+        verificationService.verifyParticipantSelfDescription(contentAccessorDirect);
+    log.debug("updateParticipant.verificationResultParticipant.got : {}", verificationResultParticipant);
+
+    SelfDescriptionMetadata selfDescriptionMetadata = new SelfDescriptionMetadata(contentAccessorDirect,
+        verificationResultParticipant);
+    log.debug("getParticipantExtWithValidationAndStore.got SelfDescriptionMetadata: {}",selfDescriptionMetadata);
+
+    return Pair.of(verificationResultParticipant,selfDescriptionMetadata);
+  }
+
+  /**
+   * Manually registering rollback for the file system when transactions was rolled-back as spring does not have
+   * rollback for file systems storage.
+   * @param part participant metadata to be rolled back.
+   */
+  private void registerRollBackForFileStoreManuallyIfTransactionFail(ParticipantMetaData part) {
+
+    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+      @Override
+      public void afterCompletion(int status) {
+        if(TransactionSynchronization.STATUS_ROLLED_BACK == status){
+          try {
+            fileStore.deleteFile(SelfDescriptionStore.STORE_NAME, part.getSdHash());
+            log.debug("registerRollBackForFileStoreManuallyIfTransactionFail.Rolling back manually file with hash  : " +
+                "{}", part.getSdHash());
+            TransactionSynchronizationManager.clearSynchronization();
+          } catch(IOException ex) {
+
+          }
+        }
+      }
+    });
+  }
+
 }
