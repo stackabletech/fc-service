@@ -1,16 +1,25 @@
 package eu.gaiax.difs.fc.server.controller;
 
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.mockito.ArgumentMatchers.any;
+
 import com.c4_soft.springaddons.security.oauth2.test.annotations.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
+import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
+import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
-
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.time.OffsetDateTime;
 
+import java.util.ArrayList;
+import javax.transaction.Transactional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -21,9 +30,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.harness.Neo4j;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -31,26 +42,31 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.event.annotation.BeforeTestClass;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-// TODO: 23.08.2022 Add a test file storage
+// TODO: 23.08.2022 Add a test Graph storage
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
-//@Transactional
 @Import(EmbeddedNeo4JConfig.class)
+@Transactional
 public class SelfDescriptionControllerTest {
+    private final static String TEST_ISSUER = "http://example.org/test-issuer";
+    private final static String SD_FILE_NAME = "test-provider-sd.json";
+
     @Autowired
     private Neo4j embeddedDatabaseServer;
 
@@ -74,6 +90,9 @@ public class SelfDescriptionControllerTest {
     @Autowired
     private SelfDescriptionStore sdStore;
 
+    @SpyBean
+    private FileStoreImpl fileStore;
+
     @BeforeTestClass
     public void setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
@@ -94,6 +113,15 @@ public class SelfDescriptionControllerTest {
 
     @Test
     @WithMockUser
+    public void readSDsShouldReturnBadRequestResponse() throws Exception {
+      mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions?status=123")
+              .with(csrf())
+              .accept(MediaType.APPLICATION_JSON))
+          .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser
     public void readSDsShouldReturnSuccessResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions")
                         .with(csrf())
@@ -107,6 +135,13 @@ public class SelfDescriptionControllerTest {
                         .with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser
+    public void readSDByHashShouldReturnNotFoundResponse() throws Exception {
+      mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions/123").with(csrf()))
+          .andExpect(status().isNotFound());
     }
 
     @Test
@@ -141,9 +176,32 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
-            claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
-                    {@StringClaim(name = "participant_id", value = "http://example.org/test-issuer")})))
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = "")})))
+    public void deleteSdWithoutIssuerReturnForbiddenResponse() throws Exception {
+      sdStore.storeSelfDescription(sdMeta, null);
+      mockMvc.perform(MockMvcRequestBuilders.delete("/self-descriptions/" + sdMeta.getSdHash())
+              .with(csrf())
+              .contentType(MediaType.APPLICATION_JSON)
+              .accept(MediaType.APPLICATION_JSON))
+          .andExpect(status().isForbidden());
+      sdStore.deleteSelfDescription(sdMeta.getSdHash());
+    }
+
+    @Test
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
+    public void deleteSDReturnNotFoundResponse() throws Exception {
+      mockMvc.perform(MockMvcRequestBuilders.delete("/self-descriptions/" + sdMeta.getSdHash())
+              .with(csrf())
+              .contentType(MediaType.APPLICATION_JSON)
+              .accept(MediaType.APPLICATION_JSON))
+          .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void deleteSDReturnSuccessResponse() throws Exception {
         sdStore.storeSelfDescription(sdMeta, null);
 
@@ -167,28 +225,84 @@ public class SelfDescriptionControllerTest {
     @WithMockUser
     public void addSDReturnForbiddenResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
-                        .content(getMockFileDataAsString("test-provider-self-description.json"))
+                        .content(getMockFileDataAsString(SD_FILE_NAME))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
     }
 
-    // TODO: 23.08.2022 see TODO in SD add method
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
-            claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
-                    {@StringClaim(name = "participant_id", value = "http://example.org/test-issuer")})))
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
+    public void addSDWithoutIssuerReturnForbiddenResponse() throws Exception {
+      mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
+              .content(getMockFileDataAsString("test-provider-sd-without-credential-subject.json"))
+              .with(csrf())
+              .contentType(MediaType.APPLICATION_JSON)
+              .accept(MediaType.APPLICATION_JSON))
+          .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void addSDReturnSuccessResponse() throws Exception {
-        assertThrows(AssertionError.class, () ->
-            mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
-                .content(getMockFileDataAsString("test-provider-self-description.json"))
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
+                .content(getMockFileDataAsString(SD_FILE_NAME))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isCreated()));
+            .andExpect(status().isCreated())
+            .andReturn();
 
-//        sdStore.deleteSelfDescription(sdMeta.getSdHash());
+        SelfDescription sd = objectMapper.readValue(result.getResponse().getContentAsString(), SelfDescription.class);
+        sdStore.deleteSelfDescription(sd.getSdHash());
+    }
+
+    @Test
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
+    public void addDuplicateSDReturnConflictWithSdStorage() throws Exception {
+      String sd = getMockFileDataAsString(SD_FILE_NAME);
+      ContentAccessorDirect contentAccessor = new ContentAccessorDirect(sd);
+
+      SelfDescriptionMetadata sdMetadata =
+          new SelfDescriptionMetadata(contentAccessor, "id123", TEST_ISSUER, new ArrayList<>());
+
+      sdStore.storeSelfDescription(sdMetadata, null);
+      mockMvc.perform(MockMvcRequestBuilders
+              .post("/self-descriptions")
+              .content(sd)
+              .with(csrf())
+              .contentType(MediaType.APPLICATION_JSON)
+              .accept(MediaType.APPLICATION_JSON))
+          .andExpect(status().isConflict());
+      sdStore.deleteSelfDescription(sdMetadata.getSdHash());
+      assertThrows(NotFoundException.class, () -> sdStore.getByHash(sdMetadata.getSdHash()));
+    }
+
+    // TODO: 05.09.2022 Need to add a test to check the correct scenario with graph storage when it is added
+    @Test
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
+    public void addSDFailedThanAllTransactionsRolledBack() throws Exception {
+        ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
+        doThrow((new IOException("Some server exception")))
+            .when(fileStore).storeFile(any(), hashCaptor.capture(), any());
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
+                .content(getMockFileDataAsString(SD_FILE_NAME))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isInternalServerError());
+
+        String hash = hashCaptor.getValue();
+
+        assertThrowsExactly(FileNotFoundException.class,
+            () -> fileStore.readFile(SelfDescriptionStore.STORE_NAME, hash));
+        assertThrows(NotFoundException.class, () -> sdStore.getByHash(hash));
     }
 
     @Test
@@ -211,9 +325,19 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
-            claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
-                    {@StringClaim(name = "participant_id", value = "http://example.org/test-issuer")})))
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
+    public void revokeSDReturnNotFound() throws Exception {
+      mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions/" + sdMeta.getSdHash() + "/revoke")
+              .with(csrf())
+              .contentType(MediaType.APPLICATION_JSON)
+              .accept(MediaType.APPLICATION_JSON))
+          .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void revokeSDReturnSuccessResponse() throws Exception {
         sdStore.storeSelfDescription(sdMeta, null);
         mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions/" + sdMeta.getSdHash() + "/revoke")
@@ -227,7 +351,7 @@ public class SelfDescriptionControllerTest {
     private static SelfDescriptionMetadata createSdMetadata() {
         SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata();
         sdMeta.setId("test id");
-        sdMeta.setIssuer("http://example.org/test-issuer");
+        sdMeta.setIssuer(TEST_ISSUER);
         sdMeta.setSdHash(HashUtils.calculateSha256AsHex("test hash"));
         sdMeta.setStatus(SelfDescriptionStatus.ACTIVE);
         sdMeta.setStatusDatetime(OffsetDateTime.parse("2022-01-01T12:00:00Z"));
