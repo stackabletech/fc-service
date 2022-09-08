@@ -446,7 +446,8 @@
           "uma_protection"
         ],
         "realm-management": [
-          "manage-users"
+          "manage-users",
+          "view-users"
         ]
       },
       "notBefore": 0,
