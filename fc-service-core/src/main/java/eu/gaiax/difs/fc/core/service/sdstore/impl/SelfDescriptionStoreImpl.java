@@ -81,14 +81,13 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     final SdMetaRecord sdmRecord = sessionFactory.getCurrentSession().byId(SdMetaRecord.class).load(hash);
     checkNonNull(sdmRecord, hash);
     // FIXME: Inconsistent exception handling: IOException will be caught and null
-    // returned; but NotFoundException will be propagated to caller.
+    //  returned; but NotFoundException will be propagated to caller.
     final ContentAccessor sdFile = getSDFileByHash(hash);
     if (sdFile == null) {
       throw new ServerException("Self-Description with hash " + hash + " not found in the file storage.");
     }
-    final SelfDescriptionMetadata sdmData = sdmRecord.asSelfDescriptionMetadata();
-    sdmData.setSelfDescription(sdFile);
-    return sdmData;
+    sdmRecord.setSelfDescription(sdFile);
+    return sdmRecord;
   }
 
   private static class FilterQueryBuilder {
@@ -223,29 +222,22 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     queryBuilder.setFirstResult(filter.getOffset());
     queryBuilder.setMaxResults(filter.getLimit());
 
-    final Query<SdMetaRecord> query = queryBuilder.createQuery();
-    final Stream<SdMetaRecord> stream = query.stream();
-    try {
-      return stream.map(SdMetaRecord::asSelfDescriptionMetadata).collect(Collectors.toList());
-    } finally {
-      stream.close();
-    }
+    return queryBuilder.createQuery().stream().collect(Collectors.toList());
   }
 
   @Override
-  public void storeSelfDescription(final SelfDescriptionMetadata selfDescription,
-      final VerificationResult sdVerificationResults) {
+  public void storeSelfDescription(final SelfDescriptionMetadata sdMetadata, final VerificationResult sdVerificationResults) {
     final Session currentSession = sessionFactory.getCurrentSession();
 
     final SdMetaRecord existingSd = currentSession
         .createQuery("select sd from SdMetaRecord sd where sd.subjectId=?1 and sd.status=?2", SdMetaRecord.class)
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .setTimeout(1)
-        .setParameter(1, selfDescription.getId())
+        .setParameter(1, sdMetadata.getId())
         .setParameter(2, SelfDescriptionStatus.ACTIVE)
         .uniqueResult();
 
-    final SdMetaRecord sdmRecord = new SdMetaRecord(selfDescription);
+    final SdMetaRecord sdmRecord = new SdMetaRecord(sdMetadata);
 
     // TODO: Add validators/signatures to the record once the Signature class is
     // clarified.
@@ -259,14 +251,13 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     try {
       currentSession.persist(sdmRecord);
     } catch (final EntityExistsException exc) {
-      final String message = String.format("self-description file with hash %s already exists",
-          selfDescription.getSdHash());
+      final String message = String.format("self-description file with hash %s already exists", sdMetadata.getSdHash());
       throw new ConflictException(message);
     }
     try {
-      fileStore.storeFile(STORE_NAME, selfDescription.getSdHash(), selfDescription.getSelfDescription());
+      fileStore.storeFile(STORE_NAME, sdMetadata.getSdHash(), sdMetadata.getSelfDescription());
     } catch (FileExistsException e) {
-      throw new ConflictException("The SD file with the hash " + selfDescription.getSdHash() + " already exists in the file storage.", e);
+      throw new ConflictException("The SD file with the hash " + sdMetadata.getSdHash() + " already exists in the file storage.", e);
     } catch (final IOException exc) {
       throw new ServerException("Error while adding SD to file storage: " + exc.getMessage());
     }
