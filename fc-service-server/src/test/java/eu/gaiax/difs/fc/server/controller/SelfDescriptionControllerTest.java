@@ -123,10 +123,14 @@ public class SelfDescriptionControllerTest {
     @Test
     @WithMockUser
     public void readSDsShouldReturnSuccessResponse() throws Exception {
+        sdStore.storeSelfDescription(sdMeta, null);
+
         mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions")
                         .with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+
+        sdStore.deleteSelfDescription(sdMeta.getSdHash());
     }
 
     @Test

@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
@@ -92,6 +93,19 @@ public class SelfDescriptionStoreImplTest {
     assertEquals(0, count.intValue(), "Deleting the last file should result in exactly 0 files in the store.");
   }
 
+  // Since SdMetaRecord class extends SelfDescriptionMetadata class instead of being formed from it, then check
+  // in the equals method will always be false. Because we are downcasting SdMetaRecord to SelfDescriptionMetadata.
+  private void assertThatSdHasTheSameData(SelfDescriptionMetadata excepted, SelfDescriptionMetadata actual) {
+    assertEquals(actual.getId(), excepted.getId());
+    assertEquals(actual.getSdHash(), excepted.getSdHash());
+    assertEquals(actual.getStatus(), excepted.getStatus());
+    assertEquals(actual.getIssuer(), excepted.getIssuer());
+    assertEquals(actual.getValidators(), excepted.getValidators());
+    assertEquals(actual.getUploadDatetime(), excepted.getUploadDatetime());
+    assertEquals(actual.getStatusDatetime(), excepted.getStatusDatetime());
+    assertEquals(actual.getSelfDescription(), excepted.getSelfDescription());
+  }
+
   /**
    * Test storing a self-description, ensuring it creates exactly one file on
    * disk, retrieving it by hash, and deleting it again.
@@ -107,8 +121,7 @@ public class SelfDescriptionStoreImplTest {
     sdStore.storeSelfDescription(sdMeta, null);
     assertStoredSdFiles(1);
 
-    SelfDescriptionMetadata byHash = sdStore.getByHash(hash);
-    assertEquals(sdMeta, byHash);
+    assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
 
     ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
     assertEquals(sdfileByHash, sdMeta.getSelfDescription(),
@@ -148,9 +161,8 @@ public class SelfDescriptionStoreImplTest {
     SelfDescriptionMetadata byHash1 = sdStore.getByHash(hash1);
     assertEquals(SelfDescriptionStatus.DEPRECATED, byHash1.getStatus(),
         "First self-description should have been depricated.");
-    Assertions.assertTrue(byHash1.getStatusDatetime().isAfter(sdMeta1.getStatusDatetime()));
-    SelfDescriptionMetadata byHash2 = sdStore.getByHash(hash2);
-    assertEquals(sdMeta2, byHash2);
+    assertTrue(byHash1.getStatusDatetime().isAfter(sdMeta1.getStatusDatetime()));
+    assertThatSdHasTheSameData(sdMeta2, sdStore.getByHash(hash2));
 
     sdStore.deleteSelfDescription(hash1);
     sdStore.deleteSelfDescription(hash2);
@@ -212,7 +224,7 @@ public class SelfDescriptionStoreImplTest {
     assertStoredSdFiles(1);
 
     SelfDescriptionMetadata byHash = sdStore.getByHash(hash);
-    assertEquals(sdMeta, byHash);
+    assertThatSdHasTheSameData(sdMeta, byHash);
 
     sdStore.changeLifeCycleStatus(hash, SelfDescriptionStatus.REVOKED);
     byHash = sdStore.getByHash(hash);
