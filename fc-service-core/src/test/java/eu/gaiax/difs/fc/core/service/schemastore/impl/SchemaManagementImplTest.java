@@ -10,8 +10,6 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
-import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImplTest;
-import eu.gaiax.difs.fc.core.service.verification.impl.VerificationServiceImplTest;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
@@ -32,6 +30,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -43,12 +43,19 @@ import org.springframework.transaction.annotation.Transactional;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
-@ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, SchemaManagementImplTest.class, SchemaStoreImpl.class, FileStoreImpl.class, DatabaseConfig.class})
+@ContextConfiguration(classes = {SchemaManagementImplTest.TestApplication.class, SchemaManagementImplTest.class, SchemaStoreImpl.class, FileStoreImpl.class, DatabaseConfig.class})
 @DirtiesContext
 @Transactional
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 public class SchemaManagementImplTest {
+  @SpringBootApplication
+  public static class TestApplication {
+
+    public static void main(String[] args) {
+      SpringApplication.run(TestApplication.class, args);
+    }
+  }
 
   @Autowired
   private SchemaStoreImpl schemaStore;
