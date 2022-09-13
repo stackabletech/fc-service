@@ -21,7 +21,9 @@ To see how the FC Service works go to `/docker` folder and start it with docker-
 >cd docker
 >docker-compose up
 ```
-- When all components started you should setup Keycloak which is used as Identity and Access Management layer in the project. Add keycloak host to your local `hosts` file:
+### Keycloak setup
+
+When all components started you should setup Keycloak which is used as Identity and Access Management layer in the project. Add keycloak host to your local `hosts` file:
 
 ```
 127.0.0.1	key-server
@@ -34,3 +36,16 @@ To see how the FC Service works go to `/docker` folder and start it with docker-
 
 Now you can test FC Service with Demo Portal web app. Go to `http://localhost:8088/parts` in your browser, you should be redirected to Keycloak Login page. Login with user credentials you created above..
 
+### Neo4j setup
+
+When all components are running you should configure Neo4j.
+
+You should open _http://localhost:7474_ to see the Neo4j connection page. Enter the default credentials:
+
+```
+login       neo4j
+password    neo4j
+```
+
+Then, after the connection, a page with a password change should appear. 
+Set new password as **_12345_** (local configs).
