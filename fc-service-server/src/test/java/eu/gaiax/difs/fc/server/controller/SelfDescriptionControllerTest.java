@@ -10,8 +10,10 @@ import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
+import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
+import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
 import java.io.FileNotFoundException;
@@ -93,13 +95,16 @@ public class SelfDescriptionControllerTest {
     @SpyBean
     private FileStoreImpl fileStore;
 
+    @Autowired
+    private VerificationService verificationService;
+
     @BeforeTestClass
     public void setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
     }
 
     @BeforeAll
-    static void initBeforeAll() {
+    static void initBeforeAll() throws IOException {
         sdMeta = createSdMetadata();
     }
 
@@ -123,7 +128,7 @@ public class SelfDescriptionControllerTest {
     @Test
     @WithMockUser
     public void readSDsShouldReturnSuccessResponse() throws Exception {
-        sdStore.storeSelfDescription(sdMeta, null);
+        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
 
         mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions")
                         .with(csrf())
@@ -151,7 +156,7 @@ public class SelfDescriptionControllerTest {
     @Test
     @WithMockUser
     public void readSDByHashShouldReturnSuccessResponse() throws Exception {
-        sdStore.storeSelfDescription(sdMeta, null);
+        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
 
         mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions/" + sdMeta.getSdHash())
                 .with(csrf()))
@@ -183,7 +188,7 @@ public class SelfDescriptionControllerTest {
     @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = "")})))
     public void deleteSdWithoutIssuerReturnForbiddenResponse() throws Exception {
-      sdStore.storeSelfDescription(sdMeta, null);
+      sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
       mockMvc.perform(MockMvcRequestBuilders.delete("/self-descriptions/" + sdMeta.getSdHash())
               .with(csrf())
               .contentType(MediaType.APPLICATION_JSON)
@@ -207,7 +212,7 @@ public class SelfDescriptionControllerTest {
     @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void deleteSDReturnSuccessResponse() throws Exception {
-        sdStore.storeSelfDescription(sdMeta, null);
+        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/self-descriptions/" + sdMeta.getSdHash())
                         .with(csrf())
@@ -343,7 +348,7 @@ public class SelfDescriptionControllerTest {
     @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void revokeSDReturnSuccessResponse() throws Exception {
-        sdStore.storeSelfDescription(sdMeta, null);
+        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
         mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions/" + sdMeta.getSdHash() + "/revoke")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -352,7 +357,7 @@ public class SelfDescriptionControllerTest {
         sdStore.deleteSelfDescription(sdMeta.getSdHash());
     }
 
-    private static SelfDescriptionMetadata createSdMetadata() {
+    private static SelfDescriptionMetadata createSdMetadata() throws IOException {
         SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata();
         sdMeta.setId("test id");
         sdMeta.setIssuer(TEST_ISSUER);
@@ -360,7 +365,11 @@ public class SelfDescriptionControllerTest {
         sdMeta.setStatus(SelfDescriptionStatus.ACTIVE);
         sdMeta.setStatusDatetime(OffsetDateTime.parse("2022-01-01T12:00:00Z"));
         sdMeta.setUploadDatetime(OffsetDateTime.parse("2022-01-02T12:00:00Z"));
-        sdMeta.setSelfDescription(new ContentAccessorDirect("test content"));
+        sdMeta.setSelfDescription(new ContentAccessorDirect(getMockFileDataAsString(SD_FILE_NAME)));
         return sdMeta;
+    }
+
+    private VerificationResultOffering getStaticVerificationResult() {
+        return verificationService.verifyOfferingSelfDescription(sdMeta.getSelfDescription());
     }
 }
