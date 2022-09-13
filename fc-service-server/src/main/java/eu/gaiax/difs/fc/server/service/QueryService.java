@@ -1,14 +1,21 @@
 package eu.gaiax.difs.fc.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.gaiax.difs.fc.api.generated.model.Data;
 import eu.gaiax.difs.fc.api.generated.model.Result;
 import eu.gaiax.difs.fc.api.generated.model.Statement;
 import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.server.generated.controller.QueryApiDelegate;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -25,13 +32,16 @@ import org.springframework.util.FileCopyUtils;
 @Slf4j
 @Service
 public class QueryService implements QueryApiDelegate {
-  // TODO : We will add actual service implemented by Fraunhofer for getting result back.
-
   @Autowired
   private ResourceLoader resourceLoader;
 
   @Autowired
   private ObjectMapper jsonMapper;
+
+  @Autowired
+  private GraphStore graphStore;
+
+
 
   /**
    * Get List of results from catalogue for provided {@link Statement}.
@@ -45,11 +55,15 @@ public class QueryService implements QueryApiDelegate {
   @Override
   public ResponseEntity<Result> query(String queryLanguage, Statement statement) {
     log.debug("query.enter; got queryLanguage:{}, got statement:{}", queryLanguage, statement);
-    Optional<Result> result = Optional.of(new Result());
+    List<Map<String, String>> queryResultList= graphStore.queryData(new OpenCypherQuery(statement.getStatement()));
+    Result result = toResultData(queryResultList);
     log.debug("query.exit; got results:{}", result);
-    return new ResponseEntity<>(result.get(), HttpStatus.OK);
+    return new ResponseEntity<>(result, HttpStatus.OK);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public ResponseEntity<String> querywebsite() {
     log.debug("queryPage.enter");
@@ -70,4 +84,30 @@ public class QueryService implements QueryApiDelegate {
         .headers(responseHeaders)
         .body(page);
   }
+
+  /**
+   * Transforming query result to desired format to UI
+   * @param queryResultList result of query from db
+   * @return Transformed Result object
+   */
+  private Result toResultData(List<Map<String, String>> queryResultList) {
+    log.debug("toResultData.enter; got queryResultList:{}", queryResultList);
+    Result result = new Result();
+    List<String> column = new ArrayList<>();
+    List<Data> dataList = new ArrayList<>();
+    final Map<String, List<String>> singleKeyMultiValueMap = queryResultList.stream()
+        .collect(Collectors.groupingBy(k -> String.valueOf(k.keySet()),
+            Collectors.mapping(l -> String.valueOf(l.values()), Collectors.toList())));
+
+    for(Map.Entry<String,List<String>> entry : singleKeyMultiValueMap.entrySet()){
+       column.add(entry.getKey());
+       dataList = entry.getValue().stream().map(p-> new Data(List.of(p),null)).collect(Collectors.toList());
+
+    }
+    result.setColumns(column);
+    result.setData(dataList);
+    log.debug("toResultData.exit; returning result:{}", result);
+    return result;
+  }
+
 }
