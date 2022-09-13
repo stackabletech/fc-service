@@ -279,7 +279,7 @@ public class SelfDescriptionControllerTest {
       SelfDescriptionMetadata sdMetadata =
           new SelfDescriptionMetadata(contentAccessor, "id123", TEST_ISSUER, new ArrayList<>());
 
-      sdStore.storeSelfDescription(sdMetadata, null);
+      sdStore.storeSelfDescription(sdMetadata, getStaticVerificationResult());
       mockMvc.perform(MockMvcRequestBuilders
               .post("/self-descriptions")
               .content(sd)
