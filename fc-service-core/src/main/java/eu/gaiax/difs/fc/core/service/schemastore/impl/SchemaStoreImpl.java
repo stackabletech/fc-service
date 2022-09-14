@@ -144,7 +144,8 @@ public class SchemaStoreImpl implements SchemaStore {
       throw new VerificationException("Schema redefines " + redefines.size() + " terms. First: " + redefines.get(0));
     }
 
-    SchemaRecord newRecord = new SchemaRecord(schemaId, nameHash, result.getSchemaType(), result.getExtractedUrls());
+    SchemaRecord newRecord = new SchemaRecord(schemaId, nameHash, result.getSchemaType(),schema.getContentAsString(),
+        result.getExtractedUrls());
     try {
       currentSession.persist(newRecord);
     } catch (EntityExistsException ex) {
@@ -201,6 +202,7 @@ public class SchemaStoreImpl implements SchemaStore {
 
     existing.setUpdateTime(Instant.now());
     existing.replaceTerms(result.getExtractedUrls());
+    existing.setContent(schema.getContentAsString());
     try {
       currentSession.update(existing);
     } catch (EntityExistsException ex) {
