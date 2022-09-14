@@ -1,17 +1,26 @@
 package eu.gaiax.difs.fc.core.service.schemastore.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
-import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImplTest;
+import eu.gaiax.difs.fc.core.service.verification.impl.VerificationServiceImplTest;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,8 +37,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -87,6 +94,28 @@ public class SchemaManagementImplTest {
     assertEquals(0, count, "Deleting the only file should result in exactly 0 files in the store.");
   }
 
+
+  /**
+   * Test of addSchema method with content storing checking, of class SchemaManagementImpl.
+   *
+   */
+  @Test
+  public void testAddSchemaWithLongContent() throws IOException  {
+    log.info("testAddSchemaWithLongContent");
+
+    String path = "Schema-Tests/largeSchemaContent.json";
+
+    String schema1 = getAccessor(path).getContentAsString();
+
+    String schemaId1 = schemaStore.addSchema(new ContentAccessorDirect(schema1));
+
+    ContentAccessor ContentAccessor = schemaStore.getSchema(schemaId1);
+
+    assertEquals(schema1, ContentAccessor.getContentAsString(), "Checking schema content stored properly " +
+        "and retrieved properly");
+
+    schemaStore.deleteSchema(schemaId1);
+  }
   /**
    * Test of addSchema method, of class SchemaManagementImpl.
    * Adding the schema twice
@@ -165,5 +194,14 @@ public class SchemaManagementImplTest {
   @Test
   @Disabled
   public void testGetCompositeSchema() {
+  }
+
+
+  private static ContentAccessorFile getAccessor(String path) throws UnsupportedEncodingException {
+    URL url = SchemaManagementImplTest.class.getClassLoader().getResource(path);
+    String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8.name());
+    File file = new File(str);
+    ContentAccessorFile accessor = new ContentAccessorFile(file);
+    return accessor;
   }
 }
