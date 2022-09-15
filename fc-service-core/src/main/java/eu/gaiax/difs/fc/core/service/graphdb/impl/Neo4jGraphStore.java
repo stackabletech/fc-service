@@ -67,6 +67,10 @@ public class Neo4jGraphStore implements GraphStore {
         String checkClaim = "match(n) where n.uri ='" + credentialSubject + "' return n;";
         OpenCypherQuery checkQuery = new OpenCypherQuery(checkClaim);
         List<Map<String, String>> result = queryData(checkQuery);
+        if (result.size() == 0) {
+            log.debug("nothing to delete");
+            return;
+        }
         Map<String, String> resultCheck = result.get(0);
         String claim = resultCheck.entrySet().iterator().next().getValue();
 

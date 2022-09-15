@@ -51,7 +51,7 @@ public class DatabaseConfig {
 
   private Properties hibernateProperties() {
     Properties hibernateProperties = new Properties();
-    hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "validate");
+    hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "update");
     return hibernateProperties;
   }
 }

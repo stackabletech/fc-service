@@ -1,8 +1,49 @@
 version: '3.7'
 
 services:
+  postgres:
+    container_name: "postgres"
+    image: postgres:latest
+    restart: always
+    environment:
+#      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    expose:
+      - "5432"
+    ports:
+      - "5432:5432"
+    networks:
+      - "gaia-x"
+#    extra_hosts:
+#      - "localhost:host-gateway"
+#    volumes:
+#      - pgdata:/var/lib/postgresql/data/
+
+  neo4j:
+    container_name: "neo4j"
+    image: neo4j:latest
+    environment:
+      NEO4J_dbms_connector_http_listen__address: :7474
+      NEO4J_dbms_connector_bolt_listen__address: :7687
+      NEO4JLABS_PLUGINS: '["apoc", "graph-data-science", "n10s"]'
+      NEO4J_dbms_security_procedures_unrestricted: gds.*,apoc.*,n10s.*
+      NEO4J_dbms_security_procedures_allowlist: gds.*,apoc.*,n10s.*
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    networks:
+      - "gaia-x"
+#    extra_hosts:
+#      - "localhost:host-gateway"
+    restart: always
+    command: neo4j
+#    volumes:
+#      - '$HOME/neo4j/data:/data'
+#      - '$HOME/neo4j/conf/:/conf/'
+
   keycloak:
-    container_name: "federated-catalogue-keycloak"
+    container_name: "keycloak"
     environment:
       KEYCLOAK_ADMIN: "admin"
       KEYCLOAK_ADMIN_PASSWORD: "admin"
@@ -28,13 +69,15 @@ services:
       ]
 
   server:
-    container_name: "federated-catalogue-server"
+    container_name: "fc-server"
 #    image: "${CI_REGISTRY}/fc-service-server:0.0.1-SNAPSHOT"
     build:
       context: ../fc-service-server
       dockerfile: Dockerfile
     environment:
       KEYCLOAK_CREDENTIALS_SECRET: "${FC_CLIENT_SECRET}"
+      SPRING_DATASOURCE_URL: "${DB_URL}"
+      GRAPHSTORE_URI: "bolt://neo4j:7687"
     ports:
       - "8081:8081"
     networks:
@@ -42,10 +85,13 @@ services:
     extra_hosts:
       - "key-server:host-gateway"
       - "localhost:127.0.0.1"
-    restart: unless-stopped
+    restart: always #unless-stopped
+    depends_on:
+      - postgres
+      - neo4j
 
   portal:
-    container_name: "federated-catalogue-portal"
+    container_name: "demo-portal"
 #    image: "${CI_REGISTRY}/demo-portal:0.0.1-SNAPSHOT"
     build:
       context: ../demo-portal
@@ -60,34 +106,8 @@ services:
       - "key-server:host-gateway"
       - "localhost:host-gateway"
     restart: unless-stopped
-
-  postgres:
-    image: postgres:latest
-    restart: always
-    environment:
-#      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
-    ports:
-      - "5432:5432"
-#    volumes:
-#      - pgdata:/var/lib/postgresql/data/
-  neo4j:
-    image: neo4j:latest
-#    volumes:
-#      - '$HOME/neo4j/data:/data'
-#      - '$HOME/neo4j/conf/:/conf/'
-    environment:
-      NEO4J_dbms_connector_http_listen__address: :7474
-      NEO4J_dbms_connector_bolt_listen__address: :7687
-      NEO4JLABS_PLUGINS: '["apoc", "graph-data-science", "n10s"]'
-      NEO4J_dbms_security_procedures_unrestricted: gds.*,apoc.*,n10s.*
-      NEO4J_dbms_security_procedures_allowlist: gds.*,apoc.*,n10s.*
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-    restart: always
-    command: neo4j
+    depends_on:
+      - keycloak
 
 networks:
   gaia-x:

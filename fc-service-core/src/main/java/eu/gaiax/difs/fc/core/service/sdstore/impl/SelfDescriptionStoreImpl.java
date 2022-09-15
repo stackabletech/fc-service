@@ -4,7 +4,6 @@ import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
-import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
@@ -19,7 +18,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.persistence.EntityExistsException;
 import javax.persistence.LockModeType;
@@ -56,11 +54,8 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
   @Autowired
   private SessionFactory sessionFactory;
 
-  /*
   @Autowired
-  private Neo4jGraphStore graphDb;
-  */
-  final GraphStore graphDb = new Neo4jGraphStore();
+  private GraphStore graphDb;
 
   @Override
   public ContentAccessor getSDFileByHash(final String hash) {
@@ -88,14 +83,13 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     final SdMetaRecord sdmRecord = sessionFactory.getCurrentSession().byId(SdMetaRecord.class).load(hash);
     checkNonNull(sdmRecord, hash);
     // FIXME: Inconsistent exception handling: IOException will be caught and null
-    // returned; but NotFoundException will be propagated to caller.
+    //  returned; but NotFoundException will be propagated to caller.
     final ContentAccessor sdFile = getSDFileByHash(hash);
     if (sdFile == null) {
       throw new ServerException("Self-Description with hash " + hash + " not found in the file storage.");
     }
-    final SelfDescriptionMetadata sdmData = sdmRecord.asSelfDescriptionMetadata();
-    sdmData.setSelfDescription(sdFile);
-    return sdmData;
+    sdmRecord.setSelfDescription(sdFile);
+    return sdmRecord;
   }
 
   private static class FilterQueryBuilder {
@@ -230,17 +224,11 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     queryBuilder.setFirstResult(filter.getOffset());
     queryBuilder.setMaxResults(filter.getLimit());
 
-    final Query<SdMetaRecord> query = queryBuilder.createQuery();
-    final Stream<SdMetaRecord> stream = query.stream();
-    try {
-      return stream.map(SdMetaRecord::asSelfDescriptionMetadata).collect(Collectors.toList());
-    } finally {
-      stream.close();
-    }
+    return queryBuilder.createQuery().stream().collect(Collectors.toList());
   }
 
   @Override
-  public void storeSelfDescription(final SelfDescriptionMetadata selfDescription,
+  public void storeSelfDescription(final SelfDescriptionMetadata sdMetadata,
       final VerificationResult verificationResult) {
     if (verificationResult == null) {
       throw new IllegalArgumentException("verification result must not be null");
@@ -251,11 +239,11 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
         .createQuery("select sd from SdMetaRecord sd where sd.subjectId=?1 and sd.status=?2", SdMetaRecord.class)
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .setTimeout(1)
-        .setParameter(1, selfDescription.getId())
+        .setParameter(1, sdMetadata.getId())
         .setParameter(2, SelfDescriptionStatus.ACTIVE)
         .uniqueResult();
 
-    final SdMetaRecord sdmRecord = new SdMetaRecord(selfDescription);
+    final SdMetaRecord sdmRecord = new SdMetaRecord(sdMetadata);
 
     // TODO: Add validators/signatures to the record once the Signature class is
     // clarified.
@@ -268,29 +256,30 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     }
     try {
       currentSession.persist(sdmRecord);
+      currentSession.flush();
     } catch (final EntityExistsException exc) {
-      final String message = String.format("self-description file with hash %s already exists",
-          selfDescription.getSdHash());
+      final String message = String.format("self-description file with hash %s already exists", sdMetadata.getSdHash());
       throw new ConflictException(message);
-    }
-    try {
-      fileStore.storeFile(STORE_NAME, selfDescription.getSdHash(), selfDescription.getSelfDescription());
-    } catch (FileExistsException e) {
-      throw new ConflictException("The SD file with the hash " + selfDescription.getSdHash() + " already exists in the file storage.", e);
-    } catch (final IOException exc) {
-      throw new ServerException("Error while adding SD to file storage: " + exc.getMessage());
     }
 
     if (existingSd != null) {
       existingSd.setStatus(SelfDescriptionStatus.DEPRECATED);
       existingSd.setStatusTime(Instant.now());
 
-      graphDb.deleteClaims(STORE_NAME);
       currentSession.update(existingSd);
+      graphDb.deleteClaims(existingSd.getSubjectId());
     }
+    graphDb.addClaims(verificationResult.getClaims(), sdmRecord.getSubjectId());
 
-    graphDb.addClaims(verificationResult.getClaims(), STORE_NAME);
     currentSession.flush();
+    try {
+      fileStore.storeFile(STORE_NAME, sdMetadata.getSdHash(), sdMetadata.getSelfDescription());
+      currentSession.flush();
+    } catch (final FileExistsException exc) {
+      throw new ConflictException("The SD file with the hash " + sdMetadata.getSdHash() + " already exists in the file storage.", exc);
+    } catch (final IOException exc) {
+      throw new ServerException("Error while adding SD to file storage: " + exc.getMessage());
+    }
   }
 
   @Override
@@ -310,9 +299,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     sdmRecord.setStatus(targetStatus);
     sdmRecord.setStatusTime(Instant.now());
     currentSession.update(sdmRecord);
-    currentSession.flush();
 
-    graphDb.deleteClaims(STORE_NAME);
+    graphDb.deleteClaims(sdmRecord.getSubjectId());
+    currentSession.flush();
   }
 
   @Override
@@ -333,7 +322,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     }
 
     if (status == SelfDescriptionStatus.ACTIVE) {
-      graphDb.deleteClaims(hash);
+      graphDb.deleteClaims(sdmRecord.getSubjectId());
     }
   }
 

@@ -4,7 +4,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet author="fhg" id="2022-08-05-schemafiles">
+    <changeSet author="fhg" id="2022-09-14-schemafiles">
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="schemafiles" />
@@ -26,6 +26,10 @@
             <column name="type" type="java.sql.Types.INTEGER">
                 <constraints nullable="false" />
             </column>
+            <column name="content" type="java.sql.Types.CLOB">
+                <constraints nullable="false" />
+            </column>
+
         </createTable>
         
         <createTable tableName="schematerms">

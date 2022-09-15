@@ -59,15 +59,22 @@ public class SchemaRecord implements Serializable {
   private Instant updateTime;
 
   /**
+   * The content of the schema.
+   */
+  @Column(name = "content", columnDefinition = "Text", nullable = false)
+  private String content;
+
+  /**
    * The terms defined in this schema.
    */
   @OneToMany(mappedBy = "schemaId", fetch = FetchType.LAZY)
   private List<SchemaTerm> terms;
 
-  public SchemaRecord(String schemaId, String nameHash, SchemaType type, List<String> terms) {
+  public SchemaRecord(String schemaId, String nameHash, SchemaType type,String content, List<String> terms) {
     this.schemaId = schemaId;
     this.nameHash = nameHash;
     this.type = type;
+    this.content = content;
     this.terms = terms.stream().map(t -> new SchemaTerm(t, schemaId)).collect(Collectors.toList());
     uploadTime = Instant.now();
     updateTime = Instant.now();
