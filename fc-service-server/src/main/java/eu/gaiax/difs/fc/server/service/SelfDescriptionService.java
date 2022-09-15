@@ -152,7 +152,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   @Override
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public ResponseEntity<SelfDescription> addSelfDescription(String selfDescription) {
-    log.debug("addSelfDescription.enter; got selfDescription: {}", selfDescription);
+    log.debug("addSelfDescription.enter; got selfDescription: {}", selfDescription.length());
 
     try {
      // TODO: 27.07.2022 Need to change the description and the order of actions in the documentation.

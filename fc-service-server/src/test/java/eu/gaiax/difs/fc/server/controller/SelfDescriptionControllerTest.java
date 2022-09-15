@@ -273,7 +273,7 @@ public class SelfDescriptionControllerTest {
         sdStore.deleteSelfDescription(sd.getSdHash());
     }
 
-    //@Test just to merge, will resolve it asap
+    @Test 
     @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void addDuplicateSDReturnConflictWithSdStorage() throws Exception {
@@ -283,11 +283,6 @@ public class SelfDescriptionControllerTest {
       SelfDescriptionMetadata sdMetadata =
           new SelfDescriptionMetadata(contentAccessor, "id123", TEST_ISSUER, new ArrayList<>());
       
-      try {
-          fileStore.deleteFile(SelfDescriptionStore.STORE_NAME, sdMetadata.getSdHash());
-      } catch(Exception ex) {
-      }      
-
       sdStore.storeSelfDescription(sdMetadata, getStaticVerificationResult());
       mockMvc.perform(MockMvcRequestBuilders
               .post("/self-descriptions")

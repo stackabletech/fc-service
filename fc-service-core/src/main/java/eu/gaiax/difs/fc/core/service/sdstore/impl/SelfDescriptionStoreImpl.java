@@ -252,26 +252,24 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       existingSd.setStatus(SelfDescriptionStatus.DEPRECATED);
       existingSd.setStatusTime(Instant.now());
       currentSession.update(existingSd);
-      currentSession.flush();
+      //currentSession.flush();
+      graphDb.deleteClaims(existingSd.getSubjectId());
     }
     try {
       currentSession.persist(sdmRecord);
-      currentSession.flush();
+      //currentSession.flush();
     } catch (final EntityExistsException exc) {
+        log.error("storeSelfDescription.error 1", exc);
       final String message = String.format("self-description file with hash %s already exists", sdMetadata.getSdHash());
       throw new ConflictException(message);
+    } catch (Exception ex) {
+        log.error("storeSelfDescription.error 2", ex);
+        throw ex;
     }
 
-    if (existingSd != null) {
-      existingSd.setStatus(SelfDescriptionStatus.DEPRECATED);
-      existingSd.setStatusTime(Instant.now());
-
-      currentSession.update(existingSd);
-      graphDb.deleteClaims(existingSd.getSubjectId());
-    }
     graphDb.addClaims(verificationResult.getClaims(), sdmRecord.getSubjectId());
 
-    currentSession.flush();
+    //currentSession.flush();
     try {
       fileStore.storeFile(STORE_NAME, sdMetadata.getSdHash(), sdMetadata.getSelfDescription());
       currentSession.flush();
@@ -279,7 +277,11 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       throw new ConflictException("The SD file with the hash " + sdMetadata.getSdHash() + " already exists in the file storage.", exc);
     } catch (final IOException exc) {
       throw new ServerException("Error while adding SD to file storage: " + exc.getMessage());
+    } catch (Exception ex) {
+        log.error("storeSelfDescription.error 3", ex);
+        throw ex;
     }
+    
   }
 
   @Override

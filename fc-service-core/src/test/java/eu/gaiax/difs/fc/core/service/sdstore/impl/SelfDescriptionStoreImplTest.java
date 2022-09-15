@@ -25,7 +25,6 @@ import liquibase.repackaged.org.apache.commons.collections4.IterableUtils;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
@@ -169,6 +168,8 @@ public class SelfDescriptionStoreImplTest {
     final String hash = sdMeta.getSdHash();
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
+    
+    Files.te
 
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
 
