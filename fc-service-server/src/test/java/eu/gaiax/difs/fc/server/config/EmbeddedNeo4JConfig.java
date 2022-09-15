@@ -5,6 +5,10 @@ import java.util.List;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.helpers.SocketAddress;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
 import org.neo4j.gds.catalog.GraphExistsProc;
 import org.neo4j.gds.catalog.GraphListProc;
 import org.neo4j.gds.catalog.GraphProjectProc;
@@ -40,5 +44,25 @@ public class EmbeddedNeo4JConfig {
         log.info("started Embedded Neo4J DB: {}", embeddedDatabaseServer);
         return embeddedDatabaseServer;
     }
+    
+    @Bean(destroyMethod = "close")
+    public Driver driver(Neo4j embeddedDatabaseServer) {
+        Driver driver = GraphDatabase.driver(embeddedDatabaseServer.boltURI());
+        Session session = driver.session();
+        Result result = session.run("CALL gds.graph.exists('neo4j');");
+        if (result.hasNext()) {
+            org.neo4j.driver.Record record = result.next();
+            org.neo4j.driver.Value value = record.get("exists");
+            if (value != null && value.asBoolean()) {
+                log.info("Graph already loaded");
+                return driver;
+            }
+        }
+        session.run("CALL n10s.graphconfig.init();"); /// run only when creating a new graph
+        session.run("CREATE CONSTRAINT n10s_unique_uri IF NOT EXISTS ON (r:Resource) ASSERT r.uri IS UNIQUE");
+        log.info("n10 procedure and Constraints are loaded successfully");
+        return driver;
+    }
+    
     
 }

@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
+import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
@@ -54,6 +55,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
   @Autowired
   private SessionFactory sessionFactory;
+
+  @Autowired
+  private GraphStore graphDb;
 
   @Override
   public ContentAccessor getSDFileByHash(final String hash) {
@@ -226,7 +230,11 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
   }
 
   @Override
-  public void storeSelfDescription(final SelfDescriptionMetadata sdMetadata, final VerificationResult sdVerificationResults) {
+  public void storeSelfDescription(final SelfDescriptionMetadata sdMetadata,
+      final VerificationResult verificationResult) {
+    if (verificationResult == null) {
+      throw new IllegalArgumentException("verification result must not be null");
+    }
     final Session currentSession = sessionFactory.getCurrentSession();
 
     final SdMetaRecord existingSd = currentSession
@@ -247,33 +255,33 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       existingSd.setStatusTime(Instant.now());
       currentSession.update(existingSd);
       currentSession.flush();
+      graphDb.deleteClaims(existingSd.getSubjectId());
     }
     try {
       currentSession.persist(sdmRecord);
     } catch (final EntityExistsException exc) {
+        log.error("storeSelfDescription.error 1", exc);
       final String message = String.format("self-description file with hash %s already exists", sdMetadata.getSdHash());
       throw new ConflictException(message);
+    } catch (Exception ex) {
+        log.error("storeSelfDescription.error 2", ex);
+        throw ex;
     }
+
+    graphDb.addClaims(verificationResult.getClaims(), sdmRecord.getSubjectId());
+
     try {
       fileStore.storeFile(sdMetadata.getSdHash(), sdMetadata.getSelfDescription());
+      currentSession.flush();
     } catch (FileExistsException e) {
       throw new ConflictException("The SD file with the hash " + sdMetadata.getSdHash() + " already exists in the file storage.", e);
     } catch (final IOException exc) {
       throw new ServerException("Error while adding SD to file storage: " + exc.getMessage());
+    } catch (Exception ex) {
+        log.error("storeSelfDescription.error 3", ex);
+        throw ex;
     }
-
-    if (existingSd != null) {
-      existingSd.setStatus(SelfDescriptionStatus.DEPRECATED);
-      existingSd.setStatusTime(Instant.now());
-
-      // TODO: Claims from existing SD need to be removed from the GraphDB.
-
-      currentSession.update(existingSd);
-    }
-
-    // TODO: Send sdVerificationResults.getClaims() to the GraphDB
-
-    currentSession.flush();
+    
   }
 
   @Override
@@ -293,10 +301,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     sdmRecord.setStatus(targetStatus);
     sdmRecord.setStatusTime(Instant.now());
     currentSession.update(sdmRecord);
+
+    graphDb.deleteClaims(sdmRecord.getSubjectId());
     currentSession.flush();
-
-    // TODO: Claims from existing SD need to be removed from the GraphDB.
-
   }
 
   @Override
@@ -305,6 +312,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     // Get a lock on the record.
     final SdMetaRecord sdmRecord = currentSession.find(SdMetaRecord.class, hash);
     checkNonNull(sdmRecord, hash);
+    final SelfDescriptionStatus status = sdmRecord.getStatus();
     currentSession.delete(sdmRecord);
     currentSession.flush();
     try {
@@ -315,9 +323,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       log.error("failed to delete self-description file with hash {}", hash, exc);
     }
 
-    // TODO: Claims from existing SD need to be removed from the GraphDB if existing
-    // SD was active.
-
+    if (status == SelfDescriptionStatus.ACTIVE) {
+      graphDb.deleteClaims(sdmRecord.getSubjectId());
+    }
   }
 
   @Override

@@ -1,29 +1,44 @@
 package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
+import eu.gaiax.difs.fc.core.config.EmbeddedNeo4JConfig;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
+import eu.gaiax.difs.fc.core.pojo.Signature;
+import eu.gaiax.difs.fc.core.pojo.VerificationResult;
+import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
+import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
+import eu.gaiax.difs.fc.core.service.verification.impl.VerificationServiceImpl;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 import java.io.IOException;
 import liquibase.repackaged.org.apache.commons.collections4.IterableUtils;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -32,11 +47,16 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -45,38 +65,53 @@ import org.springframework.transaction.annotation.Transactional;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.MethodName.class)
+//@EnableAutoConfiguration(exclude = {LiquibaseAutoConfiguration.class, DataSourceAutoConfiguration.class, Neo4jTestHarnessAutoConfiguration.class})
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
 @ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, FileStoreConfig.class,
-    SelfDescriptionStoreImpl.class, SelfDescriptionStoreImplTest.class, DatabaseConfig.class})
+    SelfDescriptionStoreImpl.class, SelfDescriptionStoreImplTest.class, DatabaseConfig.class, Neo4jGraphStore.class})
 @DirtiesContext
 @Transactional
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
+@Import(EmbeddedNeo4JConfig.class)
 public class SelfDescriptionStoreImplTest {
 
   @SpringBootApplication
   public static class TestApplication {
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
       SpringApplication.run(TestApplication.class, args);
     }
   }
 
+  /*
+  @Autowired
+  private VerificationService verificationService;
+  */
+
+//  private final VerificationServiceImpl verificationService = new VerificationServiceImpl();
+
   @Autowired
   private SelfDescriptionStore sdStore;
-
+  @Autowired
+  private Neo4j embeddedDatabaseServer;
   @Autowired
   @Qualifier("sdFileStore")
   private FileStore fileStore;
 
-  @AfterTestClass
+  @AfterEach 
   public void storageSelfCleaning() throws IOException {
     fileStore.clearStorage();
   }
 
-  private SelfDescriptionMetadata createSelfDescriptionMeta(String id, String issuer, OffsetDateTime sdt,
-      OffsetDateTime udt, String content) {
+  @AfterAll
+  void closeNeo4j() {
+      embeddedDatabaseServer.close();
+  }
+
+  private static SelfDescriptionMetadata createSelfDescriptionMeta(final String id, final String issuer,
+      final OffsetDateTime sdt, final OffsetDateTime udt, final String content) {
     final String hash = HashUtils.calculateSha256AsHex(content);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata();
     sdMeta.setId(id);
@@ -87,6 +122,35 @@ public class SelfDescriptionStoreImplTest {
     sdMeta.setUploadDatetime(udt);
     sdMeta.setSelfDescription(new ContentAccessorDirect(content));
     return sdMeta;
+  }
+
+  private static List<SdClaim> createClaims() {
+    final SdClaim claim1 = new SdClaim("https://delta-dao.com/.well-known/serviceMVGPortal.json",
+        "gax-service:providedBy", "https://delta-dao.com/.well-known/participant.json");
+    final SdClaim claim2 = new SdClaim("https://delta-dao.com/.well-known/serviceMVGPortal.json", "gax-service:name", "EuProGigant Portal");
+    final SdClaim claim3 = new SdClaim("https://delta-dao.com/.well-known/serviceMVGPortal.json", "gax-service:description", "EuProGigant Minimal Viable Gaia-X Portal");
+    final SdClaim claim4 = new SdClaim("https://delta-dao.com/.well-known/serviceMVGPortal.json", "gax-service:TermsAndConditions", "https://euprogigant.com/en/terms/");
+    final SdClaim claim5 = new SdClaim("https://delta-dao.com/.well-known/serviceMVGPortal.json", "gax-service:TermsAndConditions", "contentHash");
+    return List.of(claim1, claim2, claim3, claim4, claim5);
+  }
+
+  private static VerificationResult createVerificationResult(final int idSuffix) {
+    return new VerificationResultOffering("id" + idSuffix, "issuer" + idSuffix, OffsetDateTime.now(),
+        SelfDescriptionStatus.ACTIVE.getValue(), LocalDate.now(), new ArrayList<Signature>(), createClaims());
+  }
+
+  // Since SdMetaRecord class extends SelfDescriptionMetadata class instead of being formed from it, then check
+  // in the equals method will always be false. Because we are downcasting SdMetaRecord to SelfDescriptionMetadata.
+  private static void assertThatSdHasTheSameData(final SelfDescriptionMetadata excepted,
+      final SelfDescriptionMetadata actual) {
+    assertEquals(actual.getId(), excepted.getId());
+    assertEquals(actual.getSdHash(), excepted.getSdHash());
+    assertEquals(actual.getStatus(), excepted.getStatus());
+    assertEquals(actual.getIssuer(), excepted.getIssuer());
+    assertEquals(actual.getValidators(), excepted.getValidators());
+    assertEquals(actual.getUploadDatetime(), excepted.getUploadDatetime());
+    assertEquals(actual.getStatusDatetime(), excepted.getStatusDatetime());
+    assertEquals(actual.getSelfDescription(), excepted.getSelfDescription());
   }
 
   private void assertStoredSdFiles(final int expected) {
@@ -103,37 +167,24 @@ public class SelfDescriptionStoreImplTest {
     assertEquals(0, count.intValue(), "Deleting the last file should result in exactly 0 files in the store.");
   }
 
-  // Since SdMetaRecord class extends SelfDescriptionMetadata class instead of being formed from it, then check
-  // in the equals method will always be false. Because we are downcasting SdMetaRecord to SelfDescriptionMetadata.
-  private void assertThatSdHasTheSameData(SelfDescriptionMetadata excepted, SelfDescriptionMetadata actual) {
-    assertEquals(actual.getId(), excepted.getId());
-    assertEquals(actual.getSdHash(), excepted.getSdHash());
-    assertEquals(actual.getStatus(), excepted.getStatus());
-    assertEquals(actual.getIssuer(), excepted.getIssuer());
-    assertEquals(actual.getValidators(), excepted.getValidators());
-    assertEquals(actual.getUploadDatetime(), excepted.getUploadDatetime());
-    assertEquals(actual.getStatusDatetime(), excepted.getStatusDatetime());
-    assertEquals(actual.getSelfDescription(), excepted.getSelfDescription());
-  }
-
   /**
    * Test storing a self-description, ensuring it creates exactly one file on
    * disk, retrieving it by hash, and deleting it again.
    */
   @Test
-  void test01StoreSelfDescription() {
+  void test01StoreSelfDescription() throws Exception {
     log.info("test01StoreSelfDescription");
     final String content = "Some Test Content";
 
-    SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
+    final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
         OffsetDateTime.parse("2022-01-01T12:00:00Z"), OffsetDateTime.parse("2022-01-02T12:00:00Z"), content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, null);
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
-
+    
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
 
-    ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
+    final ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
     assertEquals(sdfileByHash, sdMeta.getSelfDescription(),
         "Getting the SD file by hash is equal to the stored SD file");
 
@@ -159,16 +210,16 @@ public class SelfDescriptionStoreImplTest {
         OffsetDateTime.parse("2022-01-01T12:00:00Z"), OffsetDateTime.parse("2022-01-02T12:00:00Z"), content1);
     final String hash1 = sdMeta1.getSdHash();
     sdMeta1.setSelfDescription(new ContentAccessorDirect(content1));
-    sdStore.storeSelfDescription(sdMeta1, null);
+    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
     assertStoredSdFiles(1);
 
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
         OffsetDateTime.parse("2022-01-01T13:00:00Z"), OffsetDateTime.parse("2022-01-02T13:00:00Z"), content2);
     final String hash2 = sdMeta2.getSdHash();
-    sdStore.storeSelfDescription(sdMeta2, null);
+    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
     assertStoredSdFiles(2);
 
-    SelfDescriptionMetadata byHash1 = sdStore.getByHash(hash1);
+    final SelfDescriptionMetadata byHash1 = sdStore.getByHash(hash1);
     assertEquals(SelfDescriptionStatus.DEPRECATED, byHash1.getStatus(),
         "First self-description should have been depricated.");
     assertTrue(byHash1.getStatusDatetime().isAfter(sdMeta1.getStatusDatetime()));
@@ -195,13 +246,13 @@ public class SelfDescriptionStoreImplTest {
     final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
         OffsetDateTime.parse("2022-01-01T12:00:00Z"), OffsetDateTime.parse("2022-01-02T12:00:00Z"), content1);
     final String hash1 = sdMeta1.getSdHash();
-    sdStore.storeSelfDescription(sdMeta1, null);
+    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
     assertStoredSdFiles(1);
 
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
         OffsetDateTime.parse("2022-01-01T13:00:00Z"), OffsetDateTime.parse("2022-01-02T13:00:00Z"), content1);
     Assertions.assertThrows(ConflictException.class, () -> {
-      sdStore.storeSelfDescription(sdMeta2, null);
+      sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
     });
 
     final int count = IterableUtils.size(fileStore.getFileIterable());
@@ -223,14 +274,14 @@ public class SelfDescriptionStoreImplTest {
    * Test storing a self-description, and updating the status.
    */
   @Test
-  void test04ChangeSelfDescriptionStatus() {
+  void test04ChangeSelfDescriptionStatus() throws Exception {
     log.info("test04ChangeSelfDescriptionStatus");
     final String content = "Some Test Content";
 
-    SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
+    final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
         OffsetDateTime.parse("2022-01-01T12:00:00Z"), OffsetDateTime.parse("2022-01-02T12:00:00Z"), content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, null);
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
 
     SelfDescriptionMetadata byHash = sdStore.getByHash(hash);
@@ -268,7 +319,7 @@ public class SelfDescriptionStoreImplTest {
     final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, null);
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
 
     final SdFilter filterParams = new SdFilter();
@@ -302,7 +353,7 @@ public class SelfDescriptionStoreImplTest {
     final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, null);
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
 
     final SdFilter filterParams = new SdFilter();
@@ -337,7 +388,7 @@ public class SelfDescriptionStoreImplTest {
     final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, null);
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
 
     final SdFilter filterParams = new SdFilter();
@@ -372,7 +423,7 @@ public class SelfDescriptionStoreImplTest {
     final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, null);
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
 
     final SdFilter filterParams = new SdFilter();
@@ -420,9 +471,9 @@ public class SelfDescriptionStoreImplTest {
     final String hash1 = sdMeta1.getSdHash();
     final String hash2 = sdMeta2.getSdHash();
     final String hash3 = sdMeta3.getSdHash();
-    sdStore.storeSelfDescription(sdMeta1, null);
-    sdStore.storeSelfDescription(sdMeta2, null);
-    sdStore.storeSelfDescription(sdMeta3, null);
+    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
+    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
+    sdStore.storeSelfDescription(sdMeta3, createVerificationResult(3));
     assertStoredSdFiles(3);
 
     final SdFilter filterParams = new SdFilter();
@@ -483,9 +534,9 @@ public class SelfDescriptionStoreImplTest {
     final String hash1 = sdMeta1.getSdHash();
     final String hash2 = sdMeta2.getSdHash();
     final String hash3 = sdMeta3.getSdHash();
-    sdStore.storeSelfDescription(sdMeta1, null);
-    sdStore.storeSelfDescription(sdMeta2, null);
-    sdStore.storeSelfDescription(sdMeta3, null);
+    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
+    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
+    sdStore.storeSelfDescription(sdMeta3, createVerificationResult(3));
     assertStoredSdFiles(3);
 
     final SdFilter filterParams = new SdFilter();
@@ -534,7 +585,7 @@ public class SelfDescriptionStoreImplTest {
     final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, null);
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
 
     final SdFilter filterParams = new SdFilter();
@@ -581,9 +632,9 @@ public class SelfDescriptionStoreImplTest {
     final String hash1 = sdMeta1.getSdHash();
     final String hash2 = sdMeta2.getSdHash();
     final String hash3 = sdMeta3.getSdHash();
-    sdStore.storeSelfDescription(sdMeta1, null);
-    sdStore.storeSelfDescription(sdMeta2, null);
-    sdStore.storeSelfDescription(sdMeta3, null);
+    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
+    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
+    sdStore.storeSelfDescription(sdMeta3, createVerificationResult(3));
     assertStoredSdFiles(3);
 
     final SdFilter filterParams = new SdFilter();
