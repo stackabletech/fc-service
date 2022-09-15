@@ -12,7 +12,7 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
-import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.generated.controller.ParticipantsApiDelegate;
@@ -26,6 +26,7 @@ import javax.ws.rs.ForbiddenException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,16 +45,14 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   private ParticipantDao partDao;
 
   @Autowired
-  private FileStoreImpl fileStore;
+  @Qualifier("sdFileStore")
+  private FileStore fileStore;
 
   @Autowired
   private SelfDescriptionStore selfDescriptionStore;
 
   @Autowired
   private VerificationService verificationService;
-
-  @Autowired
-  private ObjectMapper jsonMapper;
 
   private final String catalogueAdminRole="ROLE_Ro-MU-CA";
 
@@ -273,7 +272,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
       public void afterCompletion(int status) {
         if(TransactionSynchronization.STATUS_ROLLED_BACK == status){
           try {
-            fileStore.deleteFile(SelfDescriptionStore.STORE_NAME, part.getSdHash());
+            fileStore.deleteFile(part.getSdHash());
             log.debug("registerRollBackForFileStoreManuallyIfTransactionFail.Rolling back manually file with hash  : " +
                 "{}", part.getSdHash());
             TransactionSynchronizationManager.clearSynchronization();

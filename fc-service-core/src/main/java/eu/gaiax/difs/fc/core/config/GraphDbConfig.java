@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Configuration
-@ConditionalOnProperty(value="graphstore.scope", havingValue="runtime")
+@ConditionalOnProperty(value="federated-catalogue.scope", havingValue="runtime")
 public class GraphDbConfig {
 
 	@Value("${graphstore.uri}")

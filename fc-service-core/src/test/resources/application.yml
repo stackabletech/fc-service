@@ -14,10 +14,17 @@ graphstore:
   uri: bolt://localhost:7687
   user: neo4j
   password: 12345
-  scope: test
 
 logging:
   level:
     root: INFO
     liquibase: INFO
     eu.gaiax.difs.fc: DEBUG
+
+federated-catalogue:
+  scope: test
+  file-store:
+    sd:
+      location: sdFiles
+    schema:
+      location: schemaFiles

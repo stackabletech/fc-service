@@ -69,7 +69,6 @@ graphstore:
   uri: bolt://localhost:7687
   user: neo4j
   password: 12345
-  scope: runtime
 
 logging:
   level:
@@ -78,3 +77,11 @@ logging:
     org.springframework.web: DEBUG
     org.springframework.security: DEBUG
 #    org.springframework.web.client.RestTemplate: DEBUG
+
+federated-catalogue:
+  scope: runtime
+  file-store:
+    sd:
+      location: sdFiles
+    schema:
+      location: schemaFiles

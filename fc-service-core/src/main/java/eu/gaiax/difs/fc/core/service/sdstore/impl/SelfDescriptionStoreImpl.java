@@ -2,8 +2,8 @@ package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
-import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
@@ -28,6 +28,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +50,8 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
    * run time.
    */
   @Autowired
-  private FileStoreImpl fileStore;
+  @Qualifier("sdFileStore")
+  private FileStore fileStore;
 
   @Autowired
   private SessionFactory sessionFactory;
@@ -60,7 +62,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
   @Override
   public ContentAccessor getSDFileByHash(final String hash) {
     try {
-      return fileStore.readFile(STORE_NAME, hash);
+      return fileStore.readFile(hash);
     } catch (final FileNotFoundException exc) {
       log.error("Error in getSDFileByHash method: ", exc);
       return null;
@@ -252,12 +254,11 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       existingSd.setStatus(SelfDescriptionStatus.DEPRECATED);
       existingSd.setStatusTime(Instant.now());
       currentSession.update(existingSd);
-      //currentSession.flush();
+      currentSession.flush();
       graphDb.deleteClaims(existingSd.getSubjectId());
     }
     try {
       currentSession.persist(sdmRecord);
-      //currentSession.flush();
     } catch (final EntityExistsException exc) {
         log.error("storeSelfDescription.error 1", exc);
       final String message = String.format("self-description file with hash %s already exists", sdMetadata.getSdHash());
@@ -269,12 +270,11 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
     graphDb.addClaims(verificationResult.getClaims(), sdmRecord.getSubjectId());
 
-    //currentSession.flush();
     try {
-      fileStore.storeFile(STORE_NAME, sdMetadata.getSdHash(), sdMetadata.getSelfDescription());
+      fileStore.storeFile(sdMetadata.getSdHash(), sdMetadata.getSelfDescription());
       currentSession.flush();
-    } catch (final FileExistsException exc) {
-      throw new ConflictException("The SD file with the hash " + sdMetadata.getSdHash() + " already exists in the file storage.", exc);
+    } catch (FileExistsException e) {
+      throw new ConflictException("The SD file with the hash " + sdMetadata.getSdHash() + " already exists in the file storage.", e);
     } catch (final IOException exc) {
       throw new ServerException("Error while adding SD to file storage: " + exc.getMessage());
     } catch (Exception ex) {
@@ -316,7 +316,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     currentSession.delete(sdmRecord);
     currentSession.flush();
     try {
-      fileStore.deleteFile(STORE_NAME, hash);
+      fileStore.deleteFile(hash);
     } catch (final FileNotFoundException exc) {
       log.info("no self-description file with hash {} found for deletion", hash);
     } catch (final IOException exc) {
