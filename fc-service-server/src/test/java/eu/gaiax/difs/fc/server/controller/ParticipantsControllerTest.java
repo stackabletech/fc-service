@@ -19,8 +19,7 @@ import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
-import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
-import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
 
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
@@ -52,15 +51,16 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.event.annotation.BeforeTestClass;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -71,10 +71,10 @@ import org.springframework.web.context.WebApplicationContext;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@ExtendWith(SpringExtension.class)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Import(EmbeddedNeo4JConfig.class)
+@DirtiesContext
 public class ParticipantsControllerTest {
 
     @Autowired
@@ -82,7 +82,8 @@ public class ParticipantsControllerTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
-    private FileStoreImpl fileStore;
+    @Qualifier("sdFileStore")
+    private FileStore fileStore;
 
     @Autowired
     private SelfDescriptionStoreImpl selfDescriptionStore;
@@ -111,6 +112,11 @@ public class ParticipantsControllerTest {
     @BeforeTestClass
     public void setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+    }
+
+    @AfterAll
+    public void storageSelfCleaning() throws IOException {
+        fileStore.clearStorage();
     }
 
     @Test
@@ -149,7 +155,7 @@ public class ParticipantsControllerTest {
         assertEquals("did:example:holder", partResult.getName());
         assertEquals("did:example:holder#key-1", partResult.getPublicKey());
 
-        assertDoesNotThrow(() -> fileStore.readFile(SelfDescriptionStore.STORE_NAME, part.getSdHash()));
+        assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
         assertDoesNotThrow(() -> selfDescriptionStore.getByHash(part.getSdHash()));
     }
 
@@ -170,7 +176,7 @@ public class ParticipantsControllerTest {
             .andExpect(status().isConflict());
 
         FileNotFoundException exception = assertThrows(FileNotFoundException.class,
-            () -> fileStore.readFile(SelfDescriptionStore.STORE_NAME, partNew.getSdHash()));
+            () -> fileStore.readFile(partNew.getSdHash()));
         assertEquals(FileNotFoundException.class, exception.getClass());
 
         NotFoundException exceptionSDStore = assertThrows(NotFoundException.class,
@@ -196,7 +202,7 @@ public class ParticipantsControllerTest {
             .andExpect(status().is5xxServerError());
 
         FileNotFoundException exception = assertThrows(FileNotFoundException.class,
-            () -> fileStore.readFile(SelfDescriptionStore.STORE_NAME, part.getSdHash()));
+            () -> fileStore.readFile(part.getSdHash()));
         assertEquals(FileNotFoundException.class, exception.getClass());
 
         Throwable exceptionSD = assertThrows(Throwable.class,
@@ -296,7 +302,7 @@ public class ParticipantsControllerTest {
         assertEquals("did:example:updated-holder", partResult.getName());
         assertEquals("did:example:holder#key-2", partResult.getPublicKey());
 
-        assertDoesNotThrow(() -> fileStore.readFile(SelfDescriptionStore.STORE_NAME, part.getSdHash()));
+        assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
         assertDoesNotThrow(() -> selfDescriptionStore.getByHash(part.getSdHash()));
 
         SelfDescriptionMetadata metadata=selfDescriptionStore.getByHash(part.getSdHash());
@@ -325,7 +331,7 @@ public class ParticipantsControllerTest {
 
 
         Throwable exception = assertThrows(Throwable.class,
-            () -> fileStore.readFile(SelfDescriptionStore.STORE_NAME, part.getSdHash()));
+            () -> fileStore.readFile(part.getSdHash()));
         assertEquals(FileNotFoundException.class, exception.getClass());
 
         Throwable exceptionSD = assertThrows(Throwable.class,
@@ -349,7 +355,7 @@ public class ParticipantsControllerTest {
             .perform(MockMvcRequestBuilders.delete("/participants/{participantId}", part.getId()))
             .andExpect(status().isForbidden());
 
-         assertDoesNotThrow(() -> fileStore.readFile(SelfDescriptionStore.STORE_NAME, part.getSdHash()));
+         assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
          assertDoesNotThrow(() -> selfDescriptionStore.getByHash(part.getSdHash()));
     }
 
@@ -372,7 +378,7 @@ public class ParticipantsControllerTest {
 
 
         Throwable exception = assertThrows(Throwable.class,
-            () -> fileStore.readFile(SelfDescriptionStore.STORE_NAME, part.getSdHash()));
+            () -> fileStore.readFile(part.getSdHash()));
         assertEquals(FileNotFoundException.class, exception.getClass());
 
         Throwable exceptionSD = assertThrows(Throwable.class,
@@ -392,7 +398,7 @@ public class ParticipantsControllerTest {
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:updated-holder", "did:example:holder#key-2", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
-        assertDoesNotThrow(() -> fileStore.readFile(SelfDescriptionStore.STORE_NAME, part.getSdHash()));
+        assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
 
         String response = mockMvc
             .perform(MockMvcRequestBuilders.delete("/participants/{participantId}", part.getId()))
@@ -407,7 +413,7 @@ public class ParticipantsControllerTest {
         assertEquals("did:example:holder#key-2", participantMetaData.getPublicKey());
 
         Throwable exception = assertThrows(Throwable.class,
-            () -> fileStore.readFile(SelfDescriptionStore.STORE_NAME, part.getSdHash()));
+            () -> fileStore.readFile(part.getSdHash()));
         assertEquals(FileNotFoundException.class, exception.getClass());
 
         Throwable exceptionSD = assertThrows(Throwable.class,
@@ -468,7 +474,7 @@ public class ParticipantsControllerTest {
 
     private void initialiseWithParticipantDeleteFromAllDB(ParticipantMetaData part){
         try {
-            fileStore.deleteFile(SelfDescriptionStore.STORE_NAME, part.getSdHash());
+            fileStore.deleteFile(part.getSdHash());
             selfDescriptionStore.deleteSelfDescription(part.getSdHash());
             //TODO: graphdb need to add after implementation
         } catch(Exception ex) {

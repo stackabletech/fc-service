@@ -2,17 +2,19 @@ package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
+import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
-import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
+import java.io.IOException;
 import liquibase.repackaged.org.apache.commons.collections4.IterableUtils;
 
 import java.time.OffsetDateTime;
@@ -31,20 +33,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.event.annotation.AfterTestClass;
 import org.springframework.transaction.annotation.Transactional;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
-@ContextConfiguration(classes = { SelfDescriptionStoreImplTest.TestApplication.class, DatabaseConfig.class,
-    SelfDescriptionStoreImpl.class, FileStoreImpl.class })
+@ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, FileStoreConfig.class,
+    SelfDescriptionStoreImpl.class, SelfDescriptionStoreImplTest.class, DatabaseConfig.class})
 @DirtiesContext
 @Transactional
 @Slf4j
@@ -63,7 +67,13 @@ public class SelfDescriptionStoreImplTest {
   private SelfDescriptionStore sdStore;
 
   @Autowired
-  private FileStoreImpl fileStore;
+  @Qualifier("sdFileStore")
+  private FileStore fileStore;
+
+  @AfterTestClass
+  public void storageSelfCleaning() throws IOException {
+    fileStore.clearStorage();
+  }
 
   private SelfDescriptionMetadata createSelfDescriptionMeta(String id, String issuer, OffsetDateTime sdt,
       OffsetDateTime udt, String content) {
@@ -81,7 +91,7 @@ public class SelfDescriptionStoreImplTest {
 
   private void assertStoredSdFiles(final int expected) {
     final MutableInt count = new MutableInt(0);
-    fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME).forEach(file -> count.increment());
+    fileStore.getFileIterable().forEach(file -> count.increment());
     final String message = String.format("Storing %d file(s) should result in exactly %d file(s) in the store.",
         expected, expected);
     assertEquals(expected, count.intValue(), message);
@@ -89,7 +99,7 @@ public class SelfDescriptionStoreImplTest {
 
   private void assertAllSdFilesDeleted() {
     final MutableInt count = new MutableInt(0);
-    fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME).forEach(file -> count.increment());
+    fileStore.getFileIterable().forEach(file -> count.increment());
     assertEquals(0, count.intValue(), "Deleting the last file should result in exactly 0 files in the store.");
   }
 
@@ -194,7 +204,7 @@ public class SelfDescriptionStoreImplTest {
       sdStore.storeSelfDescription(sdMeta2, null);
     });
 
-    final int count = IterableUtils.size(fileStore.getFileIterable(SelfDescriptionStore.STORE_NAME));
+    final int count = IterableUtils.size(fileStore.getFileIterable());
     assertEquals(1, count, "Second file should not have been stored.");
 
     final SelfDescriptionMetadata byHash1 = sdStore.getByHash(hash1);

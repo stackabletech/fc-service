@@ -14,9 +14,6 @@ import java.util.List;
  * @author j_reuter
  */
 public interface SelfDescriptionStore {
-
-  String STORE_NAME = "sdFiles";
-
   /**
    * Fetch a self-description file by its hash value.
    *

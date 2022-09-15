@@ -4,14 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
+import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
-import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImplTest;
-import eu.gaiax.difs.fc.core.service.verification.impl.VerificationServiceImplTest;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
@@ -32,10 +32,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.event.annotation.AfterTestClass;
 import org.springframework.transaction.annotation.Transactional;
 
 
@@ -43,7 +45,8 @@ import org.springframework.transaction.annotation.Transactional;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
-@ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, SchemaManagementImplTest.class, SchemaStoreImpl.class, FileStoreImpl.class, DatabaseConfig.class})
+@ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, FileStoreConfig.class,
+    SchemaManagementImplTest.class, SchemaStoreImpl.class, DatabaseConfig.class})
 @DirtiesContext
 @Transactional
 @Slf4j
@@ -54,8 +57,13 @@ public class SchemaManagementImplTest {
   private SchemaStoreImpl schemaStore;
 
   @Autowired
-  private FileStoreImpl fileStore;
+  @Qualifier("schemaFileStore")
+  private FileStore fileStore;
 
+  @AfterTestClass
+  public void storageSelfCleaning() throws IOException {
+    fileStore.clearStorage();
+  }
   /**
    * Test of verifySchema method, of class SchemaManagementImpl.
    */
@@ -81,14 +89,14 @@ public class SchemaManagementImplTest {
     assertEquals(expected, schemaList);
 
     int count = 0;
-    for (File file : fileStore.getFileIterable(SchemaStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable()) {
       count++;
     }
     assertEquals(1, count, "Storing one schama should result in exactly one file in the store.");
 
     schemaStore.deleteSchema(schemaId1);
     count = 0;
-    for (File file : fileStore.getFileIterable(SchemaStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable()) {
       count++;
     }
     assertEquals(0, count, "Deleting the only file should result in exactly 0 files in the store.");
@@ -129,7 +137,7 @@ public class SchemaManagementImplTest {
     schemaStore.addSchema(new ContentAccessorDirect(schema1));
     assertThrowsExactly(ConflictException.class, () -> schemaStore.addSchema(new ContentAccessorDirect(schema2)));
 
-    fileStore.deleteFile(SchemaStoreImpl.STORE_NAME, HashUtils.calculateSha256AsHex(schema2));
+    fileStore.deleteFile(HashUtils.calculateSha256AsHex(schema2));
   }
 
   /**
@@ -144,11 +152,11 @@ public class SchemaManagementImplTest {
     String schemaId = schemaStore.addSchema(new ContentAccessorDirect(schema1));
     schemaStore.updateSchema(schemaId, new ContentAccessorDirect(schema2));
 
-    assertEquals(schema2, fileStore.readFile(SchemaStoreImpl.STORE_NAME, schemaId).getContentAsString(), "The content of the updated schema is stored in the schema file.");
+    assertEquals(schema2, fileStore.readFile(schemaId).getContentAsString(), "The content of the updated schema is stored in the schema file.");
 
     schemaStore.deleteSchema(schemaId);
     int count = 0;
-    for (File file : fileStore.getFileIterable(SchemaStoreImpl.STORE_NAME)) {
+    for (File file : fileStore.getFileIterable()) {
       count++;
     }
     assertEquals(0, count, "Deleting the only file should result in exactly 0 files in the store.");
