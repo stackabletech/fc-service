@@ -2,16 +2,22 @@ package eu.gaiax.difs.fc.server.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
+import java.io.IOException;
 import java.util.Objects;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.event.annotation.AfterTestClass;
 import org.springframework.test.context.event.annotation.BeforeTestClass;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -33,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 public class SchemaControllerTest {
   @Autowired
@@ -45,7 +52,8 @@ public class SchemaControllerTest {
   private SchemaStore schemaStore;
 
   @Autowired
-  private ObjectMapper objectMapper;
+  @Qualifier("schemaFileStore")
+  private FileStore fileStore;
 
   String SCHEMA_REQUEST = "{\"ontologies\":null,\"shapes\":null,\"vocabularies\":null}";
 
@@ -54,6 +62,10 @@ public class SchemaControllerTest {
     mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
   }
 
+  @AfterAll
+  public void storageSelfCleaning() throws IOException {
+    fileStore.clearStorage();
+  }
 
   @Test
   @WithMockUser(roles = {"Ro-MU-CA", "Ro-MU-A"})

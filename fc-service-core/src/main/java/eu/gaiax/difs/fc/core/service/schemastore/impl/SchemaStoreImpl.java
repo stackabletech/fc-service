@@ -7,7 +7,7 @@ import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
-import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import java.io.IOException;
@@ -25,6 +25,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,11 +36,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @Slf4j
 public class SchemaStoreImpl implements SchemaStore {
-
-  public static final String STORE_NAME = "schemaFiles";
-
   @Autowired
-  private FileStoreImpl fileStore;
+  @Qualifier("schemaFileStore")
+  private FileStore fileStore;
 
   @Autowired
   private SessionFactory sessionFactory;
@@ -154,7 +153,7 @@ public class SchemaStoreImpl implements SchemaStore {
     }
 
     try {
-      fileStore.storeFile(STORE_NAME, nameHash, schema);
+      fileStore.storeFile(nameHash, schema);
     } catch (IOException ex) {
       transaction.rollback();
       throw new RuntimeException("Failed to store schema file", ex);
@@ -211,7 +210,7 @@ public class SchemaStoreImpl implements SchemaStore {
     }
     try {
       //Update schema file
-      fileStore.replaceFile(STORE_NAME, existing.getNameHash(), schema);
+      fileStore.replaceFile(existing.getNameHash(), schema);
     }
     catch (IOException ex) {
       transaction.rollback();
@@ -233,7 +232,7 @@ public class SchemaStoreImpl implements SchemaStore {
     else {
       currentSession.delete(existing);
       try {
-        fileStore.deleteFile(STORE_NAME, existing.getNameHash());
+        fileStore.deleteFile(existing.getNameHash());
       } catch (IOException ex) {
         currentSession.clear();
         throw new ServerException("Failed to delete schema from file store. (" + ex.getMessage() + ")");
@@ -260,7 +259,7 @@ public class SchemaStoreImpl implements SchemaStore {
       throw new NotFoundException("Schema with id " + identifier + " was not found");
     }
     try {
-      return fileStore.readFile(STORE_NAME, existing.getNameHash());
+      return fileStore.readFile(existing.getNameHash());
 
     } catch (IOException ex) {
       throw new ServerException("File for Schema " + identifier + " does not exist.");

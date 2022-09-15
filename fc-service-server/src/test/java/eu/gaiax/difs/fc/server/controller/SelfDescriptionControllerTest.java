@@ -11,7 +11,7 @@ import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
-import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.core.util.HashUtils;
@@ -92,8 +92,8 @@ public class SelfDescriptionControllerTest {
     @Autowired
     private SelfDescriptionStore sdStore;
 
-    @SpyBean
-    private FileStoreImpl fileStore;
+    @SpyBean(name = "sdFileStore")
+    private FileStore fileStore;
 
     @Autowired
     private VerificationService verificationService;
@@ -106,6 +106,11 @@ public class SelfDescriptionControllerTest {
     @BeforeAll
     static void initBeforeAll() throws IOException {
         sdMeta = createSdMetadata();
+    }
+
+    @AfterAll
+    public void storageSelfCleaning() throws IOException {
+        fileStore.clearStorage();
     }
 
     @Test
@@ -298,7 +303,7 @@ public class SelfDescriptionControllerTest {
     public void addSDFailedThanAllTransactionsRolledBack() throws Exception {
         ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
         doThrow((new IOException("Some server exception")))
-            .when(fileStore).storeFile(any(), hashCaptor.capture(), any());
+            .when(fileStore).storeFile(hashCaptor.capture(), any());
 
         mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
                 .content(getMockFileDataAsString(SD_FILE_NAME))
@@ -310,7 +315,7 @@ public class SelfDescriptionControllerTest {
         String hash = hashCaptor.getValue();
 
         assertThrowsExactly(FileNotFoundException.class,
-            () -> fileStore.readFile(SelfDescriptionStore.STORE_NAME, hash));
+            () -> fileStore.readFile(hash));
         assertThrows(NotFoundException.class, () -> sdStore.getByHash(hash));
     }
 

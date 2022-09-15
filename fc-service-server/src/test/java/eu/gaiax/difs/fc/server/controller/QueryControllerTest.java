@@ -1,6 +1,5 @@
 package eu.gaiax.difs.fc.server.controller;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -12,12 +11,12 @@ import eu.gaiax.difs.fc.api.generated.model.Result;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
 import eu.gaiax.difs.fc.server.helper.FileReaderHelper;
-import eu.gaiax.difs.fc.server.service.SelfDescriptionService;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 import java.io.IOException;
@@ -29,6 +28,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -66,10 +66,16 @@ public class QueryControllerTest {
     private SelfDescriptionStore sdStore;
 
     @Autowired
-    private SelfDescriptionService selfDescriptionService;
+    private VerificationService verificationService;
 
     @Autowired
-    private VerificationService verificationService;
+    @Qualifier("sdFileStore")
+    private FileStore fileStore;
+
+    @AfterAll
+    public void storageSelfCleaning() throws IOException {
+        fileStore.clearStorage();
+    }
 
     @AfterAll
     void closeNeo4j() {

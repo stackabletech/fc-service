@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.core.service.filestore.impl;
 
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -23,27 +24,36 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileExistsException;
 
 /**
- * Stores and retrieves files indentified by a hash.
+ * Stores and retrieves files identified by a hash.
  */
-@Component
 @Slf4j
-public class FileStoreImpl {
+public class FileStoreImpl implements FileStore {
+  @Value("${federated-catalogue.scope}")
+  private String scope;
 
   @Value("${datastore.file-path}")
   private String basePathName;
 
+  private final String storeName;
+
+  public FileStoreImpl(String storeName) {
+    this.storeName = storeName;
+  }
+
   private final Map<String, Path> storePaths = new HashMap<>();
 
   private Path getPathForStore(String storeName) {
+    if (scope.equals("test")) {
+      return FileSystems.getDefault().getPath(storeName);
+    }
     return storePaths.computeIfAbsent(storeName, n -> FileSystems.getDefault().getPath(basePathName, n));
   }
 
-  private File getFileForStoreHash(String storeName, String hash) {
+  private File getFileForStoreHash(String hash) {
     Path storePath = getPathForStore(storeName);
     Path storeSubPath = storePath.resolve(hash.substring(0, 2));
     Path filePath = storeSubPath.resolve(hash);
-    File file = filePath.toFile();
-    return file;
+    return filePath.toFile();
   }
 
   private String validateFileName(String filename) {
@@ -54,16 +64,16 @@ public class FileStoreImpl {
     return HashUtils.calculateSha256AsHex(filename);
   }
 
-  public void storeFile(String storeName, String hash, ContentAccessor content) throws IOException {
-    saveFile(storeName, hash, content, false);
+  public void storeFile(String hash, ContentAccessor content) throws IOException {
+    saveFile(hash, content, false);
   }
 
-  public void replaceFile(String storeName, String hash, ContentAccessor content) throws IOException {
-    saveFile(storeName, hash, content, true);
+  public void replaceFile(String hash, ContentAccessor content) throws IOException {
+    saveFile(hash, content, true);
   }
 
-  private void saveFile(String storeName, String hash, ContentAccessor content, boolean overwrite) throws IOException {
-    File file = getFileForStoreHash(storeName, validateFileName(hash));
+  private void saveFile(String hash, ContentAccessor content, boolean overwrite) throws IOException {
+    File file = getFileForStoreHash(validateFileName(hash));
     if (file.exists() && !overwrite) {
       throw new FileExistsException("A file for the hash " + hash + " already exists.");
     }
@@ -72,26 +82,31 @@ public class FileStoreImpl {
     }
   }
 
-  public ContentAccessor readFile(String storeName, String hash) throws IOException {
-    File file = getFileForStoreHash(storeName, validateFileName(hash));
+  public ContentAccessor readFile(String hash) throws IOException {
+    File file = getFileForStoreHash(validateFileName(hash));
     if (!file.exists()) {
       throw new FileNotFoundException("A file for the hash " + hash + " does not exist.");
     }
     return new ContentAccessorFile(file);
   }
 
-  public void deleteFile(String storeName, String hash) throws IOException {
-    File file = getFileForStoreHash(storeName, validateFileName(hash));
+  public void deleteFile(String hash) throws IOException {
+    File file = getFileForStoreHash(validateFileName(hash));
     if (!file.exists()) {
       throw new FileNotFoundException("A file for the hash " + hash + " does not exist.");
     }
     file.delete();
   }
 
-  public Iterable<File> getFileIterable(String storeName) {
+  public Iterable<File> getFileIterable() {
     return () -> {
       return new HashFileIterator(this, storeName);
     };
+  }
+
+  public void clearStorage() throws IOException {
+    Path storePath = getPathForStore(storeName);
+    FileUtils.deleteDirectory(storePath.toFile());
   }
 
   public static class HashFileIterator implements Iterator<File> {
