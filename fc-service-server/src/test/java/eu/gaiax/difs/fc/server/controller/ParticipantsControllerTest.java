@@ -13,8 +13,10 @@ import com.c4_soft.springaddons.security.oauth2.test.annotations.StringClaim;
 import com.c4_soft.springaddons.security.oauth2.test.annotations.WithMockJwtAuth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.gaiax.difs.fc.api.generated.model.Participants;
+import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.impl.ParticipantDaoImpl;
+import eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
@@ -22,7 +24,10 @@ import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
 
+import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
+import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
+import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 import java.io.ByteArrayInputStream;
@@ -48,7 +53,10 @@ import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -106,8 +114,16 @@ public class ParticipantsControllerTest {
     private GroupsResource groupsResource;
     @MockBean
     private GroupResource groupResource;
-    
+    @MockBean
+    private UsersResource usersResource;
+    @MockBean
+    private UserResource userResource;
+    @Autowired
+    private UserDaoImpl userDao;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private String userId = "ae366624-8371-401d-b2c4-518d2f308a15";
 
     @BeforeTestClass
     public void setup() {
@@ -266,7 +282,7 @@ public class ParticipantsControllerTest {
 
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", "empty SD");
         setupKeycloak(HttpStatus.SC_OK, part);
-
+        setupKeycloakForUsers(HttpStatus.SC_NO_CONTENT, null, userId);
         MvcResult result = mockMvc
             .perform(MockMvcRequestBuilders.get("/participants/{participantId}/users", part.getId())
             .contentType(MediaType.APPLICATION_JSON))
@@ -420,6 +436,48 @@ public class ParticipantsControllerTest {
             () -> selfDescriptionStore.getByHash(part.getSdHash()));
         assertEquals(NotFoundException.class, exceptionSD.getClass());
     }
+
+    @Test
+    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
+        claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
+            {@StringClaim(name = "participant_id", value = "ebc6f1c2")})))
+    @Order(60)
+    public void deleteParticipantWithAllUsersSuccessShouldReturnSuccessResponse() throws Exception {
+        //Initially adding user
+        addParticipantShouldReturnCreatedResponse();
+
+        String json = readFileFromResources("new_participant.json");
+        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
+
+        User userOfParticipant = getUserOfParticipant(part.getId());
+        setupKeycloakForUsers(HttpStatus.SC_CREATED, userOfParticipant, userId);
+        userDao.create(userOfParticipant);
+
+        setupKeycloak(HttpStatus.SC_OK, part);
+
+        setupKeycloakForUsers(HttpStatus.SC_NO_CONTENT, userOfParticipant, userId);
+
+        assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
+
+        String response = mockMvc
+            .perform(MockMvcRequestBuilders.delete("/participants/{participantId}", part.getId()))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+        ParticipantMetaData  participantMetaData = objectMapper.readValue(response, ParticipantMetaData.class);
+        assertNotNull(part);
+
+        Throwable exception = assertThrows(Throwable.class,
+            () -> fileStore.readFile(part.getSdHash()));
+        assertEquals(FileNotFoundException.class, exception.getClass());
+
+        Throwable exceptionSD = assertThrows(Throwable.class,
+            () -> selfDescriptionStore.getByHash(part.getSdHash()));
+        assertEquals(NotFoundException.class, exceptionSD.getClass());
+
+        assertEquals(0, userDao.search(userId,0,1).size());
+    }
     private void setupKeycloak(int status, ParticipantMetaData part) {
         when(builder.build()).thenReturn(keycloak);
         when(keycloak.realm("gaia-x")).thenReturn(realmResource);
@@ -452,14 +510,33 @@ public class ParticipantsControllerTest {
         } else {
             GroupRepresentation groupRepo = ParticipantDaoImpl.toGroupRepo(part);
             when(groupsResource.group(any())).thenReturn(groupResource);
-            when(groupResource.members()).thenReturn(List.of()); 
+            when(groupResource.members()).thenReturn(List.of());
             when(groupsResource.groups()).thenReturn(List.of(groupRepo));
             when(groupsResource.groups(any(), any())).thenReturn(List.of(groupRepo));
             when(groupsResource.groups(eq(part.getId()), any(), any())).thenReturn(List.of(groupRepo));
             when(groupsResource.groups(any(), any(), any(), anyBoolean())).thenReturn(List.of(groupRepo));
         }
     }
-    
+
+    private void setupKeycloakForUsers(int status, User user, String id) {
+        when(builder.build()).thenReturn(keycloak);
+        when(keycloak.realm("gaia-x")).thenReturn(realmResource);
+        when(realmResource.users()).thenReturn(usersResource);
+        when(usersResource.create(any())).thenReturn(Response.status(status).build());
+        if (user == null) {
+            when(usersResource.search(any())).thenReturn(List.of());
+        } else {
+            when(usersResource.delete(any())).thenReturn(Response.status(status).build());
+            UserRepresentation userRepo = UserDaoImpl.toUserRepo(user);
+            userRepo.setId(id);
+            when(groupResource.members()).thenReturn(List.of());
+            when(usersResource.list(any(), any())).thenReturn(List.of(userRepo));
+            when(usersResource.search(userRepo.getUsername())).thenReturn(List.of(userRepo));
+            when(usersResource.get(any())).thenReturn(userResource);
+            when(userResource.toRepresentation()).thenReturn(userRepo);
+        }
+    }
+
     public static String readFileFromResources(String filename) { 
         URL resource = ParticipantsControllerTest.class.getClassLoader().getResource(filename);
         byte[] bytes;
@@ -480,5 +557,9 @@ public class ParticipantsControllerTest {
         } catch(Exception ex) {
 
         }
+    }
+
+    public User getUserOfParticipant(String partId){
+        return new  User(partId,"testUserName","testLastName","test@gmail",List.of());
     }
 }
