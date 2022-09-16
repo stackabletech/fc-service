@@ -1,5 +1,7 @@
 package eu.gaiax.difs.fc.server.controller;
 
+import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
@@ -19,9 +21,12 @@ import eu.gaiax.difs.fc.core.dao.impl.ParticipantDaoImpl;
 import eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
+import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
+import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
 
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
@@ -34,10 +39,6 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
@@ -47,7 +48,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.GroupResource;
@@ -84,6 +84,7 @@ import org.springframework.web.context.WebApplicationContext;
 @Import(EmbeddedNeo4JConfig.class)
 @DirtiesContext
 public class ParticipantsControllerTest {
+    private final String CATALOGUE_ADMIN_ROLE_WITH_PREFIX = "ROLE_" + CATALOGUE_ADMIN_ROLE;
 
     @Autowired
     private WebApplicationContext context;
@@ -98,6 +99,9 @@ public class ParticipantsControllerTest {
 
     @Autowired
     private Neo4j embeddedDatabaseServer;
+
+    @Autowired
+    private VerificationService verificationService;
 
     @AfterAll
     void closeNeo4j() {
@@ -147,11 +151,10 @@ public class ParticipantsControllerTest {
     }
 
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(10)
     public void addParticipantShouldReturnCreatedResponse() throws Exception {
-        
-        String json = readFileFromResources("new_participant.json");
+        String json = getMockFileDataAsString("new_participant.json");
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
         setupKeycloak(HttpStatus.SC_CREATED, part);
 
@@ -176,11 +179,33 @@ public class ParticipantsControllerTest {
     }
 
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
+    @Order(10)
+    public void addDuplicateParticipantShouldReturnConflictResponse() throws Exception {
+        String json = getMockFileDataAsString("new_participant.json");
+        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
+        setupKeycloak(HttpStatus.SC_CREATED, part);
+
+        initialiseWithParticipantDeleteFromAllDB(part);
+
+        ContentAccessorDirect contentAccessor = new ContentAccessorDirect(json);
+        VerificationResultParticipant verResult = verificationService.verifyParticipantSelfDescription(contentAccessor);
+        SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor, verResult);
+        selfDescriptionStore.storeSelfDescription(sdMetadata, verResult);
+
+        mockMvc
+            .perform(MockMvcRequestBuilders.post("/participants")
+                .contentType("application/json")
+                .content(json))
+            .andExpect(status().isConflict());
+    }
+
+    @Test
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(25)
     public void addParticipantFailWithSameSDShouldReturnConflictFromKeyCloakWithoutDBStore() throws Exception {
 
-        String json = readFileFromResources("new_participant_same_sd.json");
+        String json = getMockFileDataAsString("new_participant_same_sd.json");
         ParticipantMetaData partNew = new ParticipantMetaData("ebc6f1c2new", "did:example:holder-new", "did:example" +
             ":holder#key-1", json);
         setupKeycloak(HttpStatus.SC_CONFLICT, partNew);
@@ -198,15 +223,14 @@ public class ParticipantsControllerTest {
         NotFoundException exceptionSDStore = assertThrows(NotFoundException.class,
             () -> selfDescriptionStore.getByHash(partNew.getSdHash()));
         assertEquals(NotFoundException.class, exceptionSDStore.getClass());
-
     }
 
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(26)
     public void addParticipantFailWithKeyCloakErrorShouldReturnErrorWithoutDBStore() throws Exception {
 
-        String json = readFileFromResources("participant_not_added.json");
+        String json = getMockFileDataAsString("participant_not_added.json");
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c3", "did:example:holder",
             "did:example:holder#key-1", json);
         setupKeycloak(HttpStatus.SC_INTERNAL_SERVER_ERROR, part);
@@ -227,11 +251,11 @@ public class ParticipantsControllerTest {
     }
 
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(20)
     public void getParticipantShouldReturnSuccessResponse() throws Exception {
 
-        String json = readFileFromResources("new_participant.json");
+        String json = getMockFileDataAsString("new_participant.json");
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
@@ -242,7 +266,7 @@ public class ParticipantsControllerTest {
     }
 
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(20)
     public void wrongParticipantShouldReturnNotFoundResponse() throws Exception {
         
@@ -256,11 +280,10 @@ public class ParticipantsControllerTest {
     }
     
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(20)
     public void getParticipantsShouldReturnCorrectNumber() throws Exception {
-
-        String json = readFileFromResources("new_participant.json");
+        String json = getMockFileDataAsString("new_participant.json");
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
@@ -276,7 +299,7 @@ public class ParticipantsControllerTest {
     }
     
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(20)
     public void getParticipantUsersShouldReturnCorrectNumber() throws Exception {
 
@@ -294,13 +317,13 @@ public class ParticipantsControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
             {@StringClaim(name = "participant_id", value = "ebc6f1c2")})))
     @Order(30)
     public void updateParticipantShouldReturnSuccessResponse() throws Exception {
 
-        String json = readFileFromResources("update_participant.json");
+        String json = getMockFileDataAsString("update_participant.json");
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
@@ -325,15 +348,38 @@ public class ParticipantsControllerTest {
         assertEquals(part.getSelfDescription(), metadata.getSelfDescription().getContentAsString());
     }
 
+    @Test
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
+        claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
+            {@StringClaim(name = "participant_id", value = "ebc6f1c2")})))
+    @Order(30)
+    public void updateParticipantWithOtherIdShouldReturnBadClientResponse() throws Exception {
+        String json = getMockFileDataAsString("update_participant_2.json");
+        ParticipantMetaData part = new ParticipantMetaData("2ebc6f1c2", "2ebc6f1c2name", "2ebc6f1c2pubKey", json);
+        setupKeycloak(HttpStatus.SC_OK, part);
+
+        ContentAccessorDirect contentAccessor = new ContentAccessorDirect(json);
+        VerificationResultParticipant verResult = verificationService.verifyParticipantSelfDescription(contentAccessor);
+        SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor, verResult);
+        selfDescriptionStore.storeSelfDescription(sdMetadata, verResult);
+
+        String updatedParticipant = getMockFileDataAsString("update_participant.json");
+
+        mockMvc
+            .perform(MockMvcRequestBuilders.put("/participants/{participantId}", part.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updatedParticipant))
+            .andExpect(status().isBadRequest());
+    }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
             {@StringClaim(name = "participant_id", value = "ebc6f1c2")})))
     @Order(30)
     public void updateParticipantFailWithKeycloakErrorShouldReturnErrorWithoutDBStore() throws Exception {
 
-        String json = readFileFromResources("update_participant_error.json");
+        String json = getMockFileDataAsString("update_participant_error.json");
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c5", "did:example:updated-holder-error", "did" +
             ":example" +
             ":holder#key-2-error", json);
@@ -363,7 +409,7 @@ public class ParticipantsControllerTest {
     @Order(40)
     public void deleteParticipantFailWithWrongSessionParticipantIdAndUnknownRoleShouldReturnForbiddenResponse() throws Exception {
 
-        String json = readFileFromResources("update_participant.json");
+        String json = getMockFileDataAsString("update_participant.json");
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:updated-holder", "did:example:holder#key-2", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
@@ -376,14 +422,14 @@ public class ParticipantsControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
             {@StringClaim(name = "participant_id", value = "ebc6f1c2")})))
     @Order(40)
     public void deleteParticipantFailWithWrongParticipantIdShouldReturnNotFoundResponse() throws Exception {
 
 
-        String json = readFileFromResources("unknownId_participant.json");
+        String json = getMockFileDataAsString("unknownId_participant.json");
         ParticipantMetaData part = new ParticipantMetaData("unknown", "did:example:updated-holder", "did:example" +
             ":holder#key-2", json);
         setupKeycloak(HttpStatus.SC_OK, part);
@@ -404,13 +450,13 @@ public class ParticipantsControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
             {@StringClaim(name = "participant_id", value = "ebc6f1c2")})))
     @Order(50)
     public void deleteParticipantSuccessShouldReturnSuccessResponse() throws Exception {
 
-        String json = readFileFromResources("update_participant.json");
+        String json = getMockFileDataAsString("update_participant.json");
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:updated-holder", "did:example:holder#key-2", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
@@ -446,7 +492,7 @@ public class ParticipantsControllerTest {
         //Initially adding user
         addParticipantShouldReturnCreatedResponse();
 
-        String json = readFileFromResources("new_participant.json");
+        String json = getMockFileDataAsString("new_participant.json");
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
 
         User userOfParticipant = getUserOfParticipant(part.getId());
@@ -535,18 +581,6 @@ public class ParticipantsControllerTest {
             when(usersResource.get(any())).thenReturn(userResource);
             when(userResource.toRepresentation()).thenReturn(userRepo);
         }
-    }
-
-    public static String readFileFromResources(String filename) { 
-        URL resource = ParticipantsControllerTest.class.getClassLoader().getResource(filename);
-        byte[] bytes;
-        try {
-            bytes = Files.readAllBytes(Paths.get(resource.toURI()));
-            return new String(bytes);  
-        } catch (IOException | URISyntaxException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     private void initialiseWithParticipantDeleteFromAllDB(ParticipantMetaData part){

@@ -1,5 +1,10 @@
 package eu.gaiax.difs.fc.server.config;
 
+import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_USER_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.SD_ADMIN_ROLE;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import eu.gaiax.difs.fc.api.generated.model.Error;
@@ -48,11 +53,11 @@ public class SecurityConfig {
           .permitAll()
 
           // Schema APIs
-          .antMatchers(HttpMethod.POST, "/schemas").hasRole("Ro-MU-CA")
-          .antMatchers(HttpMethod.DELETE, "/schemas/**").hasRole("Ro-MU-CA")
-          .antMatchers(HttpMethod.PUT, "/schemas").hasRole("Ro-MU-CA")
+          .antMatchers(HttpMethod.POST, "/schemas").hasRole(CATALOGUE_ADMIN_ROLE)
+          .antMatchers(HttpMethod.DELETE, "/schemas/**").hasRole(CATALOGUE_ADMIN_ROLE)
+          .antMatchers(HttpMethod.PUT, "/schemas").hasRole(CATALOGUE_ADMIN_ROLE)
           .antMatchers(HttpMethod.GET, "/schemas", "/schemas/**")
-          .hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-Pa-A")
+          .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
 
           // Query APIs
           .antMatchers("/query").permitAll()
@@ -65,20 +70,23 @@ public class SecurityConfig {
           .antMatchers(HttpMethod.GET, "/self-descriptions/{self_description_hash}")
           .authenticated()
           .antMatchers(HttpMethod.POST, "/self-descriptions")
-          .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
+          .hasAnyRole(CATALOGUE_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
           .antMatchers(HttpMethod.DELETE, "/self-descriptions/{self_description_hash}")
-          .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
+          .hasAnyRole(CATALOGUE_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
           .antMatchers(HttpMethod.POST, "/self-descriptions/{self_description_hash}/revoke")
-          .hasAnyRole("Ro-MU-CA", "Ro-SD-A", "Ro-MU-A")
+          .hasAnyRole(CATALOGUE_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
 
           // Participants API
-          .antMatchers(HttpMethod.POST, "/participants").hasRole("Ro-MU-CA")
-          .antMatchers(HttpMethod.GET, "/participants").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-SD-A", "Ro-PA-A")
-          .antMatchers("/participants/*").hasAnyRole("Ro-MU-CA", "Ro-MU-A")
-          .antMatchers(HttpMethod.GET, "/participants/*/users").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
+          .antMatchers(HttpMethod.POST, "/participants").hasRole(CATALOGUE_ADMIN_ROLE)
+          .antMatchers(HttpMethod.GET, "/participants")
+              .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
+          .antMatchers("/participants/*").hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
+          .antMatchers(HttpMethod.GET, "/participants/*/users")
+              .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
 
           // User APIs
-          .antMatchers("/users", "users/**").hasAnyRole("Ro-MU-CA", "Ro-MU-A", "Ro-PA-A")
+          .antMatchers("/users", "users/**")
+              .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
 
           // Roles APIs
           .antMatchers("/roles").authenticated()
