@@ -1,10 +1,9 @@
 package eu.gaiax.difs.fc.core.dao;
 
+import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
 import java.util.List;
 import java.util.Optional;
-
-import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 
 /**
  * Participant repository interface.

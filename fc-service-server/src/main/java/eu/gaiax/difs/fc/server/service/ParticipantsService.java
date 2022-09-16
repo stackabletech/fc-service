@@ -7,6 +7,7 @@ import eu.gaiax.difs.fc.api.generated.model.Participants;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.ParticipantDao;
+import eu.gaiax.difs.fc.core.dao.UserDao;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.ForbiddenException;
 import lombok.extern.slf4j.Slf4j;
@@ -283,5 +285,4 @@ public class ParticipantsService implements ParticipantsApiDelegate {
       }
     });
   }
-
 }
