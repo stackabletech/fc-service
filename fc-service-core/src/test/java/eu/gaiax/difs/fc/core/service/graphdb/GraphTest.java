@@ -78,8 +78,8 @@ public class GraphTest {
             graphGaia.addClaims(sdClaimList, credentialSubject.substring(1, credentialSubject.length() - 1));
         }
         OpenCypherQuery queryFull = new OpenCypherQuery(
-                "MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 25");
-        List<Map<String, String>> responseFull = graphGaia.queryData(queryFull);
+                "MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 25", Map.of());
+        List<Map<String, Object>> responseFull = graphGaia.queryData(queryFull);
         Assertions.assertEquals(resultListFull, responseFull);
     }
 
@@ -105,21 +105,18 @@ public class GraphTest {
             graphGaia.addClaims(sdClaimList, credentialSubject.substring(1, credentialSubject.length() - 1));
         }
         OpenCypherQuery queryDelta = new OpenCypherQuery(
-                "MATCH (n:ns1__LegalPerson) WHERE n.ns1__name = \"deltaDAO AG\" RETURN n LIMIT 25");
-        List<Map<String, String>> responseDelta = graphGaia.queryData(queryDelta);
+                "MATCH (n:ns1__LegalPerson) WHERE n.ns1__name = $name RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
+        List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta);
         Assertions.assertEquals(resultListDelta, responseDelta);
     }
 
 
-    private List<SdClaim> loadTestClaims(String Path) throws Exception {
-        List credentialSubjectList = new ArrayList();
-        try (InputStream is = new ClassPathResource(Path)
-                .getInputStream()) {
+    private List<SdClaim> loadTestClaims(String path) throws Exception {
+        try (InputStream is = new ClassPathResource(path).getInputStream()) {
             BufferedReader br = new BufferedReader(new InputStreamReader(is));
             String strLine;
             List<SdClaim> sdClaimList = new ArrayList<>();
             while ((strLine = br.readLine()) != null) {
-                String[] split = strLine.split("\\s+");
                 Pattern regex = Pattern.compile("[^\\s\"']+|\"[^\"]*\"|'[^']*'");
                 Matcher regexMatcher = regex.matcher(strLine);
                 int i = 0;
@@ -140,8 +137,6 @@ public class GraphTest {
                 sdClaimList.add(sdClaim);
             }
             return sdClaimList;
-        } catch (Exception e) {
-            throw e;
         }
     }
 

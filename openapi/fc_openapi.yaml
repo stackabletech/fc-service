@@ -75,51 +75,18 @@ components:
           $ref: '#/components/schemas/Parameters'
       required:
         - statement
-    Parameters: #!! why is this a parameter --> ggf ins Statement packen -> Julius ok
+    Parameters: 
       type: object
-      properties:
-        limit:
-          type: integer
-          example: 10
-        offset:
-          type: integer
-          example: 5
+      additionalProperties:
+        type: object
+      example:
+        name: "John"
+        limit: 10
+        offset: 5
     Result:
       type: object
-      properties:
-        columns:
-          type: array
-          example: ["column name 1", "column name 2"]
-          items:
-            type: string
-            example: column names
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Data'
-      required:
-        - columns
-        - data
-    Data:
-      type: object
-      properties:
-        row:
-          type: array
-          example:
-            - value1
-            - value2
-          items:
-            type: string
-        meta:
-          type: array
-          example:
-            - meta1
-            - meta2
-          items:
-            type: string
-      required:
-        - row
-        - meta
+      additionalProperties:
+        type: object
     VerificationResult:
       type: object
       properties:
@@ -308,6 +275,15 @@ components:
               type: array
               items: 
                 $ref: '#/components/schemas/UserProfile'
+    Results:
+      allOf:
+        - $ref: '#/components/schemas/ResultPage'
+        - type: object
+          properties:
+            items: 
+              type: array
+              items: 
+                $ref: '#/components/schemas/Result'
 
   parameters:
     OffsetParam:
@@ -651,7 +627,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Result'
+                $ref: '#/components/schemas/Results'
             application/sparql-results+xml:
               example: ''
             text/turtle:
