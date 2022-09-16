@@ -14,6 +14,7 @@ import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate;
+import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -166,13 +167,10 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
           verificationResult.getId(), verificationResult.getIssuer(), new ArrayList<>());
 
       checkParticipantAccess(sdMetadata.getIssuer());
-
-      // TODO: 23.08.2022 The docs states that metadata is returned from this method when SD added.
       sdStore.storeSelfDescription(sdMetadata, verificationResult);
 
       log.debug("addSelfDescription.exit; returning self-description by hash: {}", sdMetadata.getSdHash());
-      // TODO: with CREATED we must properly set Location header
-      return new ResponseEntity<>(sdMetadata, HttpStatus.CREATED);
+      return ResponseEntity.created(URI.create("/self-descriptions/" + sdMetadata.getId())).body(sdMetadata);
     } catch (ValidationException exception) {
       log.debug("Self-description isn't parsed due to: " + exception.getMessage(), exception);
       throw new ClientException("Self-description isn't parsed due to: " + exception.getMessage());
@@ -202,11 +200,8 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     checkParticipantAccess(sdMetadata.getIssuer());
 
     if (sdMetadata.getStatus().equals(SelfDescriptionStatus.ACTIVE)) {
-      sdStore.changeLifeCycleStatus(sdMetadata.getSdHash(), SelfDescriptionStatus.DEPRECATED);
+      sdStore.changeLifeCycleStatus(sdMetadata.getSdHash(), SelfDescriptionStatus.REVOKED);
     }
-
-    // TODO: 23.07.2022 Add to the interface / a new interface for working with files
-    //  and include a method for adding a self-description file there + Awaiting GraphDd repository interface.
 
     log.debug("updateSelfDescription.exit; update self-description by hash: {}", selfDescriptionHash);
     return new ResponseEntity<>(sdMetadata, HttpStatus.OK);
