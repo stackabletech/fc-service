@@ -1,13 +1,15 @@
 package eu.gaiax.difs.fc.server.service;
 
+import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
+
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.gaiax.difs.fc.api.generated.model.Participant;
 import eu.gaiax.difs.fc.api.generated.model.Participants;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.ParticipantDao;
 import eu.gaiax.difs.fc.core.dao.UserDao;
+import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
@@ -55,8 +57,6 @@ public class ParticipantsService implements ParticipantsApiDelegate {
 
   @Autowired
   private VerificationService verificationService;
-
-  private final String catalogueAdminRole="ROLE_Ro-MU-CA";
 
   /**
    * POST /participants : Register a new participant in the catalogue.
@@ -145,6 +145,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   @Override
   public ResponseEntity<UserProfiles> getParticipantUsers(String participantId, Integer offset, Integer limit) {
     log.debug("getParticipantUsers.enter; got participantId: {}", participantId);
+    checkUserAndRolePermission(participantId);
     List<UserProfile> profiles = partDao.selectUsers(participantId)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
     log.debug("getParticipantUsers.exit; returning: {}", profiles.size());
@@ -197,15 +198,20 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   public ResponseEntity<Participant> updateParticipant(String participantId, String body) {
     log.debug("updateParticipant.enter; got participant: {}", participantId);
 
+    ParticipantMetaData participantExisted = partDao.select(participantId)
+        .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
+
     checkUserAndRolePermission(participantId);
 
     Pair<VerificationResultParticipant,SelfDescriptionMetadata> pairResult = validateSelfDescription(body);
     VerificationResultParticipant verificationResult = pairResult.getLeft();
     SelfDescriptionMetadata selfDescriptionMetadata = pairResult.getRight();
 
+    ParticipantMetaData participantUpdated = toParticipantMetaData(verificationResult,selfDescriptionMetadata);
+
+    checkUpdates(participantExisted, participantUpdated);
     selfDescriptionStore.storeSelfDescription(selfDescriptionMetadata,verificationResult);
 
-    ParticipantMetaData participantUpdated = toParticipantMetaData(verificationResult,selfDescriptionMetadata);
     registerRollBackForFileStoreManuallyIfTransactionFail(participantUpdated);
 
     ParticipantMetaData participantMetaData = partDao.update(participantId, participantUpdated)
@@ -236,7 +242,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     ParticipantMetaData partExisting = partDao.select(participantId)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
     log.debug("checkUserAndRolePermission.existing participant got : {}", partExisting);
-    if(!SessionUtils.sessionUserHasRole(catalogueAdminRole)  &&
+    if (!SessionUtils.sessionUserHasRole("ROLE_" + CATALOGUE_ADMIN_ROLE) &&
         !partExisting.getId().equals(SessionUtils.getSessionParticipantId())) {
       throw new ForbiddenException("User has no permissions to operate participant : " + participantId);
     }
@@ -284,5 +290,17 @@ public class ParticipantsService implements ParticipantsApiDelegate {
         }
       }
     });
+  }
+
+  /**
+   * Checks if updates can be applied to an existing Participant.
+   *
+   * @param existed Existed participant metadata.
+   * @param updated Updated participant metadata.
+   */
+  private void checkUpdates(ParticipantMetaData existed, ParticipantMetaData updated) {
+    if (!existed.getId().equals(updated.getId())) {
+      throw new ClientException("The participant ID cannot be changed for Participant with ID " + existed.getId() );
+    }
   }
 }

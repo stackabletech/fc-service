@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.server.controller;
 
+import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,6 +54,7 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 @ExtendWith(SpringExtension.class)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 public class UsersControllerTest {
+    private final String CATALOGUE_ADMIN_ROLE_WITH_PREFIX = "ROLE_" + PARTICIPANT_ADMIN_ROLE;
 
     private static final TypeReference<List<?>> LIST_TYPE_REF = new TypeReference<List<?>>() {
     };
@@ -92,7 +94,7 @@ public class UsersControllerTest {
     }
     
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void addUserShouldReturnCreatedResponse() throws Exception {
         
         User user = getTestUser("unit-test", "user224", "did:example:holder");
@@ -117,7 +119,7 @@ public class UsersControllerTest {
     }
 
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void getUserShouldReturnSuccessResponse() throws Exception {
         
         User user = getTestUser("unit-test", "user22", "participant one");
@@ -131,7 +133,7 @@ public class UsersControllerTest {
     }
 
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void wrongUserShouldReturnNotFoundResponse() throws Exception {
         
         String userId = "unknown";
@@ -144,7 +146,7 @@ public class UsersControllerTest {
     }
     
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void getUsersShouldReturnCorrectNumber() throws Exception {
         
         User user = getTestUser("unit-test", "user33", "participant one");
@@ -161,7 +163,7 @@ public class UsersControllerTest {
     }
     
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void deleteUserShouldReturnSuccessResponse() throws Exception {
         
         User user = getTestUser("unit-test", "user11", "ebc6f1c2");
@@ -185,7 +187,7 @@ public class UsersControllerTest {
     }
     
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void updateUserShouldReturnSuccessResponse() throws Exception {
         
         User user = getTestUser("unit-test", "user", "participant one");
@@ -201,7 +203,7 @@ public class UsersControllerTest {
     }
     
     @Test
-    @WithMockUser(authorities = {"ROLE_Ro-MU-CA"})
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void updateUserRolesShouldReturnSuccessResponse() throws Exception {
         
         User user = getTestUser("unit-test", "user", "ebc6f1c2");

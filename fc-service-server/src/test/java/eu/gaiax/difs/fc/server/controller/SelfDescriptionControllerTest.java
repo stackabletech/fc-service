@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.server.controller;
 
+import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -72,6 +73,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class SelfDescriptionControllerTest {
     private final static String TEST_ISSUER = "http://example.org/test-issuer";
     private final static String SD_FILE_NAME = "test-provider-sd.json";
+
+    private final String CATALOGUE_ADMIN_ROLE_WITH_PREFIX = "ROLE_" + PARTICIPANT_ADMIN_ROLE;
 
     //@Autowired
     //private Neo4j embeddedDatabaseServer;
@@ -194,7 +197,7 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = "")})))
     public void deleteSdWithoutIssuerReturnForbiddenResponse() throws Exception {
       sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
@@ -207,7 +210,7 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void deleteSDReturnNotFoundResponse() throws Exception {
       mockMvc.perform(MockMvcRequestBuilders.delete("/self-descriptions/" + sdMeta.getSdHash())
@@ -218,7 +221,7 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void deleteSDReturnSuccessResponse() throws Exception {
         sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
@@ -251,7 +254,7 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void addSDWithoutIssuerReturnForbiddenResponse() throws Exception {
       mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
@@ -263,7 +266,7 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void addSDReturnSuccessResponse() throws Exception {
         MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
@@ -279,7 +282,7 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test 
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void addDuplicateSDReturnConflictWithSdStorage() throws Exception {
       String sd = getMockFileDataAsString(SD_FILE_NAME);
@@ -302,7 +305,7 @@ public class SelfDescriptionControllerTest {
 
     // TODO: 05.09.2022 Need to add a test to check the correct scenario with graph storage when it is added
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void addSDFailedThanAllTransactionsRolledBack() throws Exception {
         ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
@@ -343,7 +346,7 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void revokeSDReturnNotFound() throws Exception {
       mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions/" + sdMeta.getSdHash() + "/revoke")
@@ -354,7 +357,7 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void revokeSDReturnSuccessResponse() throws Exception {
         final VerificationResult vr = new VerificationResult("vhash", new ArrayList<SdClaim>(), new ArrayList<Signature>(),
