@@ -64,15 +64,15 @@ public class Neo4jGraphStore implements GraphStore {
         log.debug("deleteClaims.enter; Beginning claims deletion, subject: {}", credentialSubject);
         String query = "MATCH (n{uri: '" + credentialSubject + "'})\n" +
                 "DELETE n";
-        String checkClaim = "match(n) where n.uri ='" + credentialSubject + "' return n;";
-        OpenCypherQuery checkQuery = new OpenCypherQuery(checkClaim);
-        List<Map<String, String>> result = queryData(checkQuery);
+        String checkClaim = "match(n) where n.uri = $uri return n;";
+        OpenCypherQuery checkQuery = new OpenCypherQuery(checkClaim, Map.of("uri", credentialSubject));
+        List<Map<String, Object>> result = queryData(checkQuery);
         if (result.size() == 0) {
             log.debug("nothing to delete");
             return;
         }
-        Map<String, String> resultCheck = result.get(0);
-        String claim = resultCheck.entrySet().iterator().next().getValue();
+        Map<String, Object> resultCheck = result.get(0);
+        String claim = resultCheck.entrySet().iterator().next().getValue().toString();
 
         try (Session session = driver.session()) {
             if (claim.equals(credentialSubject)) {
@@ -88,17 +88,17 @@ public class Neo4jGraphStore implements GraphStore {
      * {@inheritDoc}
      */
     @Override
-    public List<Map<String, String>> queryData(OpenCypherQuery sdQuery) {
+    public List<Map<String, Object>> queryData(OpenCypherQuery sdQuery) {
         log.debug("queryData.enter; got query: {}", sdQuery);
         try (Session session = driver.session(); Transaction tx = session.beginTransaction()) {
-            List<Map<String, String>> resultList = new ArrayList<>();
-            Result result = tx.run(sdQuery.getQuery());
+            List<Map<String, Object>> resultList = new ArrayList<>();
+            Result result = tx.run(sdQuery.getQuery(), sdQuery.getParams());
             log.debug("queryData; got result: {}", result.keys());
             while (result.hasNext()) {
                 org.neo4j.driver.Record record = result.next();
                 Map<String, Object> map = record.asMap();
                 log.debug("queryData; record: {}", map);
-                Map<String, String> outputMap = new HashMap<String, String>();
+                Map<String, Object> outputMap = new HashMap<>();
                 for (var entry : map.entrySet()) {
                     if (entry.getValue() instanceof String) {
                         outputMap.put(entry.getKey(), entry.getValue().toString());

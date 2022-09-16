@@ -36,7 +36,7 @@ public interface GraphStore {
      * @param sdQuery is the query to be executed
      * @return List of Maps
      */
-    List<Map<String, String>> queryData(OpenCypherQuery sdQuery);
+    List<Map<String, Object>> queryData(OpenCypherQuery sdQuery);
 
 }
 

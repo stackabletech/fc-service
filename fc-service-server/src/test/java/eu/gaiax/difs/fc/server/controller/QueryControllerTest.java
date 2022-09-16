@@ -7,7 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.gaiax.difs.fc.api.generated.model.Result;
+import eu.gaiax.difs.fc.api.generated.model.Results;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
@@ -137,8 +137,8 @@ public class QueryControllerTest {
                         .getContentAsString();
 
 
-        Result result = objectMapper.readValue(response, Result.class);
-        assertEquals(1, result.getData().size());
+        Results result = objectMapper.readValue(response, Results.class);
+        assertEquals(1, result.getTotalCount());
     }
 
 
