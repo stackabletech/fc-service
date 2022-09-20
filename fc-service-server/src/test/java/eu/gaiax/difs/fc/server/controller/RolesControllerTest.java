@@ -59,8 +59,8 @@ public class RolesControllerTest {
     private RealmResource realmResource;
     @MockBean
     private RolesResource rolesResource;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private  ObjectMapper objectMapper;
 
     @BeforeTestClass
     public void setup() {

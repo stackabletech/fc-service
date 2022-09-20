@@ -82,7 +82,8 @@ public class QueryControllerTest {
         embeddedDatabaseServer.close();
     }
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private  ObjectMapper objectMapper;
 
     private final static String SD_FILE_NAME = "test-provider-sd.json";
 
