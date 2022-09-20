@@ -15,6 +15,8 @@ import com.c4_soft.springaddons.security.oauth2.test.annotations.StringClaim;
 import com.c4_soft.springaddons.security.oauth2.test.annotations.WithMockJwtAuth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.gaiax.difs.fc.api.generated.model.Participants;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptions;
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.impl.ParticipantDaoImpl;
@@ -26,12 +28,8 @@ import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
-import eu.gaiax.difs.fc.core.service.verification.VerificationService;
-import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
-
-import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
-import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
+import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
@@ -124,8 +122,8 @@ public class ParticipantsControllerTest {
     private UserResource userResource;
     @Autowired
     private UserDaoImpl userDao;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private String userId = "ae366624-8371-401d-b2c4-518d2f308a15";
 
@@ -173,6 +171,7 @@ public class ParticipantsControllerTest {
         assertEquals("ebc6f1c2", partResult.getId());
         assertEquals("did:example:holder", partResult.getName());
         assertEquals("did:example:holder#key-1", partResult.getPublicKey());
+        assertEquals(part.getSelfDescription(), partResult.getSelfDescription());
 
         assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
         assertDoesNotThrow(() -> selfDescriptionStore.getByHash(part.getSdHash()));
@@ -265,6 +264,33 @@ public class ParticipantsControllerTest {
             .andExpect(status().isOk());
     }
 
+    @Test
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
+    @Order(20)
+    public void getAddedParticipantSDShouldReturnSuccessResponseWithSameSDFromSDAPI() throws Exception {
+
+        String json = getMockFileDataAsString("new_participant.json");
+        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
+        setupKeycloak(HttpStatus.SC_OK, part);
+
+        String response = mockMvc
+            .perform(MockMvcRequestBuilders.get("/self-descriptions")
+            .contentType(MediaType.APPLICATION_JSON).queryParam("id",part.getId()))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        SelfDescriptions selfDescriptions =  objectMapper.readValue(response, SelfDescriptions.class);
+        List<SelfDescription> selfDescriptionMetadataList =  (List)selfDescriptions.getItems();
+        String  sdHash = selfDescriptionMetadataList.get(0).getSdHash();
+
+        String responseOfSDContent = mockMvc
+            .perform(MockMvcRequestBuilders.get("/self-descriptions/" + sdHash)
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        assertEquals(part.getSelfDescription(), responseOfSDContent);
+        assertEquals(1, selfDescriptionMetadataList.size());
+
+    }
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(20)

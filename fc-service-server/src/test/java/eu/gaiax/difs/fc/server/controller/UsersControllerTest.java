@@ -74,8 +74,8 @@ public class UsersControllerTest {
     private UsersResource usersResource;
     @MockBean
     private UserResource userResource;
-    
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private  ObjectMapper objectMapper;
 
     @BeforeTestClass
     public void setup() {
