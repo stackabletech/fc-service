@@ -34,7 +34,7 @@ When all components started you should setup Keycloak which is used as Identity 
 - Go to users and create one to work with. Set its username and other attributes, save. Then go to Credentials tab, set its password twice, disable Temporary switch, save. Go to Role Mappings tab, select Ro-MU-CA role and add it to Assigned Roles.
 - Restart federated-catalogue-server container to pick up changes applied at the second step above.
 
-Now you can test FC Service with Demo Portal web app. Go to `http://localhost:8088/parts` in your browser, you should be redirected to Keycloak Login page. Login with user credentials you created above..
+Now you can test FC Service with Demo Portal web app. Go to `http://localhost:8088` in your browser and press Login button. You should be redirected to Keycloak Login page. Login with user credentials you created above..
 
 ### Neo4j setup
 
