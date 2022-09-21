@@ -216,7 +216,7 @@ public class UserDaoImpl implements UserDao {
    * @param user User entity
    * @return string formatted user
    */
-  private static String getUsername(User user) {
+  public static String getUsername(User user) {
     return user.getParticipantId() + "{" + user.getFirstName() + " " + user.getLastName() + "}";
   }
 
