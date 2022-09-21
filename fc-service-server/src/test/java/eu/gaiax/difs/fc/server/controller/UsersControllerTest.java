@@ -3,6 +3,7 @@ package eu.gaiax.difs.fc.server.controller;
 import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.getUsername;
 import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.toUserRepo;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
+import static org.apache.http.HttpStatus.SC_CREATED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -11,6 +12,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import eu.gaiax.difs.fc.api.generated.model.Error;
+import eu.gaiax.difs.fc.core.dao.UserDao;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -74,7 +76,8 @@ public class UsersControllerTest {
     private UsersResource usersResource;
     @MockBean
     private UserResource userResource;
-
+    @Autowired
+    private UserDao userDao;
     @Autowired
     private  ObjectMapper objectMapper;
 
@@ -99,7 +102,7 @@ public class UsersControllerTest {
     public void addUserShouldReturnCreatedResponse() throws Exception {
         
         User user = getTestUser("unit-test", "user224", "did:example:holder");
-        setupKeycloak(HttpStatus.SC_CREATED, user, UUID.randomUUID().toString());
+        setupKeycloak(SC_CREATED, user, UUID.randomUUID().toString());
 
         String response = mockMvc
             .perform(MockMvcRequestBuilders.post("/users")
@@ -242,17 +245,41 @@ public class UsersControllerTest {
             .andExpect(status().isOk());
     }
 
+    @Test
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
+    public void updateDuplicatedUserRoleShouldReturnConflictError() throws Exception {
+        User user = getTestUser("unit-test", "user", "ebc6f1c2");
+        String id = "ae366624-8371-401d-b2c4-518d2f308a15";
+        setupKeycloak(HttpStatus.SC_OK, user, id);
+
+        userDao.create(user);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/users/{userId}/roles", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(List.of("ROLE_test"))))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        UserProfile userProfile = userDao.select(id);
+        assertNotNull(userProfile);
+        assertEquals(1, userProfile.getRoleIds().size());
+        assertEquals(List.of("ROLE_test"), userProfile.getRoleIds());
+    }
+
     private void setupKeycloak(int status, User user, String id) {
         when(builder.build()).thenReturn(keycloak);
         when(keycloak.realm("gaia-x")).thenReturn(realmResource);
         when(realmResource.users()).thenReturn(usersResource);
-        when(usersResource.create(any())).thenReturn(Response.status(status).build());
         if (user == null) {
+            when(usersResource.create(any())).thenReturn(Response.status(status).build());
             when(usersResource.delete(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
             when(usersResource.list(any(), any())).thenReturn(List.of());
             when(usersResource.search(any())).thenReturn(List.of());
             when(usersResource.get(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
         } else {
+            when(usersResource.create(any())).thenReturn(Response.status(SC_CREATED).entity(user).build());
             when(usersResource.delete(any())).thenReturn(Response.status(status).build());
             UserRepresentation userRepo = toUserRepo(user);
             userRepo.setId(id);
