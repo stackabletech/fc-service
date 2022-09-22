@@ -3,12 +3,12 @@ package eu.gaiax.difs.fc.server.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.gaiax.difs.fc.api.generated.model.Results;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
@@ -21,7 +21,9 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -87,19 +89,28 @@ public class QueryControllerTest {
 
     private final static String SD_FILE_NAME = "test-provider-sd.json";
 
+    @BeforeAll
+    public void addManuallyDBEntries() throws Exception {
+        initialiseAllDataBaseWithManuallyAddingSDFromRepository();
+    }
 
     @BeforeTestClass
     public void setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
     }
 
-    String QUERY_REQUEST_GET="{\"statement\": \"Match (m:Address) where m.postal-code > 99999 RETURN m\", " +
+    String QUERY_REQUEST_GET="{\"statement\": \"MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 25\", " +
         "\"parameters\": " +
         "null}}";
 
+    String QUERY_REQUEST_GET_WITH_PARAMETERS="{\"statement\": \"MATCH (n:ns0__ServiceOffering) where n.ns0__name = " +
+        "$name RETURN n \", \"parameters\": { \"name\": \"EuProGigant Portal\"}}";
+
+    String QUERY_REQUEST_GET_WITH_PARAMETERS_UNKNOWN="{\"statement\": \"MATCH (n:ns0__ServiceOffering) where " +
+        "n.ns0__name = $name RETURN n \", \"parameters\": { \"name\": \"notFound\"}}";
+
     String QUERY_REQUEST_POST="{\"statement\": \"CREATE (m:Address {postal-code: '99999', address : 'test'})\", " +
-        "\"parameters\": " +
-        "null}}";
+        "\"parameters\": null}}";
 
     String QUERY_REQUEST_UPDATE="{\"statement\": \"Match (m:Address) where m.postal-code > 99999 SET m.postal-code = " +
         "88888 RETURN m\", " +
@@ -118,12 +129,23 @@ public class QueryControllerTest {
             .andExpect(status().isOk())
             .andExpect(header().stringValues("Content-Type", "text/html"));
     }
+    @Test
+    public void postGetQueriesReturnDefaultJsonResponseTypeSuccess() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/query")
+                .content(QUERY_REQUEST_GET)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Produces","application/json","application/sparql-results+xml", "text/turtle", "text/html")
+                .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
+                .header("query-language","application/sparql-query"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+    }
 
     @Test
-    @Disabled("Enable when FH implementation is done")
-    public void postQueriesReturnSuccessResponse() throws Exception {
-
-        initialiseAllDataBaseWithManuallyAddingSDFromRepository();
+    public void postGetQueriesReturnSuccessResponse() throws Exception {
 
         String response =  mockMvc.perform(MockMvcRequestBuilders.post("/query")
                         .content(QUERY_REQUEST_GET)
@@ -139,10 +161,48 @@ public class QueryControllerTest {
 
 
         Results result = objectMapper.readValue(response, Results.class);
-        assertEquals(1, result.getTotalCount());
+        assertEquals(1, result.getItems().size());
     }
 
+    @Test
+    public void postGetQueriesWithParametersReturnSuccessResponse() throws Exception {
 
+        String response =  mockMvc.perform(MockMvcRequestBuilders.post("/query")
+                .content(QUERY_REQUEST_GET_WITH_PARAMETERS)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Produces","application/json","application/sparql-results+xml", "text/turtle", "text/html")
+                .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
+                .header("query-language","application/sparql-query"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+
+        Results result = objectMapper.readValue(response, Results.class);
+        assertEquals(1, result.getItems().size());
+    }
+
+    @Test
+    public void postGetQueriesWithUnKnownParametersResultNotFoundReturnSuccessResponse() throws Exception {
+
+        String response =  mockMvc.perform(MockMvcRequestBuilders.post("/query")
+                .content(QUERY_REQUEST_GET_WITH_PARAMETERS_UNKNOWN)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Produces","application/json","application/sparql-results+xml", "text/turtle", "text/html")
+                .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
+                .header("query-language","application/sparql-query"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+
+        Results result = objectMapper.readValue(response, Results.class);
+        assertEquals(0, result.getItems().size());
+    }
     @Test
     @Disabled("Enable  when FH implementation is done")
     public void postQueryReturnForbiddenResponse() throws Exception {
@@ -184,12 +244,32 @@ public class QueryControllerTest {
 
     }
 
-    private void initialiseAllDataBaseWithManuallyAddingSDFromRepository() throws IOException {
+    private void initialiseAllDataBaseWithManuallyAddingSDFromRepository() throws Exception {
         ContentAccessorDirect contentAccessor = new ContentAccessorDirect(FileReaderHelper.getMockFileDataAsString(SD_FILE_NAME));
         VerificationResultOffering verificationResult = verificationService.verifyOfferingSelfDescription(contentAccessor);
-        SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor,
-            verificationResult.getId(), verificationResult.getIssuer(), new ArrayList<>());
+
+        SdClaim sdClaim = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal.json>",
+            "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+            "<http://w3id.org/gaia-x/service#ServiceOffering>");
+
+        SdClaim sdClaim1 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal.json>",
+            "<http://w3id.org/gaia-x/service#name> \"EuProGigant Portal\"",
+            "");
+
+
+        List<SdClaim> sdClaimFile = List.of(sdClaim,sdClaim1);
+
+        verificationResult.setClaims(sdClaimFile);
+        verificationResult.setId(sdClaimFile.get(0).getSubject());
+
+        //Manually removing extra character from string <>
+        String id = verificationResult.getId();
+        String verificationIdAsSubject = id.substring(1, id.length() - 1);
+
+        SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor, verificationIdAsSubject,
+            verificationResult.getIssuer(), new ArrayList<>());
         sdStore.storeSelfDescription(sdMetadata, verificationResult);
 
     }
+
 }
