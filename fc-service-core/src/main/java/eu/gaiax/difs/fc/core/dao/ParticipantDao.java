@@ -1,8 +1,8 @@
 package eu.gaiax.difs.fc.core.dao;
 
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -31,7 +31,7 @@ public interface ParticipantDao {
    * @param participantId Participant id.
    * @return Optional list of users.
    */
-  Optional<List<UserProfile>> selectUsers(String participantId);
+  Optional<PaginatedResults<UserProfile>> selectUsers(String participantId);
 
   /**
    * Remove the Participant with the given id.
@@ -57,5 +57,5 @@ public interface ParticipantDao {
    * @param limit The maximum number of items to return.
    * @return List of filtered participants.
    */
-  List<ParticipantMetaData> search(Integer offset, Integer limit);
+  PaginatedResults<ParticipantMetaData> search(Integer offset, Integer limit);
 }

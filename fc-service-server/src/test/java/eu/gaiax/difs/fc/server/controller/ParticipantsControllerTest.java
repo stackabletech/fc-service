@@ -38,6 +38,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.Map;
+
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterAll;
@@ -550,15 +552,15 @@ public class ParticipantsControllerTest {
 
         assertEquals(0, userDao.search(userId,0,1).size());
     }
+    
     private void setupKeycloak(int status, ParticipantMetaData part) {
         when(builder.build()).thenReturn(keycloak);
         when(keycloak.realm("gaia-x")).thenReturn(realmResource);
         when(realmResource.groups()).thenReturn(groupsResource);
-        if(status == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+        if (status == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
             when(groupsResource.add(any())).thenThrow(new ServerException("500 Server Error"));
             doThrow(new ServerException("500 Server Error")).when(groupResource).update(any());
-
-        }else if (status == HttpStatus.SC_CONFLICT){
+        } else if (status == HttpStatus.SC_CONFLICT) {
             String message = "{\"errorMessage\": \"User already exists\"}";
             String charset = "UTF-8";
             ByteArrayInputStream byteArrayInputStream;
@@ -568,10 +570,10 @@ public class ParticipantsControllerTest {
                 throw new RuntimeException(e);
             }
             when(groupsResource.add(any())).thenReturn(Response.status(status).type(javax.ws.rs.core.MediaType.APPLICATION_JSON).entity(byteArrayInputStream).build());
-
-        }else {
+        } else {
             when(groupsResource.add(any())).thenReturn(Response.status(status).build());
         }
+        
         if (part == null) {
             when(groupsResource.group(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
             when(groupResource.members()).thenReturn(List.of()); 
@@ -587,6 +589,7 @@ public class ParticipantsControllerTest {
             when(groupsResource.groups(any(), any())).thenReturn(List.of(groupRepo));
             when(groupsResource.groups(eq(part.getId()), any(), any())).thenReturn(List.of(groupRepo));
             when(groupsResource.groups(any(), any(), any(), anyBoolean())).thenReturn(List.of(groupRepo));
+            when(groupsResource.count()).thenReturn(Map.of("count", 1L));
         }
     }
 

@@ -12,6 +12,7 @@ import eu.gaiax.difs.fc.core.dao.UserDao;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
@@ -146,11 +147,10 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   public ResponseEntity<UserProfiles> getParticipantUsers(String participantId, Integer offset, Integer limit) {
     log.debug("getParticipantUsers.enter; got participantId: {}", participantId);
     checkUserAndRolePermission(participantId);
-    List<UserProfile> profiles = partDao.selectUsers(participantId)
+    PaginatedResults<UserProfile> profiles = partDao.selectUsers(participantId)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
-    log.debug("getParticipantUsers.exit; returning: {}", profiles.size());
-    // TODO: set total count
-    return ResponseEntity.ok(new UserProfiles(0, profiles));
+    log.debug("getParticipantUsers.exit; returning: {}", profiles.getTotalCount());
+    return ResponseEntity.ok(new UserProfiles((int) profiles.getTotalCount(), profiles.getResults()));
   }
 
   /**
@@ -167,18 +167,14 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   public ResponseEntity<Participants> getParticipants(Integer offset, Integer limit) { //, String orderBy, Boolean asc) {
     // sorting is not supported yet by keycloak admin API
     log.debug("getParticipants.enter; got offset: {}, limit: {}", offset, limit);
-    List<ParticipantMetaData> partsExt = partDao.search(offset, limit);
+    PaginatedResults<ParticipantMetaData> results = partDao.search(offset, limit);
     //Adding actual SD from sd-store for each sd-hash present in keycloak
-    List<Participant> parts =
-        partsExt.stream().map(participant -> {
-          participant.setSelfDescription(
-              selfDescriptionStore.getByHash(participant.getSdHash()).getSelfDescription()
-                  .getContentAsString());
-          return participant;
-        }).collect(
-            Collectors.toList());
-    log.debug("getParticipants.exit; returning size:{}, parts: {}", parts.size(),parts);
-    return ResponseEntity.ok(new Participants(partsExt.size(), parts));
+    results.getResults().stream().forEach(part -> 
+        part.setSelfDescription(selfDescriptionStore.getSDFileByHash(part.getSdHash()).getContentAsString()));
+    log.debug("getParticipants.exit; returning results: {}", results);
+    int total = (int) results.getTotalCount();
+    List parts = results.getResults();
+    return ResponseEntity.ok(new Participants(total, parts));
   }
 
   /**
