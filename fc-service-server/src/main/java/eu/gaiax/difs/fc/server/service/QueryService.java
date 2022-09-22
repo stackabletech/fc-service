@@ -51,7 +51,7 @@ public class QueryService implements QueryApiDelegate {
    * @param statement JSON object to send queries. Use \&quot;application/json\&quot; for openCypher queries.
    *                   A Catalogue may also support the other content types depending on its supported query languages
    *                   but only \&quot;application/json\&quot; is mandatory. (optional)
-   * @return List of {@link Result}
+   * @return List of {@link Results}
    */
   @Override
   public ResponseEntity<Results> query(String queryLanguage, Statement statement) {
