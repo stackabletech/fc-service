@@ -1,7 +1,6 @@
 package eu.gaiax.difs.fc.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import eu.gaiax.difs.fc.api.generated.model.Results;
 import eu.gaiax.difs.fc.api.generated.model.Statement;
 import eu.gaiax.difs.fc.core.exception.ServerException;
@@ -11,13 +10,11 @@ import eu.gaiax.difs.fc.server.generated.controller.QueryApiDelegate;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -56,12 +53,16 @@ public class QueryService implements QueryApiDelegate {
   @Override
   public ResponseEntity<Results> query(String queryLanguage, Statement statement) {
     log.debug("query.enter; got queryLanguage: {}, statement: {}", queryLanguage, statement);
+    if ( !checkIfLimitPresent(statement) ) {
+      addDefaultLimit(statement);
+    }
     List<Map<String, Object>> queryResultList = graphStore.queryData(new OpenCypherQuery(statement.getStatement(), statement.getParameters()));
     // TODO: fix totalCount!
     Results result = new Results(0, queryResultList);
     log.debug("query.exit; returning results: {}", result);
     return ResponseEntity.ok(result);
   }
+
 
   /**
    * {@inheritDoc}
@@ -87,5 +88,30 @@ public class QueryService implements QueryApiDelegate {
         .body(page);
   }
 
+  /**
+   * Adding default limit for the query if not present
+   * @param statement
+   */
+  private void addDefaultLimit(Statement statement) {
+    String appendLimit = " limit $limit";
+    statement.setStatement(statement.getStatement().concat(appendLimit));
+    if (null == statement.getParameters()) {
+      statement.setParameters(Map.of("limit", 100));
+    } else {
+      statement.getParameters().putIfAbsent("limit", 100);
+    }
+  }
 
+  /**
+   * Check if limit is present or not in query
+   * @param statement
+   * @return boolean match status
+   */
+  private boolean checkIfLimitPresent(Statement statement){
+    String subItem = "limit";
+    String pattern = "(?m)(^|\\s)" + subItem + "(\\s|$)";
+    Pattern p = Pattern.compile(pattern);
+    Matcher m = p.matcher(statement.getStatement().toLowerCase());
+    return m.find();
+  }
 }
