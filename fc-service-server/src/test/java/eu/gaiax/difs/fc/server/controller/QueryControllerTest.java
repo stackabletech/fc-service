@@ -1,6 +1,7 @@
 package eu.gaiax.difs.fc.server.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -182,6 +183,7 @@ public class QueryControllerTest {
 
         Results result = objectMapper.readValue(response, Results.class);
         assertEquals(1, result.getItems().size());
+        assertTrue(result.getItems().size() < 101);
     }
 
     @Test
