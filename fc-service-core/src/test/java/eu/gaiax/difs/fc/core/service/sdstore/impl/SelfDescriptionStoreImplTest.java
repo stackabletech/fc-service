@@ -125,12 +125,12 @@ public class SelfDescriptionStoreImplTest {
   }
 
   private static List<SdClaim> createClaims() {
-    final SdClaim claim1 = new SdClaim("https://delta-dao.com/.well-known/serviceMVGPortal.json",
-        "gax-service:providedBy", "https://delta-dao.com/.well-known/participant.json");
-    final SdClaim claim2 = new SdClaim("https://delta-dao.com/.well-known/serviceMVGPortal.json", "gax-service:name", "EuProGigant Portal");
-    final SdClaim claim3 = new SdClaim("https://delta-dao.com/.well-known/serviceMVGPortal.json", "gax-service:description", "EuProGigant Minimal Viable Gaia-X Portal");
-    final SdClaim claim4 = new SdClaim("https://delta-dao.com/.well-known/serviceMVGPortal.json", "gax-service:TermsAndConditions", "https://euprogigant.com/en/terms/");
-    final SdClaim claim5 = new SdClaim("https://delta-dao.com/.well-known/serviceMVGPortal.json", "gax-service:TermsAndConditions", "contentHash");
+    final SdClaim claim1 = new SdClaim("<https://delta-dao.com/.well-known/serviceMVGPortal.json>",
+        "<https://www.w3id.org/gaia-x/service#providedBy>", "<https://delta-dao.com/.well-known/participant.json>");
+    final SdClaim claim2 = new SdClaim("<https://delta-dao.com/.well-known/serviceMVGPortal.json>", "<https://www.w3id.org/gaia-x/service#name>", "\"EuProGigant Portal\"");
+    final SdClaim claim3 = new SdClaim("<https://delta-dao.com/.well-known/serviceMVGPortal.json>", "<https://www.w3id.org/gaia-x/service#description>", "\"EuProGigant Minimal Viable Gaia-X Portal\"");
+    final SdClaim claim4 = new SdClaim("<https://delta-dao.com/.well-known/serviceMVGPortal.json>", "<https://www.w3id.org/gaia-x/service#TermsAndConditions>", "<https://euprogigant.com/en/terms/>");
+    final SdClaim claim5 = new SdClaim("<https://delta-dao.com/.well-known/serviceMVGPortal.json>", "<https://www.w3id.org/gaia-x/service#TermsAndConditions>", "\"contentHash\"");
     return List.of(claim1, claim2, claim3, claim4, claim5);
   }
 

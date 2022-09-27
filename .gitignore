@@ -36,3 +36,6 @@ build/
 
 ### Server logs ###
 fc-service-server/logs/
+
+### vim ###
+*.swp

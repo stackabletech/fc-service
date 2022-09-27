@@ -14,7 +14,6 @@
     <packaging>jar</packaging>
     <name>fc-service-core</name>
     <description>GAIA-X Federated Catalogue Core Integration Services</description>
-
     <dependencies>
         <dependency>
             <groupId>eu.gaiax.difs.fc</groupId>
@@ -102,6 +101,15 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>apache-jena-libs</artifactId>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>commons-validator</groupId>
+            <artifactId>commons-validator</artifactId>
         </dependency>
     </dependencies>
 
