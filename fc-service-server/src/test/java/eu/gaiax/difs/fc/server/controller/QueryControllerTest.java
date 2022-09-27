@@ -13,7 +13,6 @@ import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
-import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
@@ -24,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -53,43 +53,25 @@ import org.springframework.web.context.WebApplicationContext;
 @Import(EmbeddedNeo4JConfig.class)
 public class QueryControllerTest {
 
+    private final static String SD_FILE_NAME = "test-provider-sd.json";
+    
     @Autowired
     private WebApplicationContext context;
-
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private Neo4jGraphStore graphStore;
-
     @Autowired
     private Neo4j embeddedDatabaseServer;
-
     @Autowired
     private SelfDescriptionStore sdStore;
-
     @Autowired
     private VerificationService verificationService;
-
     @Autowired
     @Qualifier("sdFileStore")
     private FileStore fileStore;
-
-    @AfterAll
-    public void storageSelfCleaning() throws IOException {
-        fileStore.clearStorage();
-    }
-
-    @AfterAll
-    void closeNeo4j() {
-        embeddedDatabaseServer.close();
-    }
-
     @Autowired
     private  ObjectMapper objectMapper;
 
-    private final static String SD_FILE_NAME = "test-provider-sd.json";
-
+    
     @BeforeAll
     public void addManuallyDBEntries() throws Exception {
         initialiseAllDataBaseWithManuallyAddingSDFromRepository();
@@ -100,6 +82,17 @@ public class QueryControllerTest {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
     }
 
+    @AfterEach
+    public void storageSelfCleaning() throws IOException {
+        fileStore.clearStorage();
+    }
+
+    @AfterAll
+    void closeNeo4j() {
+        embeddedDatabaseServer.close();
+    }
+
+    
     String QUERY_REQUEST_GET="{\"statement\": \"MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 25\", " +
         "\"parameters\": " +
         "null}}";
@@ -121,6 +114,7 @@ public class QueryControllerTest {
     String QUERY_REQUEST_DELETE="{\"statement\": \"Match (m:Address) where m.postal-code > 99999 DELETE m\", " +
         "\"parameters\": " +
         "null}}";
+    
     @Test
     public void getQueryPageShouldReturnSuccessResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/query")
@@ -130,6 +124,7 @@ public class QueryControllerTest {
             .andExpect(status().isOk())
             .andExpect(header().stringValues("Content-Type", "text/html"));
     }
+    
     @Test
     public void postGetQueriesReturnDefaultJsonResponseTypeSuccess() throws Exception {
 
@@ -142,7 +137,6 @@ public class QueryControllerTest {
                 .header("query-language","application/sparql-query"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON));
-
     }
 
     @Test
@@ -205,6 +199,7 @@ public class QueryControllerTest {
         Results result = objectMapper.readValue(response, Results.class);
         assertEquals(0, result.getItems().size());
     }
+    
     @Test
     @Disabled("Enable  when FH implementation is done")
     public void postQueryReturnForbiddenResponse() throws Exception {
@@ -216,8 +211,8 @@ public class QueryControllerTest {
                 .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
                 .header("query-language","application/sparql-query"))
             .andExpect(status().isForbidden());
-
     }
+    
     @Test
     @Disabled("Enable  when FH implementation is done")
     public void postQueryForUpdateReturnForbiddenResponse() throws Exception {
@@ -243,7 +238,6 @@ public class QueryControllerTest {
                 .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
                 .header("query-language","application/sparql-query"))
             .andExpect(status().isForbidden());
-
     }
 
     private void initialiseAllDataBaseWithManuallyAddingSDFromRepository() throws Exception {
@@ -271,7 +265,6 @@ public class QueryControllerTest {
         SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor, verificationIdAsSubject,
             verificationResult.getIssuer(), new ArrayList<>());
         sdStore.storeSelfDescription(sdMetadata, verificationResult);
-
     }
 
 }
