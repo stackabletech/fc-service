@@ -42,8 +42,7 @@ public class Neo4jGraphStore implements GraphStore {
         int cnt = 0;
         try (Session session = driver.session()) {
             for (SdClaim sdClaim : sdClaimList) {
-                String validatedTriple = claimValidator.validateClaim(sdClaim);
-                payload = validatedTriple + sdClaim.asTriple();
+                payload += claimValidator.validateClaim(sdClaim);
                 cnt++;
             }
 
