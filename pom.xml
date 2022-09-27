@@ -49,6 +49,11 @@
         <embedded.postgres.version>2.0.1</embedded.postgres.version>
         <embedded.postgres.test.version>2.1.2</embedded.postgres.test.version>
         <jsonld.version>0.13.4</jsonld.version>
+        <neo4j.dsl.parser.version>2022.6.1</neo4j.dsl.parser.version>
+        <commons-lang3.version>3.9</commons-lang3.version>
+        <neo4j.harness.version>4.4.10</neo4j.harness.version>
+        <apache.jena.version>3.16.0</apache.jena.version>
+        <commons.validator.version>1.4.1</commons.validator.version>
 
         <neo4j-java-driver-spring-boot-starter.version>4.3.6.0</neo4j-java-driver-spring-boot-starter.version>
         <neo4j.neosemantics.version>4.4.0.1</neo4j.neosemantics.version>
@@ -205,6 +210,17 @@
                 <groupId>org.neo4j.gds</groupId>
                 <artifactId>proc</artifactId>
                 <version>${neo4j.gds.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>apache-jena-libs</artifactId>
+                <version>${apache.jena.version}</version>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>commons-validator</groupId>
+                <artifactId>commons-validator</artifactId>
+                <version>${commons.validator.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
