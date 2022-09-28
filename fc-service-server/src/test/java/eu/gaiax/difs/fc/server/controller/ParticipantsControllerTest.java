@@ -39,10 +39,10 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
-
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -251,6 +251,31 @@ public class ParticipantsControllerTest {
         assertEquals(NotFoundException.class, exceptionSD.getClass());
     }
 
+    @Test
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
+    @Order(26)
+    @Disabled("Need to enable when FH side implementation is merged")
+    public void addParticipantWithInvalidSignatureShouldReturnErrorWithoutDBStore() throws Exception {
+
+        String json = getMockFileDataAsString("participant_invalid_signature.json");
+        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c4", "did:example:holder",
+            "did:example:holder#key-1", json);
+        setupKeycloak(HttpStatus.SC_OK, part);
+
+        mockMvc
+            .perform(MockMvcRequestBuilders.post("/participants")
+                .contentType("application/json")
+                .content(json))
+            .andExpect(status().is4xxClientError());
+
+        FileNotFoundException exception = assertThrows(FileNotFoundException.class,
+            () -> fileStore.readFile(part.getSdHash()));
+        assertEquals(FileNotFoundException.class, exception.getClass());
+
+        Throwable exceptionSD = assertThrows(Throwable.class,
+            () -> selfDescriptionStore.getByHash(part.getSdHash()));
+        assertEquals(NotFoundException.class, exceptionSD.getClass());
+    }
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(20)
