@@ -7,6 +7,7 @@ import eu.gaiax.difs.fc.core.pojo.*;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
@@ -66,7 +67,7 @@ public class VerificationServiceImpl implements VerificationService {
     String lifecycleStatus = "";
     String participantID = "";
     LocalDate issuedDate = null;
-    List<Signature> signatures = new ArrayList<>();
+    List<Validator> validators = new ArrayList<>();
     List<SdClaim> claims = new ArrayList<>();
 
     //Verify Syntax and parse json
@@ -91,7 +92,7 @@ public class VerificationServiceImpl implements VerificationService {
             verificationTimestamp,
             lifecycleStatus,
             issuedDate,
-            signatures,
+            validators,
             claims
     );
   }
@@ -115,6 +116,13 @@ public class VerificationServiceImpl implements VerificationService {
     );
   }
 
+  @Override
+  public boolean checkValidator(Validator validator) {
+    //check if pubkey is the same
+    //check if pubkey is trusted
+    return true; //if all checks succeeded the validator is valid
+  }
+
   /*package private functions*/
 
   Map<String, Object> parseSD (ContentAccessor payload) throws VerificationException {
@@ -129,19 +137,14 @@ public class VerificationServiceImpl implements VerificationService {
     return (Map<String, Object>) parsed;
   }
 
-  List<Signature> validateCryptographic (Map<String, Object> sd) throws VerificationException {
-    List<Signature> signatures = new ArrayList<>();
-    //Validate VP's signature
-    signatures.add(hasSignature(sd));
-
+  void validateCryptographic (Map<String, Object> sd) throws VerificationException {
+    hasSignature(sd);
 
     //For Each VC: Validate VC's signature
     List<Map<String, Object>> credentials = (List<Map<String, Object>>) sd.get(credentials_key);
     for (Map<String, Object> credential: credentials) {
-      signatures.add(hasSignature(credential));
+      hasSignature(credential);
     }
-
-    return signatures;
   }
 
   Map<String, Object> cleanSD (Map<String, Object> sd) {
@@ -183,7 +186,7 @@ public class VerificationServiceImpl implements VerificationService {
     return null;
   }
 
-  Signature hasSignature (Map<String, Object> cred) {
+  void hasSignature (Map<String, Object> cred) {
     if (cred == null || cred.isEmpty()) {
       throw new VerificationException("the credential is empty");
     }
@@ -237,9 +240,5 @@ public class VerificationServiceImpl implements VerificationService {
     if (jws.isEmpty() || jws.isBlank()) {
       throw new VerificationException("jws is empty");
     }
-
-    return new Signature(
-            //TODO
-    );
   }
 }

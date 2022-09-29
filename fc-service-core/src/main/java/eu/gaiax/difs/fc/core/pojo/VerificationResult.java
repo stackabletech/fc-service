@@ -6,6 +6,8 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+
 
 public class VerificationResult extends eu.gaiax.difs.fc.api.generated.model.VerificationResult {
 
@@ -20,19 +22,16 @@ public class VerificationResult extends eu.gaiax.difs.fc.api.generated.model.Ver
   @JsonIgnore
   private List<SdClaim> claims;
   /**
-   * TODO: Signature details unknown, once clear, fix communication with parent.
+   * validators, that signed parts of the SD.
    */
   @JsonIgnore
-  private List<Signature> signatures;
+  private List<Validator> validators;
 
-  public VerificationResult(String id, List<SdClaim> claims, List<Signature> signatures, OffsetDateTime verificationTimestamp, String lifecycleStatus, String issuer, LocalDate issuedDate) {
+  public VerificationResult(String id, List<SdClaim> claims, List<Validator> validators, OffsetDateTime verificationTimestamp, String lifecycleStatus, String issuer, LocalDate issuedDate) {
     super(verificationTimestamp, lifecycleStatus, issuer, issuedDate, null);
     this.id = id;
     this.claims = claims;
-    this.signatures = signatures;
-    List<Object> sigObs = new ArrayList<>(signatures);
-    List<List<Object>> sigs2 = Arrays.asList(sigObs);
-    super.setSignatures(sigs2);
+    this.setValidators(validators);
   }
 
   public String getId() {
@@ -49,5 +48,15 @@ public class VerificationResult extends eu.gaiax.difs.fc.api.generated.model.Ver
 
   public void setClaims(List<SdClaim> claims) {
     this.claims = claims;
+  }
+
+  public List<Validator> getValidators() {
+    return validators;
+  }
+
+  public void setValidators(List<Validator> validators) {
+    //TODO: Check what parts of the validators should be added to the response
+    super.setValidatorDids(validators.stream().map(Validator::getDidURI).collect(Collectors.toList()));
+    this.validators = validators;
   }
 }

@@ -3,6 +3,7 @@ package eu.gaiax.difs.fc.core.service.verification;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
+import eu.gaiax.difs.fc.core.pojo.Validator;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import org.springframework.stereotype.Service;
@@ -36,4 +37,12 @@ public interface VerificationService {
    * @return a Self-Description metadata validation result. If the validation fails, the reason explains the issue.
    */
   VerificationResult verifySelfDescription(ContentAccessor payload) throws VerificationException;
+
+  /**
+   * The function checks if a Validator is valid of if it has changed
+   *
+   * @param validator the validator to check
+   * @return boolean if the validator is valid
+   */
+  boolean checkValidator (Validator validator);
 }

@@ -164,7 +164,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
 
       // TODO: 24.08.2022 Need to set a validator
       SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor,
-          verificationResult.getId(), verificationResult.getIssuer(), new ArrayList<>());
+          verificationResult.getId(), verificationResult.getIssuer(), verificationResult.getValidators());
 
       checkParticipantAccess(sdMetadata.getIssuer());
       sdStore.storeSelfDescription(sdMetadata, verificationResult);

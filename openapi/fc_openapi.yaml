@@ -102,13 +102,11 @@ components:
         issuedDate:
           type: string
           format: date
-        signatures:
+        validatorDids:
           type: array
           items:
-            type: array
-            items:
-              type: object
-            description: All proofs inside the Self-Description.
+            type: string
+            description: The dids of validators, having signed parts of the Self-Description
       required:
         - verificationTimestamp
         - lifecycleStatus #!! is not known when verifying external SDs. Remove from required -> Julius: You are supposed to compute the status (active, invalid, etc.) from the available information. That is the result of the validation. Maybe rename to just status
@@ -196,7 +194,7 @@ components:
           $ref: '#/components/schemas/SelfDescriptionStatus'
         issuer:
           type: string
-        validators:
+        validatorDids:
           description: >-
             The credentialSubjects of the parties that validated (parts of) the
             Self-Description

@@ -100,7 +100,7 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
    */
   @OneToMany(mappedBy = "sdHash", fetch = FetchType.LAZY)
   public List<ValidatorRecord> getValidatorRecords() {
-    final List<String> validatorsList = super.getValidators();
+    final List<String> validatorsList = super.getValidatorDids();
     if (validatorsList != null) {
       return validatorsList
           .stream()
@@ -112,7 +112,7 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
 
   public void setValidatorRecords(List<ValidatorRecord> validators) {
     if (validators != null) {
-      super.setValidators(validators.stream().map(ValidatorRecord::getValidator).collect(Collectors.toList()));
+      super.setValidatorDids(validators.stream().map(ValidatorRecord::getValidator).collect(Collectors.toList()));
     }
   }
 
@@ -129,11 +129,6 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
     this.setUploadTime(sdMeta.getUploadDatetime().toInstant());
     this.setStatusTime(sdMeta.getStatusDatetime().toInstant());
     this.setContent(sdMeta.getSelfDescription().getContentAsString());
-    final List<String> validatorsList = sdMeta.getValidators();
-    if (sdMeta.getValidators() != null) {
-      this.setValidatorRecords(validatorsList.stream()
-          .map(t -> new ValidatorRecord(getSdHash(), t))
-          .collect(Collectors.toList()));
-    }
+    this.setValidatorDids(sdMeta.getValidatorDids());
   }
 }

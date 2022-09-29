@@ -32,7 +32,7 @@ public class VerificationResultParticipant extends VerificationResult {
    * @param verificationTimestamp time stamp of verification
    * @param lifecycleStatus status according to GAIA-X lifecycle
    * @param issuedDate issuing date of the SD
-   * @param signatures List of signatures in the SD
+   * @param validators Validators, signing parts of the SD
    * @param claims List of claims in the SD
    */
   public VerificationResultParticipant(
@@ -42,9 +42,9 @@ public class VerificationResultParticipant extends VerificationResult {
           OffsetDateTime verificationTimestamp,
           String lifecycleStatus,
           LocalDate issuedDate,
-          List<Signature> signatures,
+          List<Validator> validators,
           List<SdClaim> claims) {
-    super(id, claims, signatures, verificationTimestamp, lifecycleStatus, id, issuedDate);
+    super(id, claims, validators, verificationTimestamp, lifecycleStatus, id, issuedDate);
     this.participantName = participantName;
     this.participantPublicKey = participantPublicKey;
   }
