@@ -10,9 +10,7 @@ import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
-import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
-import eu.gaiax.difs.fc.core.pojo.Signature;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
@@ -26,7 +24,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import javax.transaction.Transactional;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -76,13 +74,8 @@ public class SelfDescriptionControllerTest {
 
     private final String CATALOGUE_ADMIN_ROLE_WITH_PREFIX = "ROLE_" + PARTICIPANT_ADMIN_ROLE;
 
-    //@Autowired
-    //private Neo4j embeddedDatabaseServer;
-
-    //@AfterAll
-    //void closeNeo4j() {
-    //    embeddedDatabaseServer.close();
-    //}
+    @Autowired
+    private Neo4j embeddedDatabaseServer;
 
     // TODO: 14.07.2022 After adding business logic, need to fix/add tests, taking into account exceptions
     private static SelfDescriptionMetadata sdMeta;
@@ -118,6 +111,7 @@ public class SelfDescriptionControllerTest {
     @AfterAll
     public void storageSelfCleaning() throws IOException {
         fileStore.clearStorage();
+        embeddedDatabaseServer.close();
     }
 
     @Test
@@ -281,7 +275,7 @@ public class SelfDescriptionControllerTest {
         sdStore.deleteSelfDescription(sd.getSdHash());
     }
 
-    @Test 
+    @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void addDuplicateSDReturnConflictWithSdStorage() throws Exception {
@@ -290,7 +284,7 @@ public class SelfDescriptionControllerTest {
 
       SelfDescriptionMetadata sdMetadata =
           new SelfDescriptionMetadata(contentAccessor, "id123", TEST_ISSUER, new ArrayList<>());
-      
+
       sdStore.storeSelfDescription(sdMetadata, getStaticVerificationResult());
       mockMvc.perform(MockMvcRequestBuilders
               .post("/self-descriptions")
@@ -360,7 +354,7 @@ public class SelfDescriptionControllerTest {
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void revokeSDReturnSuccessResponse() throws Exception {
-        final VerificationResult vr = new VerificationResult("vhash", new ArrayList<SdClaim>(), new ArrayList<Signature>(),
+        final VerificationResult vr = new VerificationResult("vhash", new ArrayList<>(), new ArrayList<>(),
             OffsetDateTime.now(), "lifecyclestatus", "issuer", LocalDate.now());
         sdStore.storeSelfDescription(sdMeta, vr);
 //        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());

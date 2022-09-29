@@ -11,13 +11,11 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
-import eu.gaiax.difs.fc.core.pojo.Signature;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
-import eu.gaiax.difs.fc.core.service.verification.impl.VerificationServiceImpl;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
@@ -32,12 +30,9 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,16 +46,12 @@ import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.event.annotation.AfterTestClass;
 import org.springframework.transaction.annotation.Transactional;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -100,7 +91,7 @@ public class SelfDescriptionStoreImplTest {
   @Qualifier("sdFileStore")
   private FileStore fileStore;
 
-  @AfterEach 
+  @AfterEach
   public void storageSelfCleaning() throws IOException {
     fileStore.clearStorage();
   }
@@ -136,7 +127,7 @@ public class SelfDescriptionStoreImplTest {
 
   private static VerificationResult createVerificationResult(final int idSuffix) {
     return new VerificationResultOffering("id" + idSuffix, "issuer" + idSuffix, OffsetDateTime.now(),
-        SelfDescriptionStatus.ACTIVE.getValue(), LocalDate.now(), new ArrayList<Signature>(), createClaims());
+        SelfDescriptionStatus.ACTIVE.getValue(), LocalDate.now(), new ArrayList<>(), createClaims());
   }
 
   // Since SdMetaRecord class extends SelfDescriptionMetadata class instead of being formed from it, then check
@@ -147,7 +138,7 @@ public class SelfDescriptionStoreImplTest {
     assertEquals(actual.getSdHash(), excepted.getSdHash());
     assertEquals(actual.getStatus(), excepted.getStatus());
     assertEquals(actual.getIssuer(), excepted.getIssuer());
-    assertEquals(actual.getValidators(), excepted.getValidators());
+    assertEquals(actual.getValidatorDids(), excepted.getValidatorDids());
     assertEquals(actual.getUploadDatetime(), excepted.getUploadDatetime());
     assertEquals(actual.getStatusDatetime(), excepted.getStatusDatetime());
     assertEquals(actual.getSelfDescription(), excepted.getSelfDescription());
@@ -181,7 +172,7 @@ public class SelfDescriptionStoreImplTest {
     final String hash = sdMeta.getSdHash();
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
-    
+
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
 
     final ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);

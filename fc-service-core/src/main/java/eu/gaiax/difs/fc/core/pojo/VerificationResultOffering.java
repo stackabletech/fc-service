@@ -14,7 +14,7 @@ public class VerificationResultOffering extends VerificationResult {
    *
    * @param id id of SD
    * @param claims List of claims in the SD
-   * @param signatures List of signatures in the SD
+   * @param validators Validators, signing parts of the SD
    * @param verificationTimestamp time stamp of verification
    * @param lifecycleStatus status according to GAIA-X lifecycle
    * @param issuer Issuer of the offering
@@ -26,9 +26,9 @@ public class VerificationResultOffering extends VerificationResult {
           OffsetDateTime verificationTimestamp,
           String lifecycleStatus,
           LocalDate issuedDate,
-          List<Signature> signatures,
+          List<Validator> validators,
           List<SdClaim> claims) {
-    super(id, claims, signatures, verificationTimestamp, lifecycleStatus, issuer, issuedDate);
+    super(id, claims, validators, verificationTimestamp, lifecycleStatus, issuer, issuedDate);
   }
 
 }
