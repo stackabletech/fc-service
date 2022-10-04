@@ -8,6 +8,7 @@ import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
@@ -26,6 +27,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,17 +78,12 @@ public class SelfDescriptionStoreImplTest {
     }
   }
 
-  /*
-  @Autowired
-  private VerificationService verificationService;
-  */
-
-//  private final VerificationServiceImpl verificationService = new VerificationServiceImpl();
-
   @Autowired
   private SelfDescriptionStore sdStore;
   @Autowired
   private Neo4j embeddedDatabaseServer;
+  @Autowired
+  private Neo4jGraphStore graphStore;
   @Autowired
   @Qualifier("sdFileStore")
   private FileStore fileStore;
@@ -115,19 +112,22 @@ public class SelfDescriptionStoreImplTest {
     return sdMeta;
   }
 
-  private static List<SdClaim> createClaims() {
-    final SdClaim claim1 = new SdClaim("<https://delta-dao.com/.well-known/serviceMVGPortal.json>",
-        "<https://www.w3id.org/gaia-x/service#providedBy>", "<https://delta-dao.com/.well-known/participant.json>");
-    final SdClaim claim2 = new SdClaim("<https://delta-dao.com/.well-known/serviceMVGPortal.json>", "<https://www.w3id.org/gaia-x/service#name>", "\"EuProGigant Portal\"");
-    final SdClaim claim3 = new SdClaim("<https://delta-dao.com/.well-known/serviceMVGPortal.json>", "<https://www.w3id.org/gaia-x/service#description>", "\"EuProGigant Minimal Viable Gaia-X Portal\"");
-    final SdClaim claim4 = new SdClaim("<https://delta-dao.com/.well-known/serviceMVGPortal.json>", "<https://www.w3id.org/gaia-x/service#TermsAndConditions>", "<https://euprogigant.com/en/terms/>");
-    final SdClaim claim5 = new SdClaim("<https://delta-dao.com/.well-known/serviceMVGPortal.json>", "<https://www.w3id.org/gaia-x/service#TermsAndConditions>", "\"contentHash\"");
+  private static List<SdClaim> createClaims(String subject) {
+    final SdClaim claim1 = new SdClaim(subject, "<https://www.w3id.org/gaia-x/service#providedBy>", "<https://delta-dao.com/.well-known/participant.json>");
+    final SdClaim claim2 = new SdClaim(subject, "<https://www.w3id.org/gaia-x/service#name>", "\"EuProGigant Portal\"");
+    final SdClaim claim3 = new SdClaim(subject, "<https://www.w3id.org/gaia-x/service#description>", "\"EuProGigant Minimal Viable Gaia-X Portal\"");
+    final SdClaim claim4 = new SdClaim(subject, "<https://www.w3id.org/gaia-x/service#TermsAndConditions>", "<https://euprogigant.com/en/terms/>");
+    final SdClaim claim5 = new SdClaim(subject, "<https://www.w3id.org/gaia-x/service#TermsAndConditions>", "\"contentHash\"");
     return List.of(claim1, claim2, claim3, claim4, claim5);
   }
 
+  private static VerificationResult createVerificationResult(final int idSuffix, String subject) {
+      return new VerificationResultOffering("id" + idSuffix, "issuer" + idSuffix, OffsetDateTime.now(),
+          SelfDescriptionStatus.ACTIVE.getValue(), LocalDate.now(), new ArrayList<>(), createClaims(subject));
+    }
+  
   private static VerificationResult createVerificationResult(final int idSuffix) {
-    return new VerificationResultOffering("id" + idSuffix, "issuer" + idSuffix, OffsetDateTime.now(),
-        SelfDescriptionStatus.ACTIVE.getValue(), LocalDate.now(), new ArrayList<>(), createClaims());
+    return createVerificationResult(idSuffix, "<https://delta-dao.com/.well-known/serviceMVGPortal.json>");
   }
 
   // Since SdMetaRecord class extends SelfDescriptionMetadata class instead of being formed from it, then check
@@ -156,6 +156,9 @@ public class SelfDescriptionStoreImplTest {
     final MutableInt count = new MutableInt(0);
     fileStore.getFileIterable().forEach(file -> count.increment());
     assertEquals(0, count.intValue(), "Deleting the last file should result in exactly 0 files in the store.");
+    // TODO: check all claims were deleted also
+    //List<Map<String, Object>> claims = graphStore.queryData(new OpenCypherQuery("MATCH (n) RETURN n", Map.of()));
+    //assertEquals(0, claims.size());
   }
 
   /**
@@ -167,13 +170,18 @@ public class SelfDescriptionStoreImplTest {
     log.info("test01StoreSelfDescription");
     final String content = "Some Test Content";
 
-    final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
+    final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("https://delta-dao.com/.well-known/serviceMVGPortal.json", // "TestSd/1", 
+            "TestUser/1",
         OffsetDateTime.parse("2022-01-01T12:00:00Z"), OffsetDateTime.parse("2022-01-02T12:00:00Z"), content);
     final String hash = sdMeta.getSdHash();
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
 
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
+    
+    List<Map<String, Object>> claims = graphStore.queryData(
+            new OpenCypherQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId())));
+    //Assertions.assertEquals(5, claims.size()); only 1 node found..
 
     final ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
     assertEquals(sdfileByHash, sdMeta.getSelfDescription(),
@@ -182,6 +190,10 @@ public class SelfDescriptionStoreImplTest {
     sdStore.deleteSelfDescription(hash);
     assertAllSdFilesDeleted();
 
+    claims = graphStore.queryData(
+            new OpenCypherQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId())));
+    Assertions.assertEquals(0, claims.size());
+    
     Assertions.assertThrows(NotFoundException.class, () -> {
       sdStore.getByHash(hash);
     });
