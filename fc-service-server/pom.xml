@@ -22,6 +22,17 @@
         </dependency>
         <dependency>
             <groupId>eu.gaiax.difs.fc</groupId>
+            <artifactId>fc-test-support</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.neo4j</groupId>
+                    <artifactId>neosemantics</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>eu.gaiax.difs.fc</groupId>
             <artifactId>fc-service-core</artifactId>
         </dependency>
         <dependency>
@@ -71,11 +82,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>com.c4-soft.springaddons</groupId>
             <artifactId>spring-security-oauth2-test-addons</artifactId>
             <scope>test</scope>
@@ -90,35 +96,10 @@
             <artifactId>embedded-database-spring-test</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
-            <groupId>org.neo4j.test</groupId>
-            <artifactId>neo4j-harness</artifactId>
-            <version>4.4.10</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>slf4j-nop</artifactId>
-                    <!-- Since 4.0.1 -->
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.neo4j.driver</groupId>
-            <artifactId>neo4j-java-driver-spring-boot-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.neo4j.driver</groupId>
-            <artifactId>neo4j-java-driver-test-harness-spring-boot-autoconfigure</artifactId>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.neo4j</groupId>
-            <artifactId>neosemantics</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.neo4j.gds</groupId>
-            <artifactId>proc</artifactId>
         </dependency>
     </dependencies>
 
@@ -194,6 +175,15 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skipTests>false</skipTests>
+                    <reuseForks>false</reuseForks>
+                    <forkMode>once</forkMode>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>

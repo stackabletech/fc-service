@@ -1,7 +1,6 @@
 package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
-import eu.gaiax.difs.fc.core.config.EmbeddedNeo4JConfig;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
@@ -17,6 +16,7 @@ import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
+import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 import java.io.IOException;
@@ -56,7 +56,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.MethodName.class)
-//@EnableAutoConfiguration(exclude = {LiquibaseAutoConfiguration.class, DataSourceAutoConfiguration.class, Neo4jTestHarnessAutoConfiguration.class})
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
 @ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, FileStoreConfig.class,

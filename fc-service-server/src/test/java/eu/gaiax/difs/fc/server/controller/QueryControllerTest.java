@@ -15,8 +15,8 @@ import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
-import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
 import eu.gaiax.difs.fc.server.helper.FileReaderHelper;
+import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 import java.io.IOException;
@@ -53,7 +53,7 @@ import org.springframework.web.context.WebApplicationContext;
 @Import(EmbeddedNeo4JConfig.class)
 public class QueryControllerTest {
 
-    private final static String SD_FILE_NAME = "test-provider-sd.json";
+    private final static String SD_FILE_NAME = "default-sd.json";
     
     @Autowired
     private WebApplicationContext context;

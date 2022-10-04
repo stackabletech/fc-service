@@ -9,7 +9,7 @@
         <artifactId>fc-service</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
-    
+
     <artifactId>fc-service-core</artifactId>
     <packaging>jar</packaging>
     <name>fc-service-core</name>
@@ -18,6 +18,11 @@
         <dependency>
             <groupId>eu.gaiax.difs.fc</groupId>
             <artifactId>fc-service-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>eu.gaiax.difs.fc</groupId>
+            <artifactId>fc-test-support</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -69,24 +74,12 @@
             <version>${jsonld.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.neo4j.test</groupId>
-            <artifactId>neo4j-harness</artifactId>
-            <version>4.4.10</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>slf4j-nop</artifactId>
-                    <!-- Since 4.0.1 -->
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver-spring-boot-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.neo4j.driver</groupId>
-            <artifactId>neo4j-java-driver-test-harness-spring-boot-autoconfigure</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -96,11 +89,6 @@
         <dependency>
             <groupId>org.neo4j.gds</groupId>
             <artifactId>proc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.jena</groupId>

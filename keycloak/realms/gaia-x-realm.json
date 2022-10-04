@@ -361,27 +361,7 @@
       ]
     }
   },
-  "groups": [
-    {
-      "id": "01563eeb-832c-4baa-9521-127c26f8f70b",
-      "name": "ebc6f1c2",
-      "path": "/ebc6f1c2",
-      "attributes": {
-        "name": [
-          "did:example:holder"
-        ],
-        "publicKey": [
-          "did:example:holder#key-1"
-        ],
-        "sdHash": [
-          "8dad9e5f1c637c4958efaaf86e6a34f65b74c8619015f61230562698011131c8"
-        ]
-      },
-      "realmRoles": [],
-      "clientRoles": {},
-      "subGroups": []
-    }
-  ],
+  "groups": [],
   "defaultRole": {
     "id": "8ee7d6f7-f168-4b62-ae34-1c18ffbf631a",
     "name": "default-roles-gaia-x",

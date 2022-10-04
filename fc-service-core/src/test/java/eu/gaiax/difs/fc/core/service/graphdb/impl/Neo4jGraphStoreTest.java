@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
+import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -8,14 +9,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import eu.gaiax.difs.fc.core.exception.QueryException;
-import eu.gaiax.difs.fc.core.exception.ServerException;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.runners.MethodSorters;
-import org.neo4j.driver.springframework.boot.test.autoconfigure.Neo4jTestHarnessAutoConfiguration;
 import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -27,19 +26,17 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
-import eu.gaiax.difs.fc.core.config.EmbeddedNeo4JConfig;
 import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@EnableAutoConfiguration(exclude = {LiquibaseAutoConfiguration.class, DataSourceAutoConfiguration.class, Neo4jTestHarnessAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {LiquibaseAutoConfiguration.class, DataSourceAutoConfiguration.class})
 @SpringBootTest
-@ActiveProfiles("tests-sdstore")
+@ActiveProfiles({"test", "tests-sdstore"})
 @ContextConfiguration(classes = {Neo4jGraphStore.class})
 @Import(EmbeddedNeo4JConfig.class)
 public class Neo4jGraphStoreTest {
-    
     @Autowired
     private Neo4j embeddedDatabaseServer;
     
