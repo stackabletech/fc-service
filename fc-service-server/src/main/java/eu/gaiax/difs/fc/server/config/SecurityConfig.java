@@ -36,7 +36,7 @@ public class SecurityConfig {
 
   private static final Error FORBIDDEN_ERROR = new Error("forbidden_error",
       "User does not have permission to execute this request.");
-  
+
   @Value("${keycloak.resource}")
   private String resourceId;
 
@@ -46,10 +46,12 @@ public class SecurityConfig {
   // TODO: 13.07.2022 Need to add access by scopes and by access to the participant.
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
     http
       .csrf().disable()
+      .antMatcher("/**")
       .authorizeRequests(authorization -> authorization
-        .antMatchers(HttpMethod.GET, "/api/**", "/swagger-ui/**", "/actuator", "/actuator/**")
+          .antMatchers(HttpMethod.GET, "/api/**", "/swagger-ui/**", "/actuator", "/actuator/**")
           .permitAll()
 
           // Schema APIs

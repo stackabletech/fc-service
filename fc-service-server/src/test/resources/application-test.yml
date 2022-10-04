@@ -1,2 +1,22 @@
 federated-catalogue:
   scope: test
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://127.0.0.1:${server.port}/auth/realms/gaia-x
+
+keycloak:
+  auth-server-url: http://127.0.0.1:${server.port}/auth
+  realm: gaia-x
+  resource: federated-catalogue
+  credentials:
+    secret: federated-catalogue-secret
+  server:
+    context-path: /auth
+    admin:
+      username: admin
+      password: admin
+    realm-import-file: /keycloak/realms/gaia-x-realm.json

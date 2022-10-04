@@ -1,6 +1,6 @@
 package eu.gaiax.difs.fc.server.controller;
 
-import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.TestCommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -17,8 +17,8 @@ import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.core.util.HashUtils;
-import eu.gaiax.difs.fc.server.config.EmbeddedNeo4JConfig;
 
+import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -70,9 +70,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 //@Transactional
 public class SelfDescriptionControllerTest {
     private final static String TEST_ISSUER = "http://example.org/test-issuer";
-    private final static String SD_FILE_NAME = "test-provider-sd.json";
-
-    private final String CATALOGUE_ADMIN_ROLE_WITH_PREFIX = "ROLE_" + PARTICIPANT_ADMIN_ROLE;
+    private final static String SD_FILE_NAME = "default-sd.json";
 
     @Autowired
     private Neo4j embeddedDatabaseServer;
@@ -252,7 +250,7 @@ public class SelfDescriptionControllerTest {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void addSDWithoutIssuerReturnForbiddenResponse() throws Exception {
       mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
-              .content(getMockFileDataAsString("test-provider-sd-without-credential-subject.json"))
+              .content(getMockFileDataAsString("sd-without-credential-subject.json"))
               .with(csrf())
               .contentType(MediaType.APPLICATION_JSON)
               .accept(MediaType.APPLICATION_JSON))

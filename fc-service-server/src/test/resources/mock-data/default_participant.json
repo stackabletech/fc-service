@@ -36,8 +36,8 @@
             }
         }
     ],
-    "id": "ebc6f1c5",
-    "holder": "did:example:updated-holder-error",
+    "id": "0949d1a0",
+    "holder": "did:example:holder",
     "presentation_submission": {
         "id": "Selective disclosure example presentation",
         "definition_id": "Selective disclosure example",
@@ -56,6 +56,6 @@
         "domain": "https://client.example.org/cb",
         "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..GF5Z6TamgNE8QjE3RbiDOj3n_t25_1K7NVWMUASe_OEzQV63GaKdu235MCS3hIYvepcNdQ_ZOKpGNCf0vIAoDA",
         "proofPurpose": "authentication",
-        "verificationMethod": "did:example:holder#key-2-error"
+        "verificationMethod": "did:example:holder#key"
     }
 }

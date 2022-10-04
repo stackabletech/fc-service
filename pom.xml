@@ -27,6 +27,7 @@
         <module>fc-service-core</module>
         <module>fc-service-server</module>
         <module>demo-portal</module>
+        <module>fc-test-support</module>
     </modules>
 
     <properties>
@@ -49,7 +50,6 @@
         <embedded.postgres.version>2.0.1</embedded.postgres.version>
         <embedded.postgres.test.version>2.1.2</embedded.postgres.test.version>
         <jsonld.version>0.13.4</jsonld.version>
-        <neo4j.dsl.parser.version>2022.6.1</neo4j.dsl.parser.version>
         <commons-lang3.version>3.9</commons-lang3.version>
         <neo4j.harness.version>4.4.10</neo4j.harness.version>
         <apache.jena.version>3.16.0</apache.jena.version>
@@ -59,6 +59,7 @@
         <neo4j.neosemantics.version>4.4.0.1</neo4j.neosemantics.version>
         <neo4j.gds.version>2.0.5</neo4j.gds.version>
         <neo4j.test-harness.version>4.4.10</neo4j.test-harness.version>
+        <bcpkix.jdk15on.version>1.70</bcpkix.jdk15on.version>
         <!-- plugins -->
         <plugin.jib.version>3.2.1</plugin.jib.version>
         <plugin.openapi-generator.version>5.4.0</plugin.openapi-generator.version>
@@ -98,6 +99,12 @@
                 <groupId>eu.gaiax.difs.fc</groupId>
                 <artifactId>fc-service-core</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>eu.gaiax.difs.fc</groupId>
+                <artifactId>fc-test-support</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -184,22 +191,10 @@
                 <version>${embedded.postgres.test.version}</version>
                 <scope>test</scope>
             </dependency>
-
-            <dependency>
-                <groupId>org.neo4j.test</groupId>
-                <artifactId>neo4j-harness</artifactId>
-                <version>${neo4j.test-harness.version}</version>
-            </dependency>
             <dependency>
                 <groupId>org.neo4j.driver</groupId>
                 <artifactId>neo4j-java-driver-spring-boot-starter</artifactId>
                 <version>${neo4j-java-driver-spring-boot-starter.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.neo4j.driver</groupId>
-                <artifactId>neo4j-java-driver-test-harness-spring-boot-autoconfigure</artifactId>
-                <version>${neo4j-java-driver-spring-boot-starter.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.neo4j</groupId>
@@ -221,6 +216,12 @@
                 <groupId>commons-validator</groupId>
                 <artifactId>commons-validator</artifactId>
                 <version>${commons.validator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk15on</artifactId>
+                <version>${bcpkix.jdk15on.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
