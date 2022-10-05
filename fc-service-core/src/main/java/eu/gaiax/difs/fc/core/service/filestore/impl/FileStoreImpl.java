@@ -11,15 +11,17 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import static eu.gaiax.difs.fc.core.util.HashUtils.HASH_PATTERN;
 import java.io.FileNotFoundException;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Stack;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileExistsException;
 
@@ -28,11 +30,24 @@ import org.apache.commons.io.FileExistsException;
  */
 @Slf4j
 public class FileStoreImpl implements FileStore {
+
   @Value("${federated-catalogue.scope}")
   private String scope;
 
   @Value("${datastore.file-path}")
   private String basePathName;
+
+  /**
+   * The depth of the file tree.
+   */
+  @Value("${federated-catalogue.file-store.directory-tree-depth:1}")
+  private int directoryTreeDepth;
+  /**
+   * The length of each directory in the file tree. The number of directories in
+   * each level will be 16^x.
+   */
+  @Value("${federated-catalogue.file-store.directory-name-length:2}")
+  private int directoryNameLength;
 
   private final String storeName;
 
@@ -51,7 +66,13 @@ public class FileStoreImpl implements FileStore {
 
   private File getFileForStoreHash(String hash) {
     Path storePath = getPathForStore(storeName);
-    Path storeSubPath = storePath.resolve(hash.substring(0, 2));
+    Path storeSubPath = storePath;
+    int start = 0;
+    for (int i = 0; i < directoryTreeDepth; i++) {
+      int end = start + directoryNameLength;
+      storeSubPath = storeSubPath.resolve(hash.substring(start, end));
+      start = end;
+    }
     Path filePath = storeSubPath.resolve(hash);
     return filePath.toFile();
   }
@@ -64,10 +85,12 @@ public class FileStoreImpl implements FileStore {
     return HashUtils.calculateSha256AsHex(filename);
   }
 
+  @Override
   public void storeFile(String hash, ContentAccessor content) throws IOException {
     saveFile(hash, content, false);
   }
 
+  @Override
   public void replaceFile(String hash, ContentAccessor content) throws IOException {
     saveFile(hash, content, true);
   }
@@ -82,6 +105,7 @@ public class FileStoreImpl implements FileStore {
     }
   }
 
+  @Override
   public ContentAccessor readFile(String hash) throws IOException {
     File file = getFileForStoreHash(validateFileName(hash));
     if (!file.exists()) {
@@ -90,6 +114,7 @@ public class FileStoreImpl implements FileStore {
     return new ContentAccessorFile(file);
   }
 
+  @Override
   public void deleteFile(String hash) throws IOException {
     File file = getFileForStoreHash(validateFileName(hash));
     if (!file.exists()) {
@@ -98,12 +123,14 @@ public class FileStoreImpl implements FileStore {
     file.delete();
   }
 
+  @Override
   public Iterable<File> getFileIterable() {
     return () -> {
       return new HashFileIterator(this, storeName);
     };
   }
 
+  @Override
   public void clearStorage() throws IOException {
     Path storePath = getPathForStore(storeName);
     FileUtils.deleteDirectory(storePath.toFile());
@@ -111,60 +138,40 @@ public class FileStoreImpl implements FileStore {
 
   public static class HashFileIterator implements Iterator<File> {
 
-    private Iterator<File> dirIterator;
-    private Iterator<File> fileIterator;
+    private final Deque<Iterator<File>> fileIterators = new ArrayDeque<>();
     private File next;
 
     public HashFileIterator(FileStoreImpl parent, String storeName) {
       Path storePath = parent.getPathForStore(storeName);
       File[] subFileArray = storePath.toFile().listFiles();
       if (subFileArray != null) {
-        dirIterator = Arrays.asList(subFileArray).iterator();
-        next = traverseDirectory();
+        fileIterators.push(Arrays.asList(subFileArray).iterator());
+        next = traverseIterator();
       }
     }
 
     /**
-     * Traverses the directoryIterator until it finds a regular file in a
-     * directory.
+     * Traverses the fileIterators, descending into directories until it finds a
+     * regular file.
      *
      * @return The first file found while traversing the directories, or null if
      * no more files are available.
      */
-    private File traverseDirectory() {
-      while (dirIterator.hasNext()) {
-        File nextDir = dirIterator.next();
-        if (!nextDir.isDirectory()) {
-          continue;
-        }
-        File[] hashFiles = nextDir.listFiles();
-        if (hashFiles != null) {
-          fileIterator = Arrays.asList(hashFiles).iterator();
-          while (fileIterator.hasNext()) {
-            final File nextFile = fileIterator.next();
-            if (nextFile.isFile()) {
-              return nextFile;
-            }
+    private File traverseIterator() {
+      while (!fileIterators.isEmpty()) {
+        Iterator<File> head = fileIterators.peek();
+        while (head.hasNext()) {
+          File nextFile = head.next();
+          if (nextFile.isDirectory()) {
+            head = Arrays.asList(nextFile.listFiles()).iterator();
+            fileIterators.push(head);
+          } else {
+            return nextFile;
           }
         }
+        fileIterators.pop();
       }
       return null;
-    }
-
-    /**
-     * Fetch the next available File.
-     *
-     * @return The next file from the current directory, or the first file from
-     * a future directory, or null if no more files are available.
-     */
-    private File nextFile() {
-      while (fileIterator.hasNext()) {
-        final File nextFile = fileIterator.next();
-        if (nextFile.isFile()) {
-          return nextFile;
-        }
-      }
-      return traverseDirectory();
     }
 
     @Override
@@ -178,9 +185,47 @@ public class FileStoreImpl implements FileStore {
         throw new NoSuchElementException();
       }
       File retval = next;
-      next = nextFile();
+      next = traverseIterator();
       return retval;
     }
 
+  }
+
+  /**
+   * The depth of the file tree.
+   *
+   * @return the directoryTreeDepth
+   */
+  public int getDirectoryTreeDepth() {
+    return directoryTreeDepth;
+  }
+
+  /**
+   * The depth of the file tree.
+   *
+   * @param directoryTreeDepth the directoryTreeDepth to set
+   */
+  public void setDirectoryTreeDepth(int directoryTreeDepth) {
+    this.directoryTreeDepth = directoryTreeDepth;
+  }
+
+  /**
+   * The length of each directory in the file tree. The number of directories in
+   * each level will be 16^x.
+   *
+   * @return the directoryNameLength
+   */
+  public int getDirectoryNameLength() {
+    return directoryNameLength;
+  }
+
+  /**
+   * The length of each directory in the file tree. The number of directories in
+   * each level will be 16^x.
+   *
+   * @param directoryNameLength the directoryNameLength to set
+   */
+  public void setDirectoryNameLength(int directoryNameLength) {
+    this.directoryNameLength = directoryNameLength;
   }
 }

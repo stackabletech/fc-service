@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.core.config;
 
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
+import java.io.File;
 import org.assertj.core.util.Files;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -19,7 +20,7 @@ public class FileStoreConfig {
   @Value("${federated-catalogue.file-store.schema.location}")
   private String schemaFilesLocation;
 
-  private final String TEMPORARY_FOLDER_PATH = Files.temporaryFolderPath() +  "federated-catalogue\\test\\";
+  private final String TEMPORARY_FOLDER_PATH = Files.temporaryFolderPath() + "federated-catalogue" + File.separator + "test";
 
   @Bean
   public FileStore sdFileStore() {
