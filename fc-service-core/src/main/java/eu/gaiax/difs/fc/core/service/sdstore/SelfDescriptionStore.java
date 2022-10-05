@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.core.service.sdstore;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
@@ -37,7 +38,7 @@ public interface SelfDescriptionStore {
    * @return List of all self-description meta data objects that match the
    *         specified filter.
    */
-  List<SelfDescriptionMetadata> getByFilter(SdFilter filter);
+  PaginatedResults<SelfDescriptionMetadata> getByFilter(SdFilter filter);
 
   /**
    * Store the given self-description.
