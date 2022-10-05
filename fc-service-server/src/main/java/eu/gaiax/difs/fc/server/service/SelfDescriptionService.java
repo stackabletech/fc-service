@@ -8,6 +8,7 @@ import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptions;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
@@ -83,10 +84,9 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
       filter.setLimit(limit);
       filter.setOffset(offset);
     }
-    final List<SelfDescriptionMetadata> selfDescriptions = sdStore.getByFilter(filter);
-    log.debug("readSelfDescriptions.exit; returning: {}", selfDescriptions.size());
-    // TODO: set total count
-    return ResponseEntity.ok(new SelfDescriptions(0, (List) selfDescriptions));
+    final PaginatedResults<SelfDescriptionMetadata> selfDescriptions = sdStore.getByFilter(filter);
+    log.debug("readSelfDescriptions.exit; returning: {}", selfDescriptions);
+    return ResponseEntity.ok(new SelfDescriptions((int) selfDescriptions.getTotalCount(), (List) selfDescriptions.getResults()));
   }
 
   /**

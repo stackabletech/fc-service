@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
@@ -180,7 +181,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
   }
 
   @Override
-  public List<SelfDescriptionMetadata> getByFilter(final SdFilter filter) {
+  public PaginatedResults<SelfDescriptionMetadata> getByFilter(final SdFilter filter) {
     final FilterQueryBuilder queryBuilder = new FilterQueryBuilder(sessionFactory);
 
     final Instant uploadTimeStart = filter.getUploadTimeStart();
@@ -223,10 +224,13 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       queryBuilder.addClause("sdhash = ?", "hash", hash);
     }
 
+    Long totalCount = queryBuilder.createQuery().getResultStream().distinct().count();
+
+
     queryBuilder.setFirstResult(filter.getOffset());
     queryBuilder.setMaxResults(filter.getLimit());
 
-    return queryBuilder.createQuery().stream().collect(Collectors.toList());
+    return new PaginatedResults<>(totalCount,queryBuilder.createQuery().stream().collect(Collectors.toList()));
   }
 
   @Override

@@ -8,6 +8,7 @@ import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
@@ -124,7 +125,7 @@ public class SelfDescriptionStoreImplTest {
       return new VerificationResultOffering("id" + idSuffix, "issuer" + idSuffix, OffsetDateTime.now(),
           SelfDescriptionStatus.ACTIVE.getValue(), LocalDate.now(), new ArrayList<>(), createClaims(subject));
     }
-  
+
   private static VerificationResult createVerificationResult(final int idSuffix) {
     return createVerificationResult(idSuffix, "<https://delta-dao.com/.well-known/serviceMVGPortal.json>");
   }
@@ -169,7 +170,7 @@ public class SelfDescriptionStoreImplTest {
     log.info("test01StoreSelfDescription");
     final String content = "Some Test Content";
 
-    final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("https://delta-dao.com/.well-known/serviceMVGPortal.json", // "TestSd/1", 
+    final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("https://delta-dao.com/.well-known/serviceMVGPortal.json", // "TestSd/1",
             "TestUser/1",
         OffsetDateTime.parse("2022-01-01T12:00:00Z"), OffsetDateTime.parse("2022-01-02T12:00:00Z"), content);
     final String hash = sdMeta.getSdHash();
@@ -177,7 +178,7 @@ public class SelfDescriptionStoreImplTest {
     assertStoredSdFiles(1);
 
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
-    
+
     List<Map<String, Object>> claims = graphStore.queryData(
             new OpenCypherQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId())));
     //Assertions.assertEquals(5, claims.size()); only 1 node found..
@@ -192,7 +193,7 @@ public class SelfDescriptionStoreImplTest {
     claims = graphStore.queryData(
             new OpenCypherQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId())));
     Assertions.assertEquals(0, claims.size());
-    
+
     Assertions.assertThrows(NotFoundException.class, () -> {
       sdStore.getByHash(hash);
     });
@@ -326,11 +327,11 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setIssuer(issuer);
-    final List<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
-    final int matchCount = byFilter.size();
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(1, matchCount, "expected 1 filter match, but got " + matchCount);
-    assertEquals(sdMeta.getId(), byFilter.get(0).getId());
+    assertEquals(sdMeta.getId(), byFilter.getResults().get(0).getId());
 
     sdStore.deleteSelfDescription(hash);
     assertAllSdFilesDeleted();
@@ -360,8 +361,8 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setIssuer(otherIssuer);
-    final List<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
-    final int matchCount = byFilter.size();
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(0, matchCount, "expected 0 filter matches, but got " + matchCount);
 
@@ -395,11 +396,11 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setStatusTimeRange(statusTimeStart.toInstant(), statusTimeEnd.toInstant());
-    final List<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
-    final int matchCount = byFilter.size();
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(1, matchCount, "expected 1 filter match, but got " + matchCount);
-    assertEquals(sdMeta.getId(), byFilter.get(0).getId());
+    assertEquals(sdMeta.getId(), byFilter.getResults().get(0).getId());
 
     sdStore.deleteSelfDescription(hash);
     assertAllSdFilesDeleted();
@@ -430,8 +431,8 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setStatusTimeRange(statusTimeStart.toInstant(), statusTimeEnd.toInstant());
-    final List<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
-    final int matchCount = byFilter.size();
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(0, matchCount, "expected 0 filter matches, but got " + matchCount);
 
@@ -480,12 +481,12 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setStatusTimeRange(statusTimeStart.toInstant(), statusTimeEnd.toInstant());
-    final List<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
-    final int matchCount = byFilter.size();
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(2, matchCount, "expected 2 filter match, but got " + matchCount);
-    final SelfDescriptionMetadata filterSdMeta1 = byFilter.get(0);
-    final SelfDescriptionMetadata filterSdMeta2 = byFilter.get(1);
+    final SelfDescriptionMetadata filterSdMeta1 = byFilter.getResults().get(0);
+    final SelfDescriptionMetadata filterSdMeta2 = byFilter.getResults().get(1);
     assertEquals(true, sdMeta1.getId().equals(filterSdMeta1.getId()) || sdMeta1.getId().equals(filterSdMeta2.getId()),
         "expected filter match sdMeta1 missing in results");
     assertEquals(true, sdMeta2.getId().equals(filterSdMeta1.getId()) || sdMeta2.getId().equals(filterSdMeta2.getId()),
@@ -542,13 +543,13 @@ public class SelfDescriptionStoreImplTest {
     assertStoredSdFiles(3);
 
     final SdFilter filterParams = new SdFilter();
-    final List<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
-    final int matchCount = byFilter.size();
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(3, matchCount, "expected 3 filter match, but got " + matchCount);
-    final SelfDescriptionMetadata filterSdMeta1 = byFilter.get(0);
-    final SelfDescriptionMetadata filterSdMeta2 = byFilter.get(1);
-    final SelfDescriptionMetadata filterSdMeta3 = byFilter.get(2);
+    final SelfDescriptionMetadata filterSdMeta1 = byFilter.getResults().get(0);
+    final SelfDescriptionMetadata filterSdMeta2 = byFilter.getResults().get(1);
+    final SelfDescriptionMetadata filterSdMeta3 = byFilter.getResults().get(2);
     assertEquals(true, sdMeta1.getId().equals(filterSdMeta1.getId()) || sdMeta1.getId().equals(filterSdMeta2.getId())
         || sdMeta1.getId().equals(filterSdMeta3.getId()), "expected filter match sdMeta1 missing in results");
     assertEquals(true, sdMeta2.getId().equals(filterSdMeta1.getId()) || sdMeta2.getId().equals(filterSdMeta2.getId())
@@ -592,8 +593,8 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setValidator(validatorId);
-    final List<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
-    final int matchCount = byFilter.size();
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(0, matchCount, "expected 0 filter matches, but got " + matchCount);
 
@@ -641,8 +642,8 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setLimit(2);
-    final List<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
-    final int matchCount = byFilter.size();
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(2, matchCount, "expected 2 filter match, but got " + matchCount);
     sdStore.deleteSelfDescription(hash1);
@@ -662,6 +663,62 @@ public class SelfDescriptionStoreImplTest {
     log.info("#### Test 12 succeeded.");
   }
 
+  /**
+   * Test applying an SD filter with limited number of results with total SD count number.
+   */
+  @Test
+  void test13FilterLimitWithTotalCount() {
+    log.info("test12FilterLimit");
+    final String id1 = "TestSd/1";
+    final String id2 = "TestSd/2";
+    final String id3 = "TestSd/3";
+    final String issuer1 = "TestUser/1";
+    final String issuer2 = "TestUser/2";
+    final String issuer3 = "TestUser/3";
+    final String content1 = "Test: Fetch SD Meta Data via SD Filter, test for matching empty filter (1/3)";
+    final String content2 = "Test: Fetch SD Meta Data via SD Filter, test for matching empty filter (2/3)";
+    final String content3 = "Test: Fetch SD Meta Data via SD Filter, test for matching empty filter (3/3)";
+    final OffsetDateTime statusTime1 = OffsetDateTime.parse("2022-01-01T12:00:00Z");
+    final OffsetDateTime statusTime2 = OffsetDateTime.parse("2022-01-02T12:00:00Z");
+    final OffsetDateTime statusTime3 = OffsetDateTime.parse("2022-01-03T12:00:00Z");
+    final OffsetDateTime uploadTime1 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
+    final OffsetDateTime uploadTime2 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
+    final OffsetDateTime uploadTime3 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
+    final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta(id1, issuer1, statusTime1, uploadTime1, content1);
+    final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta(id2, issuer2, statusTime2, uploadTime2, content2);
+    final SelfDescriptionMetadata sdMeta3 = createSelfDescriptionMeta(id3, issuer3, statusTime3, uploadTime3, content3);
+    final String hash1 = sdMeta1.getSdHash();
+    final String hash2 = sdMeta2.getSdHash();
+    final String hash3 = sdMeta3.getSdHash();
+    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
+    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
+    sdStore.storeSelfDescription(sdMeta3, createVerificationResult(3));
+    assertStoredSdFiles(3);
+
+    final SdFilter filterParams = new SdFilter();
+    filterParams.setLimit(1);
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final int matchCount = byFilter.getResults().size();
+
+    log.info("filter returned {} match(es)", matchCount);
+    assertEquals(1, matchCount, "expected 2 filter match, but got " + matchCount);
+    assertEquals(3, byFilter.getTotalCount(), "expected 3 total count, but got " + matchCount);
+    sdStore.deleteSelfDescription(hash1);
+    sdStore.deleteSelfDescription(hash2);
+    sdStore.deleteSelfDescription(hash3);
+    assertAllSdFilesDeleted();
+
+    Assertions.assertThrows(NotFoundException.class, () -> {
+      sdStore.getByHash(hash1);
+    });
+    Assertions.assertThrows(NotFoundException.class, () -> {
+      sdStore.getByHash(hash2);
+    });
+    Assertions.assertThrows(NotFoundException.class, () -> {
+      sdStore.getByHash(hash3);
+    });
+    log.info("#### Test 13 succeeded.");
+  }
   /**
    * Test of changeLifeCycleStatus method, of class SelfDescriptionStore.
    */

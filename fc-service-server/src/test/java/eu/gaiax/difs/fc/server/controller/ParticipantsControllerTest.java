@@ -168,7 +168,7 @@ public class ParticipantsControllerTest extends EmbeddedKeycloakTest {
         assertTrue(participantDao.select(metadata.getId()).isEmpty());
         SdFilter sdFilter = new SdFilter();
         sdFilter.setHash(metadata.getSdHash());
-        assertEquals(1, selfDescriptionStore.getByFilter(sdFilter).size());
+        assertEquals(1, selfDescriptionStore.getByFilter(sdFilter).getTotalCount());
         clearStorages(metadata);
     }
 
