@@ -7,7 +7,9 @@ import java.time.Instant;
  */
 @lombok.Getter
 @lombok.Setter
+@lombok.NoArgsConstructor
 @lombok.AllArgsConstructor
+@lombok.EqualsAndHashCode
 public class Validator {
     private String didURI;
 

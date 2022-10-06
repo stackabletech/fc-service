@@ -6,4 +6,5 @@
 
     <include file="sd_store.xml" relativeToChangelogFile="true" />
     <include file="schema_store.xml" relativeToChangelogFile="true" />
+    <include file="validators.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
