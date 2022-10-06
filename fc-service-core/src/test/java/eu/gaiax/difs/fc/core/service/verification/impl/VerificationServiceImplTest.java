@@ -1,5 +1,7 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
+import com.danubetech.verifiablecredentials.VerifiableCredential;
+import com.danubetech.verifiablecredentials.VerifiablePresentation;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import org.junit.jupiter.api.Disabled;
@@ -60,7 +62,7 @@ public class VerificationServiceImplTest {
     void verifySignature_SignatureDoesNotMatch() throws IOException {
         String path = "Signature-Tests/hasInvalidSignature.jsonld";
 
-        Map<String, Object> parsed = verificationService.parseSD (getAccessor(path));
+        Map<String, Object> parsed = verificationService.parseSD (getAccessor(path)).getJsonObject();
 
         //TODO: Will throw exception when it is checked cryptographically
         assertThrowsExactly(VerificationException.class, () -> verificationService.validateCryptographic(parsed));
@@ -70,7 +72,7 @@ public class VerificationServiceImplTest {
     void verifySignature_SignaturesMissing1() throws IOException {
         String path = "Signature-Tests/hasNoSignature1.jsonld";
 
-        Map<String, Object> parsed = verificationService.parseSD (getAccessor(path));
+        Map<String, Object> parsed = verificationService.parseSD (getAccessor(path)).getJsonObject();
 
         Exception ex = assertThrowsExactly(VerificationException.class, () -> verificationService.validateCryptographic(parsed));
         assertEquals("no proof found", ex.getMessage());
@@ -80,7 +82,7 @@ public class VerificationServiceImplTest {
     void verifySignature_SignaturesMissing2() throws IOException {
         String path = "Signature-Tests/hasNoSignature2.jsonld";
 
-        Map<String, Object> parsed = verificationService.parseSD (getAccessor(path));
+        Map<String, Object> parsed = verificationService.parseSD (getAccessor(path)).getJsonObject();
 
         Exception ex = assertThrowsExactly(VerificationException.class, () -> verificationService.validateCryptographic(parsed));
         assertEquals("no proof found", ex.getMessage());
@@ -90,7 +92,7 @@ public class VerificationServiceImplTest {
     void verifySignature_SignaturesMissing3() throws IOException {
         String path = "Signature-Tests/lacksSomeSignatures.jsonld";
 
-        Map<String, Object> parsed = verificationService.parseSD (getAccessor(path));
+        Map<String, Object> parsed = verificationService.parseSD (getAccessor(path)).getJsonObject();
 
         Exception ex = assertThrowsExactly(VerificationException.class, () -> verificationService.validateCryptographic(parsed));
         assertEquals("no proof found", ex.getMessage());
@@ -100,7 +102,7 @@ public class VerificationServiceImplTest {
     void cleanSD_removeProofs() throws IOException {
         String path = "Signature-Tests/hasInvalidSignature.jsonld";
 
-        Map<String, Object> parsed = verificationService.parseSD (getAccessor(path));
+        Map<String, Object> parsed = verificationService.parseSD (getAccessor(path)).getJsonObject();
 
         //Do proofs exist?
         assertTrue(parsed.containsKey("proof"));

@@ -10,11 +10,30 @@ import lombok.Setter;
 
 public class VerificationException extends ServiceException {
   /**
-   * Constructs a new Client Exception with the specified detail message.
+   * Constructs a new Verification exception with the specified detail message.
    *
    * @param message Detailed message about the thrown exception.
    */
   public VerificationException(String message) {
     super(message);
+  }
+
+  /**
+   * Constructs a new Verification exception with the specified detail message and cause.
+   *
+   * @param message Detailed message about the thrown exception.
+   * @param cause Case of the thrown exception. (A null value is permitted, and indicates that the cause is unknown.)
+   */
+  public VerificationException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  /**
+   * Constructs a new Verification exception with the specified cause and a detail message of case.
+   *
+   * @param cause Case of the thrown exception. (A null value is permitted, and indicates that the cause is unknown.)
+   */
+  public VerificationException(Throwable cause) {
+    super(cause);
   }
 }

@@ -55,6 +55,9 @@
         <apache.jena.version>3.16.0</apache.jena.version>
         <commons.validator.version>1.4.1</commons.validator.version>
         <hibernate-types.version>2.19.2</hibernate-types.version>
+        <vc.version>1.0.0</vc.version>
+        <key-format.version>1.5.0</key-format.version>
+        <did.version>1.0.0</did.version>
 
         <neo4j-java-driver-spring-boot-starter.version>4.3.6.0</neo4j-java-driver-spring-boot-starter.version>
         <neo4j.neosemantics.version>4.4.0.1</neo4j.neosemantics.version>
@@ -83,6 +86,13 @@
     <ciManagement>
         <url>https://gitlab.com/${repository.path}/-/pipelines</url>
     </ciManagement>
+
+    <repositories>
+        <repository>
+            <id>danubetech-maven-public</id>
+            <url>https://repo.danubetech.com/repository/maven-public/</url>
+        </repository>
+    </repositories>
 
     <dependencyManagement>
         <dependencies>
@@ -228,7 +238,22 @@
                 <groupId>com.vladmihalcea</groupId>
                 <artifactId>hibernate-types-55</artifactId>
                 <version>${hibernate-types.version}</version>
-            </dependency>        
+            </dependency>
+            <dependency>
+                <groupId>com.danubetech</groupId>
+                <artifactId>verifiable-credentials-java</artifactId>
+                <version>${vc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.danubetech</groupId>
+                <artifactId>key-formats-java</artifactId>
+                <version>${key-format.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>decentralized-identity</groupId>
+                <artifactId>did-common-java</artifactId>
+                <version>${did.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
