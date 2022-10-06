@@ -445,7 +445,7 @@ public class ParticipantsControllerTest extends EmbeddedKeycloakTest {
         assertThrows(FileNotFoundException.class, () -> fileStore.readFile(metadata.getSdHash()));
         assertThrows(NotFoundException.class, () -> selfDescriptionStore.getByHash(metadata.getSdHash()));
 
-        assertEquals(1, userDao.search( "ae366624-8371-401d-b2c4-518d2f308a15",0,1).size());
+        assertEquals(1, userDao.search( "ae366624-8371-401d-b2c4-518d2f308a15",0,1).getResults().size());
         clearStorages(metadata);
     }
 

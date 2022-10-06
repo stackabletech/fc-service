@@ -2,6 +2,8 @@ package eu.gaiax.difs.fc.core.dao.impl;
 
 import static eu.gaiax.difs.fc.core.util.KeycloakUtils.getErrorMessage;
 
+import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -86,16 +88,18 @@ public class UserDaoImpl implements UserDao {
    * @return List of the user profiles.
    */
   @Override
-  public List<UserProfile> search(String participantId, Integer offset, Integer limit) {
+  public PaginatedResults<UserProfile> search(String participantId, Integer offset, Integer limit) {
     UsersResource instance = keycloak.realm(realm).users();
     List<UserRepresentation> userRepos;
+    int totalCount = instance.count();
     if (participantId == null) {
       userRepos = instance.list(offset, limit);
     } else {
       userRepos = instance.searchByAttributes(offset, limit, true, false,
           ATR_PARTICIPANT_ID + " = " + participantId);
+      totalCount = (int) instance.searchByAttributes(participantId).stream().count();
     }
-    return userRepos.stream().map(UserDaoImpl::toUserProfile).collect(Collectors.toList());
+    return new PaginatedResults<>(totalCount,userRepos.stream().map(UserDaoImpl::toUserProfile).collect(Collectors.toList()));
   }
 
   /**
