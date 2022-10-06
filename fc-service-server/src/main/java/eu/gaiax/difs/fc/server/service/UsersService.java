@@ -4,6 +4,7 @@ import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.UserDao;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.server.generated.controller.UsersApiDelegate;
 import java.net.URI;
 import java.util.List;
@@ -114,10 +115,9 @@ public class UsersService implements UsersApiDelegate {
   public ResponseEntity<UserProfiles> getUsers(Integer offset, Integer limit) { //String orderBy, Boolean ascending) {
     // sorting is not supported yet by keycloak admin API
     log.debug("getUsers.enter; got offset: {}, limit: {}", offset, limit);
-    List<UserProfile> profiles = userDao.search(null, offset, limit);
-    log.debug("getUsers.exit; returning: {}", profiles.size());
-    // TODO: set total count
-    return ResponseEntity.ok(new UserProfiles(0, profiles));
+    PaginatedResults<UserProfile> profiles = userDao.search(null, offset, limit);
+    log.debug("getUsers.exit; returning: {}", profiles);
+    return ResponseEntity.ok(new UserProfiles((int) profiles.getTotalCount(), profiles.getResults()));
   }
 
   /**

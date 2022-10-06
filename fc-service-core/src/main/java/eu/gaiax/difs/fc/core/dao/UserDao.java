@@ -1,5 +1,7 @@
 package eu.gaiax.difs.fc.core.dao;
 
+import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import java.util.List;
 
 import eu.gaiax.difs.fc.api.generated.model.User;
@@ -33,7 +35,7 @@ public interface UserDao {
    * @param limit         The number of items to return
    * @return List of the user profiles.
    */
-  List<UserProfile> search(String participantId, Integer offset, Integer limit);
+  PaginatedResults<UserProfile> search(String participantId, Integer offset, Integer limit);
 
   /**
    * Delete the user.

@@ -142,7 +142,28 @@ public class UsersControllerTest extends EmbeddedKeycloakTest {
         assertEquals(2, users.getItems().size());
         userDao.delete(existed.getId());
     }
-    
+
+    @Test
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
+        username = "catalog_admin", password = "catalog_admin")
+    public void getUsersWithTotalCountShouldReturnSuccessResponse() throws Exception {
+        User user = getTestUser("name4", "surname4");
+        UserProfile existed = userDao.create(user);
+        MvcResult result = mockMvc
+            .perform(MockMvcRequestBuilders.get("/users", null, null)
+                .contentType(MediaType.APPLICATION_JSON)
+                .param("offset","1")
+                .param("limit","1"))
+            .andExpect(status().isOk())
+            .andReturn();
+        UserProfiles users = objectMapper.readValue(result.getResponse().getContentAsString(), UserProfiles.class);
+        assertNotNull(users);
+        // Counts with catalogue administrator user
+        assertEquals(2, users.getTotalCount());
+        assertEquals(1, users.getItems().size());
+        userDao.delete(existed.getId());
+    }
+
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void deleteUserShouldReturnSuccessResponse() throws Exception {
