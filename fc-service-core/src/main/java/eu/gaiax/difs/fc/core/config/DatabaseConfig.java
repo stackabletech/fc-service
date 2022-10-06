@@ -32,6 +32,7 @@ public class DatabaseConfig {
   public LocalSessionFactoryBean sessionFactory() {
     LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
     sessionFactory.setDataSource(dataSource);
+    sessionFactory.setMappingResources("mappings/validators.hbm.xml");
     sessionFactory.setPackagesToScan(
         "eu.gaiax.difs.fc.core.service.sdstore.impl",
         "eu.gaiax.difs.fc.core.service.schemastore.impl"
