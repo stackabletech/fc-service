@@ -39,6 +39,13 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import javax.transaction.Transactional;
+
+import org.junit.jupiter.api.*;
+
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
+
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.neo4j.harness.Neo4j;
@@ -73,6 +80,11 @@ public class SelfDescriptionControllerTest {
 
     @Autowired
     private Neo4j embeddedDatabaseServer;
+
+    @AfterAll
+    void closeNeo4j() {
+        embeddedDatabaseServer.close();
+    }
 
     // TODO: 14.07.2022 After adding business logic, need to fix/add tests, taking into account exceptions
     private static SelfDescriptionMetadata sdMeta;

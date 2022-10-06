@@ -4,6 +4,7 @@
     "https://w3id.org/gaia-x/context.jsonld"
   ],
   "type": "VerifiablePresentation",
+  "id": "presntationID",
   "verifiableCredential": [
     {
       "@context": [
@@ -12,11 +13,11 @@
       ],
       "id": "http://example.edu/credentials/1872",
       "type": "VerifiableCredential",
-      "issuer": "https://www.handelsregister.de/",
+      "issuer": "http://example.org/test-issuer",
       "issuanceDate": "2010-01-01T19:73:24Z",
       "credentialSubject": {
         "@id": "http://example.org/test-issuer",
-        "@type": "gax:Provider",
+        "@type": "ServiceOfferingExperimental",
         "gax:hasLegallyBindingName": "My example provider",
         "gax:hasLegallyBindingAddress": {
           "id": "_:b0",

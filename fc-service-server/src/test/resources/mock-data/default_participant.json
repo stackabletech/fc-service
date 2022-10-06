@@ -23,6 +23,9 @@
             },
             "issuanceDate": "2010-01-01T19:23:24Z",
             "credentialSubject": {
+                "@type": [
+                    "LegalPerson"
+                ],
                 "given_name": "Fredrik",
                 "family_name": "Str&#246;mberg",
                 "birthdate": "1949-01-22"
