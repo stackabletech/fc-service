@@ -54,6 +54,7 @@
         <neo4j.harness.version>4.4.10</neo4j.harness.version>
         <apache.jena.version>3.16.0</apache.jena.version>
         <commons.validator.version>1.4.1</commons.validator.version>
+        <hibernate-types.version>2.19.2</hibernate-types.version>
 
         <neo4j-java-driver-spring-boot-starter.version>4.3.6.0</neo4j-java-driver-spring-boot-starter.version>
         <neo4j.neosemantics.version>4.4.0.1</neo4j.neosemantics.version>
@@ -223,6 +224,11 @@
                 <version>${bcpkix.jdk15on.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>com.vladmihalcea</groupId>
+                <artifactId>hibernate-types-55</artifactId>
+                <version>${hibernate-types.version}</version>
+            </dependency>        
         </dependencies>
     </dependencyManagement>
 
