@@ -7,6 +7,7 @@ import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptions;
 import eu.gaiax.difs.fc.core.exception.ClientException;
+import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
@@ -201,6 +202,8 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
 
     if (sdMetadata.getStatus().equals(SelfDescriptionStatus.ACTIVE)) {
       sdStore.changeLifeCycleStatus(sdMetadata.getSdHash(), SelfDescriptionStatus.REVOKED);
+    } else {
+      throw new ConflictException("The SD status cannot be changed because the SD Metadata status is " + sdMetadata.getStatus());
     }
 
     log.debug("updateSelfDescription.exit; update self-description by hash: {}", selfDescriptionHash);

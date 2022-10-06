@@ -14,6 +14,7 @@ import com.c4_soft.springaddons.security.oauth2.test.annotations.OpenIdClaims;
 import com.c4_soft.springaddons.security.oauth2.test.annotations.StringClaim;
 import com.c4_soft.springaddons.security.oauth2.test.annotations.WithMockJwtAuth;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.gaiax.difs.fc.api.generated.model.Error;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptions;
@@ -364,6 +365,26 @@ public class SelfDescriptionControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
         sdStore.deleteSelfDescription(sdMeta.getSdHash());
+    }
+
+    @Test
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
+    public void revokeSdWithNotActiveStatusReturnConflictResponse() throws Exception {
+        final VerificationResult vr = new VerificationResult("vhash", new ArrayList<>(), new ArrayList<>(),
+            OffsetDateTime.now(), "lifecyclestatus", "issuer", LocalDate.now());
+        SelfDescriptionMetadata metadata = sdMeta;
+        metadata.setStatus(SelfDescriptionStatus.DEPRECATED);
+        sdStore.storeSelfDescription(metadata, vr);
+        MvcResult result = mockMvc
+            .perform(MockMvcRequestBuilders.post("/self-descriptions/" + sdMeta.getSdHash() + "/revoke")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isConflict()).andReturn();
+        Error error = objectMapper.readValue(result.getResponse().getContentAsString(), Error.class);
+        assertEquals("The SD status cannot be changed because the SD Metadata status is deprecated", error.getMessage());
+        sdStore.deleteSelfDescription(metadata.getSdHash());
     }
 
     private static SelfDescriptionMetadata createSdMetadata() throws IOException {
