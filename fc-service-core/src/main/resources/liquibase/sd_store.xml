@@ -30,23 +30,9 @@
             <column name="content" type="java.sql.Types.CLOB">
                 <constraints nullable="false" />
             </column>
+            <column name="validators" type="java.sql.Types.VARCHAR(256) []" />
         </createTable>
         <sql dbms="postgresql">create unique index idx_sd_file_is_active on sdfiles(subjectid) where status=0</sql>
-
-        <createTable tableName="validators">
-            <column name="sdhash" type="java.sql.Types.VARCHAR(64)">
-                <constraints nullable="false" />
-            </column>
-            <column name="validator" type="java.sql.Types.VARCHAR(256)">
-                <constraints nullable="false" />
-            </column>
-        </createTable>
-        <addPrimaryKey tableName="validators" columnNames="sdhash,validator" constraintName="validators_pkey" />
-        <addForeignKeyConstraint
-            constraintName="validators_sdhash_fkey"
-            baseTableName="validators" baseColumnNames="sdhash"
-            referencedTableName="sdfiles" referencedColumnNames="sdhash"
-            onDelete="CASCADE" onUpdate="CASCADE" />
     </changeSet>
 
 </databaseChangeLog>

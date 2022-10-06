@@ -27,6 +27,7 @@ import liquibase.repackaged.org.apache.commons.collections4.IterableUtils;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -62,7 +63,7 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
 @ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, FileStoreConfig.class,
-    SelfDescriptionStoreImpl.class, SelfDescriptionStoreImplTest.class, DatabaseConfig.class, Neo4jGraphStore.class})
+  SelfDescriptionStoreImpl.class, SelfDescriptionStoreImplTest.class, DatabaseConfig.class, Neo4jGraphStore.class})
 @DirtiesContext
 @Transactional
 @Slf4j
@@ -80,8 +81,10 @@ public class SelfDescriptionStoreImplTest {
 
   @Autowired
   private SelfDescriptionStore sdStore;
+
   @Autowired
   private Neo4j embeddedDatabaseServer;
+
   @Autowired
   private Neo4jGraphStore graphStore;
   @Autowired
@@ -95,7 +98,7 @@ public class SelfDescriptionStoreImplTest {
 
   @AfterAll
   void closeNeo4j() {
-      embeddedDatabaseServer.close();
+    embeddedDatabaseServer.close();
   }
 
   private static SelfDescriptionMetadata createSelfDescriptionMeta(final String id, final String issuer,
@@ -578,8 +581,8 @@ public class SelfDescriptionStoreImplTest {
    * Test applying an SD filter on non-matching validator.
    */
   @Test
-  void test11FilterNonMatchingValidator() {
-    log.info("test11FilterNonMatchingValidator");
+  void test11AFilterMatchingValidator() {
+    log.info("test11AFilterMatchingValidator");
     final String id = "TestSd/1";
     final String validatorId = "TestSd/0815";
     final String issuer = "TestUser/1";
@@ -587,6 +590,42 @@ public class SelfDescriptionStoreImplTest {
     final OffsetDateTime statusTime = OffsetDateTime.parse("2022-01-01T12:00:00Z");
     final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
+    sdMeta.setValidatorDids(Arrays.asList(validatorId, "TestSd/0816", "TestSd/0817"));
+    final String hash = sdMeta.getSdHash();
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
+    assertStoredSdFiles(1);
+
+    final SdFilter filterParams = new SdFilter();
+    filterParams.setValidator(validatorId);
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final long matchCount = byFilter.getTotalCount();
+    log.info("filter returned {} match(es)", matchCount);
+    assertEquals(1, matchCount, "expected 1 filter matches");
+
+    sdStore.deleteSelfDescription(hash);
+    assertAllSdFilesDeleted();
+
+    Assertions.assertThrows(NotFoundException.class, () -> {
+      sdStore.getByHash(hash);
+    });
+
+    log.info("#### Test 11A succeeded.");
+  }
+
+  /**
+   * Test applying an SD filter on non-matching validator.
+   */
+  @Test
+  void test11BFilterNonMatchingValidator() {
+    log.info("test11BFilterNonMatchingValidator");
+    final String id = "TestSd/1";
+    final String validatorId = "TestSd/0815";
+    final String issuer = "TestUser/1";
+    final String content = "Test: Fetch SD Meta Data via SD Filter, test for non-matching validator";
+    final OffsetDateTime statusTime = OffsetDateTime.parse("2022-01-01T12:00:00Z");
+    final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
+    final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
+    sdMeta.setValidatorDids(Arrays.asList("TestSd/0816", "TestSd/0817"));
     final String hash = sdMeta.getSdHash();
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
@@ -596,7 +635,7 @@ public class SelfDescriptionStoreImplTest {
     final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
-    assertEquals(0, matchCount, "expected 0 filter matches, but got " + matchCount);
+    assertEquals(0, matchCount, "expected 0 filter matches");
 
     sdStore.deleteSelfDescription(hash);
     assertAllSdFilesDeleted();
@@ -605,7 +644,7 @@ public class SelfDescriptionStoreImplTest {
       sdStore.getByHash(hash);
     });
 
-    log.info("#### Test 11 succeeded.");
+    log.info("#### Test 11B succeeded.");
   }
 
   /**
@@ -719,30 +758,5 @@ public class SelfDescriptionStoreImplTest {
     });
     log.info("#### Test 13 succeeded.");
   }
-  /**
-   * Test of changeLifeCycleStatus method, of class SelfDescriptionStore.
-   */
-  @Test
-  @Disabled("TODO review the generated test code and remove the default call to fail.")
-  void testChangeLifeCycleStatus() {
-    System.out.println("changeLifeCycleStatus");
-    String hash = "";
-    SelfDescriptionStatus targetStatus = null;
-    sdStore.changeLifeCycleStatus(hash, targetStatus);
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
-  }
 
-  /**
-   * Test of deleteSelfDescription method, of class SelfDescriptionStore.
-   */
-  @Test
-  @Disabled("TODO review the generated test code and remove the default call to fail.")
-  void testDeleteSelfDescription() {
-    System.out.println("deleteSelfDescription");
-    String hash = "";
-    sdStore.deleteSelfDescription(hash);
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
-  }
 }
