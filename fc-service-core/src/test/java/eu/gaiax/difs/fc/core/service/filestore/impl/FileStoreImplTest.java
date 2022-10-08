@@ -30,11 +30,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@TestMethodOrder(MethodOrderer.MethodName.class)
+//@TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
-@ContextConfiguration(classes = {FileStoreImplTest.TestApplication.class, FileStoreConfig.class, FileStoreImplTest.class})
-@Transactional
+@ContextConfiguration(classes = {FileStoreImplTest.TestApplication.class, FileStoreConfig.class}) //, FileStoreImplTest.class})
+//@Transactional
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 public class FileStoreImplTest {

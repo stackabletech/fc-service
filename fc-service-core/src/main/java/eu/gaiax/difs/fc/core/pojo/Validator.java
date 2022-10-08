@@ -10,6 +10,7 @@ import java.time.Instant;
 @lombok.NoArgsConstructor
 @lombok.AllArgsConstructor
 @lombok.EqualsAndHashCode
+@lombok.ToString
 public class Validator {
     private String didURI;
 

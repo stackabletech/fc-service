@@ -39,8 +39,8 @@ import org.springframework.transaction.annotation.Transactional;
  * @author hylke
  * @author j_reuter
  */
-@Component
 @Slf4j
+@Component
 @Transactional
 public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 

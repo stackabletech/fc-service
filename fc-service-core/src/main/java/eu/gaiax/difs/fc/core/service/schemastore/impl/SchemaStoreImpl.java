@@ -32,9 +32,9 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  *
  */
+@Slf4j
 @Component
 @Transactional
-@Slf4j
 public class SchemaStoreImpl implements SchemaStore {
   @Autowired
   @Qualifier("schemaFileStore")
@@ -71,6 +71,7 @@ public class SchemaStoreImpl implements SchemaStore {
   }
 
   private ContentAccessor createCompositeSchema(SchemaType type) {
+    log.debug("createCompositeSchema.enter; got type: {}", type);
     StringBuilder contentBuilder = new StringBuilder();
 
     /**
@@ -84,31 +85,22 @@ public class SchemaStoreImpl implements SchemaStore {
      * Example structure listed below.
      */
     Map<SchemaType, List<String>> schemaList = getSchemaList();
-    switch (type) {
-      case ONTOLOGY:
-        for (String schemaId : schemaList.get(SchemaType.ONTOLOGY)) {
-          ContentAccessor schemaContent = getSchema(schemaId);
-          // Add ONTOLOGY schema to union schema...
-        }
-        break;
-      case SHAPE:
-        for (String schemaId : schemaList.get(SchemaType.SHAPE)) {
-          ContentAccessor schemaContent = getSchema(schemaId);
-          // Add SHAPE schema to union schema...
-        }
-        break;
-      case VOCABULARY:
-        for (String schemaId : schemaList.get(SchemaType.VOCABULARY)) {
-          ContentAccessor schemaContent = getSchema(schemaId);
-          // Add VOCABULARY schema to union schema...
-        }
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown schema type: " + type.name());
-
+    log.debug("createCompositeSchema; got schemaList: {}", schemaList);
+    
+    List<String> schemas = schemaList.get(type);
+    if (schemas != null) {
+      for (String schemaId: schemas) {
+        ContentAccessor schemaContent = getSchema(schemaId);
+        // Add schema to union schema...
+      }
     }
 
+    log.debug("createCompositeSchema.exit; returning: {}", contentBuilder.length());
     return new ContentAccessorDirect(contentBuilder.toString());
+  }
+  
+  private void buildCompositeSchema() {
+      
   }
 
   @Override

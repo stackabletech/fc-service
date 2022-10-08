@@ -13,6 +13,7 @@ import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.helper.FileReaderHelper;
@@ -53,7 +54,7 @@ import org.springframework.web.context.WebApplicationContext;
 @Import(EmbeddedNeo4JConfig.class)
 public class QueryControllerTest {
 
-    private final static String SD_FILE_NAME = "default-sd.json";
+    private final static String SD_FILE_NAME = "default-sd.json"; //"default_participant.json"; //  
     
     @Autowired
     private WebApplicationContext context;
@@ -70,6 +71,8 @@ public class QueryControllerTest {
     private FileStore fileStore;
     @Autowired
     private  ObjectMapper objectMapper;
+    //@Autowired
+    //private  SchemaStore schemaStore;
 
     
     @BeforeAll

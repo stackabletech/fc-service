@@ -11,6 +11,8 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import eu.gaiax.difs.fc.core.util.HashUtils;
@@ -21,7 +23,6 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Stack;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileExistsException;
 
@@ -29,6 +30,7 @@ import org.apache.commons.io.FileExistsException;
  * Stores and retrieves files identified by a hash.
  */
 @Slf4j
+//@Component
 public class FileStoreImpl implements FileStore {
 
   @Value("${federated-catalogue.scope}")

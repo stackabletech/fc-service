@@ -1,39 +1,55 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
+import com.apicatalog.rdf.RdfNQuad;
+import com.apicatalog.rdf.RdfValue;
 import com.danubetech.verifiablecredentials.CredentialSubject;
 import com.danubetech.verifiablecredentials.VerifiableCredential;
 import com.danubetech.verifiablecredentials.VerifiablePresentation;
-import com.github.jsonldjava.utils.JsonUtils;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ParserException;
+import eu.gaiax.difs.fc.core.exception.ServiceException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.*;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
+import foundation.identity.jsonld.JsonLDException;
 
-import java.io.IOException;
-import java.time.Instant;
+import java.io.Reader;
+import java.io.StringReader;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
-import kotlin.Pair;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.topbraid.shacl.validation.ValidationUtil;
+import org.topbraid.shacl.vocabulary.SH;
 
 // TODO: 26.07.2022 Awaiting approval and implementation by Fraunhofer.
 /**
  * Implementation of the {@link VerificationService} interface.
  */
 @Slf4j
-@Service
+@Component
 public class VerificationServiceImpl implements VerificationService {
   private static final String credentials_key = "verifiableCredential";
   private static final String[] type_keys = {"type", "types", "@type", "@types"};
   private static final String participant_type = "LegalPerson";
   private static final String serviceOfferingType = "ServiceOfferingExperimental";
+  private static final String sd_format = "JSONLD";
+  private static final String shapes_format = "TURTLE";
 
+  @Autowired
+  private SchemaStore schemaStore;
+  
   /**
    * The function validates the Self-Description as JSON and tries to parse the json handed over.
    *
@@ -43,14 +59,17 @@ public class VerificationServiceImpl implements VerificationService {
   @Override
   public VerificationResultParticipant verifyParticipantSelfDescription(ContentAccessor payload) throws VerificationException {
     VerifiablePresentation presentation = parseSD(payload);
-    if(!isSDParticipant(presentation)) {
+    if (!isSDParticipant(presentation)) {
       String msg = "Expected Participant SD, got: ";
 
-      if(isSDServiceOffering(presentation)) msg += "Serivce Offering SD";
+      if (isSDServiceOffering(presentation)) msg += "Service Offering SD";
       else msg += "Unknown SD";
 
       throw new VerificationException(msg);
     }
+    
+    // TODO: make it workable
+    //validationAgainstShacl(payload);
     return verifyParticipantSelfDescription(presentation);
   }
 
@@ -63,14 +82,17 @@ public class VerificationServiceImpl implements VerificationService {
   @Override
   public VerificationResultOffering verifyOfferingSelfDescription(ContentAccessor payload) throws VerificationException {
     VerifiablePresentation presentation = parseSD(payload);
-    if(!isSDServiceOffering(presentation)) {
+    if (!isSDServiceOffering(presentation)) {
       String msg = "Expected Service Offering SD, got: ";
 
-      if(isSDParticipant(presentation)) msg += "Participant SD";
+      if (isSDParticipant(presentation)) msg += "Participant SD";
       else msg += "Unknown SD";
 
       throw new VerificationException(msg);
     }
+
+    // TODO: make it workable
+    //validationAgainstShacl(payload);
     return verifyOfferingSelfDescription(presentation);
   }
 
@@ -84,6 +106,8 @@ public class VerificationServiceImpl implements VerificationService {
   public VerificationResult verifySelfDescription(ContentAccessor payload) throws VerificationException {
     VerifiablePresentation presentation = parseSD(payload);
 
+    // TODO: make it workable
+    //validationAgainstShacl(payload);
     Map<String, Boolean> type = getSDType(presentation);
 
     if(type.get("participant")) {
@@ -104,6 +128,8 @@ public class VerificationServiceImpl implements VerificationService {
 
   /*package private functions*/
   private VerificationResultParticipant verifyParticipantSelfDescription(VerifiablePresentation presentation) throws VerificationException {
+    // TODO: use VC.id when we'll fix URI processing  
+    //String id = presentation.getVerifiableCredential().getId().toString();
     String id = presentation.getId().toString();
     String name = presentation.getHolder().toString();
     Map<String, Object> proof = presentation.getLdProof().toMap();
@@ -111,7 +137,8 @@ public class VerificationServiceImpl implements VerificationService {
 
     //TODO: Verify Cryptographic FIT-WI
     Pair<List<CredentialSubject>, String> claimExtractionResult = extractCredentialSubjects(presentation);
-    List<CredentialSubject> credentialSubjects = claimExtractionResult.getFirst();
+    List<CredentialSubject> credentialSubjects = claimExtractionResult.getLeft();
+    List<SdClaim> claims = extractClaims(presentation);
 
     /*
     Maybe one of these methods can help you
@@ -131,23 +158,26 @@ public class VerificationServiceImpl implements VerificationService {
             SelfDescriptionStatus.ACTIVE.getValue(),
             LocalDate.MIN,
             new ArrayList<>(),
-            new ArrayList<>()
+            claims
     );
   }
 
   private VerificationResultOffering verifyOfferingSelfDescription(VerifiablePresentation presentation) throws VerificationException {
-    String id = presentation.getId().toString();
+    String id = presentation.getVerifiableCredential().getId().toString();
     OffsetDateTime verificationTimestamp = OffsetDateTime.now();
+    // TODO: what it is for?
     String participantID = "http://example.org/test-issuer";
     LocalDate issuedDate = null;
     List<Validator> validators = new ArrayList<>();
-    List<SdClaim> claims = new ArrayList<>();
 
     //TODO: Verify Cryptographic FIT-WI
 
     Pair<List<CredentialSubject>, String> claimExtractionResult = extractCredentialSubjects(presentation);
-    List<CredentialSubject> credentialSubjects = claimExtractionResult.getFirst();
-    participantID = claimExtractionResult.getSecond();
+    List<CredentialSubject> credentialSubjects = claimExtractionResult.getLeft();
+    List<SdClaim> claims = extractClaims(presentation);
+
+    participantID = claimExtractionResult.getRight();
+    // why not: presentation.getVerifiableCredential().getIssuer() ?
 
     //TODO: Extract Claims FIT-DSAI
 
@@ -165,7 +195,7 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   /*package private functions*/
-  Pair<List<CredentialSubject>, String> extractCredentialSubjects (VerifiablePresentation presentation) {
+  Pair<List<CredentialSubject>, String> extractCredentialSubjects(VerifiablePresentation presentation) {
     ArrayList<Map<String, Object>> credential_list =
             (ArrayList<Map<String, Object>>) presentation.getJsonObject().get("verifiableCredential");
     List<CredentialSubject> credentialSubjects = new ArrayList<>(credential_list.size());
@@ -210,15 +240,73 @@ public class VerificationServiceImpl implements VerificationService {
       }
     }
 
-    return new Pair<>(credentialSubjects, issuer);
+    return Pair.of(credentialSubjects, issuer);
+  }
+  
+  /**
+   * A method that returns a list of claims given a self-description's VerifiablePresentation
+   *
+   * @param sd map represents a self-description for claims extraction
+   * @return a list of claims.
+   */
+   List<SdClaim> extractClaims(VerifiablePresentation presentation) {
+
+     log.debug("extractClaims.enter; got Presentation: {}", presentation);
+     List<SdClaim> claims = new ArrayList<>();
+     try {
+       CredentialSubject cs = presentation.getVerifiableCredential().getCredentialSubject();
+       for (RdfNQuad nquad: cs.toDataset().toList()) {
+         log.debug("extractClaims; got NQuad: {}", nquad);
+         if (nquad.getSubject().isIRI()) {
+           String sub = rdf2String(nquad.getSubject());
+           if (sub != null) {
+             String pre = rdf2String(nquad.getPredicate());
+             if (pre != null) {
+               String obj = rdf2String(nquad.getObject());
+               if (obj != null) {
+                 SdClaim claim = new SdClaim(sub, pre, obj);
+                 claims.add(claim);
+               }
+             }
+           }  
+         }
+       }
+     } catch (JsonLDException ex) {
+       throw new VerificationException("error extracting claims: " + ex.getMessage());
+     }
+     log.debug("extractClaims.exit; returning claims: {}", claims);
+     return claims;
+  }
+  
+  private String rdf2String(RdfValue rdf) {
+     if (rdf.isBlankNode()) return rdf.getValue();
+     if (rdf.isLiteral()) return "\"" + rdf.getValue() + "\"";
+     // this is IRI, Neo4J does not process namespaced IRIs yet 
+     if (rdf.getValue().startsWith("http://") || rdf.getValue().startsWith("https://")) return "<" + rdf.getValue() + ">";
+     return null;
   }
 
   VerifiablePresentation parseSD(ContentAccessor accessor) {
     try {
-      return VerifiablePresentation.fromJson(accessor.getContentAsString()
+      VerifiablePresentation vp = VerifiablePresentation.fromJson(accessor.getContentAsString()
               .replaceAll("JsonWebKey2020", "JsonWebSignature2020"));
       //This has to be done to handle current examples. In the final code the replacement becomes obsolete
       //TODO remove replace
+      
+      if (vp == null) {
+        throw new VerificationException("invalid VerifiablePresentation");
+      }
+      VerifiableCredential vc = vp.getVerifiableCredential();
+      if (vc == null) {
+        throw new VerificationException("invalid VerifiableCredential");
+      }
+      CredentialSubject cs = vc.getCredentialSubject();
+      if (cs == null) {
+        throw new VerificationException("invalid CredentialSubject");
+      }
+      return vp;
+    } catch (ServiceException e) {
+      throw e;
     } catch (RuntimeException e) {
       throw new VerificationException(e);
     }
@@ -377,4 +465,39 @@ public class VerificationServiceImpl implements VerificationService {
       throw new VerificationException("jws is empty");
     }
   }
+  
+  /**
+   * Method that validates a dataGraph against shaclShape
+   *
+   * @param payload    ContentAccessor of a self-Description payload to be validated
+   * @param shaclShape ContentAccessor of a union schemas of type SHACL
+   * @return                SemanticValidationResult object
+   */
+  SemanticValidationResult validationAgainstShacl(ContentAccessor payload, ContentAccessor shaclShape) {
+      Reader dataGraphReader = new StringReader(payload.getContentAsString());
+      Reader shaclShapeReader = new StringReader(shaclShape.getContentAsString());
+      Model data = ModelFactory.createDefaultModel();
+      data.read(dataGraphReader, null, sd_format);
+      Model shape = ModelFactory.createDefaultModel();
+      shape.read(shaclShapeReader, null, shapes_format);
+      Resource reportResource = ValidationUtil.validateModel(data, shape, true);
+      boolean conforms = reportResource.getProperty(SH.conforms).getBoolean();
+      String report = null;
+      if (!conforms) {
+          report = reportResource.getModel().toString();
+      }
+      return new SemanticValidationResult(conforms, report);
+  }
+  
+  private void validationAgainstShacl(ContentAccessor payload) {
+    ContentAccessor shaclShape = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
+    SemanticValidationResult result = validationAgainstShacl(payload, shaclShape);
+    log.debug("validationAgainstShacl.exit; conforms: {}; model: {}", result.isConforming(), result.getValidationReport());
+    if (!result.isConforming()) {
+      throw new VerificationException("shacl shape schema violated");  
+    }
+  }
+  
+  
 }
+

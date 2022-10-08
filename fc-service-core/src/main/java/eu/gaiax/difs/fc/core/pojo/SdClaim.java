@@ -18,7 +18,7 @@ public class SdClaim {
   }
   
   public String asTriple() {
-    return String.format("%s %s %s . \n", subject, predicate, object );
+    return String.format("%s %s %s . \n", subject, predicate, object);
   }
   
 }
