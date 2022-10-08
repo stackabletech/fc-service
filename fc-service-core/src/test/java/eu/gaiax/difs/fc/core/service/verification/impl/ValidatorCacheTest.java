@@ -58,10 +58,9 @@ public class ValidatorCacheTest {
   private SessionFactory sessionFactory;
 
   @Test
-  @Disabled("The error is: Returned Validator is not the same as the stored Validator ==> expected: <eu.gaiax.difs.fc.core.pojo.Validator@b05de788> but was: <eu.gaiax.difs.fc.core.pojo.Validator@b05d97d8>")
   void test01AddingAndRemoving() throws IOException {
     log.info("test01AddingAndRemoving");
-    Validator validator = new Validator("SomeUrl", "Some Text Content", Instant.now());
+    Validator validator = new Validator("SomeUrl", "Some Text Content", getInstantNow());
     validatorCache.addToCache(validator);
 
     Validator fromCache = validatorCache.getFromCache(validator.getDidURI());
@@ -73,12 +72,11 @@ public class ValidatorCacheTest {
   }
 
   @Test
-  @Disabled("Returned Validator is not the same as the stored Validator ==> expected: <eu.gaiax.difs.fc.core.pojo.Validator@88a91507> but was: <eu.gaiax.difs.fc.core.pojo.Validator@88a964b7>")
   void test02Expiration() throws IOException {
     log.info("test02Expiration");
-    Validator v1 = new Validator("SomeUrl1", "Some Text Content", Instant.now().minus(1, ChronoUnit.MINUTES));
+    Validator v1 = new Validator("SomeUrl1", "Some Text Content", getInstantNow().minus(1, ChronoUnit.MINUTES));
     validatorCache.addToCache(v1);
-    Validator v2 = new Validator("SomeUrl2", "Some Text Content", Instant.now().plus(1, ChronoUnit.MINUTES));
+    Validator v2 = new Validator("SomeUrl2", "Some Text Content", getInstantNow().plus(1, ChronoUnit.MINUTES));
     validatorCache.addToCache(v2);
 
     Validator fromCache1 = validatorCache.getFromCache(v1.getDidURI());
@@ -97,6 +95,10 @@ public class ValidatorCacheTest {
     Assertions.assertEquals(v2, fromCache2, "Validator should not have been removed from the cache");
 
     validatorCache.removeFromCache(v2.getDidURI());
+  }
+
+  private static Instant getInstantNow() {
+    return Instant.now().truncatedTo(ChronoUnit.SECONDS);
   }
 
 }
