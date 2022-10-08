@@ -24,6 +24,7 @@ import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.core.util.HashUtils;
@@ -73,7 +74,7 @@ import org.springframework.web.context.WebApplicationContext;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
-//@Transactional
+@Transactional
 public class SelfDescriptionControllerTest {
     private final static String TEST_ISSUER = "http://example.org/test-issuer";
     private final static String SD_FILE_NAME = "default-sd.json";
@@ -104,6 +105,9 @@ public class SelfDescriptionControllerTest {
     @SpyBean(name = "sdFileStore")
     private FileStore fileStore;
 
+    @Autowired
+    private  SchemaStore schemaStore;
+    
     @Autowired
     private VerificationService verificationService;
 
@@ -265,7 +269,7 @@ public class SelfDescriptionControllerTest {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void addSDWithoutIssuerReturnForbiddenResponse() throws Exception {
       mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
-              .content(getMockFileDataAsString("sd-without-credential-subject.json"))
+              .content(getMockFileDataAsString("sd-without-issuer.json"))
               .with(csrf())
               .contentType(MediaType.APPLICATION_JSON)
               .accept(MediaType.APPLICATION_JSON))

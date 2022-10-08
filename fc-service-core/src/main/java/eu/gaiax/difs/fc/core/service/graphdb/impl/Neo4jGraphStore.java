@@ -38,22 +38,25 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public void addClaims(List<SdClaim> sdClaimList, String credentialSubject) {
         log.debug("addClaims.enter; got claims: {}, subject: {}", sdClaimList, credentialSubject);
-        String payload = "";
         int cnt = 0;
-        try (Session session = driver.session()) {
-            for (SdClaim sdClaim : sdClaimList) {
-                payload += claimValidator.validateClaim(sdClaim);
-                cnt++;
+        if (!sdClaimList.isEmpty()) {
+            StringBuilder payload = new StringBuilder();
+            try (Session session = driver.session()) {
+                for (SdClaim sdClaim : sdClaimList) {
+                    payload.append(claimValidator.validateClaim(sdClaim));
+                    cnt++;
+                }
+    
+                String query = "CALL n10s.rdf.import.inline($payload, \"N-Triples\")\n"
+                        + "YIELD terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo\n"
+                        + "RETURN terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo";
+    
+                log.debug("addClaims; query: {}", query);
+                Result rs = session.run(query, Map.of("payload", payload.toString()));
+                log.debug("addClaims; response: {}", rs.list());
             }
-
-            String query = " WITH '\n" + payload + "' as payload\n"
-                    + "CALL n10s.rdf.import.inline(payload,\"N-Triples\") YIELD terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo\n"
-                    + "RETURN terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo";
-
-            log.debug("addClaims; Query: {}", query);
-            Result rs = session.run(query);
-            log.debug("addClaims.exit; claims added: {}, results: {}", cnt, rs.list());
         }
+        log.debug("addClaims.exit; claims processed: {}", cnt);
     }
 
     /**

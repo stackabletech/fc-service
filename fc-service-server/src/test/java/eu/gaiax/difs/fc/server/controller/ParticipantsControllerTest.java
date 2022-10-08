@@ -31,17 +31,25 @@ import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
+
+import lombok.extern.slf4j.Slf4j;
+
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
+
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 
+import javax.transaction.Transactional;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -58,6 +66,7 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.neo4j.harness.Neo4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -75,6 +84,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+@Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -82,6 +92,7 @@ import org.springframework.web.context.WebApplicationContext;
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Import(EmbeddedNeo4JConfig.class)
+//@Transactional
 @DirtiesContext
 public class ParticipantsControllerTest {
     private final String CATALOGUE_ADMIN_ROLE_WITH_PREFIX = "ROLE_" + CATALOGUE_ADMIN_ROLE;
@@ -355,8 +366,11 @@ public class ParticipantsControllerTest {
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
+        String partId = URLEncoder.encode(part.getId(), Charset.defaultCharset());
+        log.debug("updateParticipantShouldReturnSuccessResponse; the parrtId is: {}", partId);
+
         String response = mockMvc
-            .perform(MockMvcRequestBuilders.put("/participants/{participantId}", part.getId())
+            .perform(MockMvcRequestBuilders.put("/participants/{participantId}", partId)
             .contentType(MediaType.APPLICATION_JSON)
             .content(json))
             .andExpect(status().isOk())
@@ -404,6 +418,7 @@ public class ParticipantsControllerTest {
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
+//            {@StringClaim(name = "participant_id", value = "0949d1a0")})))
             {@StringClaim(name = "participant_id", value = "ebc6fdfg")})))
     @Order(30)
     public void updateParticipantFailWithKeycloakErrorShouldReturnErrorWithoutDBStore() throws Exception {

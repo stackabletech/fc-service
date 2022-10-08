@@ -4,7 +4,6 @@
     "https://w3id.org/gaia-x/context.jsonld"
   ],
   "type": "VerifiablePresentation",
-  "id": "presentationID",
   "verifiableCredential": [
     {
       "@context": [
@@ -13,21 +12,13 @@
       ],
       "id": "http://example.edu/credentials/1872",
       "type": "VerifiableCredential",
-      "issuer": "http://example.org/test-issuer",
       "issuanceDate": "2010-01-01T19:73:24Z",
       "credentialSubject": {
-        "@id": "http://example.org/test-issuer",
-        "@type": "ServiceOfferingExperimental",
-        "gax:hasLegallyBindingName": "My example provider",
-        "gax:hasLegallyBindingAddress": {
-          "id": "_:b0",
-          "type": "vcard:Address",
-          "vcard:street-address": "Example street 2",
-          "vcard:postal-code": "99999",
-          "vcard:country-name": "Country Name 2",
-          "vcard:locality": "City Name 2"
-        }
-      },
+        "@type": "ServiceOfferingExperimental",      
+        "given_name": "Fredrik",
+        "family_name": "Str&#246;mberg",
+        "birthdate": "1949-01-22"
+      },     
       "proof": {
         "type": "RsaSignature2018",
         "created": "2017-06-18T21:19:10Z",

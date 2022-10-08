@@ -75,7 +75,6 @@
         <dependency>
             <groupId>com.github.jsonld-java</groupId>
             <artifactId>jsonld-java</artifactId>
-            <version>${jsonld.version}</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j.driver</groupId>
@@ -98,6 +97,10 @@
             <groupId>org.apache.jena</groupId>
             <artifactId>apache-jena-libs</artifactId>
             <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.topbraid</groupId>
+            <artifactId>shacl</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>

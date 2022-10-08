@@ -2,7 +2,10 @@ package eu.gaiax.difs.fc.core.service.verification.impl;
 
 import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
+import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.pojo.Validator;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
+import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
 import eu.gaiax.difs.fc.core.service.validatorcache.ValidatorCache;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.junit.jupiter.api.Disabled;
@@ -14,7 +17,7 @@ import java.time.temporal.ChronoUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.Assertions;
-
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -32,7 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
-@ContextConfiguration(classes = {ValidatorCacheTest.TestApplication.class, ValidatorCacheImpl.class, DatabaseConfig.class})
+@ContextConfiguration(classes = {ValidatorCacheTest.TestApplication.class, ValidatorCacheImpl.class, DatabaseConfig.class, FileStoreConfig.class,
+        VerificationServiceImpl.class, SchemaStoreImpl.class})
 @DirtiesContext
 @Transactional
 @Slf4j
@@ -54,7 +58,7 @@ public class ValidatorCacheTest {
   private SessionFactory sessionFactory;
 
   @Test
-  @Disabled("Does not work")
+  @Disabled("The error is: Returned Validator is not the same as the stored Validator ==> expected: <eu.gaiax.difs.fc.core.pojo.Validator@b05de788> but was: <eu.gaiax.difs.fc.core.pojo.Validator@b05d97d8>")
   void test01AddingAndRemoving() throws IOException {
     log.info("test01AddingAndRemoving");
     Validator validator = new Validator("SomeUrl", "Some Text Content", Instant.now());
@@ -69,7 +73,7 @@ public class ValidatorCacheTest {
   }
 
   @Test
-  @Disabled("Does not work")
+  @Disabled("Returned Validator is not the same as the stored Validator ==> expected: <eu.gaiax.difs.fc.core.pojo.Validator@88a91507> but was: <eu.gaiax.difs.fc.core.pojo.Validator@88a964b7>")
   void test02Expiration() throws IOException {
     log.info("test02Expiration");
     Validator v1 = new Validator("SomeUrl1", "Some Text Content", Instant.now().minus(1, ChronoUnit.MINUTES));
