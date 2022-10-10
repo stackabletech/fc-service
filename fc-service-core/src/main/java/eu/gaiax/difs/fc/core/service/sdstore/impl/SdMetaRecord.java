@@ -36,6 +36,11 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
 
   private static final long serialVersionUID = -1010712678262829212L;
 
+  @lombok.Getter
+  @lombok.Setter
+  @Column(name = "expirationtime")
+  private Instant expirationTime;
+
   @Id
   @Column(name = "sdhash", nullable = false, length = 32)
   @Override
@@ -95,6 +100,8 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
 
   /**
    * The last time stamp (ISO8601) the status changed (for this catalogue).
+   *
+   * @return the status time as Instant.
    */
   @Column(name = "statustime", nullable = false)
   public Instant getStatusTime() {

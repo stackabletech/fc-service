@@ -12,6 +12,7 @@ import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
+import eu.gaiax.difs.fc.core.pojo.Validator;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
@@ -22,10 +23,13 @@ import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.time.Instant;
 import liquibase.repackaged.org.apache.commons.collections4.IterableUtils;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -700,6 +704,69 @@ public class SelfDescriptionStoreImplTest {
       sdStore.getByHash(hash3);
     });
     log.info("#### Test 12 succeeded.");
+  }
+
+  private VerificationResult verifySd(String id, Instant firstSigInstant) throws UnsupportedEncodingException {
+    List<Validator> signatures = new ArrayList<>();
+    signatures.add(new Validator("did:first", "", firstSigInstant));
+    signatures.add(new Validator("did:second", "", Instant.now().plus(1, ChronoUnit.DAYS)));
+    signatures.add(new Validator("did:third", "", Instant.now().plus(2, ChronoUnit.DAYS)));
+    return new VerificationResult(id, new ArrayList<>(), signatures, OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer", LocalDate.now());
+  }
+
+  @Test
+  void test13PeriodicValidationOfSignatures() throws IOException {
+    log.info("test13PeriodicValidationOfSignatures");
+    final String id1 = "TestSd/1";
+    final String id2 = "TestSd/2";
+    final String id3 = "TestSd/3";
+    final String issuer1 = "TestUser/1";
+    final String issuer2 = "TestUser/2";
+    final String issuer3 = "TestUser/3";
+    final String content1 = "Test: SD 1 with future expiration date";
+    final String content2 = "Test: SD 2 with past expiration date";
+    final String content3 = "Test: SD 3 with future expiration date";
+    final OffsetDateTime statusTime1 = OffsetDateTime.parse("2022-01-01T12:00:00Z");
+    final OffsetDateTime statusTime2 = OffsetDateTime.parse("2022-01-02T12:00:00Z");
+    final OffsetDateTime statusTime3 = OffsetDateTime.parse("2022-01-03T12:00:00Z");
+    final OffsetDateTime uploadTime1 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
+    final OffsetDateTime uploadTime2 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
+    final OffsetDateTime uploadTime3 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
+    final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta(id1, issuer1, statusTime1, uploadTime1, content1);
+    final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta(id2, issuer2, statusTime2, uploadTime2, content2);
+    final SelfDescriptionMetadata sdMeta3 = createSelfDescriptionMeta(id3, issuer3, statusTime3, uploadTime3, content3);
+    final String hash1 = sdMeta1.getSdHash();
+    final String hash2 = sdMeta2.getSdHash();
+    final String hash3 = sdMeta3.getSdHash();
+    final VerificationResult vr1 = verifySd(id1, Instant.now().plus(1, ChronoUnit.DAYS));
+    final VerificationResult vr2 = verifySd(id2, Instant.now().minus(1, ChronoUnit.DAYS));
+    final VerificationResult vr3 = verifySd(id3, Instant.now().plus(1, ChronoUnit.DAYS));
+    sdStore.storeSelfDescription(sdMeta1, vr1);
+    sdStore.storeSelfDescription(sdMeta2, vr2);
+    sdStore.storeSelfDescription(sdMeta3, vr3);
+    assertStoredSdFiles(3);
+
+    final int expiredSelfDescriptionsCount = sdStore.invalidateSelfDescriptions();
+    assertEquals(1, expiredSelfDescriptionsCount, "expected 1 expired self-description");
+    assertEquals(SelfDescriptionStatus.ACTIVE, sdStore.getByHash(hash1).getStatus(), "Status should not have been changed.");
+    assertEquals(SelfDescriptionStatus.EOL, sdStore.getByHash(hash2).getStatus(), "Status should have been changed.");
+    assertEquals(SelfDescriptionStatus.ACTIVE, sdStore.getByHash(hash3).getStatus(), "Status should not have been changed.");
+
+    sdStore.deleteSelfDescription(hash1);
+    sdStore.deleteSelfDescription(hash2);
+    sdStore.deleteSelfDescription(hash3);
+    assertAllSdFilesDeleted();
+
+    Assertions.assertThrows(NotFoundException.class, () -> {
+      sdStore.getByHash(hash1);
+    });
+    Assertions.assertThrows(NotFoundException.class, () -> {
+      sdStore.getByHash(hash2);
+    });
+    Assertions.assertThrows(NotFoundException.class, () -> {
+      sdStore.getByHash(hash3);
+    });
+    log.info("#### Test 13 succeeded.");
   }
 
   /**

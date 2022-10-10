@@ -10,6 +10,7 @@ import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
+import eu.gaiax.difs.fc.core.pojo.Validator;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 
@@ -19,12 +20,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.persistence.EntityExistsException;
 import javax.persistence.LockModeType;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.io.FileExistsException;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -253,8 +256,22 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
     final SdMetaRecord sdmRecord = new SdMetaRecord(sdMetadata);
 
-    // TODO: Add validators/signatures to the record once the Signature class is
-    // clarified.
+    final List<Validator> validators = verificationResult.getValidators();
+    final boolean registerValidators = sdMetadata.getValidatorDids() == null || sdMetadata.getValidatorDids().isEmpty();
+    if (validators != null) {
+      Instant expDateFirst = null;
+      for (Validator validator : validators) {
+        Instant expDate = validator.getExpirationDate();
+        if (expDateFirst == null || expDate.isBefore(expDateFirst)) {
+          expDateFirst = expDate;
+        }
+        if (registerValidators) {
+          sdmRecord.addValidatorDidsItem(validator.getDidURI());
+        }
+      }
+      sdmRecord.setExpirationTime(expDateFirst);
+    }
+
     if (existingSd != null) {
       existingSd.setStatus(SelfDescriptionStatus.DEPRECATED);
       existingSd.setStatusTime(Instant.now());
@@ -335,7 +352,25 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
   @Override
   public int invalidateSelfDescriptions() {
-    // TODO: Implementation Required
-    return 0;
+    final Session currentSession = sessionFactory.getCurrentSession();
+    // A possible Performance optimisation may be required here to limit the number
+    // of SDs that are expired in one run, to limit the size of the Transaction.
+    Stream<SdMetaRecord> existingSds = currentSession
+        .createQuery("select sd from SdMetaRecord sd where sd.expirationTime < ?1 and sd.status = ?2", SdMetaRecord.class)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .setTimeout(1)
+        .setParameter(1, Instant.now())
+        .setParameter(2, SelfDescriptionStatus.ACTIVE)
+        .getResultStream();
+    final MutableInt count = new MutableInt();
+    existingSds.forEach((sd) -> {
+      try {
+        count.increment();
+        changeLifeCycleStatus(sd.getSdHash(), SelfDescriptionStatus.EOL);
+      } catch (ConflictException exc) {
+        log.info("SD was set non-active before we could expire it. Hash: {}", sd.getSdHash());
+      }
+    });
+    return count.intValue();
   }
 }
