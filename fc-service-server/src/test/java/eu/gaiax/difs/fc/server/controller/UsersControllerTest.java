@@ -2,13 +2,15 @@ package eu.gaiax.difs.fc.server.controller;
 
 import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.getUsername;
 import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.toUserRepo;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.SD_ADMIN_ROLE;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
-import static eu.gaiax.difs.fc.server.util.TestCommonConstants.CATALOGUE_PARTICIPANT_ADMIN_ROLE_ID;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.DEFAULT_PARTICIPANT_ID;
-import static eu.gaiax.difs.fc.server.util.TestCommonConstants.SD_ADMIN_ROLE_ID;
+import static eu.gaiax.difs.fc.server.helper.UserServiceHelper.getAllRoles;
 import static org.apache.http.HttpStatus.SC_CREATED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -18,6 +20,7 @@ import eu.gaiax.difs.fc.api.generated.model.Error;
 import eu.gaiax.difs.fc.core.dao.UserDao;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,8 +33,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.admin.client.resource.RoleScopeResource;
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -75,6 +82,12 @@ public class UsersControllerTest {
     private RealmResource realmResource;
     @MockBean
     private UsersResource usersResource;
+    @MockBean
+    private RolesResource rolesResource;
+    @MockBean
+    private RoleMappingResource roleMappingResource;
+    @MockBean
+    private RoleScopeResource roleScopeResource;
     @MockBean
     private UserResource userResource;
     @Autowired
@@ -198,7 +211,7 @@ public class UsersControllerTest {
         UserProfile profile = objectMapper.readValue(response, UserProfile.class);
         assertThatResponseUserHasValidData(user, profile);
     }
-    
+
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void updateUserShouldReturnSuccessResponse() throws Exception {
@@ -224,35 +237,64 @@ public class UsersControllerTest {
         mockMvc
             .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE_ID))))
+                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE))))
             .andExpect(status().isOk());
     }
+
+
+    @Test
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
+    public void changeUserPermissionShouldReturnSuccessResponse() throws Exception {
+        User user = getTestUser("new_user", "new_user");
+        String userId = UUID.randomUUID().toString();
+        setupKeycloak(HttpStatus.SC_OK, user, userId);
+
+        UserProfile existed = userDao.create(user);
+        assertEquals(1, existed.getRoleIds().size());
+        assertTrue( existed.getRoleIds().contains(SD_ADMIN_ROLE));
+
+        when(roleScopeResource.listAll())
+            .thenReturn(List.of(new RoleRepresentation(PARTICIPANT_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, false)));
+
+        String response = mockMvc
+            .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(List.of(PARTICIPANT_ADMIN_ROLE))))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        UserProfile updated = objectMapper.readValue(response, UserProfile.class);
+        assertEquals(1, updated.getRoleIds().size());
+        assertTrue(updated.getRoleIds().containsAll(List.of(PARTICIPANT_ADMIN_ROLE)));
+    }
+
 
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void updateDuplicatedUserRoleShouldReturnSuccessResponse() throws Exception {
-        User user = getTestUser("name8", "surname8");
+        User user = getTestUser("name8", "surname8").addRoleIdsItem(PARTICIPANT_ADMIN_ROLE);
         String userId = UUID.randomUUID().toString();
         setupKeycloak(HttpStatus.SC_OK, user, userId);
         UserProfile existed = userDao.create(user);
 
         mockMvc.perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(List.of(CATALOGUE_PARTICIPANT_ADMIN_ROLE_ID))))
+                .content(objectMapper.writeValueAsString(List.of(PARTICIPANT_ADMIN_ROLE))))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
             .getContentAsString();
         UserProfile newProfile = userDao.select(existed.getId());
         assertNotNull(newProfile);
-        assertEquals(1, newProfile.getRoleIds().size());
-        assertEquals(List.of(CATALOGUE_PARTICIPANT_ADMIN_ROLE_ID), newProfile.getRoleIds());
+        assertEquals(2, newProfile.getRoleIds().size());
+        assertTrue(newProfile.getRoleIds().containsAll(List.of(PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE)));
     }
 
     private void setupKeycloak(int status, User user, String id) {
         when(builder.build()).thenReturn(keycloak);
         when(keycloak.realm("gaia-x")).thenReturn(realmResource);
         when(realmResource.users()).thenReturn(usersResource);
+        when(realmResource.roles()).thenReturn(rolesResource);
         if (user == null) {
             when(usersResource.create(any())).thenReturn(Response.status(status).build());
             when(usersResource.delete(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
@@ -268,9 +310,14 @@ public class UsersControllerTest {
             when(usersResource.search(userRepo.getUsername())).thenReturn(List.of(userRepo));
             when(usersResource.get(any())).thenReturn(userResource);
             when(userResource.toRepresentation()).thenReturn(userRepo);
+            when(rolesResource.list()).thenReturn(getAllRoles());
+            when(userResource.roles()).thenReturn(roleMappingResource);
+            when(roleMappingResource.realmLevel()).thenReturn(roleScopeResource);
+            List<RoleRepresentation> roleRepresentations =  new ArrayList<>();
+            user.getRoleIds().forEach(roleId-> roleRepresentations.add(new RoleRepresentation(roleId, roleId, false)));
+            when(roleScopeResource.listAll()).thenReturn(roleRepresentations);
         }
     }
-
 
     private User getTestUser(String firstName, String lastName) {
         return new User()
@@ -278,7 +325,7 @@ public class UsersControllerTest {
             .participantId(DEFAULT_PARTICIPANT_ID)
             .firstName(firstName)
             .lastName(lastName)
-            .addRoleIdsItem("Ro-SD-A");
+            .addRoleIdsItem(SD_ADMIN_ROLE);
     }
 
     private static void assertThatResponseUserHasValidData(final User excepted, final UserProfile actual) {

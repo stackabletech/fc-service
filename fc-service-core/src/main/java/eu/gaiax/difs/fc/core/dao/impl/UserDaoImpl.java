@@ -2,7 +2,6 @@ package eu.gaiax.difs.fc.core.dao.impl;
 
 import static eu.gaiax.difs.fc.core.util.KeycloakUtils.getErrorMessage;
 
-import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import java.util.List;
 import java.util.Map;
@@ -60,9 +59,8 @@ public class UserDaoImpl implements UserDao {
       log.info("create.error; status {}:{}, {}", response.getStatus(), response.getStatusInfo(), message);
       throw new ConflictException(message);
     }
-
     userRepo = instance.search(userRepo.getUsername()).get(0);
-    return toUserProfile(userRepo);
+    return toUserProfile(userRepo, assignRoleToUser(instance.get(userRepo.getId()), user.getRoleIds()));
   }
 
   /**
@@ -76,7 +74,7 @@ public class UserDaoImpl implements UserDao {
     UsersResource instance = keycloak.realm(realm).users();
     UserResource userResource = instance.get(userId);
     UserRepresentation userRepo = userResource.toRepresentation();
-    return toUserProfile(userRepo);
+    return toUserProfile(userRepo, userResource.roles().realmLevel().listAll());
   }
 
   /**
@@ -97,9 +95,11 @@ public class UserDaoImpl implements UserDao {
     } else {
       userRepos = instance.searchByAttributes(offset, limit, true, false,
           ATR_PARTICIPANT_ID + " = " + participantId);
-      totalCount = (int) instance.searchByAttributes(participantId).stream().count();
+      totalCount = instance.searchByAttributes(participantId).size();
     }
-    return new PaginatedResults<>(totalCount,userRepos.stream().map(UserDaoImpl::toUserProfile).collect(Collectors.toList()));
+    return new PaginatedResults<>(totalCount, userRepos.stream().map(
+        user -> toUserProfile(user, instance.get(user.getId()).roles().realmLevel().listAll())
+    ).collect(Collectors.toList()));
   }
 
   /**
@@ -112,6 +112,7 @@ public class UserDaoImpl implements UserDao {
   public UserProfile delete(String userId) {
     UsersResource instance = keycloak.realm(realm).users();
     UserResource userResource = instance.get(userId);
+    List<RoleRepresentation> roles = userResource.roles().realmLevel().listAll();
     UserRepresentation userRepo = userResource.toRepresentation();
 
     Response response = instance.delete(userId);
@@ -120,8 +121,7 @@ public class UserDaoImpl implements UserDao {
       log.info("delete.error; status {}:{}, {}", response.getStatus(), response.getStatusInfo(), message);
       throw new ConflictException(message);
     }
-
-    return toUserProfile(userRepo);
+    return toUserProfile(userRepo, roles);
   }
 
   /**
@@ -136,12 +136,14 @@ public class UserDaoImpl implements UserDao {
     UsersResource instance = keycloak.realm(realm).users();
     UserResource userResource = instance.get(userId);
     UserRepresentation userRepo = toUserRepo(user);
+
     userResource.update(userRepo);
+    assignRoleToUser(userResource, user.getRoleIds());
     // no Response ?
 
     userResource = instance.get(userId);
     userRepo = userResource.toRepresentation();
-    return toUserProfile(userRepo);
+    return toUserProfile(userRepo, userResource.roles().realmLevel().listAll());
   }
 
   /**
@@ -158,11 +160,12 @@ public class UserDaoImpl implements UserDao {
     UserRepresentation userRepo = userResource.toRepresentation();
     userRepo.setRealmRoles(roles);
     userResource.update(userRepo);
+    assignRoleToUser(userResource, roles);
     // no Response ?
 
     userResource = instance.get(userId);
     userRepo = userResource.toRepresentation();
-    return toUserProfile(userRepo);
+    return toUserProfile(userRepo, userResource.roles().realmLevel().listAll());
   }
 
   /**
@@ -194,10 +197,22 @@ public class UserDaoImpl implements UserDao {
     userRepo.setEmailVerified(false);
     userRepo.setGroups(List.of(user.getParticipantId()));
     userRepo.setRequiredActions(List.of(ACT_UPDATE_PASSWORD, ACT_VERIFY_EMAIL));
-    if (user.getRoleIds() != null) {
-      userRepo.setRealmRoles(user.getRoleIds());
-    }
     return userRepo;
+  }
+
+  private List<RoleRepresentation> assignRoleToUser(UserResource userResource, List<String> roles) {
+    List<RoleRepresentation> existedRoles = keycloak.realm(realm).roles().list();
+    userResource.roles().realmLevel().remove(existedRoles);
+
+    List<RoleRepresentation> roleRepresentations = existedRoles.stream()
+        .filter(role -> roles.contains(role.getName()))
+        .collect(Collectors.toList());
+    userResource.roles().realmLevel().add(roleRepresentations);
+    return roleRepresentations;
+  }
+
+  private static List<String> toRoleIds(List<RoleRepresentation> roleRepresentations) {
+    return roleRepresentations.stream().map(RoleRepresentation::getName).collect(Collectors.toList());
   }
 
   /**
@@ -206,12 +221,12 @@ public class UserDaoImpl implements UserDao {
    * @param userRepo UserRepresentation of user
    * @return UserProfile of the user
    */
-  public static UserProfile toUserProfile(UserRepresentation userRepo) {
+  public static UserProfile toUserProfile(UserRepresentation userRepo, List<RoleRepresentation> roles) {
     List<String> partIds = userRepo.getAttributes() == null ? null
         : userRepo.getAttributes().get(ATR_PARTICIPANT_ID);
     String participantId = partIds == null ? null : partIds.get(0);
     return new UserProfile(participantId, userRepo.getFirstName(), userRepo.getLastName(), userRepo.getEmail(),
-        userRepo.getRealmRoles(), userRepo.getId(), userRepo.getFirstName() + " " + userRepo.getLastName());
+        toRoleIds(roles), userRepo.getId(), userRepo.getFirstName() + " " + userRepo.getLastName());
   }
 
   /**

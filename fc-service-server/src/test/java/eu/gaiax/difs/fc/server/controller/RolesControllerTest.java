@@ -76,7 +76,6 @@ public class RolesControllerTest {
     @Test
     @WithMockUser
     public void getRolesShouldReturnExpectedNumber() throws Exception {
-
         setupKeycloak();
 
         MvcResult result = mockMvc
