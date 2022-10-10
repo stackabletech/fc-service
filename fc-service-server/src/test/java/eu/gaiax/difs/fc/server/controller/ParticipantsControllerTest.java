@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.server.controller;
 
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.helper.UserServiceHelper.getAllRoles;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
@@ -32,6 +33,7 @@ import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 
+import java.util.ArrayList;
 import lombok.extern.slf4j.Slf4j;
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -46,7 +48,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 
-import javax.transaction.Transactional;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 
@@ -61,9 +62,13 @@ import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.admin.client.resource.RoleScopeResource;
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.neo4j.harness.Neo4j;
 
@@ -132,6 +137,12 @@ public class ParticipantsControllerTest {
     private UsersResource usersResource;
     @MockBean
     private UserResource userResource;
+    @MockBean
+    private RolesResource rolesResource;
+    @MockBean
+    private RoleMappingResource roleMappingResource;
+    @MockBean
+    private RoleScopeResource roleScopeResource;
     @Autowired
     private UserDaoImpl userDao;
     @Autowired
@@ -610,6 +621,7 @@ public class ParticipantsControllerTest {
         when(keycloak.realm("gaia-x")).thenReturn(realmResource);
         when(realmResource.users()).thenReturn(usersResource);
         when(usersResource.create(any())).thenReturn(Response.status(status).build());
+        when(realmResource.roles()).thenReturn(rolesResource);
         if (user == null) {
             when(usersResource.search(any())).thenReturn(List.of());
         } else {
@@ -621,6 +633,12 @@ public class ParticipantsControllerTest {
             when(usersResource.search(userRepo.getUsername())).thenReturn(List.of(userRepo));
             when(usersResource.get(any())).thenReturn(userResource);
             when(userResource.toRepresentation()).thenReturn(userRepo);
+            when(rolesResource.list()).thenReturn(getAllRoles());
+            when(userResource.roles()).thenReturn(roleMappingResource);
+            when(roleMappingResource.realmLevel()).thenReturn(roleScopeResource);
+            List<RoleRepresentation> roleRepresentations =  new ArrayList<>();
+            user.getRoleIds().forEach(roleId-> roleRepresentations.add(new RoleRepresentation(roleId, roleId, false)));
+            when(roleScopeResource.listAll()).thenReturn(roleRepresentations);
         }
     }
 

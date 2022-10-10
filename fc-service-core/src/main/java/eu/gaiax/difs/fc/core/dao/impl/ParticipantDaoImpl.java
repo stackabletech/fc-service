@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.core.dao.impl;
 
+import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.toUserProfile;
 import static eu.gaiax.difs.fc.core.util.KeycloakUtils.getErrorMessage;
 
 import eu.gaiax.difs.fc.api.generated.model.Participant;
@@ -98,9 +99,11 @@ public class ParticipantDaoImpl implements ParticipantDao {
     List<UserProfile> profiles = new ArrayList<>();
     int offset = 0, limit = 100;
     GroupResource group = instance.group(groupRepo.getId());
+    UsersResource usersResource = keycloak.realm(realm).users();
     do {
       users = group.members(offset, limit, false);
-      users.stream().map(UserDaoImpl::toUserProfile).forEach(ur -> profiles.add(ur));
+      users.stream().map(user->
+          toUserProfile(user, usersResource.get(user.getId()).roles().realmLevel().listAll())).forEach(profiles::add);
       offset += limit;
     } while (users.size() > 0);
 
