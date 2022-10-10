@@ -76,7 +76,7 @@ public class Neo4jGraphStoreTest {
         }
         OpenCypherQuery queryFull = new OpenCypherQuery(
                 "MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 25", Map.of());
-        List<Map<String, Object>> responseFull = graphGaia.queryData(queryFull);
+        List<Map<String, Object>> responseFull = graphGaia.queryData(queryFull).getResults();
         Assertions.assertEquals(resultListFull, responseFull);
     }
 
@@ -103,7 +103,7 @@ public class Neo4jGraphStoreTest {
         }
         OpenCypherQuery queryDelta = new OpenCypherQuery(
                 "MATCH (n:ns1__LegalPerson) WHERE n.ns1__name = $name RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
-        List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta);
+        List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
         Assertions.assertEquals(resultListDelta, responseDelta);
     }
 
