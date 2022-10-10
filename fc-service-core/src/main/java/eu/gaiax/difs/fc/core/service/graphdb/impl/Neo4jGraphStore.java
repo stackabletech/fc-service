@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.core.util.ClaimValidator;
@@ -78,20 +79,27 @@ public class Neo4jGraphStore implements GraphStore {
      * {@inheritDoc}
      */
     @Override
-    public List<Map<String, Object>> queryData(OpenCypherQuery sdQuery) {
+    public PaginatedResults<Map<String, Object>> queryData(OpenCypherQuery sdQuery) {
         log.debug("queryData.enter; got query: {}", sdQuery);
         try (Session session = driver.session()) {
             //In this function we use read transaction to avoid any Cypher query that modifies data
             return session.readTransaction(
                     tx -> {
                         List<Map<String, Object>> resultList = new ArrayList<>();
-                        Result result = tx.run(sdQuery.getQuery(), sdQuery.getParams());
+
+                      String finalString = getDynamicallyAddedCountClauseQuery(sdQuery);
+
+                      Result result = tx.run(finalString, sdQuery.getParams());
                         log.debug("queryData; got result: {}", result.keys());
+                        Long totalCount = 0L;
                         while (result.hasNext()) {
                             org.neo4j.driver.Record record = result.next();
                             Map<String, Object> map = record.asMap();
                             log.debug("queryData; record: {}", map);
                             Map<String, Object> outputMap = new HashMap<>();
+
+                            totalCount = (Long) map.getOrDefault("totalCount",resultList.size());
+
                             for (var entry : map.entrySet()) {
                                 if (entry.getValue() instanceof String) {
                                     outputMap.put(entry.getKey(), entry.getValue().toString());
@@ -105,7 +113,7 @@ public class Neo4jGraphStore implements GraphStore {
                             resultList.add(outputMap);
                         }
                         log.debug("queryData.exit; returning: {}", resultList);
-                        return resultList;
+                        return new PaginatedResults<>(totalCount,resultList);
                     }
             );
         } catch (Exception e) {
@@ -113,4 +121,31 @@ public class Neo4jGraphStore implements GraphStore {
             throw new ServerException("error querying data " + e.getMessage());
         }
     }
+
+  private String getDynamicallyAddedCountClauseQuery(OpenCypherQuery sdQuery) {
+    log.debug("getDynamicallyAddedCountClauseQuery.enter; actual query: {}", sdQuery.getQuery());
+     /*get string before statements and append count clause*/
+    String statement = "return";
+    int indexOf = sdQuery.getQuery().toLowerCase().indexOf(statement);
+
+    if (indexOf != -1) {
+      /*add totalCount to query to get count*/
+      StringBuilder subStringOfCount = new StringBuilder(sdQuery.getQuery().substring(0, indexOf));
+      subStringOfCount.append("WITH count(*) as totalCount ");
+
+      /*append totalCount to return statements*/
+      StringBuilder actualQuery = new StringBuilder(sdQuery.getQuery());
+      int indexOfAfter = actualQuery.toString().toLowerCase().indexOf(statement) + statement.length();
+      actualQuery.insert(indexOfAfter + 1, "totalCount, ");
+
+      /*finally combine both string */
+      String finalString = subStringOfCount.append(actualQuery).toString();
+      log.debug("getDynamicallyAddedCountClauseQuery.exit; count query appended : {}", finalString);
+      return finalString;
+    } else {
+      return sdQuery.getQuery();
+    }
+  }
+
+
 }

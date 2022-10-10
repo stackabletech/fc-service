@@ -1,6 +1,7 @@
 package eu.gaiax.difs.fc.core.service.graphdb;
 
 import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 
 import java.util.List;
@@ -36,7 +37,7 @@ public interface GraphStore {
      * @param sdQuery is the query to be executed
      * @return List of Maps
      */
-    List<Map<String, Object>> queryData(OpenCypherQuery sdQuery);
+    PaginatedResults<Map<String, Object>> queryData(OpenCypherQuery sdQuery);
 
 }
 

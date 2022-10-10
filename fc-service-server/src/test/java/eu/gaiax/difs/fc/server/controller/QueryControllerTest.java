@@ -54,8 +54,10 @@ import org.springframework.web.context.WebApplicationContext;
 @Import(EmbeddedNeo4JConfig.class)
 public class QueryControllerTest {
 
-    private final static String SD_FILE_NAME = "default-sd.json"; //"default_participant.json"; //  
-    
+    private final static String SD_FILE_NAME = "default-sd.json"; //"default_participant.json"; //
+
+    private final static String DEFAULT_SERVICE_SD_FILE_NAME = "default-sd-service-offering.json";
+
     @Autowired
     private WebApplicationContext context;
     @Autowired
@@ -96,7 +98,7 @@ public class QueryControllerTest {
     }
 
     
-    String QUERY_REQUEST_GET="{\"statement\": \"MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 25\", " +
+    String QUERY_REQUEST_GET="{\"statement\": \"MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 1\", " +
         "\"parameters\": " +
         "null}}";
 
@@ -160,6 +162,7 @@ public class QueryControllerTest {
 
         Results result = objectMapper.readValue(response, Results.class);
         assertEquals(1, result.getItems().size());
+        assertEquals(3, result.getTotalCount());
     }
 
     @Test
@@ -244,6 +247,9 @@ public class QueryControllerTest {
     }
 
     private void initialiseAllDataBaseWithManuallyAddingSDFromRepository() throws Exception {
+
+        fileStore.clearStorage();
+
         ContentAccessorDirect contentAccessor = new ContentAccessorDirect(FileReaderHelper.getMockFileDataAsString(SD_FILE_NAME));
         VerificationResultOffering verificationResult = verificationService.verifyOfferingSelfDescription(contentAccessor);
 
@@ -255,8 +261,19 @@ public class QueryControllerTest {
             "<http://w3id.org/gaia-x/service#name> \"EuProGigant Portal\"",
             "");
 
+        SdClaim sdClaim2 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal2.json>",
+            "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+            "<http://w3id.org/gaia-x/service#ServiceOffering>");
 
-        List<SdClaim> sdClaimFile = List.of(sdClaim,sdClaim1);
+        SdClaim sdClaim3 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal2.json>",
+            "<http://w3id.org/gaia-x/service#name> \"EuProGigant Portal2\"",
+            "");
+
+        SdClaim sdClaim4 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json>",
+            "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+            "<http://w3id.org/gaia-x/service#ServiceOffering>");
+
+        List<SdClaim> sdClaimFile = List.of(sdClaim,sdClaim1,sdClaim2,sdClaim3,sdClaim4);
 
         verificationResult.setClaims(sdClaimFile);
         verificationResult.setId(sdClaimFile.get(0).getSubject());
@@ -268,6 +285,29 @@ public class QueryControllerTest {
         SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor, verificationIdAsSubject,
             verificationResult.getIssuer(), new ArrayList<>());
         sdStore.storeSelfDescription(sdMetadata, verificationResult);
+
+        //adding second sd
+        ContentAccessorDirect contentAccessor2 =
+            new ContentAccessorDirect(FileReaderHelper.getMockFileDataAsString(DEFAULT_SERVICE_SD_FILE_NAME));
+        VerificationResultOffering verificationResult2 =
+            verificationService.verifyOfferingSelfDescription(contentAccessor2);
+
+        verificationResult2.setId(sdClaimFile.get(2).getSubject());
+
+        //Manually removing extra character from string <>
+        String id2 = verificationResult2.getId();
+        String verificationIdAsSubject2 = id2.substring(1, id.length() - 1);
+
+        SelfDescriptionMetadata sdMetadata2 = new SelfDescriptionMetadata(contentAccessor2, verificationIdAsSubject2,
+            verificationResult2.getIssuer(), new ArrayList<>());
+        sdStore.storeSelfDescription(sdMetadata2, verificationResult2);
+
+        //adding sd 3
+        ContentAccessorDirect contentAccessorDirect3 = new ContentAccessorDirect("test sd3");
+
+        SelfDescriptionMetadata sdMetadata3 = new SelfDescriptionMetadata(contentAccessorDirect3, "http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json",
+            "http://example.org/test-issuer", new ArrayList<>());
+        sdStore.storeSelfDescription(sdMetadata3, verificationResult2);
     }
 
 }

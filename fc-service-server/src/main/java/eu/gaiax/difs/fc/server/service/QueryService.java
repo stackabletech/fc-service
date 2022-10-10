@@ -5,6 +5,7 @@ import eu.gaiax.difs.fc.api.generated.model.Results;
 import eu.gaiax.difs.fc.api.generated.model.Statement;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.server.generated.controller.QueryApiDelegate;
 import java.io.IOException;
@@ -56,9 +57,9 @@ public class QueryService implements QueryApiDelegate {
     if ( !checkIfLimitPresent(statement) ) {
       addDefaultLimit(statement);
     }
-    List<Map<String, Object>> queryResultList = graphStore.queryData(new OpenCypherQuery(statement.getStatement(), statement.getParameters()));
-    // TODO: fix totalCount!
-    Results result = new Results(0, queryResultList);
+    PaginatedResults<Map<String, Object>> queryResultList =
+        graphStore.queryData(new OpenCypherQuery(statement.getStatement(), statement.getParameters()));
+    Results result = new Results((int) queryResultList.getTotalCount(), queryResultList.getResults());
     log.debug("query.exit; returning results: {}", result);
     return ResponseEntity.ok(result);
   }
