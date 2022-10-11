@@ -7,10 +7,15 @@ import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,8 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.query.Query;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,12 +44,41 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @Transactional
 public class SchemaStoreImpl implements SchemaStore {
+
   @Autowired
   @Qualifier("schemaFileStore")
   private FileStore fileStore;
 
   @Autowired
   private SessionFactory sessionFactory;
+
+// This seems to not work...
+//  @Bean
+//  public SmartInitializingSingleton importProcessor() {
+//    return this::initializeDefaultSchemas;
+//  }
+  public void initializeDefaultSchemas() {
+    Session currentSession = sessionFactory.getCurrentSession();
+    long count = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
+    if (count > 0) {
+      log.info("Default schemas already initialized.");
+      return;
+    }
+    addSchemasFromDirectory("defaultschema/ontology");
+    addSchemasFromDirectory("defaultschema/shacl");
+    currentSession.flush();
+    count = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
+    log.info("Added {} default schemas", count);
+  }
+
+  private void addSchemasFromDirectory(String path) {
+    URL url = getClass().getClassLoader().getResource(path);
+    String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8);
+    File ontologyDir = new File(str);
+    for (File ontology : ontologyDir.listFiles()) {
+      addSchema(new ContentAccessorFile(ontology));
+    }
+  }
 
   /**
    * Analyse the given schema character content.
@@ -86,10 +123,10 @@ public class SchemaStoreImpl implements SchemaStore {
      */
     Map<SchemaType, List<String>> schemaList = getSchemaList();
     log.debug("createCompositeSchema; got schemaList: {}", schemaList);
-    
+
     List<String> schemas = schemaList.get(type);
     if (schemas != null) {
-      for (String schemaId: schemas) {
+      for (String schemaId : schemas) {
         ContentAccessor schemaContent = getSchema(schemaId);
         // Add schema to union schema...
       }
@@ -98,9 +135,9 @@ public class SchemaStoreImpl implements SchemaStore {
     log.debug("createCompositeSchema.exit; returning: {}", contentBuilder.length());
     return new ContentAccessorDirect(contentBuilder.toString());
   }
-  
+
   private void buildCompositeSchema() {
-      
+
   }
 
   @Override
@@ -126,28 +163,24 @@ public class SchemaStoreImpl implements SchemaStore {
     }
 
     Session currentSession = sessionFactory.getCurrentSession();
-    Transaction transaction = currentSession.getTransaction();
 
     // Check duplicate terms
     List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)
-            .multiLoad(result.getExtractedUrls());
+        .multiLoad(result.getExtractedUrls());
     if (!redefines.isEmpty()) {
       throw new VerificationException("Schema redefines " + redefines.size() + " terms. First: " + redefines.get(0));
     }
 
-    SchemaRecord newRecord = new SchemaRecord(schemaId, nameHash, result.getSchemaType(),schema.getContentAsString(),
-        result.getExtractedUrls());
+    SchemaRecord newRecord = new SchemaRecord(schemaId, nameHash, result.getSchemaType(), schema.getContentAsString(), result.getExtractedUrls());
     try {
       currentSession.persist(newRecord);
     } catch (EntityExistsException ex) {
-      transaction.rollback();
       throw new ConflictException("A schema with id " + schemaId + " already exists.");
     }
 
     try {
       fileStore.storeFile(nameHash, schema);
     } catch (IOException ex) {
-      transaction.rollback();
       throw new RuntimeException("Failed to store schema file", ex);
     }
 
@@ -172,7 +205,7 @@ public class SchemaStoreImpl implements SchemaStore {
     // Find and lock record.
     SchemaRecord existing = currentSession.find(SchemaRecord.class, identifier, LockModeType.PESSIMISTIC_WRITE);
 
-    if(existing == null){
+    if (existing == null) {
       currentSession.clear();
       throw new NotFoundException("Schema with id " + identifier + " was not found");
     }
@@ -185,7 +218,7 @@ public class SchemaStoreImpl implements SchemaStore {
 
     // Check duplicate terms
     List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)
-            .multiLoad(result.getExtractedUrls());
+        .multiLoad(result.getExtractedUrls());
     if (!redefines.isEmpty()) {
       currentSession.clear();
       throw new ConflictException("Schema redefines " + redefines.size() + " terms. First: " + redefines.get(0));
@@ -203,8 +236,7 @@ public class SchemaStoreImpl implements SchemaStore {
     try {
       //Update schema file
       fileStore.replaceFile(existing.getNameHash(), schema);
-    }
-    catch (IOException ex) {
+    } catch (IOException ex) {
       transaction.rollback();
       throw new RuntimeException("Failed to store schema file", ex);
     }
@@ -220,8 +252,7 @@ public class SchemaStoreImpl implements SchemaStore {
     SchemaRecord existing = currentSession.find(SchemaRecord.class, identifier, LockModeType.PESSIMISTIC_WRITE);
     if (existing == null) {
       throw new NotFoundException("Schema with id " + identifier + " was not found");
-    }
-    else {
+    } else {
       currentSession.delete(existing);
       try {
         fileStore.deleteFile(existing.getNameHash());
@@ -238,7 +269,7 @@ public class SchemaStoreImpl implements SchemaStore {
     Session currentSession = sessionFactory.getCurrentSession();
     Map<SchemaType, List<String>> result = new HashMap<>();
     currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaTypeIdPair(s.type, s.schemaId) from SchemaRecord s", SchemaTypeIdPair.class)
-            .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
+        .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
     return result;
   }
 
@@ -263,8 +294,8 @@ public class SchemaStoreImpl implements SchemaStore {
     Session currentSession = sessionFactory.getCurrentSession();
     Map<SchemaType, List<String>> result = new HashMap<>();
     currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaTypeIdPair(s.type, s.schemaId) from SchemaRecord s join s.terms as t where t.term=?1", SchemaTypeIdPair.class)
-            .setParameter(1, entity)
-            .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
+        .setParameter(1, entity)
+        .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
     return result;
   }
 
