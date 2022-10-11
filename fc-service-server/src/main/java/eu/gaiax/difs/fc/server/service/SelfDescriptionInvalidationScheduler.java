@@ -6,13 +6,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+/**
+ * SelfDescriptionInvalidationScheduler for invalidating expired SDs in store.
+ */
 @Slf4j
 @Service
 public class SelfDescriptionInvalidationScheduler {
   @Autowired
   private SelfDescriptionStore sdStore;
 
-  @Scheduled(cron="${scheduler.sd.cron.expression}")
+  /**
+   * Scheduler for invalidating expired SDs in store.
+   */
+  @Scheduled(cron = "${scheduler.sd.cron.expression}")
   public void scheduleSdInvalidationTask() {
     log.debug("scheduleSdInvalidationTask.enter; Launched scheduler to invalidate expired SDs in store.");
     int numberOfExpiredSd = sdStore.invalidateSelfDescriptions();

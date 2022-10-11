@@ -31,25 +31,31 @@ public class WebConfiguration implements WebMvcConfigurer {
       }
     };
   }
-  
+
+  /**
+   * Defines firewall settings.
+   */
   @Bean
   public HttpFirewall configureFirewall() {
-      StrictHttpFirewall strictHttpFirewall = new StrictHttpFirewall();
-      //strictHttpFirewall.setAllowedHttpMethods(Collections.emptyList());
-      strictHttpFirewall.setAllowUrlEncodedDoubleSlash(true);
-      return strictHttpFirewall;
+    StrictHttpFirewall strictHttpFirewall = new StrictHttpFirewall();
+    //strictHttpFirewall.setAllowedHttpMethods(Collections.emptyList());
+    strictHttpFirewall.setAllowUrlEncodedDoubleSlash(true);
+    return strictHttpFirewall;
   }
-  
+
+  /**
+   * Defines RegistrationsHandlerMapping settings.
+   */
   @Bean
   public WebMvcRegistrations webMvcRegistrationsHandlerMapping() {
-      return new WebMvcRegistrations() {
-          @Override
-          public RequestMappingHandlerMapping getRequestMappingHandlerMapping() {
-              RequestMappingHandlerMapping mapper = new RequestMappingHandlerMapping();
-              mapper.setUrlDecode(true);
-              return mapper;
-          }
-      };
+    return new WebMvcRegistrations() {
+        @Override
+        public RequestMappingHandlerMapping getRequestMappingHandlerMapping() {
+            RequestMappingHandlerMapping mapper = new RequestMappingHandlerMapping();
+            mapper.setUrlDecode(true);
+            return mapper;
+        }
+    };
   }
     
 }

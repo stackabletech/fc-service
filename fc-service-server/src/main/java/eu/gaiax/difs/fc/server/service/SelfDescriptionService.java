@@ -71,8 +71,8 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    */
   @Override
   public ResponseEntity<SelfDescriptions> readSelfDescriptions(String uploadTr, String statusTr, String issuer,
-                                                                    String validator, SelfDescriptionStatus status, String id,
-                                                                    String hash, Integer offset, Integer limit) {
+                                                               String validator, SelfDescriptionStatus status,
+                                                               String id, String hash, Integer offset, Integer limit) {
     log.debug("readSelfDescriptions.enter; got uploadTimeRange: {}, statusTimeRange: {},"
             + "issuer: {}, validator: {}, status: {}, id: {}, hash: {}, offset: {}, limit: {}",
         uploadTr, statusTr, issuer, validator, status, id, hash, offset, limit);
@@ -87,7 +87,8 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     }
     final PaginatedResults<SelfDescriptionMetadata> selfDescriptions = sdStore.getByFilter(filter);
     log.debug("readSelfDescriptions.exit; returning: {}", selfDescriptions);
-    return ResponseEntity.ok(new SelfDescriptions((int) selfDescriptions.getTotalCount(), (List) selfDescriptions.getResults()));
+    return ResponseEntity.ok(new SelfDescriptions((int) selfDescriptions.getTotalCount(),
+        (List) selfDescriptions.getResults()));
   }
 
   /**
@@ -203,7 +204,8 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     if (sdMetadata.getStatus().equals(SelfDescriptionStatus.ACTIVE)) {
       sdStore.changeLifeCycleStatus(sdMetadata.getSdHash(), SelfDescriptionStatus.REVOKED);
     } else {
-      throw new ConflictException("The SD status cannot be changed because the SD Metadata status is " + sdMetadata.getStatus());
+      throw new ConflictException("The SD status cannot be changed because the SD Metadata status is "
+          + sdMetadata.getStatus());
     }
 
     log.debug("updateSelfDescription.exit; update self-description by hash: {}", selfDescriptionHash);
@@ -226,11 +228,11 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   }
 
   private boolean isNotNullObjects(Object... objs) {
-    return Arrays.stream(objs).anyMatch(x-> !Objects.isNull(x));
+    return Arrays.stream(objs).anyMatch(x -> !Objects.isNull(x));
   }
 
-  private SdFilter setupSdFilter(String id, String hash, Integer limit, Integer offset, SelfDescriptionStatus status, String issuer,
-                                 String validator, String uploadTr, String statusTr) {
+  private SdFilter setupSdFilter(String id, String hash, Integer limit, Integer offset, SelfDescriptionStatus status,
+                                 String issuer, String validator, String uploadTr, String statusTr) {
     SdFilter filterParams = new SdFilter();
     filterParams.setId(id);
     filterParams.setHash(hash);
