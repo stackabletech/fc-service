@@ -47,12 +47,13 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
 @ContextConfiguration(classes = {SchemaManagementImplTest.TestApplication.class, FileStoreConfig.class,
-    SchemaManagementImplTest.class, SchemaStoreImpl.class, DatabaseConfig.class})
+  SchemaManagementImplTest.class, SchemaStoreImpl.class, DatabaseConfig.class})
 @DirtiesContext
 @Transactional
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 public class SchemaManagementImplTest {
+
   @SpringBootApplication
   public static class TestApplication {
 
@@ -72,6 +73,7 @@ public class SchemaManagementImplTest {
   public void storageSelfCleaning() throws IOException {
     fileStore.clearStorage();
   }
+
   /**
    * Test of verifySchema method, of class SchemaManagementImpl.
    */
@@ -110,13 +112,13 @@ public class SchemaManagementImplTest {
     assertEquals(0, count, "Deleting the only file should result in exactly 0 files in the store.");
   }
 
-
   /**
-   * Test of addSchema method with content storing checking, of class SchemaManagementImpl.
+   * Test of addSchema method with content storing checking, of class
+   * SchemaManagementImpl.
    *
    */
   @Test
-  public void testAddSchemaWithLongContent() throws IOException  {
+  public void testAddSchemaWithLongContent() throws IOException {
     log.info("testAddSchemaWithLongContent");
 
     String path = "Schema-Tests/largeSchemaContent.json";
@@ -127,14 +129,15 @@ public class SchemaManagementImplTest {
 
     ContentAccessor ContentAccessor = schemaStore.getSchema(schemaId1);
 
-    assertEquals(schema1, ContentAccessor.getContentAsString(), "Checking schema content stored properly " +
-        "and retrieved properly");
+    assertEquals(schema1, ContentAccessor.getContentAsString(), "Checking schema content stored properly "
+        + "and retrieved properly");
 
     schemaStore.deleteSchema(schemaId1);
   }
+
   /**
-   * Test of addSchema method, of class SchemaManagementImpl.
-   * Adding the schema twice
+   * Test of addSchema method, of class SchemaManagementImpl. Adding the schema
+   * twice
    */
   @Test
   public void testAddDuplicateSchema() throws IOException {
@@ -170,6 +173,16 @@ public class SchemaManagementImplTest {
     assertEquals(0, count, "Deleting the only file should result in exactly 0 files in the store.");
 
     //TODO: check if terms are updated correctly
+  }
+
+  @Test
+  void addDefaultSchemas() {
+    schemaStore.initializeDefaultSchemas();
+    int count = 0;
+    for (File file : fileStore.getFileIterable()) {
+      count++;
+    }
+    assertEquals(67, count, "Deleting the only file should result in exactly 0 files in the store.");
   }
 
   /**
@@ -211,7 +224,6 @@ public class SchemaManagementImplTest {
   @Disabled
   public void testGetCompositeSchema() {
   }
-
 
   private static ContentAccessorFile getAccessor(String path) throws UnsupportedEncodingException {
     URL url = SchemaManagementImplTest.class.getClassLoader().getResource(path);
