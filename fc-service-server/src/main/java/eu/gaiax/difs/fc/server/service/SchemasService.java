@@ -32,7 +32,7 @@ public class SchemasService implements SchemasApiDelegate {
    *
    * @param id Identifier of the Schema. (required)
    * @return The schema for the given identifier. Depending on the type of the schema, either an ontology,
-   * shape graph or controlled vocabulary is returned. (status code 200)
+   *         shape graph or controlled vocabulary is returned. (status code 200)
    *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
    *         or Forbidden. The user does not have the permission to execute this request. (status code 403)
    *         or The specified resource was not found (status code 404)
@@ -125,7 +125,7 @@ public class SchemasService implements SchemasApiDelegate {
   }
 
   /**
-   * Service method for DELETE /schemas/{schemaId} : Delete a Schema
+   * Service method for DELETE /schemas/{schemaId} : Delete a Schema.
    *
    * @param schemaId Identifier of the Schema (required)
    * @return Deleted Schema (status code 200)

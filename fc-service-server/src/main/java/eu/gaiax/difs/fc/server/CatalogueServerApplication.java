@@ -9,7 +9,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * The Application class.
  */
 @EnableScheduling
-@SpringBootApplication(exclude = HibernateJpaAutoConfiguration.class) // HibernateJpaAutoConfiguration breaks the Participant API implementation
+@SpringBootApplication(exclude = HibernateJpaAutoConfiguration.class)
+// HibernateJpaAutoConfiguration breaks the Participant API implementation
 public class CatalogueServerApplication {
   /**
    * The main Method.

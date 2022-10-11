@@ -73,7 +73,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   @Transactional
   public ResponseEntity<Participant> addParticipant(String body) {
     log.debug("addParticipant.enter; got participant: {}", body); // it can be JWT?
-    Pair<VerificationResultParticipant,SelfDescriptionMetadata> pairResult = validateSelfDescription(body);
+    Pair<VerificationResultParticipant, SelfDescriptionMetadata> pairResult = validateSelfDescription(body);
     VerificationResultParticipant verificationResult = pairResult.getLeft();
     SelfDescriptionMetadata selfDescriptionMetadata = pairResult.getRight();
 
@@ -164,7 +164,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<Participants> getParticipants(Integer offset, Integer limit) { //, String orderBy, Boolean asc) {
+  public ResponseEntity<Participants> getParticipants(Integer offset, Integer limit) { //String orderBy, Boolean asc) {
     // sorting is not supported yet by keycloak admin API
     log.debug("getParticipants.enter; got offset: {}, limit: {}", offset, limit);
     PaginatedResults<ParticipantMetaData> results = partDao.search(offset, limit);
@@ -199,14 +199,14 @@ public class ParticipantsService implements ParticipantsApiDelegate {
 
     checkUserAndRolePermission(participantId);
 
-    Pair<VerificationResultParticipant,SelfDescriptionMetadata> pairResult = validateSelfDescription(body);
+    Pair<VerificationResultParticipant, SelfDescriptionMetadata> pairResult = validateSelfDescription(body);
     VerificationResultParticipant verificationResult = pairResult.getLeft();
     SelfDescriptionMetadata selfDescriptionMetadata = pairResult.getRight();
 
-    ParticipantMetaData participantUpdated = toParticipantMetaData(verificationResult,selfDescriptionMetadata);
+    ParticipantMetaData participantUpdated = toParticipantMetaData(verificationResult, selfDescriptionMetadata);
 
     checkUpdates(participantExisted, participantUpdated);
-    selfDescriptionStore.storeSelfDescription(selfDescriptionMetadata,verificationResult);
+    selfDescriptionStore.storeSelfDescription(selfDescriptionMetadata, verificationResult);
 
     registerRollBackForFileStoreManuallyIfTransactionFail(participantUpdated);
 
@@ -217,9 +217,10 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   }
 
   /**
-   * Utility method to return {@link ParticipantMetaData}
-   * @param verificationResult result of validation
-   * @param selfDescriptionMetadata metadata of self-description
+   * Utility method to return {@link ParticipantMetaData}.
+   *
+   * @param verificationResult Result of validation
+   * @param selfDescriptionMetadata Metadata of self-description
    * @return ParticipantMetaData
    */
   private ParticipantMetaData toParticipantMetaData(VerificationResultParticipant verificationResult,
@@ -232,14 +233,15 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   /**
    * Catalogue-admin user has All permission and for others Check if session user id has same with the existing
    * participant id.
+   *
    * @param participantId id of the participant
    */
   private ParticipantMetaData checkUserAndRolePermission(String participantId) {
     ParticipantMetaData partExisting = partDao.select(participantId)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
     log.debug("checkUserAndRolePermission.existing participant got : {}", partExisting);
-    if (!SessionUtils.sessionUserHasRole("ROLE_" + CATALOGUE_ADMIN_ROLE) &&
-        !partExisting.getId().equals(SessionUtils.getSessionParticipantId())) {
+    if (!SessionUtils.sessionUserHasRole("ROLE_" + CATALOGUE_ADMIN_ROLE)
+        && !partExisting.getId().equals(SessionUtils.getSessionParticipantId())) {
       throw new ForbiddenException("User has no permissions to operate participant : " + participantId);
     }
     return partExisting;
@@ -247,10 +249,11 @@ public class ParticipantsService implements ParticipantsApiDelegate {
 
   /**
    * Validate self-Description.
+   *
    * @param body self description
    * @return DTO object containing result and metadata of self-description
    */
-  private Pair<VerificationResultParticipant,SelfDescriptionMetadata> validateSelfDescription(String body){
+  private Pair<VerificationResultParticipant, SelfDescriptionMetadata> validateSelfDescription(String body) {
 
     ContentAccessorDirect contentAccessorDirect = new ContentAccessorDirect(body);
     VerificationResultParticipant verificationResultParticipant =
@@ -258,15 +261,16 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     log.debug("updateParticipant.verificationResultParticipant.got : {}", verificationResultParticipant);
 
     SelfDescriptionMetadata selfDescriptionMetadata = new SelfDescriptionMetadata(contentAccessorDirect,
-        verificationResultParticipant);
-    log.debug("getParticipantExtWithValidationAndStore.got SelfDescriptionMetadata: {}",selfDescriptionMetadata);
+         verificationResultParticipant);
+    log.debug("getParticipantExtWithValidationAndStore.got SelfDescriptionMetadata: {}", selfDescriptionMetadata);
 
-    return Pair.of(verificationResultParticipant,selfDescriptionMetadata);
+    return Pair.of(verificationResultParticipant, selfDescriptionMetadata);
   }
 
   /**
    * Manually registering rollback for the file system when transactions was rolled-back as spring does not have
    * rollback for file systems storage.
+   *
    * @param part participant metadata to be rolled back.
    */
   private void registerRollBackForFileStoreManuallyIfTransactionFail(ParticipantMetaData part) {
@@ -274,14 +278,14 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
       @Override
       public void afterCompletion(int status) {
-        if(TransactionSynchronization.STATUS_ROLLED_BACK == status){
+        if (TransactionSynchronization.STATUS_ROLLED_BACK == status) {
           try {
             fileStore.deleteFile(part.getSdHash());
-            log.debug("registerRollBackForFileStoreManuallyIfTransactionFail.Rolling back manually file with hash  : " +
-                "{}", part.getSdHash());
+            log.debug("registerRollBackForFileStoreManuallyIfTransactionFail.Rolling back manually file with hash  : "
+                + "{}", part.getSdHash());
             TransactionSynchronizationManager.clearSynchronization();
-          } catch(IOException ex) {
-
+          } catch (IOException ex) {
+              log.error(ex.getMessage(), ex);
           }
         }
       }
@@ -296,7 +300,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
    */
   private void checkUpdates(ParticipantMetaData existed, ParticipantMetaData updated) {
     if (!existed.getId().equals(updated.getId())) {
-      throw new ClientException("The participant ID cannot be changed for Participant with ID " + existed.getId() );
+      throw new ClientException("The participant ID cannot be changed for Participant with ID " + existed.getId());
     }
   }
 }

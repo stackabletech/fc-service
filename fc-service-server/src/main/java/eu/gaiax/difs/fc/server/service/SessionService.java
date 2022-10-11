@@ -39,14 +39,14 @@ public class SessionService implements SessionApiDelegate {
   }
   
   /**
-   * 
+   * Logout for current session.
    */
   @Override
   public ResponseEntity<Void> logoutCurrentSession() {
-      String userId = getSessionUserId();
-      log.debug("logoutCurrentSession.enter; got userId: {}", userId);
-      ssnDao.delete(userId);
-      log.debug("logoutCurrentSession.exit;");
-      return ResponseEntity.ok(null);
+    String userId = getSessionUserId();
+    log.debug("logoutCurrentSession.enter; got userId: {}", userId);
+    ssnDao.delete(userId);
+    log.debug("logoutCurrentSession.exit;");
+    return ResponseEntity.ok(null);
   }
 }

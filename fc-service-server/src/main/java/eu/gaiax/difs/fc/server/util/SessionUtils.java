@@ -28,8 +28,9 @@ public class SessionUtils {
 
   /**
    * Public static method to get User ID from the active user session.
-   * 
-   * @return
+   *
+   *
+   * @return String user Id.
    */
   public static String getSessionUserId() {
     String userId = null;
@@ -41,6 +42,12 @@ public class SessionUtils {
     return userId;
   }
 
+  /**
+   * Checks user session role.
+   *
+   * @param role role to be checked.
+   * @return boolean status.
+   */
   public static boolean sessionUserHasRole(String role) {
     Collection<GrantedAuthority> authorities = (Collection<GrantedAuthority>)
         SecurityContextHolder.getContext().getAuthentication().getAuthorities();

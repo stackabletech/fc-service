@@ -38,7 +38,7 @@ public class VerificationService implements VerificationApiDelegate {
    * Service method for POST /verifications/self-descriptions: Send a JSON-LD document to verify with the information
    * from the Catalogue.
    *
-   * @param selfDescription JSON-LD document to be verified object to send queries.
+   * @param jsonSelfDescription JSON-LD document to be verified object to send queries.
    * @return Verification result (status code 200)
    *       or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
    *       or Query Timeout: the query took longer than the configured timeout interval.
@@ -49,7 +49,8 @@ public class VerificationService implements VerificationApiDelegate {
   @Override
   public ResponseEntity<VerificationResult> verify(String jsonSelfDescription) {
     log.debug("verify.enter; got body: {}", jsonSelfDescription);
-    VerificationResult verificationResult = verificationService.verifySelfDescription(new ContentAccessorDirect(jsonSelfDescription));
+    VerificationResult verificationResult =
+        verificationService.verifySelfDescription(new ContentAccessorDirect(jsonSelfDescription));
     log.debug("verify.exit; returning result {} ", verificationResult);
     return new ResponseEntity<>(verificationResult, HttpStatus.OK);
 

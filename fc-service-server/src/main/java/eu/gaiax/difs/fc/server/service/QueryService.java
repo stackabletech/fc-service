@@ -54,7 +54,7 @@ public class QueryService implements QueryApiDelegate {
   @Override
   public ResponseEntity<Results> query(String queryLanguage, Statement statement) {
     log.debug("query.enter; got queryLanguage: {}, statement: {}", queryLanguage, statement);
-    if ( !checkIfLimitPresent(statement) ) {
+    if (!checkIfLimitPresent(statement)) {
       addDefaultLimit(statement);
     }
     PaginatedResults<Map<String, Object>> queryResultList =
@@ -90,8 +90,9 @@ public class QueryService implements QueryApiDelegate {
   }
 
   /**
-   * Adding default limit for the query if not present
-   * @param statement
+   * Adding default limit for the query if not present.
+   *
+   * @param statement Query Statement
    */
   private void addDefaultLimit(Statement statement) {
     String appendLimit = " limit $limit";
@@ -104,11 +105,12 @@ public class QueryService implements QueryApiDelegate {
   }
 
   /**
-   * Check if limit is present or not in query
-   * @param statement
+   * Check if limit is present or not in query.
+   *
+   * @param statement Query Statement
    * @return boolean match status
    */
-  private boolean checkIfLimitPresent(Statement statement){
+  private boolean checkIfLimitPresent(Statement statement) {
     String subItem = "limit";
     String pattern = "(?m)(^|\\s)" + subItem + "(\\s|$)";
     Pattern p = Pattern.compile(pattern);
