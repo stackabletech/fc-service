@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
@@ -72,9 +73,13 @@ public class UserDaoImpl implements UserDao {
   @Override
   public UserProfile select(String userId) {
     UsersResource instance = keycloak.realm(realm).users();
-    UserResource userResource = instance.get(userId);
-    UserRepresentation userRepo = userResource.toRepresentation();
-    return toUserProfile(userRepo, userResource.roles().realmLevel().listAll());
+    try {
+      UserResource userResource = instance.get(userId);
+      UserRepresentation userRepo = userResource.toRepresentation();
+      return toUserProfile(userRepo, userResource.roles().realmLevel().listAll());
+    } catch (NotFoundException exception) {
+      throw new eu.gaiax.difs.fc.core.exception.NotFoundException("User with id " + userId + " not found");
+    }
   }
 
   /**
