@@ -172,10 +172,14 @@ public class UsersControllerTest {
     public void wrongUserShouldReturnNotFoundResponse() throws Exception {
         setupKeycloak(HttpStatus.SC_NOT_FOUND, null, "123");
 
-        mockMvc
+        String result = mockMvc
             .perform(MockMvcRequestBuilders.get("/users/{userId}", "123")
                 .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound())
+            .andReturn().getResponse().getContentAsString();
+        Error error = objectMapper.readValue(result, Error.class);
+        assertNotNull(error);
+        assertEquals("User with id 123 not found", error.getMessage());
     }
 
     @Test
@@ -297,7 +301,7 @@ public class UsersControllerTest {
         when(realmResource.roles()).thenReturn(rolesResource);
         if (user == null) {
             when(usersResource.create(any())).thenReturn(Response.status(status).build());
-            when(usersResource.delete(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
+            when(usersResource.delete(any())).thenThrow(new NotFoundException("User with id " + id + " not found"));
             when(usersResource.list(any(), any())).thenReturn(List.of());
             when(usersResource.search(any())).thenReturn(List.of());
             when(usersResource.get(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
