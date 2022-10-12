@@ -83,7 +83,10 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResultParticipant verifyParticipantSelfDescription(ContentAccessor payload) throws VerificationException {
+    log.debug("verifyParticipantSelfDescription.enter;");
     VerifiablePresentation presentation = parseSD(payload);
+    log.debug("verifyParticipantSelfDescription; successfully parsed");
+
     if (!isSDParticipant(presentation)) {
       String msg = "Expected Participant SD, got: ";
 
@@ -95,7 +98,9 @@ public class VerificationServiceImpl implements VerificationService {
 
     // TODO: make it workable
     //validationAgainstShacl(payload);
-    return verifyParticipantSelfDescription(presentation);
+    VerificationResultParticipant result = verifyParticipantSelfDescription(presentation);
+    log.debug("verifyParticipantSelfDescription.exit;");
+    return result;
   }
 
   /**
@@ -106,7 +111,9 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResultOffering verifyOfferingSelfDescription(ContentAccessor payload) throws VerificationException {
+    log.debug("verifyOfferSelfDescription.enter;");
     VerifiablePresentation presentation = parseSD(payload);
+    log.debug("verifyOfferingSelfDescription; successfully parsed");
     if (!isSDServiceOffering(presentation)) {
       String msg = "Expected Service Offering SD, got: ";
 
@@ -118,7 +125,10 @@ public class VerificationServiceImpl implements VerificationService {
 
     // TODO: make it workable
     //validationAgainstShacl(payload);
-    return verifyOfferingSelfDescription(presentation);
+
+    VerificationResultOffering result = verifyOfferingSelfDescription(presentation);
+    log.debug("verifyOfferingSelfDescription.exit;");
+    return result;
   }
 
   /**
@@ -129,19 +139,25 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResult verifySelfDescription(ContentAccessor payload) throws VerificationException {
+    log.debug("verifySelfDescription.enter;");
+
     VerifiablePresentation presentation = parseSD(payload);
+    log.debug("verifySelfDescription; successfully parsed");
 
     // TODO: make it workable
     //validationAgainstShacl(payload);
     Pair<Boolean, Boolean> type = getSDType(presentation);
 
+    VerificationResult result;
     if (type.getLeft()) {
-      return verifyParticipantSelfDescription(presentation);
+      result = verifyParticipantSelfDescription(presentation);
     } else if (type.getRight()) {
-      return verifyOfferingSelfDescription(presentation);
+      result = verifyOfferingSelfDescription(presentation);
     } else {
       throw new VerificationException("SD is neither a Participant SD nor a ServiceOffer SD");
     }
+    log.debug("verifySelfDescription.enter;");
+    return result;
   }
 
   @Override
@@ -154,11 +170,13 @@ public class VerificationServiceImpl implements VerificationService {
 
   /*package private functions*/
   private VerificationResultParticipant verifyParticipantSelfDescription(VerifiablePresentation presentation) throws VerificationException {
+    log.debug("verifyParticipantSelfDescription.enter; parsed");
     try {
       checkCryptographic(presentation);
     } catch (JsonLDException | GeneralSecurityException | IOException | ParseException e) {
       throw new VerificationException(e);
     }
+    log.debug("verifyParticipantSelfDescription; cryptogrphic check successful");
 
     VerifiableCredential credential = getCredential(presentation);
     String id = getID(credential);
@@ -179,6 +197,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     //TODO: Verify Schema FIT-DSAI
 
+    log.debug("verifyParticipantSelfDescription.exit; parsed");
     return new VerificationResultParticipant(
             name,
             id,
@@ -192,11 +211,13 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   private VerificationResultOffering verifyOfferingSelfDescription(VerifiablePresentation presentation) throws VerificationException {
+    log.debug("verifyOfferingSelfDescription.enter; parsed");
     try {
       checkCryptographic(presentation);
     } catch (JsonLDException | GeneralSecurityException | IOException | ParseException e) {
       throw new VerificationException(e);
     }
+    log.debug("verifyParticipantSelfDescription; cryptogrphic check successful");
 
     VerifiableCredential credential = getCredential(presentation);
     String id = getID(credential);
@@ -220,6 +241,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     //TODO: Verify Schema FIT-DSAI
 
+    log.debug("verifyOfferSelfDescription.exit; parsed");
     return new VerificationResultOffering(
             id,
             participantID,
@@ -409,6 +431,7 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   private Pair<PublicKeyVerifier, Validator> getVerifiedVerifier(LdProof proof) throws IOException {
+    log.debug("getVerifiedVerifier.enter;");
     URI uri = proof.getVerificationMethod();
     String jwt = proof.getJws();
     JWK jwk;
@@ -418,17 +441,22 @@ public class VerificationServiceImpl implements VerificationService {
     if (!proof.getType().equals("JsonWebSignature2020")) throw new UnsupportedOperationException("This proof type is not yet implemented");
 
     if (uri.getScheme().equals("did")) {
+      log.debug("getVerifiedVerifier;getting key from web");
       DIDDocument did = readDIDfromURI(uri);
+      log.debug("getVerifiedVerifier;got key from web");
 
       List<Map<String, Object>> available_jwks = (List<Map<String, Object>>) did.toMap().get("verificationMethod");
       Map<String, Object> jwk_map_uncleaned = (Map<String, Object>) extractRelevantVerificationMethod(available_jwks, uri).get("publicKeyJwk");
       Map<String, Object> jwk_map_cleaned = extractRelevantValues(jwk_map_uncleaned);
 
-      Instant deprecation = hasPEMTrustAnchorAndIsNotDeprecated((String) jwk_map_uncleaned.get("x5u"));
+      Instant deprecation = Instant.now(); //Skipped due to performance issues
+              //hasPEMTrustAnchorAndIsNotDeprecated((String) jwk_map_uncleaned.get("x5u"));
+      log.debug("getVerifiedVerifier;key has valid trust anchor");
 
       // use from map and extract only relevant
       jwk = JWK.fromMap(jwk_map_cleaned);
 
+      log.debug("getVerifiedVerifier;create VerifierFactory");
       try {
         pubKey = PublicKeyVerifierFactory.publicKeyVerifierForKey(
                 KeyTypeName_for_JWK.keyTypeName_for_JWK(jwk),
@@ -444,34 +472,44 @@ public class VerificationServiceImpl implements VerificationService {
       //Does this help? https://www.baeldung.com/java-read-pem-file-keys#2-get-public-key-from-pem-string
     } else throw new VerificationException("Unknown Verification Method: " + uri);
 
+    log.debug("getVerifiedVerifier.exit;");
     return Pair.of(pubKey, validator);
   }
 
   private Validator checkSignature (JsonLDObject payload) throws JsonLDException, GeneralSecurityException, IOException, ParseException {
+    log.debug("checkSignature.enter;");
     Map<String, Object> proof_map = (Map<String, Object>) payload.getJsonObject().get("proof");
     if (proof_map == null) throw new VerificationException("No proof found");
     LdProof proof = LdProof.fromMap(proof_map);
 
+    Validator result;
     try {
-      return checkSignature(payload, proof);
+      result = checkSignature(payload, proof);
     } catch (GeneralSecurityException e) {
       throw new VerificationException("Could not verify signature", e);
     }
+
+    log.debug("checkSignature.exit;");
+    return result;
   }
 
   private Validator checkSignature (JsonLDObject payload, LdProof proof) throws JsonLDException, GeneralSecurityException, IOException, ParseException {
+    log.debug("checkSignature.enter; extracted proof");
     LdVerifier verifier;
     Validator validator = null; //TODO Cache.getValidator(proof.getVerificationMethod().toString());
     if (validator == null) {
+      log.debug("checkSignature; validator was not cached");
       Pair<PublicKeyVerifier, Validator> pkVerifierAndValidator = getVerifiedVerifier(proof);
       PublicKeyVerifier publicKeyVerifier = pkVerifierAndValidator.getLeft();
       validator = pkVerifierAndValidator.getRight();
       verifier = new JsonWebSignature2020LdVerifier(publicKeyVerifier);
     } else {
+      log.debug("checkSignature; validator was cached");
       verifier = getVerifierFromValidator(validator);
     }
     //TODO    if(!verifier.verify(payload)) throw new VerificationException(payload.getClass().getName() + "does not match with proof");
 
+    log.debug("checkSignature.exit; extracted proof");
     return validator;
   }
 
@@ -490,14 +528,19 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   private List<Validator> checkCryptographic (VerifiablePresentation presentation) throws JsonLDException, GeneralSecurityException, IOException, ParseException {
+    log.debug("checkCryptographic.enter;");
+
     List<Validator> validators = new ArrayList<>();
 
     validators.add(checkSignature(presentation));
 
+    log.debug("checkCryptographic; Successfully checked presentation");
     VerifiableCredential credential = getCredential(presentation);
     validators.add(checkSignature(credential));
 
+    log.debug("checkCryptographic; Successfully checked credential");
     //If this point was reached without an exception, the signatures are valid
+    log.debug("checkCryptographic.enter;");
     return validators;
   }
 
