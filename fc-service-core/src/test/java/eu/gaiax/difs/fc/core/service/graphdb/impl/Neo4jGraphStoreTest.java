@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
+import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -309,4 +310,48 @@ public class Neo4jGraphStoreTest {
         }
     }
 
+    @Test
+    void testRejectQueriesThatModifyData() throws Exception {
+        OpenCypherQuery queryDelete = new OpenCypherQuery(
+                "MATCH (n) DETACH DELETE n;", null);
+        Assertions.assertThrows(
+                ServerException.class,
+                () -> {
+                    graphGaia.queryData(queryDelete);
+                }
+        );
+
+        OpenCypherQuery queryUpdate = new OpenCypherQuery(
+                "MATCH (n) SET n.name = 'Santa' RETURN n;", null);
+        Assertions.assertThrows(
+                ServerException.class,
+                () -> {
+                    graphGaia.queryData(queryUpdate);
+                }
+        );
+    }
+
+    @Test
+    void testQueryDataTimeout() {
+        int acceptableDuration = graphGaia.queryTimeoutInSeconds * 1000;
+        int tooLongDuration = (graphGaia.queryTimeoutInSeconds + 1) * 1000;  // a second more than acceptable
+
+        Assertions.assertDoesNotThrow(
+                () -> graphGaia.queryData(
+                        new OpenCypherQuery(
+                                "CALL apoc.util.sleep(" + acceptableDuration + ")",
+                                null
+                        )
+                )
+        );
+
+        Assertions.assertThrows(
+                ServerException.class,
+                () -> graphGaia.queryData(
+                        new OpenCypherQuery(
+                                "CALL apoc.util.sleep(" + tooLongDuration + ")", null
+                        )
+                )
+        );
+    }
 }

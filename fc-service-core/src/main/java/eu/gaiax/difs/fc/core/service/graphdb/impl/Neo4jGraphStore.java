@@ -10,18 +10,26 @@ import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
+import org.neo4j.driver.TransactionConfig;
 import org.neo4j.driver.internal.InternalNode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
+@Configuration
 @Component
 public class Neo4jGraphStore implements GraphStore {
+
+    @Value("${graphstore.query-timeout-in-seconds}")
+    protected int queryTimeoutInSeconds;
 
     @Autowired
     private Driver driver;
@@ -83,6 +91,11 @@ public class Neo4jGraphStore implements GraphStore {
         log.debug("queryData.enter; got query: {}", sdQuery);
         try (Session session = driver.session()) {
             //In this function we use read transaction to avoid any Cypher query that modifies data
+            TransactionConfig transactionConfig =
+                    TransactionConfig.builder()
+                            .withTimeout(Duration.ofSeconds(queryTimeoutInSeconds))
+                            .build();
+
             return session.readTransaction(
                     tx -> {
                         List<Map<String, Object>> resultList = new ArrayList<>();
@@ -114,7 +127,8 @@ public class Neo4jGraphStore implements GraphStore {
                         }
                         log.debug("queryData.exit; returning: {}", resultList);
                         return new PaginatedResults<>(totalCount,resultList);
-                    }
+                    },
+                    transactionConfig
             );
         } catch (Exception e) {
             log.error("queryData.error", e);

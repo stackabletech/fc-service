@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.testsupport.config;
 
 import java.util.List;
 
+import apoc.util.Utils;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.helpers.SocketAddress;
@@ -34,9 +35,9 @@ public class EmbeddedNeo4JConfig {
     log.info("starting Embedded Neo4J DB");
     Neo4j embeddedDatabaseServer = Neo4jBuilders.newInProcessBuilder()
         .withDisabledServer()
-        .withConfig(GraphDatabaseSettings.procedure_allowlist, List.of("gds.*", "n10s.*"))
+        .withConfig(GraphDatabaseSettings.procedure_allowlist, List.of("gds.*", "n10s.*", "apoc.*"))
         .withConfig(BoltConnector.listen_address, new SocketAddress(7687))
-        .withConfig(GraphDatabaseSettings.procedure_unrestricted, List.of("gds.*", "n10s.*"))
+        .withConfig(GraphDatabaseSettings.procedure_unrestricted, List.of("gds.*", "n10s.*", "apoc.*"))
         // will be user for gds procedure
         .withProcedure(GraphExistsProc.class) // gds.graph.exists procedure
         .withProcedure(GraphListProc.class)
@@ -44,6 +45,8 @@ public class EmbeddedNeo4JConfig {
         // will be used for neo-semantics
         .withProcedure(GraphConfigProcedures.class) // n10s.graphconfig.*
         .withProcedure(RDFLoadProcedures.class)
+        // will be used for apoc
+        .withProcedure(Utils.class) // apoc.utils.*
         .build();
     log.info("started Embedded Neo4J DB: {}", embeddedDatabaseServer);
     return embeddedDatabaseServer;
