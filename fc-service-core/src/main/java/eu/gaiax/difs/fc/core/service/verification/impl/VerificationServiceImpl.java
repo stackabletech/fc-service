@@ -167,7 +167,7 @@ public class VerificationServiceImpl implements VerificationService {
     String key = (String) proof.get("verificationMethod");
 
     CredentialSubject credentialSubjects = getCredentialSubjects(credential);
-    List<SdClaim> claims = extractClaims(presentation);
+    List<SdClaim> claims = extractClaims(credentialSubjects);
 
     /*
     Maybe one of these methods can help you
@@ -207,7 +207,7 @@ public class VerificationServiceImpl implements VerificationService {
     List<Validator> validators = new ArrayList<>();
 
     CredentialSubject credentialSubjects = getCredentialSubjects(credential);
-    List<SdClaim> claims = extractClaims(presentation);
+    List<SdClaim> claims = extractClaims(credentialSubjects);
 
     URI issuer = credential.getIssuer();
     if (issuer == null) {
@@ -235,15 +235,14 @@ public class VerificationServiceImpl implements VerificationService {
   /**
    * A method that returns a list of claims given a self-description's VerifiablePresentation
    *
-   * @param presentation a self-description as Verifiable Presentation for claims extraction
+   * @param cs a self-description as Verifiable Presentation for claims extraction
    * @return a list of claims.
    */
-   List<SdClaim> extractClaims(VerifiablePresentation presentation) {
+   List<SdClaim> extractClaims(CredentialSubject cs) {
 
-     log.debug("extractClaims.enter; got Presentation: {}", presentation);
+     log.debug("extractClaims.enter; got credential subuject: {}", cs);
      List<SdClaim> claims = new ArrayList<>();
      try {
-       CredentialSubject cs = presentation.getVerifiableCredential().getCredentialSubject();
        for (RdfNQuad nquad: cs.toDataset().toList()) {
          log.debug("extractClaims; got NQuad: {}", nquad);
          if (nquad.getSubject().isIRI()) {
