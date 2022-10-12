@@ -134,7 +134,7 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
       name = "validators",
       columnDefinition = "text[]"
   )
-  public String[] getValidatorDidArray() {
+  public String[] getValidators() { 
     final List<String> validatorDids = getValidatorDids();
     if (validatorDids == null) {
       return null;
@@ -142,7 +142,7 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
     return validatorDids.toArray(String[]::new);
   }
 
-  public void setValidatorDidArray(String[] validatorDids) {
+  public void setValidators(String[] validatorDids) {
     if (validatorDids == null) {
       super.setValidatorDids(null);
       return;
@@ -162,7 +162,7 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
     this.setIssuer(sdMeta.getIssuer());
     this.setUploadTime(sdMeta.getUploadDatetime().toInstant());
     this.setStatusTime(sdMeta.getStatusDatetime().toInstant());
-    this.setContent(sdMeta.getSelfDescription().getContentAsString());
+    this.setSelfDescription(sdMeta.getSelfDescription());
     this.setValidatorDids(sdMeta.getValidatorDids());
   }
 }

@@ -4,6 +4,7 @@ import static eu.gaiax.difs.fc.server.util.SelfDescriptionHelper.parseTimeRange;
 import static eu.gaiax.difs.fc.server.util.SessionUtils.getSessionParticipantId;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionResult;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptions;
 import eu.gaiax.difs.fc.core.exception.ClientException;
@@ -18,10 +19,11 @@ import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate;
 import java.net.URI;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
 import javax.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,15 +35,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+
 /**
  * Implementation of the {@link eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate} interface.
  */
 @Slf4j
 @Service
 public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
+
   @Autowired
   private VerificationService verificationService;
-
   @Autowired
   private SelfDescriptionStore sdStore;
 
@@ -54,13 +57,13 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    * @param statusTr Filter for the time range when the status of the SD was last changed in the catalogue.
    *                        The time range has to be specified as start time and end time as ISO8601 timestamp
    *                        separated by a &#x60;/&#x60;. (optional)
-   * @param issuer          Filter for the issuer of the SD. This is the unique ID of the Participant
+   * @param issuers         Filter for the issuer of the SD. This is the unique ID of the Participant
    *                        that has prepared the SD. (optional)
-   * @param validator       Filter for a validator of the SD. This is the unique ID of the Participant
+   * @param validators      Filter for a validator of the SD. This is the unique ID of the Participant
    *                        that validated (part of) the SD. (optional)
-   * @param status          Filter for the status of the SD. (optional, default to active)
-   * @param id              Filter for id/credentialSubject of the SD. (optional)
-   * @param hash            Filter for a hash of the SD. (optional)
+   * @param statuses        Filter for the status of the SD. (optional, default to active)
+   * @param ids             Filter for id/credentialSubject of the SD. (optional)
+   * @param hashes          Filter for a hash of the SD. (optional)
    * @param offset          The number of items to skip before starting to collect the result set.
    *                        (optional, default to 0)
    * @param limit           The number of items to return. (optional, default to 100)
@@ -70,27 +73,40 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    *        Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<SelfDescriptions> readSelfDescriptions(String uploadTr, String statusTr, String issuer,
-                                                               String validator, SelfDescriptionStatus status,
-                                                               String id, String hash, Integer offset, Integer limit) {
-    log.debug("readSelfDescriptions.enter; got uploadTimeRange: {}, statusTimeRange: {},"
-            + "issuer: {}, validator: {}, status: {}, id: {}, hash: {}, offset: {}, limit: {}",
-        uploadTr, statusTr, issuer, validator, status, id, hash, offset, limit);
+  public ResponseEntity<SelfDescriptions> readSelfDescriptions(String uploadTr, String statusTr, 
+          List<String> issuers, List<String> validators, List<SelfDescriptionStatus> statuses, List<String> ids,
+          List<String> hashes, Boolean withMeta, Boolean withContent, Integer offset, Integer limit) {
+    log.debug("readSelfDescriptions.enter; got uploadTimeRange: {}, statusTimeRange: {}, issuers: {}, validators: {}, "
+          + "statuses: {}, ids: {}, hashes: {}, withMeta: {}, withContent: {}, offset: {}, limit: {}",
+        uploadTr, statusTr, issuers, validators, statuses, ids, hashes, withMeta, withContent, offset, limit);
 
     final SdFilter filter;
-    if (isNotNullObjects(id, hash, issuer, validator, uploadTr, statusTr)) {
-      filter = setupSdFilter(id, hash, limit, offset, status, issuer, validator, uploadTr, statusTr);
+    if (isNotNullObjects(ids, hashes, issuers, validators, statuses, uploadTr, statusTr)) {
+      filter = setupSdFilter(ids, hashes, statuses, issuers, validators, uploadTr, statusTr, limit, offset);
     } else {
       filter = new SdFilter();
+      filter.setStatuses(List.of(SelfDescriptionStatus.ACTIVE));
       filter.setLimit(limit);
       filter.setOffset(offset);
     }
     final PaginatedResults<SelfDescriptionMetadata> selfDescriptions = sdStore.getByFilter(filter);
     log.debug("readSelfDescriptions.exit; returning: {}", selfDescriptions);
-    return ResponseEntity.ok(new SelfDescriptions((int) selfDescriptions.getTotalCount(),
-        (List) selfDescriptions.getResults()));
+    List<SelfDescriptionResult> results = null;
+    if (withMeta) {
+        if (withContent) {
+            results = selfDescriptions.getResults().stream().map(sd -> 
+                new SelfDescriptionResult(sd, sd.getSelfDescription().getContentAsString())).collect(Collectors.toList());
+        } else {
+            results = selfDescriptions.getResults().stream().map(sd -> 
+                new SelfDescriptionResult(sd, null)).collect(Collectors.toList());
+        }
+    } else if (withContent) {
+        results = selfDescriptions.getResults().stream().map(sd -> 
+            new SelfDescriptionResult(null, sd.getSelfDescription().getContentAsString())).collect(Collectors.toList());
+    }
+    return ResponseEntity.ok(new SelfDescriptions((int) selfDescriptions.getTotalCount(), results));
   }
-
+  
   /**
    * Service method for GET /self-descriptions/{self_description_hash} : Read a SD by its hash. Returns the content
    * of the single SD.
@@ -164,10 +180,8 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
 
       VerificationResultOffering verificationResult = verificationService.verifyOfferingSelfDescription(contentAccessor);
 
-      // TODO: 24.08.2022 Need to set a validator
-      SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor,
-          verificationResult.getId(), verificationResult.getIssuer(), verificationResult.getValidators());
-
+      SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(verificationResult.getId(), verificationResult.getIssuer(), 
+              verificationResult.getValidators(), contentAccessor);
       checkParticipantAccess(sdMetadata.getIssuer());
       sdStore.storeSelfDescription(sdMetadata, verificationResult);
 
@@ -218,6 +232,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
    * @param sdIssuer The Participant issuer of SD (required).
    */
   // TODO: 24.08.2022 It is required to rewrite the logic when the SD parsing methods are ready.
+  // does it still requires rewrite?!
   private void checkParticipantAccess(String sdIssuer) {
     String sessionParticipantId = getSessionParticipantId();
     if (Objects.isNull(sdIssuer) || Objects.isNull(sessionParticipantId) || !sdIssuer.equals(sessionParticipantId)) {
@@ -231,16 +246,18 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     return Arrays.stream(objs).anyMatch(x -> !Objects.isNull(x));
   }
 
-  private SdFilter setupSdFilter(String id, String hash, Integer limit, Integer offset, SelfDescriptionStatus status,
-                                 String issuer, String validator, String uploadTr, String statusTr) {
+  private SdFilter setupSdFilter(List<String> ids, List<String> hashes, List<SelfDescriptionStatus> statuses, List<String> issuers,
+                                 List<String> validators, String uploadTr, String statusTr, Integer limit, Integer offset) {
     SdFilter filterParams = new SdFilter();
-    filterParams.setId(id);
-    filterParams.setHash(hash);
-    filterParams.setLimit(limit);
-    filterParams.setOffset(offset);
-    filterParams.setStatus(status);
-    filterParams.setIssuer(issuer);
-    filterParams.setValidator(validator);
+    filterParams.setIds(ids);
+    filterParams.setHashes(hashes);
+    if (statuses == null) {
+        filterParams.setStatuses(List.of(SelfDescriptionStatus.ACTIVE));
+    } else {
+        filterParams.setStatuses(statuses);
+    }
+    filterParams.setIssuers(issuers);
+    filterParams.setValidators(validators);
     if (uploadTr != null) {
       String[] timeRanges = parseTimeRange(uploadTr);
       filterParams.setUploadTimeRange(Instant.parse(timeRanges[0]), Instant.parse(timeRanges[1]));
@@ -249,6 +266,8 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
       String[] timeRanges = parseTimeRange(statusTr);
       filterParams.setStatusTimeRange(Instant.parse(timeRanges[0]), Instant.parse(timeRanges[1]));
     }
+    filterParams.setLimit(limit);
+    filterParams.setOffset(offset);
     return filterParams;
   }
 }

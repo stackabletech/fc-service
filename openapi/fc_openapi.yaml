@@ -112,7 +112,7 @@ components:
         - lifecycleStatus #!! is not known when verifying external SDs. Remove from required -> Julius: You are supposed to compute the status (active, invalid, etc.) from the available information. That is the result of the validation. Maybe rename to just status
         - issuer #!! Comment on issuer: if available, but still required?? Remove from required -> Julius: required
         - issuedDate
-        - signatures
+        - validatorDids
     Participant:
       type: object
       properties:
@@ -220,6 +220,13 @@ components:
         - eol
         - deprecated
         - revoked
+    SelfDescriptionResult:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/SelfDescription'
+        content:
+          type: string
     OntologySchema:
       type: object
       properties:
@@ -254,7 +261,7 @@ components:
             items: 
               type: array
               items: 
-                $ref: '#/components/schemas/SelfDescription'
+                $ref: '#/components/schemas/SelfDescriptionResult'
     Participants:
       allOf:
         - $ref: '#/components/schemas/ResultPage'
@@ -318,6 +325,16 @@ components:
         default: true
       required: false
       description: Ascending/Descending ordering.
+    StatusParam:
+      in: query
+      name: statuses
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/SelfDescriptionStatus'
+      explode: false      
+      required: false
+      description: SelfDescription statuses
   securitySchemes:
     jwt:
       type: http
@@ -379,40 +396,69 @@ paths:
           example: 2022-03-01T13:00:00Z/2022-05-11T15:30:00Z
           schema:
             type: string
-        - name: issuer
+        - name: issuers
           in: query
           description: >-
             Filter for the issuer of the Self-Description. This is the unique ID
             of the Participant that has prepared the Self-Description.
           required: false
           schema:
-            type: string
-        - name: validator
+            type: array
+            items:
+              type: string
+          explode: false    
+        - name: validators
           in: query
           description: >-
             Filter for a validator of the Self-Description. This is the unique
             ID of the Participant that validated (part of) the Self-Description.
           required: false
           schema:
-            type: string
-        - name: status
+            type: array
+            items:
+              type: string
+          explode: false    
+        - name: statuses
           in: query
           description: Filter for the status of the Self-Description.
           required: false
-          schema:          
-            $ref: '#/components/schemas/SelfDescriptionStatus'
-        - name: id
+          schema:
+            type: array
+            items:
+                $ref: '#/components/schemas/SelfDescriptionStatus'
+          explode: false      
+        - name: ids
           in: query
           description: Filter for a id/credentialSubject of the Self-Description.
           required: false
           schema:
-            type: string
-        - name: hash
+            type: array
+            items:
+              type: string
+          explode: false    
+        - name: hashes
           in: query
           description: Filter for a hash of the Self-Description.
           required: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
+          explode: false
+        - name: withMeta
+          in: query
+          description: To add Self-Description Metadata to response or not.
+          required: false
+          schema:
+            type: boolean
+            default: true
+        - name: withContent
+          in: query
+          description: To add Self-Description Content to response or not.
+          required: false
+          schema:
+            type: boolean
+            default: false
         - $ref: '#/components/parameters/OffsetParam'
         - $ref: '#/components/parameters/LimitParam'
       responses:

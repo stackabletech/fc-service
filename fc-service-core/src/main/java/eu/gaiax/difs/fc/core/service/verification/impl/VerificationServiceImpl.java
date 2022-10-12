@@ -156,7 +156,7 @@ public class VerificationServiceImpl implements VerificationService {
     } else {
       throw new VerificationException("SD is neither a Participant SD nor a ServiceOffer SD");
     }
-    log.debug("verifySelfDescription.enter;");
+    log.debug("verifySelfDescription.exit;");
     return result;
   }
 
@@ -204,7 +204,7 @@ public class VerificationServiceImpl implements VerificationService {
             key,
             OffsetDateTime.now(),
             SelfDescriptionStatus.ACTIVE.getValue(),
-            LocalDate.MIN,
+            LocalDate.now(),
             new ArrayList<>(),
             claims
     );
@@ -298,8 +298,9 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   private VerifiablePresentation parseSD(ContentAccessor accessor) {
+    VerifiablePresentation vp;  
     try {
-      VerifiablePresentation vp = VerifiablePresentation.fromJson(accessor.getContentAsString());
+      vp = VerifiablePresentation.fromJson(accessor.getContentAsString());
 
       if (vp == null) {
         throw new VerificationException("invalid VerifiablePresentation");
@@ -313,12 +314,12 @@ public class VerificationServiceImpl implements VerificationService {
       if (cs == null) {
         throw new VerificationException("invalid CredentialSubject");
       }
-      return vp;
     } catch (VerificationException e) {
       throw e;
     } catch (Exception e) {
       throw new VerificationException("Parsing of SD failed", e);
     }
+    return vp;
   }
 
   private Pair<Boolean, Boolean> getSDType (VerifiablePresentation presentation) {
@@ -441,9 +442,9 @@ public class VerificationServiceImpl implements VerificationService {
     if (!proof.getType().equals("JsonWebSignature2020")) throw new UnsupportedOperationException("This proof type is not yet implemented");
 
     if (uri.getScheme().equals("did")) {
-      log.debug("getVerifiedVerifier;getting key from web");
+      log.debug("getVerifiedVerifier; getting key from web");
       DIDDocument did = readDIDfromURI(uri);
-      log.debug("getVerifiedVerifier;got key from web");
+      log.debug("getVerifiedVerifier; got key from web");
 
       List<Map<String, Object>> available_jwks = (List<Map<String, Object>>) did.toMap().get("verificationMethod");
       Map<String, Object> jwk_map_uncleaned = (Map<String, Object>) extractRelevantVerificationMethod(available_jwks, uri).get("publicKeyJwk");
@@ -456,7 +457,7 @@ public class VerificationServiceImpl implements VerificationService {
       // use from map and extract only relevant
       jwk = JWK.fromMap(jwk_map_cleaned);
 
-      log.debug("getVerifiedVerifier;create VerifierFactory");
+      log.debug("getVerifiedVerifier; create VerifierFactory");
       try {
         pubKey = PublicKeyVerifierFactory.publicKeyVerifierForKey(
                 KeyTypeName_for_JWK.keyTypeName_for_JWK(jwk),
@@ -540,7 +541,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     log.debug("checkCryptographic; Successfully checked credential");
     //If this point was reached without an exception, the signatures are valid
-    log.debug("checkCryptographic.enter;");
+    log.debug("checkCryptographic.exit; returning: {}", validators);
     return validators;
   }
 

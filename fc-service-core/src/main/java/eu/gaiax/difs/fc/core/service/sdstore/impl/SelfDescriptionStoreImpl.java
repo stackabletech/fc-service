@@ -16,6 +16,7 @@ import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +31,14 @@ import org.apache.commons.io.FileExistsException;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.jpa.TypedParameterValue;
 import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.vladmihalcea.hibernate.type.array.StringArrayType;
 
 /**
  * File system based implementation of the self-description store interface.
@@ -46,8 +50,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @Transactional
 public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
-
-  private static final String ORDER_BY_HQL = "order by sd.statusTime desc, sd.sdHash";
 
   /**
    * The fileStore to use.
@@ -146,27 +148,35 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       this.maxResults = maxResults;
     }
 
-    private String buildHqlQuery() {
-      final StringBuilder hqlWhere = new StringBuilder();
-      clauses.stream().forEach(clause -> {
-        if (hqlWhere.length() > 0) {
-          hqlWhere.append(" and");
-        } else {
-          hqlWhere.append(" where");
-        }
-        hqlWhere.append(" (");
-        hqlWhere.append(clause.templateInstance);
-        hqlWhere.append(")");
-      });
-      final String hqlQuery = "select sd from SdMetaRecord sd" + hqlWhere + " " + ORDER_BY_HQL;
-      log.debug("hqlQuery=" + hqlQuery);
-      return hqlQuery;
+    private String buildCountQuery() {
+      final StringBuilder hqlQuery = new StringBuilder("select count(*) from sdfiles where 1=1");
+      for (Clause cls: clauses) {
+        hqlQuery.append(" and (");
+        hqlQuery.append(cls.templateInstance);
+        hqlQuery.append(")");
+      }
+      log.debug("buildCountQuery; Query: {}", hqlQuery.toString());
+      return hqlQuery.toString();
     }
 
+    private String buildHqlQuery() {
+      final StringBuilder hqlQuery = new StringBuilder("select expirationtime, sdhash, subjectid, status, issuer, uploadtime,");
+      hqlQuery.append(" statustime, content, validators from sdfiles");
+      hqlQuery.append(" where 1=1");
+      for (Clause cls: clauses) {
+        hqlQuery.append(" and (");
+        hqlQuery.append(cls.templateInstance);
+        hqlQuery.append(")");
+      }
+      hqlQuery.append(" ").append("order by statustime desc, sdhash");
+      log.debug("buildHqlQuery; Query: {}", hqlQuery.toString());
+      return hqlQuery.toString();
+    }
+    
     private Query<SdMetaRecord> createQuery() {
       final String hqlQuery = buildHqlQuery();
       final Session currentSession = sessionFactory.getCurrentSession();
-      final Query<SdMetaRecord> query = currentSession.createQuery(hqlQuery, SdMetaRecord.class);
+      final Query<SdMetaRecord> query = currentSession.createNativeQuery(hqlQuery, SdMetaRecord.class);
       clauses.stream().forEach(clause -> query.setParameter(clause.formalParameterName, clause.actualParameter));
       query.setFirstResult(firstResult);
       if (maxResults != 0) {
@@ -183,6 +193,14 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
          */
         query.setMaxResults(maxResults);
       }
+      return query;
+    }
+  
+    private Query<?> createCountQuery() {
+      final String hqlQuery = buildCountQuery();
+      final Session currentSession = sessionFactory.getCurrentSession();
+      final Query<?> query = currentSession.createNativeQuery(hqlQuery);
+      clauses.stream().forEach(clause -> query.setParameter(clause.formalParameterName, clause.actualParameter));
       return query;
     }
   }
@@ -205,37 +223,39 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       queryBuilder.addClause("statustime <= ?", "statusTimeEnd", statusTimeEnd);
     }
 
-    final String issuer = filter.getIssuer();
-    if (issuer != null) {
-      queryBuilder.addClause("issuer = ?", "issuer", issuer);
+    final List<String> issuers = filter.getIssuers();
+    if (issuers != null) {
+      queryBuilder.addClause("issuer in (?)", "issuers", issuers);
     }
 
-    final String validator = filter.getValidator();
-    if (validator != null) {
-      queryBuilder.addClause("? = inarray(validators)", "validator", validator);
+    final List<String> validators = filter.getValidators();
+    if (validators != null) {
+      queryBuilder.addClause("validators && cast(? as varchar[])", "validators", 
+              new TypedParameterValue(StringArrayType.INSTANCE, validators)); 
     }
 
-    final SelfDescriptionStatus status = filter.getStatus();
-    if (status != null) {
-      queryBuilder.addClause("status = ?", "status", status);
+    final List<SelfDescriptionStatus> statuses = filter.getStatuses();
+    if (statuses != null) {
+      List<Integer> ords = statuses.stream().map(s -> s.ordinal()).collect(Collectors.toList());  
+      queryBuilder.addClause("status in (?)", "statuses", ords);
     }
 
-    final String subjectId = filter.getId();
-    if (subjectId != null) {
-      queryBuilder.addClause("subjectid = ?", "subjectId", subjectId);
+    final List<String> subjectIds = filter.getIds();
+    if (subjectIds != null) {
+      queryBuilder.addClause("subjectid in (?)", "subjectIds", subjectIds);
     }
 
-    final String hash = filter.getHash();
-    if (hash != null) {
-      queryBuilder.addClause("sdhash = ?", "hash", hash);
+    final List<String> hashes = filter.getHashes();
+    if (hashes != null) {
+      queryBuilder.addClause("sdhash in (?)", "hashes", hashes);
     }
 
-    Long totalCount = queryBuilder.createQuery().getResultStream().distinct().count();
+    BigInteger totalCount = (BigInteger) queryBuilder.createCountQuery().uniqueResult();
 
     queryBuilder.setFirstResult(filter.getOffset());
     queryBuilder.setMaxResults(filter.getLimit());
 
-    return new PaginatedResults<>(totalCount, queryBuilder.createQuery().stream().collect(Collectors.toList()));
+    return new PaginatedResults<>(totalCount.longValue(), queryBuilder.createQuery().stream().collect(Collectors.toList()));
   }
 
   @Override
@@ -282,7 +302,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     try {
       currentSession.persist(sdmRecord);
     } catch (final EntityExistsException exc) {
-      log.error("storeSelfDescription.error 1", exc);
+      log.error("storeSelfDescription.error 1: {}", sdMetadata.getSdHash(), exc);
       final String message = String.format("self-description file with hash %s already exists", sdMetadata.getSdHash());
       throw new ConflictException(message);
     } catch (Exception ex) {

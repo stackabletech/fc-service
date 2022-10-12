@@ -31,11 +31,15 @@ import eu.gaiax.difs.fc.core.util.HashUtils;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -67,6 +71,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 // TODO: 23.08.2022 Add a test Graph storage
+@Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -106,9 +111,6 @@ public class SelfDescriptionControllerTest {
     private FileStore fileStore;
 
     @Autowired
-    private  SchemaStore schemaStore;
-    
-    @Autowired
     private VerificationService verificationService;
 
     @BeforeTestClass
@@ -138,7 +140,7 @@ public class SelfDescriptionControllerTest {
     @Test
     @WithMockUser
     public void readSDsShouldReturnBadRequestResponse() throws Exception {
-      mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions?status=123")
+      mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions?statuses=123")
               .with(csrf())
               .accept(MediaType.APPLICATION_JSON))
           .andExpect(status().isBadRequest());
@@ -158,6 +160,60 @@ public class SelfDescriptionControllerTest {
         assertNotNull(selfDescriptions);
         assertEquals(1, selfDescriptions.getItems().size());
         assertEquals(1, selfDescriptions.getTotalCount());
+        sdStore.deleteSelfDescription(sdMeta.getSdHash());
+    }
+
+    @Test
+    @WithMockUser
+    public void readSDsByFilterShouldReturnSuccessResponse() throws Exception {
+        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
+        
+        MvcResult result =  mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions")
+                        .accept(MediaType.APPLICATION_JSON)
+                .queryParam("issuers", sdMeta.getIssuer()))  
+                .andExpect(status().isOk())
+            .andReturn();
+        SelfDescriptions selfDescriptions = objectMapper.readValue(result.getResponse().getContentAsString(), SelfDescriptions.class);
+        assertNotNull(selfDescriptions);
+        assertEquals(1, selfDescriptions.getItems().size());
+        assertEquals(1, selfDescriptions.getTotalCount());
+        
+        String statusTr = sdMeta.getStatusDatetime().minusSeconds(5).toString() + "/" + sdMeta.getStatusDatetime().plusSeconds(5).toString();
+        result =  mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions")
+                .accept(MediaType.APPLICATION_JSON)
+                .queryParam("hashes", sdMeta.getSdHash())  
+                .queryParam("statusTimerange", statusTr))  
+                .andExpect(status().isOk())
+                .andReturn();
+        selfDescriptions = objectMapper.readValue(result.getResponse().getContentAsString(), SelfDescriptions.class);
+        assertNotNull(selfDescriptions);
+        assertEquals(1, selfDescriptions.getItems().size());
+        assertEquals(1, selfDescriptions.getTotalCount());
+
+        String uploadTr = sdMeta.getUploadDatetime().minusSeconds(5).toString() + "/" + sdMeta.getUploadDatetime().plusSeconds(5).toString();
+        result =  mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions")
+                .accept(MediaType.APPLICATION_JSON)
+                .queryParam("ids", sdMeta.getId())  
+                .queryParam("uploadTimerange", uploadTr))  
+                .andExpect(status().isOk())
+                .andReturn();
+        selfDescriptions = objectMapper.readValue(result.getResponse().getContentAsString(), SelfDescriptions.class);
+        assertNotNull(selfDescriptions);
+        assertEquals(1, selfDescriptions.getItems().size());
+        assertEquals(1, selfDescriptions.getTotalCount());
+
+        if (sdMeta.getValidatorDids() != null && !sdMeta.getValidatorDids().isEmpty()) {
+            result =  mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions")
+                    .accept(MediaType.APPLICATION_JSON)
+                    .queryParam("validators", sdMeta.getValidatorDids().stream().collect(Collectors.joining(","))))
+                    .andExpect(status().isOk())
+                    .andReturn();
+            selfDescriptions = objectMapper.readValue(result.getResponse().getContentAsString(), SelfDescriptions.class);
+            assertNotNull(selfDescriptions);
+            assertEquals(1, selfDescriptions.getItems().size());
+            assertEquals(1, selfDescriptions.getTotalCount());
+        }
+        
         sdStore.deleteSelfDescription(sdMeta.getSdHash());
     }
 
@@ -299,8 +355,7 @@ public class SelfDescriptionControllerTest {
       String sd = getMockFileDataAsString(SD_FILE_NAME);
       ContentAccessorDirect contentAccessor = new ContentAccessorDirect(sd);
 
-      SelfDescriptionMetadata sdMetadata =
-          new SelfDescriptionMetadata(contentAccessor, "id123", TEST_ISSUER, new ArrayList<>());
+      SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata("id123", TEST_ISSUER, new ArrayList<>(), contentAccessor);
 
       sdStore.storeSelfDescription(sdMetadata, getStaticVerificationResult());
       mockMvc.perform(MockMvcRequestBuilders

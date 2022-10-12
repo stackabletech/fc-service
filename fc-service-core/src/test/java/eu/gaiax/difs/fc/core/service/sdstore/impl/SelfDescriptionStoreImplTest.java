@@ -333,7 +333,7 @@ public class SelfDescriptionStoreImplTest {
     assertStoredSdFiles(1);
 
     final SdFilter filterParams = new SdFilter();
-    filterParams.setIssuer(issuer);
+    filterParams.setIssuers(List.of(issuer, "TestUser/21"));
     final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
@@ -367,7 +367,7 @@ public class SelfDescriptionStoreImplTest {
     assertStoredSdFiles(1);
 
     final SdFilter filterParams = new SdFilter();
-    filterParams.setIssuer(otherIssuer);
+    filterParams.setIssuers(List.of(otherIssuer));
     final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
@@ -585,12 +585,12 @@ public class SelfDescriptionStoreImplTest {
    * Test applying an SD filter on non-matching validator.
    */
   @Test
-  void test11AFilterMatchingValidator() {
+  void test11AFilterMatchingValidator() throws Exception {
     log.info("test11AFilterMatchingValidator");
     final String id = "TestSd/1";
     final String validatorId = "TestSd/0815";
     final String issuer = "TestUser/1";
-    final String content = "Test: Fetch SD Meta Data via SD Filter, test for non-matching validator";
+    final String content = "Test: Fetch SD Meta Data via SD Filter, test for matching validator";
     final OffsetDateTime statusTime = OffsetDateTime.parse("2022-01-01T12:00:00Z");
     final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
@@ -600,7 +600,7 @@ public class SelfDescriptionStoreImplTest {
     assertStoredSdFiles(1);
 
     final SdFilter filterParams = new SdFilter();
-    filterParams.setValidator(validatorId);
+    filterParams.setValidators(List.of(validatorId, "TestSd/0820"));
     final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
     final long matchCount = byFilter.getTotalCount();
     log.info("filter returned {} match(es)", matchCount);
@@ -620,7 +620,7 @@ public class SelfDescriptionStoreImplTest {
    * Test applying an SD filter on non-matching validator.
    */
   @Test
-  void test11BFilterNonMatchingValidator() {
+  void test11BFilterNonMatchingValidator() throws Exception {
     log.info("test11BFilterNonMatchingValidator");
     final String id = "TestSd/1";
     final String validatorId = "TestSd/0815";
@@ -635,7 +635,7 @@ public class SelfDescriptionStoreImplTest {
     assertStoredSdFiles(1);
 
     final SdFilter filterParams = new SdFilter();
-    filterParams.setValidator(validatorId);
+    filterParams.setValidators(List.of(validatorId));
     final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);

@@ -282,8 +282,8 @@ public class QueryControllerTest {
         String id = verificationResult.getId();
         String verificationIdAsSubject = id.substring(1, id.length() - 1);
 
-        SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor, verificationIdAsSubject,
-            verificationResult.getIssuer(), new ArrayList<>());
+        SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(verificationIdAsSubject,
+            verificationResult.getIssuer(), new ArrayList<>(), contentAccessor);
         sdStore.storeSelfDescription(sdMetadata, verificationResult);
 
         //adding second sd
@@ -298,15 +298,15 @@ public class QueryControllerTest {
         String id2 = verificationResult2.getId();
         String verificationIdAsSubject2 = id2.substring(1, id.length() - 1);
 
-        SelfDescriptionMetadata sdMetadata2 = new SelfDescriptionMetadata(contentAccessor2, verificationIdAsSubject2,
-            verificationResult2.getIssuer(), new ArrayList<>());
+        SelfDescriptionMetadata sdMetadata2 = new SelfDescriptionMetadata(verificationIdAsSubject2,
+            verificationResult2.getIssuer(), new ArrayList<>(), contentAccessor2);
         sdStore.storeSelfDescription(sdMetadata2, verificationResult2);
 
         //adding sd 3
         ContentAccessorDirect contentAccessorDirect3 = new ContentAccessorDirect("test sd3");
 
-        SelfDescriptionMetadata sdMetadata3 = new SelfDescriptionMetadata(contentAccessorDirect3, "http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json",
-            "http://example.org/test-issuer", new ArrayList<>());
+        SelfDescriptionMetadata sdMetadata3 = new SelfDescriptionMetadata("http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json",
+            "http://example.org/test-issuer", new ArrayList<>(), contentAccessorDirect3);
         sdStore.storeSelfDescription(sdMetadata3, verificationResult2);
     }
 
