@@ -14,6 +14,7 @@ graphstore:
   uri: bolt://localhost:7687
   user: neo4j
   password: 12345
+  query-timeout-in-seconds: 5
 
 logging:
   level:

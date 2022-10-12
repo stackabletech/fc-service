@@ -1,2 +1,5 @@
 federated-catalogue:
   scope: test
+
+graphstore:
+  query-timeout-in-seconds: 5
