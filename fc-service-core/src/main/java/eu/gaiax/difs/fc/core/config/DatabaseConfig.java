@@ -56,7 +56,7 @@ public class DatabaseConfig {
   private Properties hibernateProperties() {
     Properties hibernateProperties = new Properties();
     hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "validate");
-    hibernateProperties.setProperty("hibernate.dialect", ArrayPostgresSQLDialect.class.getCanonicalName());
+    //hibernateProperties.setProperty("hibernate.dialect", ArrayPostgresSQLDialect.class.getCanonicalName());
     return hibernateProperties;
   }
 

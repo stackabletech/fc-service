@@ -16,7 +16,6 @@ import com.c4_soft.springaddons.security.oauth2.test.annotations.StringClaim;
 import com.c4_soft.springaddons.security.oauth2.test.annotations.WithMockJwtAuth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.gaiax.difs.fc.api.generated.model.Participants;
-import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptions;
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
@@ -52,6 +51,7 @@ import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -98,31 +98,29 @@ import org.springframework.web.context.WebApplicationContext;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Import(EmbeddedNeo4JConfig.class)
 //@Transactional
-@DirtiesContext
+//@DirtiesContext
 public class ParticipantsControllerTest {
     private final String CATALOGUE_ADMIN_ROLE_WITH_PREFIX = "ROLE_" + CATALOGUE_ADMIN_ROLE;
 
     @Autowired
     private WebApplicationContext context;
     @Autowired
-    private MockMvc mockMvc;
-    @Autowired
     @Qualifier("sdFileStore")
     private FileStore fileStore;
-
     @Autowired
     private SelfDescriptionStoreImpl selfDescriptionStore;
     @Autowired
     private Neo4j embeddedDatabaseServer;
-
     @Autowired
     private VerificationService verificationService;
+    @Autowired
+    private UserDaoImpl userDao;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    @AfterAll
-    void closeNeo4j() {
-        embeddedDatabaseServer.close();
-    }
-
+    @Autowired
+    private MockMvc mockMvc;
+    
     @MockBean
     private KeycloakBuilder builder;
     @MockBean
@@ -143,15 +141,11 @@ public class ParticipantsControllerTest {
     private RoleMappingResource roleMappingResource;
     @MockBean
     private RoleScopeResource roleScopeResource;
-    @Autowired
-    private UserDaoImpl userDao;
-    @Autowired
-    private ObjectMapper objectMapper;
 
     private final String userId = "ae366624-8371-401d-b2c4-518d2f308a15";
-
     private final String DEFAULT_PARTICIPANT_FILE = "default_participant.json";
-    @BeforeTestClass
+    
+    @BeforeAll //TestClass
     public void setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
     }
@@ -159,8 +153,10 @@ public class ParticipantsControllerTest {
     @AfterAll
     public void storageSelfCleaning() throws IOException {
         fileStore.clearStorage();
+        embeddedDatabaseServer.close();
     }
 
+    
     @Test
     public void participantAuthShouldReturnUnauthorizedResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/participants")).andExpect(status().isUnauthorized());
@@ -226,56 +222,6 @@ public class ParticipantsControllerTest {
 
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
-    @Order(25)
-    public void addParticipantFailWithSameSDShouldReturnConflictFromKeyCloakWithoutDBStore() throws Exception {
-        String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
-        ParticipantMetaData partNew = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example" +
-            ":holder#key", json);
-        selfDescriptionStore.deleteSelfDescription(partNew.getSdHash());
-        setupKeycloak(HttpStatus.SC_CONFLICT, partNew);
-
-         mockMvc
-            .perform(MockMvcRequestBuilders.post("/participants")
-                .contentType("application/json")
-                .content(json))
-            .andExpect(status().isConflict());
-
-        FileNotFoundException exception = assertThrows(FileNotFoundException.class,
-            () -> fileStore.readFile(partNew.getSdHash()));
-        assertEquals(FileNotFoundException.class, exception.getClass());
-
-        NotFoundException exceptionSDStore = assertThrows(NotFoundException.class,
-            () -> selfDescriptionStore.getByHash(partNew.getSdHash()));
-        assertEquals(NotFoundException.class, exceptionSDStore.getClass());
-    }
-
-    @Test
-    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
-    @Order(26)
-    public void addParticipantFailWithKeyCloakErrorShouldReturnErrorWithoutDBStore() throws Exception {
-
-        String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
-        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c3", "did:example:holder",
-            "did:example:holder#key", json);
-        setupKeycloak(HttpStatus.SC_INTERNAL_SERVER_ERROR, part);
-
-        mockMvc
-            .perform(MockMvcRequestBuilders.post("/participants")
-                .contentType("application/json")
-                .content(json))
-            .andExpect(status().is5xxServerError());
-
-        FileNotFoundException exception = assertThrows(FileNotFoundException.class,
-            () -> fileStore.readFile(part.getSdHash()));
-        assertEquals(FileNotFoundException.class, exception.getClass());
-
-        Throwable exceptionSD = assertThrows(Throwable.class,
-            () -> selfDescriptionStore.getByHash(part.getSdHash()));
-        assertEquals(NotFoundException.class, exceptionSD.getClass());
-    }
-
-    @Test
-    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(20)
     public void getParticipantShouldReturnSuccessResponse() throws Exception {
         String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
@@ -291,7 +237,7 @@ public class ParticipantsControllerTest {
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(20)
-    public void getAddedParticipantSDShouldReturnSuccessResponseWithSameSDFromSDAPI() throws Exception {
+    public void getAddedParticipantSDShouldReturnSuccessResponseWithSameSD() throws Exception {
 
         String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
         ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key", json);
@@ -299,12 +245,13 @@ public class ParticipantsControllerTest {
 
         String response = mockMvc
             .perform(MockMvcRequestBuilders.get("/self-descriptions")
-            .contentType(MediaType.APPLICATION_JSON).queryParam("id",part.getId()))
+            .contentType(MediaType.APPLICATION_JSON)
+            .queryParam("id", part.getId()).queryParam("withContent", "true")) 
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
-        SelfDescriptions selfDescriptions =  objectMapper.readValue(response, SelfDescriptions.class);
-        List<SelfDescription> selfDescriptionMetadataList =  (List)selfDescriptions.getItems();
-        String  sdHash = selfDescriptionMetadataList.get(0).getSdHash();
+        SelfDescriptions selfDescriptions = objectMapper.readValue(response, SelfDescriptions.class);
+        String sdHash = selfDescriptions.getItems().get(0).getMeta().getSdHash();
+        String content = selfDescriptions.getItems().get(0).getContent();
 
         String responseOfSDContent = mockMvc
             .perform(MockMvcRequestBuilders.get("/self-descriptions/" + sdHash)
@@ -312,9 +259,11 @@ public class ParticipantsControllerTest {
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
         assertEquals(part.getSelfDescription(), responseOfSDContent);
-        assertEquals(1, selfDescriptionMetadataList.size());
+        assertEquals(responseOfSDContent, content);
+        assertEquals(1, selfDescriptions.getItems().size());
 
     }
+
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(20)
@@ -366,6 +315,56 @@ public class ParticipantsControllerTest {
         assertEquals(0, users.getItems().size());
     }
 
+    @Test
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
+    @Order(25)
+    public void addParticipantFailWithSameSDShouldReturnConflictFromKeyCloakWithoutDBStore() throws Exception {
+        String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
+        ParticipantMetaData partNew = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example" +
+            ":holder#key", json);
+        selfDescriptionStore.deleteSelfDescription(partNew.getSdHash());
+        setupKeycloak(HttpStatus.SC_CONFLICT, partNew);
+
+         mockMvc
+            .perform(MockMvcRequestBuilders.post("/participants")
+                .contentType("application/json")
+                .content(json))
+            .andExpect(status().isConflict());
+
+        FileNotFoundException exception = assertThrows(FileNotFoundException.class,
+            () -> fileStore.readFile(partNew.getSdHash()));
+        assertEquals(FileNotFoundException.class, exception.getClass());
+
+        NotFoundException exceptionSDStore = assertThrows(NotFoundException.class,
+            () -> selfDescriptionStore.getByHash(partNew.getSdHash()));
+        assertEquals(NotFoundException.class, exceptionSDStore.getClass());
+    }
+
+    @Test
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
+    @Order(26)
+    public void addParticipantFailWithKeyCloakErrorShouldReturnErrorWithoutDBStore() throws Exception {
+
+        String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
+        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c3", "did:example:holder",
+            "did:example:holder#key", json);
+        setupKeycloak(HttpStatus.SC_INTERNAL_SERVER_ERROR, part);
+
+        mockMvc
+            .perform(MockMvcRequestBuilders.post("/participants")
+                .contentType("application/json")
+                .content(json))
+            .andExpect(status().is5xxServerError());
+
+        FileNotFoundException exception = assertThrows(FileNotFoundException.class,
+            () -> fileStore.readFile(part.getSdHash()));
+        assertEquals(FileNotFoundException.class, exception.getClass());
+
+        Throwable exceptionSD = assertThrows(Throwable.class,
+            () -> selfDescriptionStore.getByHash(part.getSdHash()));
+        assertEquals(NotFoundException.class, exceptionSD.getClass());
+    }
+    
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
@@ -563,7 +562,7 @@ public class ParticipantsControllerTest {
             .getResponse()
             .getContentAsString();
         ParticipantMetaData  participantMetaData = objectMapper.readValue(response, ParticipantMetaData.class);
-        assertNotNull(part);
+        assertNotNull(participantMetaData);
 
         Throwable exception = assertThrows(Throwable.class,
             () -> fileStore.readFile(part.getSdHash()));

@@ -2,13 +2,11 @@ package eu.gaiax.difs.fc.server.service;
 
 import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import eu.gaiax.difs.fc.api.generated.model.Participant;
 import eu.gaiax.difs.fc.api.generated.model.Participants;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.ParticipantDao;
-import eu.gaiax.difs.fc.core.dao.UserDao;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
@@ -24,9 +22,6 @@ import eu.gaiax.difs.fc.server.util.SessionUtils;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.ws.rs.ForbiddenException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -44,18 +39,14 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Slf4j
 @Service
 public class ParticipantsService implements ParticipantsApiDelegate {
-  private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
 
   @Autowired
   private ParticipantDao partDao;
-
   @Autowired
   @Qualifier("sdFileStore")
   private FileStore fileStore;
-
   @Autowired
   private SelfDescriptionStore selfDescriptionStore;
-
   @Autowired
   private VerificationService verificationService;
 
@@ -260,8 +251,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
         verificationService.verifyParticipantSelfDescription(contentAccessorDirect);
     log.debug("updateParticipant.verificationResultParticipant.got : {}", verificationResultParticipant);
 
-    SelfDescriptionMetadata selfDescriptionMetadata = new SelfDescriptionMetadata(contentAccessorDirect,
-         verificationResultParticipant);
+    SelfDescriptionMetadata selfDescriptionMetadata = new SelfDescriptionMetadata(contentAccessorDirect, verificationResultParticipant);
     log.debug("getParticipantExtWithValidationAndStore.got SelfDescriptionMetadata: {}", selfDescriptionMetadata);
 
     return Pair.of(verificationResultParticipant, selfDescriptionMetadata);

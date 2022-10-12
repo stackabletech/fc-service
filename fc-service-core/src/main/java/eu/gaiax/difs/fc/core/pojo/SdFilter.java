@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.core.pojo;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Filter parameters for searching self-description meta data. If multiple items
@@ -40,7 +41,7 @@ public class SdFilter {
    * self-description.
    */
   @lombok.Setter
-  private String issuer;
+  private List<String> issuers;
 
   /**
    * Filter for a validator of the self-description. This is the unique ID
@@ -48,25 +49,25 @@ public class SdFilter {
    * self-description.
    */
   @lombok.Setter
-  private String validator;
+  private List<String> validators;
 
   /**
    * Filter for the status of the self-description.
    */
   @lombok.Setter
-  private SelfDescriptionStatus status;
+  private List<SelfDescriptionStatus> statuses;
 
   /**
    * Filter for a id/credentialSubject of the self-description.
    */
   @lombok.Setter
-  private String id;
+  private List<String> ids;
 
   /**
    * Filter for a hash of the self-description.
    */
   @lombok.Setter
-  private String hash;
+  private List<String> hashes;
 
   /**
    * The offset to start returning results when applying this filter.
