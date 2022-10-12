@@ -18,6 +18,7 @@ public class CatalogueServerApplication {
    * @param args the args for the main method
    */
   public static void main(String[] args) {
+    System.setProperty("org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH", "true");
     SpringApplication.run(CatalogueServerApplication.class, args);
   }
 }
