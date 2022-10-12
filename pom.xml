@@ -66,7 +66,8 @@
         <vc.version>1.0.0</vc.version>
         <key-format.version>1.5.0</key-format.version>
         <did.version>1.0.0</did.version>
-
+        <spring-cloud-contract-wiremock.version>3.1.4</spring-cloud-contract-wiremock.version>
+        <jose4j.version>0.8.0</jose4j.version>
         <neo4j-java-driver-spring-boot-starter.version>4.3.6.0</neo4j-java-driver-spring-boot-starter.version>
         <neo4j.neosemantics.version>4.4.0.1</neo4j.neosemantics.version>
         <neo4j.gds.version>2.0.5</neo4j.gds.version>
@@ -264,6 +265,18 @@
                 <groupId>decentralized-identity</groupId>
                 <artifactId>did-common-java</artifactId>
                 <version>${did.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-contract-wiremock</artifactId>
+                <version>${spring-cloud-contract-wiremock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.bitbucket.b_c</groupId>
+                <artifactId>jose4j</artifactId>
+                <version>${jose4j.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

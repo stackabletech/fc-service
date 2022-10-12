@@ -1,7 +1,10 @@
 package eu.gaiax.difs.fc.server.controller;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.getUsername;
 import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.toUserRepo;
+import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.SD_ADMIN_ROLE;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
@@ -10,25 +13,41 @@ import static eu.gaiax.difs.fc.server.helper.UserServiceHelper.getAllRoles;
 import static org.apache.http.HttpStatus.SC_CREATED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.OAuth2Constants.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
 import eu.gaiax.difs.fc.api.generated.model.Error;
 import eu.gaiax.difs.fc.core.dao.UserDao;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
+import org.jose4j.jwk.JsonWebKeySet;
+import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jwk.RsaJwkGenerator;
+import org.jose4j.jws.AlgorithmIdentifiers;
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.lang.JoseException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -38,21 +57,34 @@ import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.server.resource.BearerTokenAuthenticationToken;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.event.annotation.BeforeTestClass;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -63,17 +95,26 @@ import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@AutoConfigureWireMock(port = 0)
+@TestPropertySource(locations = "classpath:wiremock.properties")
 public class UsersControllerTest {
+    @Value("${wiremock.server.baseUrl}")
+    private String keycloakBaseUrl;
+    @Value("${keycloak.resource}")
+    private String clientId;
+    @Value("${keycloak.credentials.secret}")
+    private String clientSecret;
     @Autowired
     private WebApplicationContext context;
     @Autowired
     private MockMvc mockMvc;
-
     @MockBean
     private KeycloakBuilder builder;
     @MockBean
@@ -94,6 +135,8 @@ public class UsersControllerTest {
     private UserDao userDao;
     @Autowired
     private ObjectMapper objectMapper;
+
+    private static RsaJsonWebKey rsaJsonWebKey;
 
     @BeforeTestClass
     public void setup() {
@@ -140,7 +183,6 @@ public class UsersControllerTest {
             .thenReturn(Response.status(HttpStatus.SC_CONFLICT, "Conflict")
                 .entity(new ByteArrayInputStream("{ \"errorMessage\" : \"User exists with same username\"}".getBytes()))
                 .build());
-
         String response = mockMvc.perform(MockMvcRequestBuilders.post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(user)))
@@ -217,6 +259,27 @@ public class UsersControllerTest {
     }
 
     @Test
+    public void deleteUserAndKeycloakAccessShouldReturnUnauthorizedError() throws Exception {
+        User user = getTestUser("newuser", "newuser").addRoleIdsItem(CATALOGUE_ADMIN_ROLE);
+        String userId = UUID.randomUUID().toString();
+        setupKeycloak(HttpStatus.SC_NO_CONTENT, user, userId);
+        UserProfile existed = userDao.create(user);
+        setUpKeycloakAuth(user);
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/users/{userId}", existed.getId())
+                .with(authentication(new BearerTokenAuthenticationToken(grantAccessToken("newuser", "newuser"))))
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk());
+
+        stubFor(WireMock.post(urlEqualTo("/auth/realms/gaia-x/protocol/openid-connect/token"))
+            .willReturn(unauthorized().withBody("{ \"error\": \"HTTP 401 Unauthorized\"}")));
+        when(usersResource.delete(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
+
+        assertThrows(NotFoundException.class, () -> userDao.delete(existed.getId()));
+        assertThrows(HttpClientErrorException.Unauthorized.class, () -> grantAccessToken("newuser", "newuser"));
+    }
+
+    @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void updateUserShouldReturnSuccessResponse() throws Exception {
         User user = getTestUser("name6", "surname6");
@@ -230,7 +293,7 @@ public class UsersControllerTest {
                 .content(objectMapper.writeValueAsString(user)))
             .andExpect(status().isOk());
     }
-    
+
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void updateUserRolesShouldReturnSuccessResponse() throws Exception {
@@ -245,6 +308,26 @@ public class UsersControllerTest {
             .andExpect(status().isOk());
     }
 
+    @Test
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
+    public void updateDuplicatedUserRoleShouldReturnSuccessResponse() throws Exception {
+        User user = getTestUser("name8", "surname8").addRoleIdsItem(PARTICIPANT_ADMIN_ROLE);
+        String userId = UUID.randomUUID().toString();
+        setupKeycloak(HttpStatus.SC_OK, user, userId);
+        UserProfile existed = userDao.create(user);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(List.of(PARTICIPANT_ADMIN_ROLE))))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+        UserProfile newProfile = userDao.select(existed.getId());
+        assertNotNull(newProfile);
+        assertEquals(2, newProfile.getRoleIds().size());
+        assertTrue(newProfile.getRoleIds().containsAll(List.of(PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE)));
+    }
 
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
@@ -270,28 +353,6 @@ public class UsersControllerTest {
         UserProfile updated = objectMapper.readValue(response, UserProfile.class);
         assertEquals(1, updated.getRoleIds().size());
         assertTrue(updated.getRoleIds().containsAll(List.of(PARTICIPANT_ADMIN_ROLE)));
-    }
-
-
-    @Test
-    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
-    public void updateDuplicatedUserRoleShouldReturnSuccessResponse() throws Exception {
-        User user = getTestUser("name8", "surname8").addRoleIdsItem(PARTICIPANT_ADMIN_ROLE);
-        String userId = UUID.randomUUID().toString();
-        setupKeycloak(HttpStatus.SC_OK, user, userId);
-        UserProfile existed = userDao.create(user);
-
-        mockMvc.perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(List.of(PARTICIPANT_ADMIN_ROLE))))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
-        UserProfile newProfile = userDao.select(existed.getId());
-        assertNotNull(newProfile);
-        assertEquals(2, newProfile.getRoleIds().size());
-        assertTrue(newProfile.getRoleIds().containsAll(List.of(PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE)));
     }
 
     private void setupKeycloak(int status, User user, String id) {
@@ -340,5 +401,70 @@ public class UsersControllerTest {
         assertEquals(excepted.getFirstName(), actual.getFirstName());
         assertEquals(excepted.getLastName(), actual.getLastName());
         assertEquals(excepted.getParticipantId(), actual.getParticipantId());
+    }
+
+    private void setUpKeycloakAuth(User user) throws IOException, JoseException {
+        rsaJsonWebKey = RsaJwkGenerator.generateJwk(2048);
+        rsaJsonWebKey.setKeyId("k1");
+        rsaJsonWebKey.setAlgorithm(AlgorithmIdentifiers.RSA_USING_SHA256);
+        rsaJsonWebKey.setUse("sig");
+
+        String openidConfig = getMockFileDataAsString("openid-configs.json")
+            .replace("keycloakBaseUrl", keycloakBaseUrl);
+
+        stubFor(WireMock.get(urlEqualTo("/auth/realms/gaia-x/.well-known/openid-configuration"))
+            .willReturn(aResponse().withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE).withBody(openidConfig)));
+        stubFor(WireMock.get(urlEqualTo("/auth/realms/gaia-x/protocol/openid-connect/certs"))
+            .willReturn(aResponse().withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE).withBody(openidConfig)
+                .withBody(new JsonWebKeySet(rsaJsonWebKey).toJson())));
+
+        stubFor(WireMock.post(urlEqualTo("/auth/realms/gaia-x/protocol/openid-connect/token"))
+            .willReturn(ok().withBody("{\"access_token\": \"" + generateToken(user) + "\", \"expires_in\": 900," +
+                " \"refresh_expires_in\": 1800, \"token_type\": \"Bearer\", \"scope\": \"gaia-x\"}")));
+    }
+
+    private String generateToken(User user) throws JoseException {
+        JwtClaims claims = new JwtClaims();
+        claims.setJwtId(UUID.randomUUID().toString());
+        claims.setExpirationTimeMinutesInTheFuture(10);
+        claims.setNotBeforeMinutesInThePast(0);
+        claims.setIssuedAtToNow();
+        claims.setAudience("account");
+        claims.setIssuer(String.format("%s/auth/realms/gaia-x", keycloakBaseUrl));
+        claims.setSubject(UUID.randomUUID().toString());
+        claims.setClaim("typ", "Bearer");
+        claims.setClaim("azp", clientId);
+        claims.setClaim("session_state", UUID.randomUUID().toString());
+        claims.setClaim("realm_access", Map.of("roles", List.of(CATALOGUE_ADMIN_ROLE)));
+        claims.setClaim("scope", "openid gaia-x");
+        claims.setClaim("email_verified", true);
+        claims.setClaim("preferred_username", getUsername(user));
+        claims.setClaim("given_name", user.getFirstName());
+        claims.setClaim("family_name", user.getLastName());
+
+        JsonWebSignature jws = new JsonWebSignature();
+        jws.setPayload(claims.toJson());
+        jws.setKey(rsaJsonWebKey.getPrivateKey());
+        jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
+        jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
+        jws.setHeader("typ","JWT");
+        return jws.getCompactSerialization();
+    }
+
+    private String grantAccessToken(String username, String password) throws Exception {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.add(GRANT_TYPE, PASSWORD);
+        map.add(USERNAME, username);
+        map.add(PASSWORD, password);
+        map.add(CLIENT_ID, clientId);
+        map.add(CLIENT_SECRET, clientSecret);
+
+        String uri = keycloakBaseUrl + "/auth/realms/gaia-x/protocol/openid-connect/token";
+        return objectMapper.readValue(
+            new RestTemplate().exchange(uri, HttpMethod.POST, new HttpEntity<>(map, headers), String.class)
+                .getBody(), AccessTokenResponse.class).getToken();
     }
 }
