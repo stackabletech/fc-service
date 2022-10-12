@@ -194,7 +194,7 @@ public class ParticipantsControllerTest {
         assertNotNull(part);
         assertEquals("ebc6f1c2", partResult.getId());
         assertEquals("did:example:holder", partResult.getName());
-        assertEquals("did:example:holder#key", partResult.getPublicKey());
+        assertEquals("did:web:compliance.lab.gaia-x.eu", partResult.getPublicKey());
         assertEquals(part.getSelfDescription(), partResult.getSelfDescription());
 
         assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
@@ -392,7 +392,7 @@ public class ParticipantsControllerTest {
         assertNotNull(part);
         assertEquals("ebc6f1c2", partResult.getId());
         assertEquals("did:example:holder", partResult.getName());
-        assertEquals("did:example:holder#key", partResult.getPublicKey());
+        assertEquals("did:web:compliance.lab.gaia-x.eu", partResult.getPublicKey());
 
         assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
         assertDoesNotThrow(() -> selfDescriptionStore.getByHash(part.getSdHash()));
