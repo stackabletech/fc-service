@@ -52,11 +52,7 @@ public class SchemaStoreImpl implements SchemaStore {
   @Autowired
   private SessionFactory sessionFactory;
 
-// This seems to not work...
-//  @Bean
-//  public SmartInitializingSingleton importProcessor() {
-//    return this::initializeDefaultSchemas;
-//  }
+  @Override
   public void initializeDefaultSchemas() {
     Session currentSession = sessionFactory.getCurrentSession();
     long count = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
