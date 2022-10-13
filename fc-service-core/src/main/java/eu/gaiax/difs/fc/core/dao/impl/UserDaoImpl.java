@@ -196,7 +196,7 @@ public class UserDaoImpl implements UserDao {
     userRepo.setFirstName(user.getFirstName());
     userRepo.setLastName(user.getLastName());
     userRepo.setEmail(user.getEmail());
-    userRepo.setUsername(getUsername(user)); // use email instead?
+    userRepo.setUsername(user.getEmail());
     userRepo.setAttributes(Map.of(ATR_PARTICIPANT_ID, List.of(user.getParticipantId())));
     userRepo.setEnabled(true);
     userRepo.setEmailVerified(false);
@@ -232,16 +232,6 @@ public class UserDaoImpl implements UserDao {
     String participantId = partIds == null ? null : partIds.get(0);
     return new UserProfile(participantId, userRepo.getFirstName(), userRepo.getLastName(), userRepo.getEmail(),
         toRoleIds(roles), userRepo.getId(), userRepo.getFirstName() + " " + userRepo.getLastName());
-  }
-
-  /**
-   * Get user as string format.
-   *
-   * @param user User entity
-   * @return string formatted user
-   */
-  public static String getUsername(User user) {
-    return user.getParticipantId() + "{" + user.getFirstName() + " " + user.getLastName() + "}";
   }
 
   /**
