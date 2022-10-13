@@ -301,11 +301,20 @@ public class UsersControllerTest {
         String userId = UUID.randomUUID().toString();
         setupKeycloak(HttpStatus.SC_OK, user, userId);
         UserProfile existed = userDao.create(user);
-        mockMvc
+
+        when(roleScopeResource.listAll())
+            .thenReturn(List.of(new RoleRepresentation(PARTICIPANT_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, false),
+                new RoleRepresentation(SD_ADMIN_ROLE, SD_ADMIN_ROLE, false)));
+
+        String response = mockMvc
             .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE))))
-            .andExpect(status().isOk());
+                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE))))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        UserProfile profile = objectMapper.readValue(response, UserProfile.class);
+        assertEquals(2, profile.getRoleIds().size());
+        assertTrue(profile.getRoleIds().containsAll(List.of(PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE)));
     }
 
     @Test
