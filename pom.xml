@@ -58,7 +58,6 @@
         <embedded.postgres.test.version>2.1.2</embedded.postgres.test.version>
         <commons-lang3.version>3.9</commons-lang3.version>
         <neo4j.harness.version>4.4.10</neo4j.harness.version>
-        <commons.validator.version>1.4.1</commons.validator.version>
         <jsonld.version>0.13.4</jsonld.version>
         <jena.version>4.4.0</jena.version>
         <topbraid.version>1.4.2</topbraid.version>
@@ -234,11 +233,6 @@
                 <groupId>org.topbraid</groupId>
                 <artifactId>shacl</artifactId>
                 <version>${topbraid.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-validator</groupId>
-                <artifactId>commons-validator</artifactId>
-                <version>${commons.validator.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
