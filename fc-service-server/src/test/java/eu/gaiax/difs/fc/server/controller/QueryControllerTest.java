@@ -258,16 +258,16 @@ public class QueryControllerTest {
             "<http://w3id.org/gaia-x/service#ServiceOffering>");
 
         SdClaim sdClaim1 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal.json>",
-            "<http://w3id.org/gaia-x/service#name> \"EuProGigant Portal\"",
-            "");
+            "<http://w3id.org/gaia-x/service#name>",
+                "\"EuProGigant Portal\"");
 
         SdClaim sdClaim2 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal2.json>",
             "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
             "<http://w3id.org/gaia-x/service#ServiceOffering>");
 
         SdClaim sdClaim3 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal2.json>",
-            "<http://w3id.org/gaia-x/service#name> \"EuProGigant Portal2\"",
-            "");
+            "<http://w3id.org/gaia-x/service#name>",
+                "\"EuProGigant Portal2\"");
 
         SdClaim sdClaim4 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json>",
             "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
