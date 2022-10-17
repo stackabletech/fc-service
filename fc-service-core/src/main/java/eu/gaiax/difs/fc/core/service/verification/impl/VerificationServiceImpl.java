@@ -41,14 +41,15 @@ import org.springframework.stereotype.Component;
 import org.topbraid.shacl.validation.ValidationUtil;
 import org.topbraid.shacl.vocabulary.SH;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -57,6 +58,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.time.LocalDate.now;
 
 // TODO: 26.07.2022 Awaiting approval and implementation by Fraunhofer.
 /**
@@ -204,7 +207,7 @@ public class VerificationServiceImpl implements VerificationService {
             key,
             OffsetDateTime.now(),
             SelfDescriptionStatus.ACTIVE.getValue(),
-            LocalDate.now(),
+            now(),
             new ArrayList<>(),
             claims
     );
@@ -410,7 +413,40 @@ public class VerificationServiceImpl implements VerificationService {
     return jwt.getHeader().getAlgorithm().getName();
   }
 
-  private Instant hasPEMTrustAnchorAndIsNotDeprecated (String uri) throws IOException {
+  private Instant hasPEMTrustAnchorAndIsNotDeprecated (String uri) throws IOException, CertificateException {
+    StringBuilder result = new StringBuilder();
+    URL url = new URL(uri);
+    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    conn.setRequestMethod("GET");
+    try (BufferedReader reader = new BufferedReader(
+            new InputStreamReader(conn.getInputStream()))) {
+      for (String line; (line = reader.readLine()) != null; ) {
+        result.append(line + System.lineSeparator());
+      }
+    }
+    String pem = result.toString();
+    InputStream certStream = new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8));
+    CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+    List<X509Certificate> certs = (List<X509Certificate>) certFactory.generateCertificates(certStream);
+
+    //Then extract relevant cert
+    X509Certificate relevant = null;
+
+    for(X509Certificate cert : certs) {
+      try {
+        cert.checkValidity();
+      } catch (Exception e) {
+        System.out.println(e.getMessage());
+      }
+      if (relevant == null || relevant.getNotAfter().after(cert.getNotAfter())) {
+        relevant = cert;
+      }
+    }
+
+    //Second, extract required information
+    Instant exp = relevant.getNotAfter().toInstant();
+
+    //Third check the validity of the cert
     //Is the PEM anchor in the registry?
     HttpClient httpclient = HttpClients.createDefault();
     HttpPost httppost = new HttpPost("https://registry.lab.gaia-x.eu/v2206/api/trustAnchor/chain/file");
@@ -426,8 +462,7 @@ public class VerificationServiceImpl implements VerificationService {
       throw new VerificationException("The trust anchor is not set in the registry. URI: " + uri);
     }
 
-    //TODO deprecation time from pem from URI
-    return Instant.now(); // The registry is down, thus this code fails
+    return exp;
   }
 
   private Pair<PublicKeyVerifier, Validator> getVerifiedVerifier(LdProof proof) throws IOException {
