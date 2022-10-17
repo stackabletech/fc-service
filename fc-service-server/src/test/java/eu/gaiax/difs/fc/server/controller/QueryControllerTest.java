@@ -54,7 +54,7 @@ import org.springframework.web.context.WebApplicationContext;
 @Import(EmbeddedNeo4JConfig.class)
 public class QueryControllerTest {
 
-    private final static String SD_FILE_NAME = "default-sd.json"; //"default_participant.json"; //
+    private final static String SD_FILE_NAME = "new_participant.json"; //"default-sd.json"; //"default_participant.json"; //
 
     private final static String DEFAULT_SERVICE_SD_FILE_NAME = "default-sd-service-offering.json";
 

@@ -36,17 +36,19 @@ public class VerificationResultParticipant extends VerificationResult {
    * @param claims List of claims in the SD
    */
   public VerificationResultParticipant(
-          String participantName,
-          String id,
-          String participantPublicKey,
           OffsetDateTime verificationTimestamp,
           String lifecycleStatus,
+          String id,
           LocalDate issuedDate,
+          List<SdClaim> claims,
           List<Validator> validators,
-          List<SdClaim> claims) {
-    super(id, claims, validators, verificationTimestamp, lifecycleStatus, id, issuedDate);
+          String participantName,
+          String participantPublicKey) {
+    super(verificationTimestamp, lifecycleStatus, id, issuedDate, id, claims, validators);
     this.participantName = participantName;
     this.participantPublicKey = participantPublicKey;
   }
 
 }
+
+

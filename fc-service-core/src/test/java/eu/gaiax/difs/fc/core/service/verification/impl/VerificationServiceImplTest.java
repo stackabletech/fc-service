@@ -61,8 +61,19 @@ public class VerificationServiceImplTest {
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
-        assertEquals("Parsing of SD failed", ex.getMessage());
+        assertTrue(ex.getMessage().startsWith("Syntactic error;"));
         assertNotNull(ex.getCause());
+    }
+
+    @Test
+    void invalidSyntax_WrongJsonLd() throws IOException {
+        String path = "VerificationService/sign/hasNoSignature1.jsonld";
+
+        Exception ex = assertThrowsExactly(VerificationException.class, () ->
+                verificationService.verifySelfDescription(getAccessor(path)));
+        System.out.println(ex.getMessage());
+        assertEquals("Semantic error: JSON-LD problem. (Undefined JSON-LD term: issuer)", ex.getMessage()); 
+        assertNull(ex.getCause());
     }
 
     @Test
@@ -71,7 +82,15 @@ public class VerificationServiceImplTest {
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
-        assertEquals("Could not find a VC in SD", ex.getMessage());
+        assertEquals("Semantic error: JSON-LD problem. (Imported context is null.)", ex.getMessage());
+    }
+
+    @Test
+    void invalidSyntax_EmptyContext () throws Exception {
+        String path = "VerificationService/syntax/participantSD.jsonld";
+        Exception ex = assertThrowsExactly(VerificationException.class, () ->
+                verificationService.verifySelfDescription(getAccessor(path)));
+        assertEquals("Semantic error: JSON-LD problem. (Imported context is null.)", ex.getMessage());
     }
 
     @Test
@@ -80,19 +99,7 @@ public class VerificationServiceImplTest {
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
-        System.out.println(ex.getMessage());
-        assertEquals("SD is neither a Participant SD nor a ServiceOffer SD", ex.getMessage());
-        assertNull(ex.getCause());
-    }
-
-    @Test
-    void invalidProof_SignaturesMissing1() throws IOException {
-        String path = "VerificationService/sign/hasNoSignature1.jsonld";
-
-        Exception ex = assertThrowsExactly(VerificationException.class, () ->
-                verificationService.verifySelfDescription(getAccessor(path)));
-        System.out.println(ex.getMessage());
-        assertEquals("No proof found", ex.getMessage());
+        assertEquals("Semantic error: JSON-LD problem. (Undefined JSON-LD term: type)", ex.getMessage());
         assertNull(ex.getCause());
     }
 
@@ -154,7 +161,7 @@ public class VerificationServiceImplTest {
     void verifyValidationResult() throws IOException {
         String dataPath = "Validation-Tests/DataCenterDataGraph.jsonld";
         String shapePath = "Validation-Tests/physical-resourceShape.ttl";
-        SemanticValidationResult validationResult = verificationService.validationAgainstShacl(
+        SemanticValidationResult validationResult = verificationService.validatePayloadAgainstSchema(
                 getAccessor(dataPath), getAccessor(shapePath));
 
         if (!validationResult.isConforming()) {

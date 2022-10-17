@@ -904,6 +904,28 @@ paths:
         Send a JSON-LD document to verify with the information from the
         Catalogue
       operationId: verify
+      parameters:
+        - name: verifySemantics
+          in: query
+          description: 'To verify SD semantics or not'
+          required: false
+          schema:
+            type: boolean
+            default: true
+        - name: verifySchema
+          in: query
+          description: 'To verify SD agains schema or not'
+          required: false
+          schema:
+            type: boolean
+            default: true  
+        - name: verifySignatures
+          in: query
+          description: 'To verify SD signatures or not'
+          required: false
+          schema:
+            type: boolean
+            default: true  
       requestBody:
         description: >-
           JSON-LD document to be verified object to send queries. Use

@@ -3,8 +3,6 @@ package eu.gaiax.difs.fc.core.pojo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,7 +25,8 @@ public class VerificationResult extends eu.gaiax.difs.fc.api.generated.model.Ver
   @JsonIgnore
   private List<Validator> validators;
 
-  public VerificationResult(String id, List<SdClaim> claims, List<Validator> validators, OffsetDateTime verificationTimestamp, String lifecycleStatus, String issuer, LocalDate issuedDate) {
+  public VerificationResult(OffsetDateTime verificationTimestamp, String lifecycleStatus, String issuer, LocalDate issuedDate,
+          String id, List<SdClaim> claims, List<Validator> validators) {
     super(verificationTimestamp, lifecycleStatus, issuer, issuedDate, null);
     this.id = id;
     this.claims = claims;

@@ -426,8 +426,8 @@ public class SelfDescriptionControllerTest {
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void revokeSDReturnSuccessResponse() throws Exception {
-        final VerificationResult vr = new VerificationResult("vhash", new ArrayList<>(), new ArrayList<>(),
-            OffsetDateTime.now(), "lifecyclestatus", "issuer", LocalDate.now());
+        final VerificationResult vr = new VerificationResult(OffsetDateTime.now(), "lifecyclestatus", "issuer", LocalDate.now(),
+                "vhash", new ArrayList<>(), new ArrayList<>());
         sdStore.storeSelfDescription(sdMeta, vr);
 //        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
         mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions/" + sdMeta.getSdHash() + "/revoke")
@@ -442,8 +442,8 @@ public class SelfDescriptionControllerTest {
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void revokeSdWithNotActiveStatusReturnConflictResponse() throws Exception {
-        final VerificationResult vr = new VerificationResult("vhash", new ArrayList<>(), new ArrayList<>(),
-            OffsetDateTime.now(), "lifecyclestatus", "issuer", LocalDate.now());
+        final VerificationResult vr = new VerificationResult(OffsetDateTime.now(), "lifecyclestatus", "issuer", LocalDate.now(), 
+                "vhash", new ArrayList<>(), new ArrayList<>());
         SelfDescriptionMetadata metadata = sdMeta;
         metadata.setStatus(SelfDescriptionStatus.DEPRECATED);
         sdStore.storeSelfDescription(metadata, vr);

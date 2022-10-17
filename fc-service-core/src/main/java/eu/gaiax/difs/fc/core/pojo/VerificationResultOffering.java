@@ -21,14 +21,14 @@ public class VerificationResultOffering extends VerificationResult {
    * @param issuedDate issuing date of the SD
    */
   public VerificationResultOffering(
-          String id,
-          String issuer,
           OffsetDateTime verificationTimestamp,
           String lifecycleStatus,
+          String issuer,
           LocalDate issuedDate,
-          List<Validator> validators,
-          List<SdClaim> claims) {
-    super(id, claims, validators, verificationTimestamp, lifecycleStatus, issuer, issuedDate);
+          String id,
+          List<SdClaim> claims,
+          List<Validator> validators) {
+    super(verificationTimestamp, lifecycleStatus, issuer, issuedDate, id, claims, validators);
   }
 
 }

@@ -20,6 +20,7 @@ import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.jsonld.JsonLDException;
 import foundation.identity.jsonld.JsonLDObject;
+import foundation.identity.jsonld.validation.Validation;
 import info.weboftrust.ldsignatures.LdProof;
 import info.weboftrust.ldsignatures.verifier.JsonWebSignature2020LdVerifier;
 import info.weboftrust.ldsignatures.verifier.LdVerifier;
@@ -71,6 +72,10 @@ public class VerificationServiceImpl implements VerificationService {
   private static final String[] ID_KEYS = {"id", "@id"};
   private static final String PARTICIPANT_TYPE = "LegalPerson";
   private static final String SERVICE_OFFERING_TYPE = "ServiceOfferingExperimental";
+  
+  private int VRT_UNKNOWN = 0;
+  private int VRT_PARTICIPANT= 1;
+  private int VRT_OFFERING = 2;
 
   @Autowired
   private SchemaStore schemaStore;
@@ -83,24 +88,7 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResultParticipant verifyParticipantSelfDescription(ContentAccessor payload) throws VerificationException {
-    log.debug("verifyParticipantSelfDescription.enter;");
-    VerifiablePresentation presentation = parseSD(payload);
-    log.debug("verifyParticipantSelfDescription; successfully parsed");
-
-    if (!isSDParticipant(presentation)) {
-      String msg = "Expected Participant SD, got: ";
-
-      if (isSDServiceOffering(presentation)) msg += "Service Offering SD";
-      else msg += "Unknown SD";
-
-      throw new VerificationException(msg);
-    }
-
-    // TODO: make it workable
-    //validationAgainstShacl(payload);
-    VerificationResultParticipant result = verifyParticipantSelfDescription(presentation);
-    log.debug("verifyParticipantSelfDescription.exit;");
-    return result;
+    return (VerificationResultParticipant) verifySelfDescription(payload, true, VRT_PARTICIPANT, true, true, true);
   }
 
   /**
@@ -111,24 +99,7 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResultOffering verifyOfferingSelfDescription(ContentAccessor payload) throws VerificationException {
-    log.debug("verifyOfferSelfDescription.enter;");
-    VerifiablePresentation presentation = parseSD(payload);
-    log.debug("verifyOfferingSelfDescription; successfully parsed");
-    if (!isSDServiceOffering(presentation)) {
-      String msg = "Expected Service Offering SD, got: ";
-
-      if (isSDParticipant(presentation)) msg += "Participant SD";
-      else msg += "Unknown SD";
-
-      throw new VerificationException(msg);
-    }
-
-    // TODO: make it workable
-    //validationAgainstShacl(payload);
-
-    VerificationResultOffering result = verifyOfferingSelfDescription(presentation);
-    log.debug("verifyOfferingSelfDescription.exit;");
-    return result;
+    return (VerificationResultOffering) verifySelfDescription(payload, true, VRT_OFFERING, true, true, true);
   }
 
   /**
@@ -139,27 +110,103 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResult verifySelfDescription(ContentAccessor payload) throws VerificationException {
+    return verifySelfDescription(payload, true, true, true);
+  }
+
+  @Override
+  public VerificationResult verifySelfDescription(ContentAccessor payload, 
+          boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException {
+    return verifySelfDescription(payload, false, VRT_UNKNOWN, verifySemantics, verifySchema, verifySignatures);
+  }
+
+  private VerificationResult verifySelfDescription(ContentAccessor payload, boolean strict, int exceptedType, 
+          boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException {
     log.debug("verifySelfDescription.enter;");
 
-    VerifiablePresentation presentation = parseSD(payload);
-    log.debug("verifySelfDescription; successfully parsed");
-
-    // TODO: make it workable
-    //validationAgainstShacl(payload);
+    JsonLDObject jsonld = fromPayload(payload);
+    VerifiablePresentation presentation;
+    // syntactic verification
+    try {
+      if (verifySemantics) {
+        Validation.validate(jsonld);
+        presentation = parseJsonLD(jsonld);
+      } else {
+        presentation = VerifiablePresentation.fromJsonLDObject(jsonld); 
+      }
+    } catch (VerificationException ex) {
+      throw ex;
+    } catch (IllegalStateException ex) {
+      throw new VerificationException("Semantic error: " + ex.getMessage());
+    } catch (Exception ex) {
+      log.error("verifySelfDescription.error", ex);
+      throw new VerificationException("Semantic error: Parsing of SD failed", ex);
+    }
+    
     Pair<Boolean, Boolean> type = getSDType(presentation);
+    if (strict) {
+      if (type.getLeft()) {
+        if (type.getRight()) { 
+          throw new VerificationException("Semantic error: SD is both, a Participant and an Service Offering SD");
+        }
+        if (exceptedType == VRT_OFFERING) {
+          throw new VerificationException("Semantic error: Expected Service Offering SD, got Participant SD");
+        }
+      } else if (type.getRight()) {
+        if (exceptedType == VRT_PARTICIPANT) {
+          throw new VerificationException("Semantic error: Expected Participant SD, got Service Offering SD");
+        }
+      } else {
+        throw new VerificationException("Semantic error: SD is neither a Participant SD nor a Service Offering SD");
+      }
+    }
+    
+    if (verifySchema) {
+      // TODO: make it workable
+      //validatePayloadAgainstSchema(payload);
+    }
+  
+    List<Validator> validators;
+    if (verifySignatures) {
+      validators = checkCryptographic(presentation);
+    } else {
+      validators = null; //is it ok?  
+    }
+
+    VerifiableCredential credential = getCredential(presentation);
+    String id = getID(credential);
+    //String issuer = null;
+    String participantId = null;
+    URI issuer = credential.getIssuer();
+    if (issuer != null) {
+      participantId = credential.getIssuer().toString();
+    }
+
+    CredentialSubject credentialSubject = getCredentialSubjects(credential);
+    List<SdClaim> claims = extractClaims(credentialSubject);
 
     VerificationResult result;
     if (type.getLeft()) {
-      result = verifyParticipantSelfDescription(presentation);
+      String name = presentation.getHolder().toString();
+      Map<String, Object> proof = presentation.getLdProof().toMap();
+      // take it from validators?
+      String key = (String) proof.get("verificationMethod");
+      if (participantId == null) {
+          participantId = id;
+      }
+      result = new VerificationResultParticipant(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), participantId, LocalDate.now(),
+              claims, validators, name, key);
     } else if (type.getRight()) {
-      result = verifyOfferingSelfDescription(presentation);
+      result = new VerificationResultOffering(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), participantId, LocalDate.now(),
+              id, claims, validators);
     } else {
-      throw new VerificationException("SD is neither a Participant SD nor a ServiceOffer SD");
+      result = new VerificationResult(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), participantId, LocalDate.now(),
+            id, claims, validators);
     }
+
     log.debug("verifySelfDescription.exit;");
     return result;
   }
-
+  
   @Override
   public boolean checkValidator(Validator validator) {
     //Todo delete this function as it's unused?
@@ -167,100 +214,83 @@ public class VerificationServiceImpl implements VerificationService {
     //check if pubkey is trusted
     return true; //if all checks succeeded the validator is valid
   }
-
-  /*package private functions*/
-  private VerificationResultParticipant verifyParticipantSelfDescription(VerifiablePresentation presentation) throws VerificationException {
-    log.debug("verifyParticipantSelfDescription.enter; parsed");
-    try {
-      checkCryptographic(presentation);
-    } catch (JsonLDException | GeneralSecurityException | IOException | ParseException e) {
-      throw new VerificationException(e);
-    }
-    log.debug("verifyParticipantSelfDescription; cryptogrphic check successful");
-
-    VerifiableCredential credential = getCredential(presentation);
-    String id = getID(credential);
-    String name = presentation.getHolder().toString();
-    Map<String, Object> proof = presentation.getLdProof().toMap();
-    String key = (String) proof.get("verificationMethod");
-
-    CredentialSubject credentialSubjects = getCredentialSubjects(credential);
-    List<SdClaim> claims = extractClaims(credentialSubjects);
-
-    /*
-    Maybe one of these methods can help you
-    credentialSubjects.get(0).getClaims();
-    credentialSubjects.get(0).getJsonObject();
-    */
-
-    //TODO: Extract Claims FIT-DSAI
-
-    //TODO: Verify Schema FIT-DSAI
-
-    log.debug("verifyParticipantSelfDescription.exit; parsed");
-    return new VerificationResultParticipant(
-            name,
-            id,
-            key,
-            OffsetDateTime.now(),
-            SelfDescriptionStatus.ACTIVE.getValue(),
-            LocalDate.now(),
-            new ArrayList<>(),
-            claims
-    );
+  
+  private JsonLDObject fromPayload(ContentAccessor payload) {
+      try {
+        JsonLDObject jsonld = JsonLDObject.fromJson(payload.getContentAsString());
+        return jsonld;
+      } catch (Exception ex) {
+        log.error("fromPayload.error", ex);
+        throw new VerificationException("Syntactic error; " + ex.getMessage(), ex);  
+      }
   }
 
-  private VerificationResultOffering verifyOfferingSelfDescription(VerifiablePresentation presentation) throws VerificationException {
-    log.debug("verifyOfferingSelfDescription.enter; parsed");
-    try {
-      checkCryptographic(presentation);
-    } catch (JsonLDException | GeneralSecurityException | IOException | ParseException e) {
-      throw new VerificationException(e);
-    }
-    log.debug("verifyParticipantSelfDescription; cryptogrphic check successful");
+  /* SD parsing, semantic validation */
+  
+  private VerifiablePresentation parseJsonLD(JsonLDObject jsonld) {
+    log.debug("parseJsonLD.enter;");
+    VerifiablePresentation vp;  
+    vp = VerifiablePresentation.fromJsonLDObject(jsonld);
 
-    VerifiableCredential credential = getCredential(presentation);
-    String id = getID(credential);
-    OffsetDateTime verificationTimestamp = OffsetDateTime.now();
-    // TODO: what it is for?
-    String participantID = "http://example.org/test-issuer";
-    LocalDate issuedDate = null;
-    List<Validator> validators = new ArrayList<>();
-
-    CredentialSubject credentialSubjects = getCredentialSubjects(credential);
-    List<SdClaim> claims = extractClaims(credentialSubjects);
-
-    URI issuer = credential.getIssuer();
-    if (issuer == null) {
-      participantID = null;
-    } else {
-      participantID = credential.getIssuer().toString();
+    if (vp == null) {
+      throw new VerificationException("Semantic error: invalid VerifiablePresentation");
     }
 
-    //TODO: Extract Claims FIT-DSAI
-
-    //TODO: Verify Schema FIT-DSAI
-
-    log.debug("verifyOfferSelfDescription.exit; parsed");
-    return new VerificationResultOffering(
-            id,
-            participantID,
-            verificationTimestamp,
-            SelfDescriptionStatus.ACTIVE.getValue(),
-            issuedDate,
-            validators,
-            claims
-    );
+    VerifiableCredential vc = getCredential(vp);
+    if (vc == null) {
+      throw new VerificationException("Semantic error: invalid VerifiableCredential");
+    }
+    CredentialSubject cs = vc.getCredentialSubject();
+    if (cs == null) {
+      throw new VerificationException("Semantic error: invalid CredentialSubject");
+    }
+    log.debug("parseJsonLD.exit;");
+    return vp;
   }
 
-  /*package private functions*/
+  private Pair<Boolean, Boolean> getSDType(VerifiablePresentation presentation) {
+    boolean isParticipant = false;
+    boolean isServiceOffering = false;
+
+    try {
+      VerifiableCredential credential = getCredential(presentation);
+      CredentialSubject cs = getCredentialSubjects(credential);
+      for (String key : TYPE_KEYS) {
+        Object _type = cs.getJsonObject().get(key);
+        log.debug("getSDType; key: {}, value: {}", key, _type);
+        if (_type == null) continue;
+
+        List<String> types;
+        if (_type instanceof List) {
+          types = (List<String>) _type;
+        } else {
+          types = new ArrayList<>(1);
+          types.add((String) _type);
+        }
+
+        for (String type : types) {
+          if (type.contains(PARTICIPANT_TYPE)) {
+            isParticipant = true;
+          }
+          if (type.contains(SERVICE_OFFERING_TYPE)) {
+            isServiceOffering = true;
+          }
+        }
+      }
+    } catch (Exception e) {
+      throw new VerificationException("Semntic error: Could not extract SD's type", e);
+    }
+
+    return Pair.of(isParticipant, isServiceOffering);
+  }
+
   /**
    * A method that returns a list of claims given a self-description's VerifiablePresentation
    *
    * @param cs a self-description as Verifiable Presentation for claims extraction
    * @return a list of claims.
    */
-   List<SdClaim> extractClaims(CredentialSubject cs) {
+   private List<SdClaim> extractClaims(CredentialSubject cs) {
 
      log.debug("extractClaims.enter; got credential subuject: {}", cs);
      List<SdClaim> claims = new ArrayList<>();
@@ -295,79 +325,122 @@ public class VerificationServiceImpl implements VerificationService {
      if (rdf.getValue().startsWith("http://") || rdf.getValue().startsWith("https://")) return "<" + rdf.getValue() + ">";
      return null;
   }
-
-  private VerifiablePresentation parseSD(ContentAccessor accessor) {
-    VerifiablePresentation vp;  
-    try {
-      vp = VerifiablePresentation.fromJson(accessor.getContentAsString());
-
-      if (vp == null) {
-        throw new VerificationException("invalid VerifiablePresentation");
-      }
-
-      VerifiableCredential vc = getCredential(vp);
-      if (vc == null) {
-        throw new VerificationException("invalid VerifiableCredential");
-      }
-      CredentialSubject cs = vc.getCredentialSubject();
-      if (cs == null) {
-        throw new VerificationException("invalid CredentialSubject");
-      }
-    } catch (VerificationException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new VerificationException("Parsing of SD failed", e);
-    }
-    return vp;
-  }
-
-  private Pair<Boolean, Boolean> getSDType (VerifiablePresentation presentation) {
-    boolean isParticipant = false;
-    boolean isServiceOffering = false;
-
-    try {
+  
+  private String getParticipantID(VerifiablePresentation presentation) {
+      //TODO compare to validators
       VerifiableCredential credential = getCredential(presentation);
-      CredentialSubject cs = getCredentialSubjects(credential);
-      for (String key : TYPE_KEYS) {
-        Object _type = cs.getJsonObject().get(key);
-        if (_type == null) continue;
+      String id = getID(credential);
+      return id;
+    }
 
-        List<String> types;
-        if (_type instanceof List) {
-          types = (List<String>) _type;
-        } else {
-          types = new ArrayList<>(1);
-          types.add((String) _type);
-        }
+  private VerifiableCredential getCredential (VerifiablePresentation presentation) {
+    try {
+      VerifiableCredential credential = presentation.getVerifiableCredential();
+      log.debug("getCredential; vp.credential: {}", credential);
 
-        for (String type : types) {
-          if (type.contains(PARTICIPANT_TYPE)) {
-            isParticipant = true;
-          }
-          if (type.contains(SERVICE_OFFERING_TYPE)) {
-            isServiceOffering = true;
-          }
-        }
+      if (credential != null) {
+        return credential;
       }
     } catch (Exception e) {
-      throw new VerificationException("Could not extract SD's type", e);
+      log.debug("getCredential; error: {}", e.getMessage());
+    }
+    Object _credential = presentation.getJsonObject().get("verifiableCredential");
+    log.debug("getCredential; all credentials: {}", _credential);
+
+    if (_credential != null) {
+      if (_credential instanceof List) {
+        List<Map<String, Object>> credentials = (List<Map<String, Object>>) _credential;
+        if (credentials.size() > 0)
+          return VerifiableCredential.fromJsonObject(credentials.get(0));
+      }
     }
 
-    if (isParticipant && isServiceOffering) {
-      throw new VerificationException("SD is both, a participant and an offering SD");
+    throw new VerificationException("Semantic error: Could not find a VC in SD");
+  }
+
+  private CredentialSubject getCredentialSubjects (VerifiableCredential credential) {
+    return credential.getCredentialSubject();
+  }
+
+  private String getID (VerifiablePresentation presentation) {
+    return getID(presentation.getJsonObject());
+  }
+
+  private String getID (VerifiableCredential credential) {
+    return getID(credential.getJsonObject());
+  }
+
+  private String getID (Map<String, Object> map) {
+    for (String key : ID_KEYS) {
+      Object id = map.get(key);
+      if (id != null) {
+        if (id instanceof String) return (String) id;
+        if (id instanceof URI) {
+          URI uri = (URI) id;
+          return uri.toString();
+        }
+      }
     }
-
-    return Pair.of(isParticipant, isServiceOffering);
+    throw new VerificationException("Could not find String");
   }
 
-  boolean isSDServiceOffering (VerifiablePresentation presentation) {
-    return getSDType(presentation).getRight();
+  /* SD validation against SHACL Schemas */
+
+  /**
+   * Method that validates a dataGraph against shaclShape
+   *
+   * @param payload    ContentAccessor of a self-Description payload to be validated
+   * @param shaclShape ContentAccessor of a union schemas of type SHACL
+   * @return                SemanticValidationResult object
+   */
+  SemanticValidationResult validatePayloadAgainstSchema(ContentAccessor payload, ContentAccessor shaclShape) {
+      Reader dataGraphReader = new StringReader(payload.getContentAsString());
+      Reader shaclShapeReader = new StringReader(shaclShape.getContentAsString());
+      Model data = ModelFactory.createDefaultModel();
+      data.read(dataGraphReader, null, sd_format);
+      Model shape = ModelFactory.createDefaultModel();
+      shape.read(shaclShapeReader, null, shapes_format);
+      Resource reportResource = ValidationUtil.validateModel(data, shape, true);
+      boolean conforms = reportResource.getProperty(SH.conforms).getBoolean();
+      String report = null;
+      if (!conforms) {
+          report = reportResource.getModel().toString();
+      }
+      return new SemanticValidationResult(conforms, report);
   }
 
-  boolean isSDParticipant (VerifiablePresentation presentation) {
-    return getSDType(presentation).getLeft();
+  private void validatePayloadAgainstSchema(ContentAccessor payload) {
+    ContentAccessor shaclShape = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
+    SemanticValidationResult result = validatePayloadAgainstSchema(payload, shaclShape);
+    log.debug("validationAgainstShacl.exit; conforms: {}; model: {}", result.isConforming(), result.getValidationReport());
+    if (!result.isConforming()) {
+      throw new VerificationException("shacl shape schema violated");
+    }
+  }
+  
+  /* SD signatures verification */
+
+  private List<Validator> checkCryptographic(VerifiablePresentation presentation) { 
+    log.debug("checkCryptographic.enter;");
+
+    List<Validator> validators = new ArrayList<>();
+    try {
+      validators.add(checkSignature(presentation));
+      log.debug("checkCryptographic; Successfully checked presentation");
+      
+      VerifiableCredential credential = getCredential(presentation);
+      validators.add(checkSignature(credential));
+      log.debug("checkCryptographic; Successfully checked credential");
+    } catch (VerificationException ex) {
+      throw ex;
+    } catch (Exception ex) {
+      throw new VerificationException("Signatures error; " + ex.getMessage(), ex);  
+    }
+    log.debug("checkCryptographic.exit; returning: {}", validators);
+    return validators;
   }
 
+  
   //This function becomes obsolete when a did resolver will be available
   //https://gitlab.com/gaia-x/lab/compliance/gx-compliance/-/issues/13
   private static DIDDocument readDIDfromURI (URI uri) throws IOException {
@@ -527,108 +600,4 @@ public class VerificationServiceImpl implements VerificationService {
     return new JsonWebSignature2020LdVerifier(pubKey);
   }
 
-  private List<Validator> checkCryptographic (VerifiablePresentation presentation) throws JsonLDException, GeneralSecurityException, IOException, ParseException {
-    log.debug("checkCryptographic.enter;");
-
-    List<Validator> validators = new ArrayList<>();
-
-    validators.add(checkSignature(presentation));
-
-    log.debug("checkCryptographic; Successfully checked presentation");
-    VerifiableCredential credential = getCredential(presentation);
-    validators.add(checkSignature(credential));
-
-    log.debug("checkCryptographic; Successfully checked credential");
-    //If this point was reached without an exception, the signatures are valid
-    log.debug("checkCryptographic.exit; returning: {}", validators);
-    return validators;
-  }
-
-  private String getParticipantID(VerifiablePresentation presentation) {
-    //TODO compare to validators
-    VerifiableCredential credential = getCredential(presentation);
-    String id = getID(credential);
-    return id;
-  }
-
-  /**
-   * Method that validates a dataGraph against shaclShape
-   *
-   * @param payload    ContentAccessor of a self-Description payload to be validated
-   * @param shaclShape ContentAccessor of a union schemas of type SHACL
-   * @return                SemanticValidationResult object
-   */
-  SemanticValidationResult validationAgainstShacl(ContentAccessor payload, ContentAccessor shaclShape) {
-      Reader dataGraphReader = new StringReader(payload.getContentAsString());
-      Reader shaclShapeReader = new StringReader(shaclShape.getContentAsString());
-      Model data = ModelFactory.createDefaultModel();
-      data.read(dataGraphReader, null, sd_format);
-      Model shape = ModelFactory.createDefaultModel();
-      shape.read(shaclShapeReader, null, shapes_format);
-      Resource reportResource = ValidationUtil.validateModel(data, shape, true);
-      boolean conforms = reportResource.getProperty(SH.conforms).getBoolean();
-      String report = null;
-      if (!conforms) {
-          report = reportResource.getModel().toString();
-      }
-      return new SemanticValidationResult(conforms, report);
-  }
-
-  private void validationAgainstShacl(ContentAccessor payload) {
-    ContentAccessor shaclShape = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
-    SemanticValidationResult result = validationAgainstShacl(payload, shaclShape);
-    log.debug("validationAgainstShacl.exit; conforms: {}; model: {}", result.isConforming(), result.getValidationReport());
-    if (!result.isConforming()) {
-      throw new VerificationException("shacl shape schema violated");
-    }
-  }
-
-  private VerifiableCredential getCredential (VerifiablePresentation presentation) {
-    try {
-      VerifiableCredential credential = presentation.getVerifiableCredential();
-
-      if (credential != null) {
-        return credential;
-      }
-    } catch (Exception e) {
-      //do nothing
-    }
-    Object _credential = presentation.getJsonObject().get("verifiableCredential");
-
-    if (_credential != null) {
-      if (_credential instanceof List) {
-        List<Map<String, Object>> credentials = (List<Map<String, Object>>) _credential;
-        if (credentials.size() > 0)
-          return VerifiableCredential.fromJsonObject(credentials.get(0));
-      }
-    }
-
-    throw new VerificationException("Could not find a VC in SD");
-  }
-
-  private CredentialSubject getCredentialSubjects (VerifiableCredential credential) {
-    return credential.getCredentialSubject();
-  }
-
-  private String getID (VerifiablePresentation presentation) {
-    return getID(presentation.getJsonObject());
-  }
-
-  private String getID (VerifiableCredential credential) {
-    return getID(credential.getJsonObject());
-  }
-
-  private String getID (Map<String, Object> map) {
-    for (String key : ID_KEYS) {
-      Object id = map.get(key);
-      if (id != null) {
-        if (id instanceof String) return (String) id;
-        if (id instanceof URI) {
-          URI uri = (URI) id;
-          return uri.toString();
-        }
-      }
-    }
-    throw new VerificationException("Could not find String");
-  }
 }

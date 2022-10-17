@@ -47,12 +47,14 @@ public class VerificationService implements VerificationApiDelegate {
    *       Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<VerificationResult> verify(String jsonSelfDescription) {
-    log.debug("verify.enter; got body: {}", jsonSelfDescription);
-    VerificationResult verificationResult =
-        verificationService.verifySelfDescription(new ContentAccessorDirect(jsonSelfDescription));
-    log.debug("verify.exit; returning result {} ", verificationResult);
-    return new ResponseEntity<>(verificationResult, HttpStatus.OK);
+  public ResponseEntity<VerificationResult> verify(Boolean verifySemantics, Boolean verifySchema, Boolean verifySignatures,
+          String body) {
+    log.debug("verify.enter; got body of length: {}; verify semantics: {}, schema: {}, signatures: {}", 
+            body.length(), verifySemantics, verifySchema, verifySignatures);
+    VerificationResult verificationResult = verificationService.verifySelfDescription(new ContentAccessorDirect(body), 
+            verifySemantics, verifySchema, verifySignatures);
+    log.debug("verify.exit; returning result: {}", verificationResult);
+    return ResponseEntity.ok(verificationResult);
 
   }
 
