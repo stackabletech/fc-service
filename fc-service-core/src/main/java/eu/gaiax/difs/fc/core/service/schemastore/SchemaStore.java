@@ -18,6 +18,13 @@ public interface SchemaStore {
   }
 
   /**
+   * Initialise the default Gaia-X schemas, if the schema store is still empty.
+   * If there are already schemas in the store, calling this method will do
+   * nothing.
+   */
+  public void initializeDefaultSchemas();
+
+  /**
    * Verify if a given schema is syntactically correct.
    *
    * @param schema The schema data to verify. The content can be shacl (ttl),

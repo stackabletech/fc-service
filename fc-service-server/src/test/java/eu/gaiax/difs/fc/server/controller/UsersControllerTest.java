@@ -1,7 +1,6 @@
 package eu.gaiax.difs.fc.server.controller;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.getUsername;
 import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.toUserRepo;
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
@@ -178,7 +177,7 @@ public class UsersControllerTest {
         User user = getTestUser("name2", "surname2");
         setupKeycloak(HttpStatus.SC_CREATED, user, UUID.randomUUID().toString());
         userDao.create(user);
-        when(usersResource.search(getUsername(user))).thenReturn(List.of(toUserRepo(user)));
+        when(usersResource.search(user.getEmail())).thenReturn(List.of(toUserRepo(user)));
         when(usersResource.create(any()))
             .thenReturn(Response.status(HttpStatus.SC_CONFLICT, "Conflict")
                 .entity(new ByteArrayInputStream("{ \"errorMessage\" : \"User exists with same username\"}".getBytes()))
@@ -301,11 +300,20 @@ public class UsersControllerTest {
         String userId = UUID.randomUUID().toString();
         setupKeycloak(HttpStatus.SC_OK, user, userId);
         UserProfile existed = userDao.create(user);
-        mockMvc
+
+        when(roleScopeResource.listAll())
+            .thenReturn(List.of(new RoleRepresentation(PARTICIPANT_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, false),
+                new RoleRepresentation(SD_ADMIN_ROLE, SD_ADMIN_ROLE, false)));
+
+        String response = mockMvc
             .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE))))
-            .andExpect(status().isOk());
+                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE))))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        UserProfile profile = objectMapper.readValue(response, UserProfile.class);
+        assertEquals(2, profile.getRoleIds().size());
+        assertTrue(profile.getRoleIds().containsAll(List.of(PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE)));
     }
 
     @Test
@@ -327,6 +335,30 @@ public class UsersControllerTest {
         assertNotNull(newProfile);
         assertEquals(2, newProfile.getRoleIds().size());
         assertTrue(newProfile.getRoleIds().containsAll(List.of(PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE)));
+    }
+
+    @Test
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
+    public void revokeUserRoleShouldNotContainThisRoleInSubsequentRequest() throws Exception {
+        User user = getTestUser("test_name", "test_surname");
+        String userId = UUID.randomUUID().toString();
+        setupKeycloak(HttpStatus.SC_OK, user, userId);
+        UserProfile existed = userDao.create(user);
+        when(roleScopeResource.listAll())
+            .thenReturn(List.of(new RoleRepresentation(PARTICIPANT_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, false)));
+        String response = mockMvc
+            .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(List.of(PARTICIPANT_ADMIN_ROLE))))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        UserProfile profile = objectMapper.readValue(response, UserProfile.class);
+        assertEquals(1, profile.getRoleIds().size());
+        assertTrue(profile.getRoleIds().contains(PARTICIPANT_ADMIN_ROLE));
+
+        List<String> roles = userDao.select(profile.getId()).getRoleIds();
+        assertEquals(1, roles.size());
+        assertTrue(roles.contains(PARTICIPANT_ADMIN_ROLE));
     }
 
     @Test
@@ -372,7 +404,7 @@ public class UsersControllerTest {
             UserRepresentation userRepo = toUserRepo(user);
             userRepo.setId(id);
             when(usersResource.list(any(), any())).thenReturn(List.of(userRepo));
-            when(usersResource.search(userRepo.getUsername())).thenReturn(List.of(userRepo));
+            when(usersResource.search(user.getEmail())).thenReturn(List.of(userRepo));
             when(usersResource.get(any())).thenReturn(userResource);
             when(userResource.toRepresentation()).thenReturn(userRepo);
             when(rolesResource.list()).thenReturn(getAllRoles());
@@ -396,7 +428,7 @@ public class UsersControllerTest {
     private static void assertThatResponseUserHasValidData(final User excepted, final UserProfile actual) {
         assertNotNull(actual);
         assertNotNull(actual.getId());
-        assertNotNull(actual.getUsername());
+        assertNotNull(actual.getEmail());
         assertEquals(excepted.getEmail(), actual.getEmail());
         assertEquals(excepted.getFirstName(), actual.getFirstName());
         assertEquals(excepted.getLastName(), actual.getLastName());
@@ -438,7 +470,7 @@ public class UsersControllerTest {
         claims.setClaim("realm_access", Map.of("roles", List.of(CATALOGUE_ADMIN_ROLE)));
         claims.setClaim("scope", "openid gaia-x");
         claims.setClaim("email_verified", true);
-        claims.setClaim("preferred_username", getUsername(user));
+        claims.setClaim("preferred_username", user.getEmail());
         claims.setClaim("given_name", user.getFirstName());
         claims.setClaim("family_name", user.getLastName());
 

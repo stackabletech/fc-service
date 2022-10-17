@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.persistence.EntityExistsException;
 import javax.persistence.LockModeType;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -29,11 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.query.Query;
-import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,11 +50,9 @@ public class SchemaStoreImpl implements SchemaStore {
   @Autowired
   private SessionFactory sessionFactory;
 
-// This seems to not work...
-//  @Bean
-//  public SmartInitializingSingleton importProcessor() {
-//    return this::initializeDefaultSchemas;
-//  }
+  private static final Map<SchemaType, ContentAccessor> COMPOSITE_SCHEMAS = new ConcurrentHashMap<>();
+
+  @Override
   public void initializeDefaultSchemas() {
     Session currentSession = sessionFactory.getCurrentSession();
     long count = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
@@ -136,10 +132,6 @@ public class SchemaStoreImpl implements SchemaStore {
     return new ContentAccessorDirect(contentBuilder.toString());
   }
 
-  private void buildCompositeSchema() {
-
-  }
-
   @Override
   public boolean verifySchema(ContentAccessor schema) {
     SchemaAnalysisResult result = analyseSchema(schema);
@@ -185,6 +177,7 @@ public class SchemaStoreImpl implements SchemaStore {
     }
 
     currentSession.flush();
+    COMPOSITE_SCHEMAS.remove(result.getSchemaType());
     // TODO: Re-Validate SDs in a separate thread.
     return schemaId;
   }
@@ -241,6 +234,7 @@ public class SchemaStoreImpl implements SchemaStore {
       throw new RuntimeException("Failed to store schema file", ex);
     }
     currentSession.flush();
+    COMPOSITE_SCHEMAS.remove(result.getSchemaType());
 
     // TODO: Re-Validate SDs in a separate thread.
   }
@@ -252,16 +246,16 @@ public class SchemaStoreImpl implements SchemaStore {
     SchemaRecord existing = currentSession.find(SchemaRecord.class, identifier, LockModeType.PESSIMISTIC_WRITE);
     if (existing == null) {
       throw new NotFoundException("Schema with id " + identifier + " was not found");
-    } else {
-      currentSession.delete(existing);
-      try {
-        fileStore.deleteFile(existing.getNameHash());
-      } catch (IOException ex) {
-        currentSession.clear();
-        throw new ServerException("Failed to delete schema from file store. (" + ex.getMessage() + ")");
-      }
+    }
+    currentSession.delete(existing);
+    try {
+      fileStore.deleteFile(existing.getNameHash());
+    } catch (IOException ex) {
+      currentSession.clear();
+      throw new ServerException("Failed to delete schema from file store. (" + ex.getMessage() + ")");
     }
     currentSession.flush();
+    COMPOSITE_SCHEMAS.remove(existing.getType());
   }
 
   @Override
@@ -301,8 +295,7 @@ public class SchemaStoreImpl implements SchemaStore {
 
   @Override
   public ContentAccessor getCompositeSchema(SchemaType type) {
-    // TODO IOSB add caching
-    return createCompositeSchema(type);
+    return COMPOSITE_SCHEMAS.computeIfAbsent(type, t -> createCompositeSchema(t));
   }
 
 }
