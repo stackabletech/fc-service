@@ -54,7 +54,7 @@ public class QueryService implements QueryApiDelegate {
   @Override
   public ResponseEntity<Results> query(String queryLanguage, Statement statement) {
     log.debug("query.enter; got queryLanguage: {}, statement: {}", queryLanguage, statement);
-    if (!checkIfLimitPresent(statement)) {
+    if (!checkIfLimitPresent(statement) && statement.getStatement().toLowerCase().indexOf("return") != -1) {
       addDefaultLimit(statement);
     }
     PaginatedResults<Map<String, Object>> queryResultList =
