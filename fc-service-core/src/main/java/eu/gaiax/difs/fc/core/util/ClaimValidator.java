@@ -52,9 +52,9 @@ public class ClaimValidator {
      * @param sdClaim the claim to be validated
      * @return the claim as a formatted triple string
      */
-    public String validateClaim(SdClaim sdClaim) {
-        validateRDFTripleSyntax(sdClaim);
-        return sdClaim.asTriple();
+    public Model validateClaim(SdClaim sdClaim) {
+        Model model=validateRDFTripleSyntax(sdClaim);
+        return model;
     }
 
     /**
@@ -63,7 +63,7 @@ public class ClaimValidator {
      *
      * @param sdClaim the claim to be validated
      */
-    private void validateRDFTripleSyntax(SdClaim sdClaim) {
+    private Model validateRDFTripleSyntax(SdClaim sdClaim) {
         Model model = ModelFactory.createDefaultModel();
         try (InputStream in = IOUtils.toInputStream(sdClaim.asTriple(), "UTF-8")) {
             switchOnJenaLiteralValidation();
@@ -137,5 +137,6 @@ public class ClaimValidator {
                 );
             }
         }
+        return model;
     }
 }
