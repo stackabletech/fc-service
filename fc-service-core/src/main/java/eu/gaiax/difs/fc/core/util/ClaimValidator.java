@@ -66,7 +66,7 @@ public class ClaimValidator {
 
     /**
      * Method to validate that a claim follow the RDF triple syntax, i.e.,
-     * < URI , URI, (URI, Literal) >
+     * < (URI, blank node) , URI, (URI, blank node, literal) >
      *
      * @param sdClaim the claim to be validated
      */
@@ -131,10 +131,7 @@ public class ClaimValidator {
                                     " is not a valid URI: " + e.getMessage());
                 }
 
-            } else {
-                // else it should be a blank node
-                assert s.isBlank();
-            }
+            } // else it should be a blank node
 
             // --- predicate --------------------------------------------------
             Node p = triple.getPredicate();
@@ -181,10 +178,7 @@ public class ClaimValidator {
                 // datatype errors are already handled by the parser directly.
                 // See the catch blocks after the RDFDataMgr.read( ) call above.
 
-            } else {
-                // ...it's a blank node, which is OK
-                assert o.isBlank();
-            }
+            } // else it's a blank node, which is OK
         }
     }
 }
