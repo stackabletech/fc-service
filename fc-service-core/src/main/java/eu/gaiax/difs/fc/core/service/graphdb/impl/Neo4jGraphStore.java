@@ -5,8 +5,10 @@ import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
+import eu.gaiax.difs.fc.core.util.ExtendClaims;
 import eu.gaiax.difs.fc.core.util.ClaimValidator;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.jena.rdf.model.Model;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
@@ -52,7 +54,8 @@ public class Neo4jGraphStore implements GraphStore {
             StringBuilder payload = new StringBuilder();
             try (Session session = driver.session()) {
                 for (SdClaim sdClaim : sdClaimList) {
-                    payload.append(claimValidator.validateClaim(sdClaim));
+                    Model model= claimValidator.validateClaim(sdClaim);
+                    payload.append(ExtendClaims.addPropertyGraphUri(model,credentialSubject));
                     cnt++;
                 }
     
