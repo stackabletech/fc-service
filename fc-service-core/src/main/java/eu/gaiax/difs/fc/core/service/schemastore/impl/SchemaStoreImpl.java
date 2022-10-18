@@ -13,20 +13,21 @@ import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.persistence.EntityExistsException;
 import javax.persistence.LockModeType;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.shacl.Shapes;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -38,11 +39,10 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  *
  */
-@Slf4j
 @Component
 @Transactional
+@Slf4j
 public class SchemaStoreImpl implements SchemaStore {
-
   @Autowired
   @Qualifier("schemaFileStore")
   private FileStore fileStore;
@@ -82,54 +82,111 @@ public class SchemaStoreImpl implements SchemaStore {
    * @param schema The schema to analyse.
    * @return The analysis results.
    */
-  private SchemaAnalysisResult analyseSchema(ContentAccessor schema) {
+  public SchemaAnalysisResult analyseSchema(ContentAccessor schema) {
     SchemaAnalysisResult result = new SchemaAnalysisResult();
-    List<String> extractedUrls = new ArrayList<>();
-    /**
-     * TODO FIT: add code that
-     *
-     * - Analyses the type of the schema
-     *
-     * - Checks if the schema is valid
-     *
-     * - Extracts the Identifier from the schema if possible
-     *
-     * - Extracts the URLs of all entities defined in the schema.
-     */
-    result.setSchemaType(SchemaType.SHAPE);
-    result.setValid(true);
+    List<String> extractedUrlsDupliacte = new ArrayList<>();
+    Model model = ModelFactory.createDefaultModel();
+    try {
+      StringReader schemaReader = new StringReader(schema.getContentAsString());
+      model.read(schemaReader, null,"TTL");
+      result.setValid(true);
+    }  catch (Throwable t){
+      result.setValid(false);
+      //  throw new VerificationException(t.getMessage());
+    }
+    StmtIterator iter = model.listStatements();
+    while (iter.hasNext()) {
+      Statement stmt = iter.nextStatement();
+      String predicate = stmt.getPredicate().getURI();
+      String subject = stmt.getSubject().getURI();
+      Object object = stmt.getObject();
+      if (predicate != null){
+        if(predicate.toLowerCase().indexOf("/skos") > 0){
+          result.setSchemaType(SchemaType.VOCABULARY);
+          if(stmt.getObject().isURIResource()) {
+            extractedUrlsDupliacte.add(object.toString());
+          }
+          if(subject!=null && predicate!=null ) {
+            extractedUrlsDupliacte.add(predicate);
+            extractedUrlsDupliacte.add(subject);
+          }
+          break;
+        }
+        else if(predicate.toLowerCase().indexOf("/shacl") > 0){
+          result.setSchemaType(SchemaType.SHAPE);
+          if(stmt.getObject().isURIResource()) {
+            extractedUrlsDupliacte.add(object.toString());
+          }
+          if(subject!=null && predicate!=null ) {
+            extractedUrlsDupliacte.add(predicate);
+            extractedUrlsDupliacte.add(subject);
+          }
+          ResIterator res = model.listSubjects();
+          while (res.hasNext()) {
+            String extractedID= res.nextResource().getURI();
+            if(extractedID!=null){
+              result.setExtractedId(extractedID);
+            }
+          }
+          break;
+        }else{
+          result.setSchemaType(SchemaType.ONTOLOGY);
+          if(stmt.getObject().isURIResource()) {
+            extractedUrlsDupliacte.add(object.toString());
+          }
+          if(subject!=null && predicate!=null ) {
+            extractedUrlsDupliacte.add(predicate);
+            extractedUrlsDupliacte.add(subject);
+          }
+        }
+      }
+    }
+    Set<String> extractedUrlsSet = new LinkedHashSet<>(extractedUrlsDupliacte);
+    List<String> extractedUrls = new ArrayList<>(extractedUrlsSet);
     result.setExtractedUrls(extractedUrls);
-    result.setExtractedId(null);
+////    result.setExtractedId(null);
     return result;
   }
 
   private ContentAccessor createCompositeSchema(SchemaType type) {
     log.debug("createCompositeSchema.enter; got type: {}", type);
     StringBuilder contentBuilder = new StringBuilder();
-
-    /**
-     * TODO FIT: Add code that
-     *
-     * - Fetches the existing schema IDs using getSchemaList
-     *
-     * - Iterates over these schemas and adds each schema to the composite
-     * schema.
-     *
-     * Example structure listed below.
-     */
     Map<SchemaType, List<String>> schemaList = getSchemaList();
     log.debug("createCompositeSchema; got schemaList: {}", schemaList);
 
-    List<String> schemas = schemaList.get(type);
-    if (schemas != null) {
-      for (String schemaId : schemas) {
-        ContentAccessor schemaContent = getSchema(schemaId);
-        // Add schema to union schema...
-      }
-    }
+    Model model = ModelFactory.createDefaultModel();
+    Model unionModel = ModelFactory.createDefaultModel();
+    switch (type) {
+      case ONTOLOGY:
+        for (String schemaId : schemaList.get(SchemaType.ONTOLOGY)) {
+          ContentAccessor schemaContent = getSchema(schemaId);
+          Reader schemaContentReader = new StringReader(schemaContent.getContentAsString());
+          model.read(schemaContentReader,null);
+          unionModel.union(model);
+        }
+        break;
+      case SHAPE:
+        for (String schemaId : schemaList.get(SchemaType.SHAPE)) {
+          ContentAccessor schemaContent = getSchema(schemaId);
+          Reader schemaContentReader = new StringReader(schemaContent.getContentAsString());
+          model.read(schemaContentReader,null);
+          unionModel.union(model);
+        }
+        break;
+      case VOCABULARY:
+        for (String schemaId : schemaList.get(SchemaType.VOCABULARY)) {
+          ContentAccessor schemaContent = getSchema(schemaId);
+          Reader schemaContentReader = new StringReader(schemaContent.getContentAsString());
+          model.read(schemaContentReader,null);
+          unionModel.union(model);
+        }
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown schema type: " + type.name());
 
-    log.debug("createCompositeSchema.exit; returning: {}", contentBuilder.length());
-    return new ContentAccessorDirect(contentBuilder.toString());
+    }
+    log.debug("createCompositeSchema.exit; returning: {}", unionModel.listStatements());
+    return new ContentAccessorDirect(unionModel.toString());
   }
 
   @Override
@@ -155,24 +212,28 @@ public class SchemaStoreImpl implements SchemaStore {
     }
 
     Session currentSession = sessionFactory.getCurrentSession();
+    Transaction transaction = currentSession.getTransaction();
 
     // Check duplicate terms
     List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)
-        .multiLoad(result.getExtractedUrls());
+            .multiLoad(result.getExtractedUrls());
     if (!redefines.isEmpty()) {
       throw new VerificationException("Schema redefines " + redefines.size() + " terms. First: " + redefines.get(0));
     }
 
-    SchemaRecord newRecord = new SchemaRecord(schemaId, nameHash, result.getSchemaType(), schema.getContentAsString(), result.getExtractedUrls());
+    SchemaRecord newRecord = new SchemaRecord(schemaId, nameHash, result.getSchemaType(),schema.getContentAsString(),
+            result.getExtractedUrls());
     try {
       currentSession.persist(newRecord);
     } catch (EntityExistsException ex) {
+      transaction.rollback();
       throw new ConflictException("A schema with id " + schemaId + " already exists.");
     }
 
     try {
       fileStore.storeFile(nameHash, schema);
     } catch (IOException ex) {
+      transaction.rollback();
       throw new RuntimeException("Failed to store schema file", ex);
     }
 
@@ -198,7 +259,7 @@ public class SchemaStoreImpl implements SchemaStore {
     // Find and lock record.
     SchemaRecord existing = currentSession.find(SchemaRecord.class, identifier, LockModeType.PESSIMISTIC_WRITE);
 
-    if (existing == null) {
+    if(existing == null){
       currentSession.clear();
       throw new NotFoundException("Schema with id " + identifier + " was not found");
     }
@@ -211,7 +272,7 @@ public class SchemaStoreImpl implements SchemaStore {
 
     // Check duplicate terms
     List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)
-        .multiLoad(result.getExtractedUrls());
+            .multiLoad(result.getExtractedUrls());
     if (!redefines.isEmpty()) {
       currentSession.clear();
       throw new ConflictException("Schema redefines " + redefines.size() + " terms. First: " + redefines.get(0));
@@ -229,7 +290,8 @@ public class SchemaStoreImpl implements SchemaStore {
     try {
       //Update schema file
       fileStore.replaceFile(existing.getNameHash(), schema);
-    } catch (IOException ex) {
+    }
+    catch (IOException ex) {
       transaction.rollback();
       throw new RuntimeException("Failed to store schema file", ex);
     }
@@ -263,7 +325,9 @@ public class SchemaStoreImpl implements SchemaStore {
     Session currentSession = sessionFactory.getCurrentSession();
     Map<SchemaType, List<String>> result = new HashMap<>();
     currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaTypeIdPair(s.type, s.schemaId) from SchemaRecord s", SchemaTypeIdPair.class)
-        .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
+            .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
+    // TORemove
+    log.debug("getSchemaList; got schemaList: {}", result);
     return result;
   }
 
@@ -288,14 +352,16 @@ public class SchemaStoreImpl implements SchemaStore {
     Session currentSession = sessionFactory.getCurrentSession();
     Map<SchemaType, List<String>> result = new HashMap<>();
     currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaTypeIdPair(s.type, s.schemaId) from SchemaRecord s join s.terms as t where t.term=?1", SchemaTypeIdPair.class)
-        .setParameter(1, entity)
-        .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
+            .setParameter(1, entity)
+            .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
     return result;
   }
 
   @Override
   public ContentAccessor getCompositeSchema(SchemaType type) {
-    return COMPOSITE_SCHEMAS.computeIfAbsent(type, t -> createCompositeSchema(t));
+    // TODO IOSB add caching
+    return createCompositeSchema(type);
   }
 
 }
+
