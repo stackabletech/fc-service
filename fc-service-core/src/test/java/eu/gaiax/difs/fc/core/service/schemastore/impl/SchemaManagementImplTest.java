@@ -19,9 +19,8 @@ import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+
+import java.io.*;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
@@ -253,10 +254,13 @@ public class SchemaManagementImplTest {
    */
   @Test
   public void testGetCompositeSchema() throws IOException {
-//    String path = "Schema-Tests/compositeShacl.ttl";
+
     String path = "Schema-Tests/valid-schemaShape.ttl";
+
     ContentAccessor compositeSchemaExpected = getAccessor(path);
+
     fileStore.clearStorage();
+
     schemaStore.addSchema(compositeSchemaExpected);
     ContentAccessor compositeSchemaActual = schemaStore.getCompositeSchema(SHAPE);
 

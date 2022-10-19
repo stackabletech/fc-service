@@ -11,10 +11,8 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
+
+import java.io.*;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +26,8 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.jena.rdf.model.*;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -35,6 +35,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+//import static java.lang.invoke.MethodHandleImpl.ArrayAccessor.getAccessor;
 
 /**
  *
@@ -149,9 +151,11 @@ public class SchemaStoreImpl implements SchemaStore {
     return result;
   }
 
-  private ContentAccessor createCompositeSchema(SchemaType type) {
+  private ContentAccessor createCompositeSchema(SchemaType type) throws FileNotFoundException, UnsupportedEncodingException {
     log.debug("createCompositeSchema.enter; got type: {}", type);
-    StringBuilder contentBuilder = new StringBuilder();
+    String path = "src/main/resources/dummy/dummySchema.ttl";
+
+    OutputStream out = new FileOutputStream(path);
     Map<SchemaType, List<String>> schemaList = getSchemaList();
     log.debug("createCompositeSchema; got schemaList: {}", schemaList);
 
@@ -161,33 +165,36 @@ public class SchemaStoreImpl implements SchemaStore {
       case ONTOLOGY:
         for (String schemaId : schemaList.get(SchemaType.ONTOLOGY)) {
           ContentAccessor schemaContent = getSchema(schemaId);
-          Reader schemaContentReader = new StringReader(schemaContent.getContentAsString());
-          model.read(schemaContentReader, null);
-          unionModel.union(model);
+          StringReader schemaContentReader = new StringReader(schemaContent.getContentAsString());
+          model.read(schemaContentReader,  "","TURTLE");
+          unionModel.add(model);
         }
         break;
       case SHAPE:
         for (String schemaId : schemaList.get(SchemaType.SHAPE)) {
           ContentAccessor schemaContent = getSchema(schemaId);
-          Reader schemaContentReader = new StringReader(schemaContent.getContentAsString());
-          model.read(schemaContentReader, null);
-          unionModel.union(model);
+          StringReader schemaContentReader = new StringReader(schemaContent.getContentAsString());
+          model.read(schemaContentReader,  "","TURTLE");
+          unionModel.add(model);
         }
         break;
       case VOCABULARY:
         for (String schemaId : schemaList.get(SchemaType.VOCABULARY)) {
           ContentAccessor schemaContent = getSchema(schemaId);
-          Reader schemaContentReader = new StringReader(schemaContent.getContentAsString());
-          model.read(schemaContentReader, null);
-          unionModel.union(model);
+          StringReader schemaContentReader = new StringReader(schemaContent.getContentAsString());
+          model.read(schemaContentReader,  "","TURTLE");
+          unionModel.add(model);
         }
         break;
       default:
         throw new IllegalArgumentException("Unknown schema type: " + type.name());
 
     }
-    log.debug("createCompositeSchema.exit; returning: {}", unionModel.listStatements());
-    return new ContentAccessorDirect(unionModel.toString());
+    RDFDataMgr.write(out, unionModel, Lang.TURTLE);
+    log.debug("createCompositeSchema.exit; returning: {}", out);
+    ContentAccessor compositeSchemaExpected = getAccessor("dummy/dummySchema.ttl");
+
+    return new ContentAccessorDirect(compositeSchemaExpected.getContentAsString());
   }
 
   @Override
@@ -361,9 +368,17 @@ public class SchemaStoreImpl implements SchemaStore {
   }
 
   @Override
-  public ContentAccessor getCompositeSchema(SchemaType type) {
+  public ContentAccessor getCompositeSchema(SchemaType type) throws FileNotFoundException, UnsupportedEncodingException {
     // TODO IOSB add caching
     return createCompositeSchema(type);
+  }
+
+  private static ContentAccessorFile getAccessor(String path) throws UnsupportedEncodingException {
+    URL url = SchemaStoreImpl.class.getClassLoader().getResource(path);
+    String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8.name());
+    File file = new File(str);
+    ContentAccessorFile accessor = new ContentAccessorFile(file);
+    return accessor;
   }
 
 }

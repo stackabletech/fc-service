@@ -41,10 +41,7 @@ import org.springframework.stereotype.Component;
 import org.topbraid.shacl.validation.ValidationUtil;
 import org.topbraid.shacl.vocabulary.SH;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.*;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -574,7 +571,7 @@ public class VerificationServiceImpl implements VerificationService {
       return new SemanticValidationResult(conforms, report);
   }
 
-  private void validationAgainstShacl(ContentAccessor payload) {
+  private void validationAgainstShacl(ContentAccessor payload) throws FileNotFoundException, UnsupportedEncodingException {
     ContentAccessor shaclShape = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
     SemanticValidationResult result = validationAgainstShacl(payload, shaclShape);
     log.debug("validationAgainstShacl.exit; conforms: {}; model: {}", result.isConforming(), result.getValidationReport());
