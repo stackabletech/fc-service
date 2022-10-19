@@ -197,7 +197,7 @@ public class SchemaManagementImplTest {
     for (File file : fileStore.getFileIterable()) {
       count++;
     }
-    assertEquals(67, count, "Deleting the only file should result in exactly 0 files in the store.");
+    assertEquals(5, count, "Expected a different number of files in the store.");
   }
 
   /**
