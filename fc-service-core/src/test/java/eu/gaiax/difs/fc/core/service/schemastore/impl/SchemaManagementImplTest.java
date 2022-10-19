@@ -254,17 +254,40 @@ public class SchemaManagementImplTest {
    */
   @Test
   public void testGetCompositeSchema() throws IOException {
-
-    String path = "Schema-Tests/valid-schemaShape.ttl";
-
-    ContentAccessor compositeSchemaExpected = getAccessor(path);
-
     fileStore.clearStorage();
+    String schemaPath1 = "Schema-Tests/FirstValidSchemaShape.ttl";
+    String schemaPath2 = "Schema-Tests/SecondValidSchemaShape.ttl";
+    String compositeSchemaPath = "Schema-Tests/compositeShacl.ttl";
+    ContentAccessor compositeSchemaContent = getAccessor(compositeSchemaPath);
 
-    schemaStore.addSchema(compositeSchemaExpected);
+    Model modelActual = ModelFactory.createDefaultModel();
+    Model modelExpected = ModelFactory.createDefaultModel();
+
+    schemaStore.addSchema(getAccessor(schemaPath1));
+    schemaStore.addSchema(getAccessor(schemaPath2));
+
     ContentAccessor compositeSchemaActual = schemaStore.getCompositeSchema(SHAPE);
 
+    StringReader schemaContentReader = new StringReader(compositeSchemaActual.getContentAsString());
+
+    StringReader schemaContentReaderComposite = new StringReader(compositeSchemaContent.getContentAsString());
+
+    modelActual.read(schemaContentReader,  "","TURTLE");
+
+    StmtIterator iterActual = modelActual.listStatements();
+
+    modelExpected.read(schemaContentReaderComposite,  "","TURTLE");.
+
+    StmtIterator iterExpected = modelExpected.listStatements();
+
+    // get the set from the list of statements of the iterExpected ( easy to convert a list to set)
+    // get the set from list of statement of the iterActual
+    // compare the 2 sets , also easy in java to assert if 2 set are equal
+
+
     assertEquals(compositeSchemaExpected.getContentAsString(),compositeSchemaActual.getContentAsString());
+    fileStore.clearStorage();
+
   }
 
 
