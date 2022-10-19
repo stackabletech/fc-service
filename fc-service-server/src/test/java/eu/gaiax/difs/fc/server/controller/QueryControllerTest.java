@@ -12,6 +12,7 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
+import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
@@ -250,8 +251,9 @@ public class QueryControllerTest {
 
         fileStore.clearStorage();
 
-        ContentAccessorDirect contentAccessor = new ContentAccessorDirect(FileReaderHelper.getMockFileDataAsString(SD_FILE_NAME));
-        VerificationResultOffering verificationResult = verificationService.verifyOfferingSelfDescription(contentAccessor);
+        ContentAccessorDirect contentAccessor = new ContentAccessorDirect(FileReaderHelper.getMockFileDataAsString("default_participant.json")); //SD_FILE_NAME));
+        //try {
+        VerificationResultParticipant verificationResult = verificationService.verifyParticipantSelfDescription(contentAccessor);
 
         SdClaim sdClaim = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal.json>",
             "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",

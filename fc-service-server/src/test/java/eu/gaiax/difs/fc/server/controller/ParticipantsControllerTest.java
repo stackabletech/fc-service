@@ -173,7 +173,7 @@ public class ParticipantsControllerTest {
     @Order(10)
     public void addParticipantShouldReturnCreatedResponse() throws Exception {
         String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
-        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key", json);
+        ParticipantMetaData part = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key", json);
         setupKeycloak(HttpStatus.SC_CREATED, part);
 
         initialiseWithParticipantDeleteFromAllDB(part);
@@ -188,14 +188,13 @@ public class ParticipantsControllerTest {
             .getContentAsString();
         ParticipantMetaData partResult = objectMapper.readValue(response, ParticipantMetaData.class);
         assertNotNull(part);
-        assertEquals("ebc6f1c2", partResult.getId());
+        assertEquals("did:example:issuer", partResult.getId());
         assertEquals("did:example:holder", partResult.getName());
         assertEquals("did:web:compliance.lab.gaia-x.eu", partResult.getPublicKey());
         assertEquals(part.getSelfDescription(), partResult.getSelfDescription());
 
         assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
         assertDoesNotThrow(() -> selfDescriptionStore.getByHash(part.getSdHash()));
-
     }
 
     @Test
@@ -203,7 +202,7 @@ public class ParticipantsControllerTest {
     @Order(10)
     public void addDuplicateParticipantShouldReturnConflictResponse() throws Exception {
         String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
-        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key", json);
+        ParticipantMetaData part = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key", json);
         setupKeycloak(HttpStatus.SC_CREATED, part);
 
         initialiseWithParticipantDeleteFromAllDB(part);
@@ -225,7 +224,7 @@ public class ParticipantsControllerTest {
     @Order(20)
     public void getParticipantShouldReturnSuccessResponse() throws Exception {
         String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
-        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key", json);
+        ParticipantMetaData part = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
         mockMvc
@@ -240,7 +239,7 @@ public class ParticipantsControllerTest {
     public void getAddedParticipantSDShouldReturnSuccessResponseWithSameSD() throws Exception {
 
         String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
-        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key", json);
+        ParticipantMetaData part = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
         String response = mockMvc
@@ -261,7 +260,6 @@ public class ParticipantsControllerTest {
         assertEquals(part.getSelfDescription(), responseOfSDContent);
         assertEquals(responseOfSDContent, content);
         assertEquals(1, selfDescriptions.getItems().size());
-
     }
 
     @Test
@@ -283,7 +281,7 @@ public class ParticipantsControllerTest {
     @Order(20)
     public void getParticipantsShouldReturnCorrectNumber() throws Exception {
         String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
-        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key", json);
+        ParticipantMetaData part = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
         MvcResult result = mockMvc
@@ -302,7 +300,7 @@ public class ParticipantsControllerTest {
     @Order(20)
     public void getParticipantUsersShouldReturnCorrectNumber() throws Exception {
 
-        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", "empty SD");
+        ParticipantMetaData part = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key-1", "empty SD");
         setupKeycloak(HttpStatus.SC_OK, part);
         setupKeycloakForUsers(HttpStatus.SC_NO_CONTENT, null, userId);
         MvcResult result = mockMvc
@@ -320,8 +318,7 @@ public class ParticipantsControllerTest {
     @Order(25)
     public void addParticipantFailWithSameSDShouldReturnConflictFromKeyCloakWithoutDBStore() throws Exception {
         String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
-        ParticipantMetaData partNew = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example" +
-            ":holder#key", json);
+        ParticipantMetaData partNew = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key", json);
         selfDescriptionStore.deleteSelfDescription(partNew.getSdHash());
         setupKeycloak(HttpStatus.SC_CONFLICT, partNew);
 
@@ -346,7 +343,7 @@ public class ParticipantsControllerTest {
     public void addParticipantFailWithKeyCloakErrorShouldReturnErrorWithoutDBStore() throws Exception {
 
         String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
-        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c3", "did:example:holder",
+        ParticipantMetaData part = new ParticipantMetaData("did:example:wrong-issuer", "did:example:holder",
             "did:example:holder#key", json);
         setupKeycloak(HttpStatus.SC_INTERNAL_SERVER_ERROR, part);
 
@@ -368,16 +365,16 @@ public class ParticipantsControllerTest {
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
-            {@StringClaim(name = "participant_id", value = "ebc6f1c2")})))
+            {@StringClaim(name = "participant_id", value = "did:example:issuer")})))
     @Order(30)
     public void updateParticipantShouldReturnSuccessResponse() throws Exception {
 
         String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
-        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key", json);
+        ParticipantMetaData part = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
         String partId = URLEncoder.encode(part.getId(), Charset.defaultCharset());
-        log.debug("updateParticipantShouldReturnSuccessResponse; the parrtId is: {}", partId);
+        log.debug("updateParticipantShouldReturnSuccessResponse; the partId is: {}", partId);
 
         String response = mockMvc
             .perform(MockMvcRequestBuilders.put("/participants/{participantId}", partId)
@@ -387,9 +384,9 @@ public class ParticipantsControllerTest {
             .andReturn()
             .getResponse()
             .getContentAsString();
-       ParticipantMetaData partResult = objectMapper.readValue(response, ParticipantMetaData.class);
+        ParticipantMetaData partResult = objectMapper.readValue(response, ParticipantMetaData.class);
         assertNotNull(part);
-        assertEquals("ebc6f1c2", partResult.getId());
+        assertEquals("did:example:issuer", partResult.getId());
         assertEquals("did:example:holder", partResult.getName());
         assertEquals("did:web:compliance.lab.gaia-x.eu", partResult.getPublicKey());
 
@@ -403,11 +400,11 @@ public class ParticipantsControllerTest {
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
-            {@StringClaim(name = "participant_id", value = "ebc6f1c2")})))
+            {@StringClaim(name = "participant_id", value = "did:example:issuer")})))
     @Order(30)
     public void updateParticipantWithOtherIdShouldReturnBadClientResponse() throws Exception {
-        String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE).replace("ebc6f1c2", "asd13fg5");
-        ParticipantMetaData part = new ParticipantMetaData("asd13fg5", "did:example:holder", "did:example:holder#key", json);
+        String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE).replace("did:example:issuer", "did:example:new-issuer");
+        ParticipantMetaData part = new ParticipantMetaData("did:example:new-issuer", "did:example:holder", "did:example:holder#key", json);
 //        selfDescriptionStore.deleteSelfDescription(part.getSdHash());
         setupKeycloak(HttpStatus.SC_OK, part);
 
@@ -416,7 +413,7 @@ public class ParticipantsControllerTest {
         SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor, verResult);
         selfDescriptionStore.storeSelfDescription(sdMetadata, verResult);
 
-        String updatedParticipant = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE).replace("asd13fg5", "sddsfsd4");
+        String updatedParticipant = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE).replace("did:example:new-issuer", "did:example:extra-issuer");
 
         mockMvc
             .perform(MockMvcRequestBuilders.put("/participants/{participantId}", part.getId())
@@ -428,15 +425,12 @@ public class ParticipantsControllerTest {
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
-//            {@StringClaim(name = "participant_id", value = "0949d1a0")})))
-            {@StringClaim(name = "participant_id", value = "ebc6fdfg")})))
+            {@StringClaim(name = "participant_id", value = "did:example:new-issuer")}))) 
     @Order(30)
     public void updateParticipantFailWithKeycloakErrorShouldReturnErrorWithoutDBStore() throws Exception {
 
-        String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE).replace("ebc6f1c2", "ebc6fdfg");
-        ParticipantMetaData part = new ParticipantMetaData("ebc6fdfg", "did:example:holder", "did" +
-            ":example" +
-            ":holder#key", json);
+        String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE).replace("did:example:issuer", "did:example:new-issuer");
+        ParticipantMetaData part = new ParticipantMetaData("did:example:new-issuer", "did:example:holder", "did:example:holder#key", json);
         setupKeycloak(HttpStatus.SC_INTERNAL_SERVER_ERROR, part);
 
         mockMvc
@@ -461,7 +455,7 @@ public class ParticipantsControllerTest {
     @Order(40)
     public void deleteParticipantFailWithWrongSessionParticipantIdAndUnknownRoleShouldReturnForbiddenResponse() throws Exception {
         String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
-        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:updated", "did:example:holder#key", json);
+        ParticipantMetaData part = new ParticipantMetaData("did:example:issuer", "did:example:updated", "did:example:holder#key", json);
         setupKeycloak(HttpStatus.SC_OK, part);
 
         mockMvc
@@ -472,11 +466,11 @@ public class ParticipantsControllerTest {
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
-            {@StringClaim(name = "participant_id", value = "abcdfrc2")})))
+            {@StringClaim(name = "participant_id", value = "did:example:wrong-issuer")})))
     @Order(40)
     public void deleteParticipantFailWithWrongParticipantIdShouldReturnNotFoundResponse() throws Exception {
-        String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE).replace("ebc6f1c2", "abcdfrc2");
-        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:updated", "did:example:holder#key", json);
+        String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE).replace("did:example:issuer", "did:example:wrong-issuer");
+        ParticipantMetaData part = new ParticipantMetaData("did:example:wrong-issuer", "did:example:updated", "did:example:holder#key", json);
         setupKeycloak(HttpStatus.SC_NOT_FOUND, part);
 
         mockMvc
@@ -497,12 +491,12 @@ public class ParticipantsControllerTest {
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
-            {@StringClaim(name = "participant_id", value = "ebc6f1c2")})))
+            {@StringClaim(name = "participant_id", value = "did:example:issuer")})))
     @Order(50)
     public void deleteParticipantSuccessShouldReturnSuccessResponse() throws Exception {
 
-        String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE).replace("ebc6f1c2", "edfc6f1c2");
-        ParticipantMetaData part = new ParticipantMetaData("edfc6f1c2", "did:example:holder", "did:example:holder#key", json);
+        String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE).replace("did:example:issuer", "did:example:unique-issuer");
+        ParticipantMetaData part = new ParticipantMetaData("did:example:unique-issuer", "did:example:holder", "did:example:holder#key", json);
 //        setupKeycloak(HttpStatus.SC_CREATED, part);
 //        participantDao.create(part);
         ContentAccessorDirect contentAccessor = new ContentAccessorDirect(json);
@@ -520,7 +514,7 @@ public class ParticipantsControllerTest {
             .getContentAsString();
         ParticipantMetaData  participantMetaData = objectMapper.readValue(response, ParticipantMetaData.class);
         assertNotNull(part);
-        assertEquals("edfc6f1c2", participantMetaData.getId());
+        assertEquals("did:example:unique-issuer", participantMetaData.getId());
         assertEquals("did:example:holder", participantMetaData.getName());
         assertEquals("did:example:holder#key", participantMetaData.getPublicKey());
 
@@ -536,14 +530,14 @@ public class ParticipantsControllerTest {
     @Test
     @WithMockJwtAuth(authorities = {"ROLE_Ro-MU-CA"},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
-            {@StringClaim(name = "participant_id", value = "ebc6f1c2")})))
+            {@StringClaim(name = "participant_id", value = "did:example:issuer")})))
     @Order(60)
     public void deleteParticipantWithAllUsersSuccessShouldReturnSuccessResponse() throws Exception {
         //Initially adding user
         addParticipantShouldReturnCreatedResponse();
 
         String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
-        ParticipantMetaData part = new ParticipantMetaData("ebc6f1c2", "did:example:holder", "did:example:holder#key-1", json);
+        ParticipantMetaData part = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key-1", json);
 
         User userOfParticipant = getUserOfParticipant(part.getId());
         setupKeycloakForUsers(HttpStatus.SC_CREATED, userOfParticipant, userId);

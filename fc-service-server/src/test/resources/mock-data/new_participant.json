@@ -16,7 +16,7 @@
       "issuanceDate": "2010-01-01T19:73:24Z",
       "credentialSubject": {
         "@id": "http://example.org/test-issuer",
-        "@type": "gax:Provider",
+        "@type": "LegalPerson",
         "gax:hasLegallyBindingName": "My example provider",
         "gax:hasLegallyBindingAddress": {
           "id": "_:b0",

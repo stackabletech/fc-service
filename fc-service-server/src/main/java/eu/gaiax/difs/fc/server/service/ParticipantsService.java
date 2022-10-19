@@ -63,7 +63,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   @Override
   @Transactional
   public ResponseEntity<Participant> addParticipant(String body) {
-    log.debug("addParticipant.enter; got participant: {}", body); // it can be JWT?
+    log.debug("addParticipant.enter; got participant: {}", body.length()); // it can be JWT?
     Pair<VerificationResultParticipant, SelfDescriptionMetadata> pairResult = validateSelfDescription(body);
     VerificationResultParticipant verificationResult = pairResult.getLeft();
     SelfDescriptionMetadata selfDescriptionMetadata = pairResult.getRight();
@@ -195,8 +195,10 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     SelfDescriptionMetadata selfDescriptionMetadata = pairResult.getRight();
 
     ParticipantMetaData participantUpdated = toParticipantMetaData(verificationResult, selfDescriptionMetadata);
+    if (!participantUpdated.getId().equals(participantExisted.getId())) {
+      throw new ClientException("Participant ID cannot be changed");
+    }
 
-    checkUpdates(participantExisted, participantUpdated);
     selfDescriptionStore.storeSelfDescription(selfDescriptionMetadata, verificationResult);
 
     registerRollBackForFileStoreManuallyIfTransactionFail(participantUpdated);
@@ -249,10 +251,10 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     ContentAccessorDirect contentAccessorDirect = new ContentAccessorDirect(body);
     VerificationResultParticipant verificationResultParticipant =
         verificationService.verifyParticipantSelfDescription(contentAccessorDirect);
-    log.debug("updateParticipant.verificationResultParticipant.got : {}", verificationResultParticipant);
+    log.debug("validateSelfDescription; verification result is: {}", verificationResultParticipant);
 
     SelfDescriptionMetadata selfDescriptionMetadata = new SelfDescriptionMetadata(contentAccessorDirect, verificationResultParticipant);
-    log.debug("getParticipantExtWithValidationAndStore.got SelfDescriptionMetadata: {}", selfDescriptionMetadata);
+    log.debug("validateSelfDescription; SD metadata is: {}", selfDescriptionMetadata);
 
     return Pair.of(verificationResultParticipant, selfDescriptionMetadata);
   }
@@ -271,26 +273,15 @@ public class ParticipantsService implements ParticipantsApiDelegate {
         if (TransactionSynchronization.STATUS_ROLLED_BACK == status) {
           try {
             fileStore.deleteFile(part.getSdHash());
-            log.debug("registerRollBackForFileStoreManuallyIfTransactionFail.Rolling back manually file with hash  : "
-                + "{}", part.getSdHash());
+            log.debug("registerRollBackForFileStoreManuallyIfTransactionFail; Rolling back file with hash: {}", 
+                    part.getSdHash());
             TransactionSynchronizationManager.clearSynchronization();
           } catch (IOException ex) {
-              log.error(ex.getMessage(), ex);
+            log.error(ex.getMessage(), ex);
           }
         }
       }
     });
   }
 
-  /**
-   * Checks if updates can be applied to an existing Participant.
-   *
-   * @param existed Existed participant metadata.
-   * @param updated Updated participant metadata.
-   */
-  private void checkUpdates(ParticipantMetaData existed, ParticipantMetaData updated) {
-    if (!existed.getId().equals(updated.getId())) {
-      throw new ClientException("The participant ID cannot be changed for Participant with ID " + existed.getId());
-    }
-  }
 }

@@ -23,6 +23,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,50 +57,114 @@ public class VerificationServiceImplTest {
     }
 
     @Test
-    void invalidSyntax_MissingQuote () {
+    void invalidSyntax_MissingQuote() {
         String path = "VerificationService/syntax/missingQuote.jsonld";
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
-        assertTrue(ex.getMessage().startsWith("Syntactic error;"));
+        assertTrue(ex.getMessage().startsWith("Syntactic error: "));
         assertNotNull(ex.getCause());
     }
 
     @Test
-    void invalidSyntax_WrongJsonLd() throws IOException {
+    void invalidSyntax_NoVCinSD() {
+        String path = "VerificationService/syntax/smallExample.jsonld";
+
+        Exception ex = assertThrowsExactly(VerificationException.class, () ->
+                verificationService.verifySelfDescription(getAccessor(path)));
+        assertEquals("Semantic error: could not find VC in SD", ex.getMessage());
+    }
+
+    @Test
+    void validSyntax_Participant() throws Exception {
+        String path = "VerificationService/syntax/participantSD2.jsonld";
+        VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path));
+        assertNotNull(vr);
+        assertTrue(vr instanceof VerificationResultParticipant);
+        VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
+        assertEquals("https://www.handelsregister.de/", vrp.getId());
+        assertEquals("https://www.handelsregister.de/", vrp.getIssuer());
+        assertEquals(LocalDate.of(2010, 1, 1), vrp.getIssuedDate());
+    }
+
+    @Test
+    void validSyntax_ValidSDVP() throws Exception {
+        String path = "VerificationService/syntax/input.vp.jsonld";
+        VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
+        assertNotNull(vr);
+        //assertTrue(vr instanceof VerificationResultParticipant);
+        //VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
+        //assertEquals("https://www.handelsregister.de/", vrp.getId());
+        //assertEquals("https://www.handelsregister.de/", vrp.getIssuer());
+        //assertEquals(LocalDate.of(2010, 1, 1), vrp.getIssuedDate());
+    }
+
+    @Test
+    void validSyntax_ValidService() throws Exception {
+        String path = "VerificationService/syntax/service1.jsonld";
+        VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
+        assertNotNull(vr);
+        assertTrue(vr instanceof VerificationResult);
+        assertFalse(vr instanceof VerificationResultParticipant);
+        assertFalse(vr instanceof VerificationResultOffering);
+        //VerificationResultOffering vro = (VerificationResultOffering) vr;
+        //assertEquals("https://www.handelsregister.de/", vro.getId());
+        //assertEquals("https://www.handelsregister.de/", vro.getIssuer());
+        //assertEquals(LocalDate.of(2010, 1, 1), vro.getIssuedDate());
+    }
+
+    @Test
+    void validSyntax_ValidService2() throws Exception {
+        String path = "VerificationService/syntax/service2.jsonld";
+        VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
+        assertNotNull(vr);
+        assertTrue(vr instanceof VerificationResult);
+        //VerificationResultOffering vro = (VerificationResultOffering) vr;
+        //assertEquals("https://www.handelsregister.de/", vro.getId());
+        //assertEquals("https://www.handelsregister.de/", vro.getIssuer());
+        //assertEquals(LocalDate.of(2010, 1, 1), vro.getIssuedDate());
+    }
+    
+    @Test
+    void validSyntax_ValidPerson() throws Exception {
+        String path = "VerificationService/syntax/legalPerson1.jsonld";
+        VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
+        assertNotNull(vr);
+        assertTrue(vr instanceof VerificationResult);
+        assertFalse(vr instanceof VerificationResultParticipant);
+        assertFalse(vr instanceof VerificationResultOffering);
+        //VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
+        //assertEquals("https://www.handelsregister.de/", vrp.getId());
+        //assertEquals("https://www.handelsregister.de/", vrp.getIssuer());
+        //assertEquals(LocalDate.of(2010, 1, 1), vrp.getIssuedDate());
+    }
+    
+    @Test
+    void invalidProof_InvalidSignatureType() throws Exception {
+        String path = "VerificationService/syntax/input.vp.jsonld";
+        Exception ex = assertThrowsExactly(VerificationException.class, () ->
+                verificationService.verifySelfDescription(getAccessor(path)));
+        assertEquals("Signatures error; This proof type is not yet implemented: Ed25519Signature2018", ex.getMessage());
+    }
+    
+    @Test
+    void invalidProof_MissingProofs() throws IOException {
         String path = "VerificationService/sign/hasNoSignature1.jsonld";
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
         System.out.println(ex.getMessage());
-        assertEquals("Semantic error: JSON-LD problem. (Undefined JSON-LD term: issuer)", ex.getMessage()); 
+        assertEquals("Signarures error; No proof found", ex.getMessage()); 
         assertNull(ex.getCause());
     }
 
     @Test
-    void invalidSyntax_IsNoSD () {
-        String path = "VerificationService/syntax/smallExample.jsonld";
-
-        Exception ex = assertThrowsExactly(VerificationException.class, () ->
-                verificationService.verifySelfDescription(getAccessor(path)));
-        assertEquals("Semantic error: JSON-LD problem. (Imported context is null.)", ex.getMessage());
-    }
-
-    @Test
-    void invalidSyntax_EmptyContext () throws Exception {
-        String path = "VerificationService/syntax/participantSD.jsonld";
-        Exception ex = assertThrowsExactly(VerificationException.class, () ->
-                verificationService.verifySelfDescription(getAccessor(path)));
-        assertEquals("Semantic error: JSON-LD problem. (Imported context is null.)", ex.getMessage());
-    }
-
-    @Test
-    void invalidProof_SignatureHasInvalidType () throws IOException {
+    void invalidProof_UnknownVerificationMethod () throws Exception {
         String path = "VerificationService/sign/hasInvalidSignatureType.jsonld";
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
-        assertEquals("Semantic error: JSON-LD problem. (Undefined JSON-LD term: type)", ex.getMessage());
+        assertEquals("Signatures error; Unknown Verification Method: https://example.edu/issuers/565049#key-1", ex.getMessage());
         assertNull(ex.getCause());
     }
 
@@ -124,15 +189,6 @@ public class VerificationServiceImplTest {
                 verificationService.verifySelfDescription(getAccessor(path)));
         System.out.println(ex.getMessage());
         assertTrue(ex.getMessage().contains("does not match with proof"));
-    }
-
-    @Test
-    @Disabled("We have no valid SD yet") //TODO
-    void validSD () {
-        String path = "VerificationService/validExample.jsonld";
-
-        assertDoesNotThrow(() ->
-                verificationService.verifySelfDescription(getAccessor(path)));
     }
 
     @Test

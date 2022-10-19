@@ -55,7 +55,11 @@ public class VerificationResult extends eu.gaiax.difs.fc.api.generated.model.Ver
 
   public void setValidators(List<Validator> validators) {
     //TODO: Check what parts of the validators should be added to the response
-    super.setValidatorDids(validators.stream().map(Validator::getDidURI).collect(Collectors.toList()));
+    if (validators == null) {
+      super.setValidatorDids(null);  
+    } else {
+      super.setValidatorDids(validators.stream().map(Validator::getDidURI).collect(Collectors.toList()));
+    }
     this.validators = validators;
   }
 }

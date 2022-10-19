@@ -37,6 +37,8 @@ public class WebConfiguration implements WebMvcConfigurer {
     StrictHttpFirewall strictHttpFirewall = new StrictHttpFirewall();
     strictHttpFirewall.setAllowUrlEncodedDoubleSlash(true);
     strictHttpFirewall.setAllowUrlEncodedSlash(true);
+    strictHttpFirewall.setAllowUrlEncodedPercent(true);
+    strictHttpFirewall.setAllowUrlEncodedPeriod(true);
     strictHttpFirewall.setAllowSemicolon(true);
     return strictHttpFirewall;
   }
