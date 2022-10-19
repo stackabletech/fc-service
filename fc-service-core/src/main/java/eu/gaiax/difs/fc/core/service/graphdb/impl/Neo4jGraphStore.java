@@ -54,15 +54,15 @@ public class Neo4jGraphStore implements GraphStore {
             StringBuilder payload = new StringBuilder();
             try (Session session = driver.session()) {
                 for (SdClaim sdClaim : sdClaimList) {
-                    Model model= claimValidator.validateClaim(sdClaim);
-                    payload.append(ExtendClaims.addPropertyGraphUri(model,credentialSubject));
+                    Model model = claimValidator.validateClaim(sdClaim);
+                    payload.append(ExtendClaims.addPropertyGraphUri(model, credentialSubject));
                     cnt++;
                 }
-    
+
                 String query = "CALL n10s.rdf.import.inline($payload, \"N-Triples\")\n"
                         + "YIELD terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo\n"
                         + "RETURN terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo";
-    
+
                 log.debug("addClaims; query: {}", query);
                 Result rs = session.run(query, Map.of("payload", payload.toString()));
                 log.debug("addClaims; response: {}", rs.list());
@@ -77,12 +77,16 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public void deleteClaims(String credentialSubject) {
         log.debug("deleteClaims.enter; Beginning claims deletion, subject: {}", credentialSubject);
-        String query =  "MATCH (n {uri: $uri})\n" +
-                        "DETACH DELETE n";
+        String queryDelete = "MATCH (n {ns1__graphUri: ['$uri']})\n" +
+                "DETACH DELETE n;";
+        String queryUpdate = "MATCH (n)\n" +
+                "WHERE '$uri' IN n.ns1__graphUri\n" +
+                "SET n.ns1__graphUri = [g IN n.ns1__graphUri WHERE g <> '$uri'];";
 
         try (Session session = driver.session()) {
-            Result rs = session.run(query, Map.of("uri", credentialSubject));
-            log.debug("deleteClaims.exit; results: {}", rs.list());
+            Result rsDelelte = session.run(queryDelete, Map.of("uri", credentialSubject));
+            Result rsUpdate  = session.run(queryUpdate, Map.of("uri", credentialSubject));
+            log.debug("deleteClaims.exit; results: {}", rsDelelte.list());
         }
     }
 
@@ -103,9 +107,9 @@ public class Neo4jGraphStore implements GraphStore {
                     tx -> {
                         List<Map<String, Object>> resultList = new ArrayList<>();
 
-                      String finalString = getDynamicallyAddedCountClauseQuery(sdQuery);
+                        String finalString = getDynamicallyAddedCountClauseQuery(sdQuery);
 
-                      Result result = tx.run(finalString, sdQuery.getParams());
+                        Result result = tx.run(finalString, sdQuery.getParams());
                         log.debug("queryData; got result: {}", result.keys());
                         Long totalCount = 0L;
                         while (result.hasNext()) {
@@ -114,7 +118,7 @@ public class Neo4jGraphStore implements GraphStore {
                             log.debug("queryData; record: {}", map);
                             Map<String, Object> outputMap = new HashMap<>();
 
-                            totalCount = (Long) map.getOrDefault("totalCount",resultList.size());
+                            totalCount = (Long) map.getOrDefault("totalCount", resultList.size());
 
                             for (var entry : map.entrySet()) {
                                 if (entry.getValue() instanceof String) {
@@ -129,7 +133,7 @@ public class Neo4jGraphStore implements GraphStore {
                             resultList.add(outputMap);
                         }
                         log.debug("queryData.exit; returning: {}", resultList);
-                        return new PaginatedResults<>(totalCount,resultList);
+                        return new PaginatedResults<>(totalCount, resultList);
                     },
                     transactionConfig
             );
@@ -139,30 +143,30 @@ public class Neo4jGraphStore implements GraphStore {
         }
     }
 
-  private String getDynamicallyAddedCountClauseQuery(OpenCypherQuery sdQuery) {
-    log.debug("getDynamicallyAddedCountClauseQuery.enter; actual query: {}", sdQuery.getQuery());
-     /*get string before statements and append count clause*/
-    String statement = "return";
-    int indexOf = sdQuery.getQuery().toLowerCase().lastIndexOf(statement);
+    private String getDynamicallyAddedCountClauseQuery(OpenCypherQuery sdQuery) {
+        log.debug("getDynamicallyAddedCountClauseQuery.enter; actual query: {}", sdQuery.getQuery());
+        /*get string before statements and append count clause*/
+        String statement = "return";
+        int indexOf = sdQuery.getQuery().toLowerCase().lastIndexOf(statement);
 
-    if (indexOf != -1) {
-      /*add totalCount to query to get count*/
-      StringBuilder subStringOfCount = new StringBuilder(sdQuery.getQuery().substring(0, indexOf));
-      subStringOfCount.append("WITH count(*) as totalCount ");
+        if (indexOf != -1) {
+            /*add totalCount to query to get count*/
+            StringBuilder subStringOfCount = new StringBuilder(sdQuery.getQuery().substring(0, indexOf));
+            subStringOfCount.append("WITH count(*) as totalCount ");
 
-      /*append totalCount to return statements*/
-      StringBuilder actualQuery = new StringBuilder(sdQuery.getQuery());
-      int indexOfAfter = actualQuery.toString().toLowerCase().lastIndexOf(statement) + statement.length();
-      actualQuery.insert(indexOfAfter + 1, "totalCount, ");
+            /*append totalCount to return statements*/
+            StringBuilder actualQuery = new StringBuilder(sdQuery.getQuery());
+            int indexOfAfter = actualQuery.toString().toLowerCase().lastIndexOf(statement) + statement.length();
+            actualQuery.insert(indexOfAfter + 1, "totalCount, ");
 
-      /*finally combine both string */
-      String finalString = subStringOfCount.append(actualQuery).toString();
-      log.debug("getDynamicallyAddedCountClauseQuery.exit; count query appended : {}", finalString);
-      return finalString;
-    } else {
-      return sdQuery.getQuery();
+            /*finally combine both string */
+            String finalString = subStringOfCount.append(actualQuery).toString();
+            log.debug("getDynamicallyAddedCountClauseQuery.exit; count query appended : {}", finalString);
+            return finalString;
+        } else {
+            return sdQuery.getQuery();
+        }
     }
-  }
 
 
 }
