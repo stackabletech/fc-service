@@ -90,6 +90,6 @@ public interface SchemaStore {
    * returned.
    * @return The union RDF graph.
    */
-  ContentAccessor getCompositeSchema(SchemaType schemaType) throws FileNotFoundException, UnsupportedEncodingException;
+  ContentAccessor getCompositeSchema(SchemaType schemaType);
 
 }

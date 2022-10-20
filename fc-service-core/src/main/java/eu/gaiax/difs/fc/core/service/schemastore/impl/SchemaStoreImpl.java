@@ -163,7 +163,7 @@ public class SchemaStoreImpl implements SchemaStore {
     return result;
   }
 
-  private ContentAccessor createCompositeSchema(SchemaType type) throws FileNotFoundException, UnsupportedEncodingException {
+  private ContentAccessor createCompositeSchema(SchemaType type) {
     log.debug("createCompositeSchema.enter; got type: {}", type);
 
     StringWriter out = new StringWriter();
@@ -380,7 +380,7 @@ public class SchemaStoreImpl implements SchemaStore {
   }
 
   @Override
-  public ContentAccessor getCompositeSchema(SchemaType type) throws FileNotFoundException, UnsupportedEncodingException {
+  public ContentAccessor getCompositeSchema(SchemaType type) {
     // TODO IOSB add caching
     return createCompositeSchema(type);
   }
