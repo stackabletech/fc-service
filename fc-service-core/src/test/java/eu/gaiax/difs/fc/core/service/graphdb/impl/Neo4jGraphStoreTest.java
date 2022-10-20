@@ -1,20 +1,13 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
-import eu.gaiax.difs.fc.core.exception.ServerException;
-import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import eu.gaiax.difs.fc.core.exception.QueryException;
-import org.apache.commons.compress.utils.Lists;
+import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.SdClaim;
+import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.runners.MethodSorters;
@@ -31,8 +24,12 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
-import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
-import eu.gaiax.difs.fc.core.pojo.SdClaim;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -44,7 +41,7 @@ import eu.gaiax.difs.fc.core.pojo.SdClaim;
 public class Neo4jGraphStoreTest {
     @Autowired
     private Neo4j embeddedDatabaseServer;
-    
+
     @Autowired
     private Neo4jGraphStore graphGaia;
 
@@ -87,8 +84,8 @@ public class Neo4jGraphStoreTest {
     /**
      * Given set of credentials connect to graph and upload self description.
      * Instantiate list of claims with subject predicate and object in N-triples
-     * form along with literals and upload to graph. Verify if the claim has been uploaded using
-     * query service
+     * form along with literals and upload to graph. Verify if the claim has
+     * been uploaded using query service
      */
 
     @Test
@@ -111,11 +108,38 @@ public class Neo4jGraphStoreTest {
         Assertions.assertEquals(resultListDelta, responseDelta);
     }
 
+
+    /**
+     * Given set of credentials connect to graph and upload self description.
+     * Instantiate list of claims with subject predicate and object in N-triples
+     * form along with literals and upload to graph. Delete claims by credential
+     * subject and Verify if the claim has been deleted using query service
+     */
+
+    @Test
+    void testDeleteClaims() throws Exception {
+        List<SdClaim> sdClaimSample = new ArrayList<>();
+        SdClaim syntacticallyCorrectClaim = new SdClaim(
+                "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                "<http://w3.org/1999/02/22-rdf-syntax-ns#type>",
+                "<http://w3id.org/gaia-x/service#ServiceOffering>"
+        );
+        sdClaimSample.add(syntacticallyCorrectClaim);
+        List<Map<String, String>> resultListDelta = new ArrayList<Map<String, String>>();
+        graphGaia.addClaims(sdClaimSample, "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
+        graphGaia.deleteClaims("http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
+        OpenCypherQuery queryDelta = new OpenCypherQuery(
+                "MATCH (n{uri:'http://w3id.org/gaia-x/indiv#serviceElasticSearch.json'}) RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
+        List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
+        Assertions.assertTrue(responseDelta.isEmpty());
+    }
+
+
     /**
      * Given set of credentials connect to graph and upload self description.
      * Instantiate list of claims with subject predicate and object in N-triples
      * form along with literals and upload to graph.
-     *
+     * <p>
      * To be able to reference sets of claims (i.e. claim triples) that belong
      * to the same credential subject, we mimic separate graphs. The graphs here
      * are just attributes that are added to the nodes.
@@ -133,21 +157,6 @@ public class Neo4jGraphStoreTest {
                         credentialSubject,
                         "<http://w3id.org/gaia-x/participant#hasMemberParticipant>",
                         "<https://example.org/member-participant23>"
-                ),
-                new SdClaim(
-                        credentialSubject,
-                        "<http://w3id.org/gaia-x/service#hasLegallyBindingAddress>",
-                        "_:b52"
-                ),
-                new SdClaim(
-                        "_:b52",
-                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
-                        "<http://www.w3.org/2006/vcard/ns#Address>"
-                ),
-                new SdClaim(
-                        "_:b52",
-                        "<http://www.w3.org/2006/vcard/ns#street-address>",
-                        "\"123 Example Road\""
                 )
         );
 
@@ -187,21 +196,6 @@ public class Neo4jGraphStoreTest {
                         credentialSubject2,
                         "<http://w3id.org/gaia-x/participant#hasMemberParticipant>",
                         "<https://example.org/member-participant23>"
-                ),
-                new SdClaim(
-                        credentialSubject2,
-                        "<http://w3id.org/gaia-x/service#hasLegallyBindingAddress>",
-                        "_:b52"
-                ),
-                new SdClaim(
-                        "_:b52",
-                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
-                        "<http://www.w3.org/2006/vcard/ns#Address>"
-                ),
-                new SdClaim(
-                        "_:b52",
-                        "<http://www.w3.org/2006/vcard/ns#street-address>",
-                        "\"567 Example Lane\""
                 )
         );
 
@@ -210,7 +204,7 @@ public class Neo4jGraphStoreTest {
         try (Transaction tx = embeddedDatabaseServer.defaultDatabaseService().beginTx()) {
 
             Result res = tx.execute(
-                    "MATCH (n {graphURI: " + credentialSubject + "}) " +
+                    "MATCH (n {graphURI: '" + credentialSubject.substring(1, credentialSubject.length() - 1) + "'}) " +
                             "RETURN count(n)"
             );
 
@@ -282,8 +276,8 @@ public class Neo4jGraphStoreTest {
         // and the correct credential subject
         Assertions.assertDoesNotThrow(
                 () -> graphGaia.addClaims(
-                    Collections.singletonList(syntacticallyCorrectClaim),
-                    credentialSubject
+                        Collections.singletonList(syntacticallyCorrectClaim),
+                        credentialSubject
                 )
         );
 
