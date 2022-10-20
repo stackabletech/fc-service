@@ -99,9 +99,9 @@ components:
         issuer: #!! Is this the participant? -> Julius: Yes, the participant that created the SD
           type: string # contains the id of the issuers self-description if available  #!! NOT FURTHER SPECIFIED
           description: ID of the issues Self-Description, if available.
-        issuedDate:
+        issuedDateTime:
           type: string
-          format: date
+          format: date-time
         validatorDids:
           type: array
           items:
@@ -111,7 +111,7 @@ components:
         - verificationTimestamp
         - lifecycleStatus #!! is not known when verifying external SDs. Remove from required -> Julius: You are supposed to compute the status (active, invalid, etc.) from the available information. That is the result of the validation. Maybe rename to just status
         - issuer #!! Comment on issuer: if available, but still required?? Remove from required -> Julius: required
-        - issuedDate
+        - issuedDateTime
         - validatorDids
     Participant:
       type: object
