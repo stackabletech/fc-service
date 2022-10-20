@@ -51,8 +51,15 @@ public class VerificationService implements VerificationApiDelegate {
           String body) {
     log.debug("verify.enter; got body of length: {}; verify semantics: {}, schema: {}, signatures: {}", 
             body.length(), verifySemantics, verifySchema, verifySignatures);
-    VerificationResult verificationResult = verificationService.verifySelfDescription(new ContentAccessorDirect(body), 
+    VerificationResult verificationResult;
+    try {
+    //VerificationResult 
+    verificationResult = verificationService.verifySelfDescription(new ContentAccessorDirect(body), 
             verifySemantics, verifySchema, verifySignatures);
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        throw ex;
+    }
     log.debug("verify.exit; returning result: {}", verificationResult);
     return ResponseEntity.ok(verificationResult);
 

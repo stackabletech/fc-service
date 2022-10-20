@@ -35,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -428,7 +427,7 @@ public class SelfDescriptionControllerTest {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void revokeSDReturnSuccessResponse() throws Exception {
         final VerificationResult vr = new VerificationResult(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer", 
-                LocalDate.now(), "vhash", List.of(), List.of());
+                OffsetDateTime.now(), "vhash", List.of(), List.of());
         sdStore.storeSelfDescription(sdMeta, vr);
 //        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
         mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions/" + sdMeta.getSdHash() + "/revoke")
@@ -444,7 +443,7 @@ public class SelfDescriptionControllerTest {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void revokeSdWithNotActiveStatusReturnConflictResponse() throws Exception {
         final VerificationResult vr = new VerificationResult(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer", 
-                LocalDate.now(), "vhash", List.of(), List.of());
+                OffsetDateTime.now(), "vhash", List.of(), List.of());
         SelfDescriptionMetadata metadata = sdMeta;
         metadata.setStatus(SelfDescriptionStatus.DEPRECATED);
         sdStore.storeSelfDescription(metadata, vr);

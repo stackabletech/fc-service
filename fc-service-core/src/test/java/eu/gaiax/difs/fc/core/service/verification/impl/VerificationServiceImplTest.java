@@ -24,6 +24,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,7 +86,7 @@ public class VerificationServiceImplTest {
         VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
         assertEquals("https://www.handelsregister.de/", vrp.getId());
         assertEquals("https://www.handelsregister.de/", vrp.getIssuer());
-        assertEquals(LocalDate.of(2010, 1, 1), vrp.getIssuedDate());
+        assertEquals(OffsetDateTime.of(2010, 1, 1, 19, 37, 24, 0, ZoneOffset.UTC), vrp.getIssuedDateTime()); //2010-01-01T19:73:24
     }
 
     @Test

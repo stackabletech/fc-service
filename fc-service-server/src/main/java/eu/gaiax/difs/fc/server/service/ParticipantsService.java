@@ -63,7 +63,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   @Override
   @Transactional
   public ResponseEntity<Participant> addParticipant(String body) {
-    log.debug("addParticipant.enter; got participant: {}", body.length()); // it can be JWT?
+    log.debug("addParticipant.enter; got SD of length: {}", body.length()); // it can be JWT?
     Pair<VerificationResultParticipant, SelfDescriptionMetadata> pairResult = validateSelfDescription(body);
     VerificationResultParticipant verificationResult = pairResult.getLeft();
     SelfDescriptionMetadata selfDescriptionMetadata = pairResult.getRight();

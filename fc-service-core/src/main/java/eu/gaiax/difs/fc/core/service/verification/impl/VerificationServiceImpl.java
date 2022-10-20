@@ -57,6 +57,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -189,20 +190,29 @@ public class VerificationServiceImpl implements VerificationService {
       issuer = vc.getIssuer().toString();
     }
     Date issDate = vc.getIssuanceDate();
-    LocalDate issuedDate = issDate == null ? LocalDate.now() : issDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    OffsetDateTime issuedDate = issDate == null ? OffsetDateTime.now() : issDate.toInstant().atOffset(ZoneOffset.UTC); 
 
+    List<SdClaim> claims = null;
     CredentialSubject credentialSubject = getCredentialSubject(vc);
-    List<SdClaim> claims = extractClaims(credentialSubject);
+    if (credentialSubject == null) {
+      if (strict) {
+        throw new VerificationException("Semantic error: could not find CS in VC");
+      }
+    } else {
+      claims = extractClaims(credentialSubject);
+    }
     
     VerificationResult result;
     if (type.getLeft()) {
-      String name = vp.getHolder().toString();
-      Map<String, Object> proof = vp.getLdProof().toMap();
-      // take it from validators?
-      String key = (String) proof.get("verificationMethod");
+        // take it from validators?
+      LdProof proof = vp.getLdProof();
+      URI method = proof == null ? null : proof.getVerificationMethod();
+      String key = method == null ? null : method.toString();
       if (issuer == null) {
           issuer = id;
       }
+      URI holder = vp.getHolder();
+      String name = holder == null ? issuer : holder.toString();
       result = new VerificationResultParticipant(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
               claims, validators, name, key);
     } else if (type.getRight()) {
@@ -272,30 +282,33 @@ public class VerificationServiceImpl implements VerificationService {
 
     try {
       CredentialSubject cs = getCredentialSubject(credential);
-      log.debug("getSDType; type: {}, types: {}", cs.getType(), cs.getTypes());
-      for (String key : TYPE_KEYS) {
-        Object _type = cs.getJsonObject().get(key);
-        log.debug("getSDType; key: {}, value: {}", key, _type);
-        if (_type == null) continue;
-        
-        List<String> types;
-        if (_type instanceof List) {
-          types = (List<String>) _type;
-        } else {
-          types = List.of((String) _type);
-        }
-
-        for (String type : types) {
-          if (PARTICIPANT_TYPES.contains(type)) {
-            isParticipant = true;
+      if (cs != null) {
+        log.debug("getSDType; type: {}, types: {}", cs.getType(), cs.getTypes());
+        for (String key : TYPE_KEYS) {
+          Object _type = cs.getJsonObject().get(key);
+          log.debug("getSDType; key: {}, value: {}", key, _type);
+          if (_type == null) continue;
+           
+          List<String> types;
+          if (_type instanceof List) {
+            types = (List<String>) _type;
+          } else {
+            types = List.of((String) _type);
           }
-          if (SERVICE_OFFERING_TYPES.contains(type)) {
-            isServiceOffering = true;
+    
+          for (String type : types) {
+            if (PARTICIPANT_TYPES.contains(type)) {
+              isParticipant = true;
+            }
+            if (SERVICE_OFFERING_TYPES.contains(type)) {
+              isServiceOffering = true;
+            }
           }
         }
       }
     } catch (Exception e) {
-      throw new VerificationException("Semantic error: Could not extract SD's type", e);
+      log.debug("getSDType.error: {}", e.getMessage());  
+      throw new VerificationException("Semantic error: could not extract SD type", e);
     }
 
     return Pair.of(isParticipant, isServiceOffering);
