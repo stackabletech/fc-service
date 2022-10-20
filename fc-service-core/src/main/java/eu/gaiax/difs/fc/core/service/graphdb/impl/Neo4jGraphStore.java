@@ -20,10 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Configuration
@@ -55,14 +52,14 @@ public class Neo4jGraphStore implements GraphStore {
             try (Session session = driver.session()) {
                 for (SdClaim sdClaim : sdClaimList) {
                     Model model = claimValidator.validateClaim(sdClaim);
-                    payload.append(ExtendClaims.addPropertyGraphUri(model, credentialSubject));
+                    String claimsAdded=ExtendClaims.addPropertyGraphUri(model, credentialSubject);
+                    payload.append(claimsAdded);
                     cnt++;
                 }
 
                 String query = "CALL n10s.rdf.import.inline($payload, \"N-Triples\")\n"
                         + "YIELD terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo\n"
                         + "RETURN terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo";
-
                 log.debug("addClaims; query: {}", query);
                 Result rs = session.run(query, Map.of("payload", payload.toString()));
                 log.debug("addClaims; response: {}", rs.list());
@@ -77,16 +74,16 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public void deleteClaims(String credentialSubject) {
         log.debug("deleteClaims.enter; Beginning claims deletion, subject: {}", credentialSubject);
-        String queryDelete = "MATCH (n {ns1__graphUri: ['$uri']})\n" +
+        String queryDelete = "MATCH (n {claimsGraphUri: ['"+credentialSubject+"']})\n" +
                 "DETACH DELETE n;";
         String queryUpdate = "MATCH (n)\n" +
-                "WHERE '$uri' IN n.ns1__graphUri\n" +
-                "SET n.ns1__graphUri = [g IN n.ns1__graphUri WHERE g <> '$uri'];";
-
+                "WHERE '"+credentialSubject+"' IN n.claimsGraphUri\n" +
+                "SET n.claimsGraphUri = [g IN n.claimsGraphUri WHERE g <> '"+credentialSubject+"'];";
         try (Session session = driver.session()) {
             Result rsDelelte = session.run(queryDelete, Map.of("uri", credentialSubject));
             Result rsUpdate  = session.run(queryUpdate, Map.of("uri", credentialSubject));
             log.debug("deleteClaims.exit; results: {}", rsDelelte.list());
+            log.debug("updateClaims.exit; results: {}", rsUpdate.list());
         }
     }
 
