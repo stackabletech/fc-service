@@ -11,13 +11,24 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 
-import java.io.*;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.persistence.EntityExistsException;
@@ -25,7 +36,11 @@ import javax.persistence.LockModeType;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.jena.rdf.model.*;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.ResIterator;
+import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.hibernate.Session;
@@ -35,8 +50,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-//import static java.lang.invoke.MethodHandleImpl.ArrayAccessor.getAccessor;
 
 /**
  *
@@ -110,7 +123,7 @@ public class SchemaStoreImpl implements SchemaStore {
           if (stmt.getObject().isURIResource()) {
             extractedUrlsDupliacte.add(object.toString());
           }
-          if (subject != null && predicate != null) {
+          if (subject != null) {
             extractedUrlsDupliacte.add(predicate);
             extractedUrlsDupliacte.add(subject);
           }
@@ -120,7 +133,7 @@ public class SchemaStoreImpl implements SchemaStore {
           if (stmt.getObject().isURIResource()) {
             extractedUrlsDupliacte.add(object.toString());
           }
-          if (subject != null && predicate != null) {
+          if (subject != null) {
             extractedUrlsDupliacte.add(predicate);
             extractedUrlsDupliacte.add(subject);
           }
@@ -137,7 +150,7 @@ public class SchemaStoreImpl implements SchemaStore {
           if (stmt.getObject().isURIResource()) {
             extractedUrlsDupliacte.add(object.toString());
           }
-          if (subject != null && predicate != null) {
+          if (subject != null) {
             extractedUrlsDupliacte.add(predicate);
             extractedUrlsDupliacte.add(subject);
           }
@@ -147,15 +160,13 @@ public class SchemaStoreImpl implements SchemaStore {
     Set<String> extractedUrlsSet = new LinkedHashSet<>(extractedUrlsDupliacte);
     List<String> extractedUrls = new ArrayList<>(extractedUrlsSet);
     result.setExtractedUrls(extractedUrls);
-////    result.setExtractedId(null);
     return result;
   }
 
   private ContentAccessor createCompositeSchema(SchemaType type) throws FileNotFoundException, UnsupportedEncodingException {
     log.debug("createCompositeSchema.enter; got type: {}", type);
-    String path = "src/main/resources/dummy/dummySchema.ttl";
 
-    OutputStream out = new FileOutputStream(path);
+    StringWriter out = new StringWriter();
     Map<SchemaType, List<String>> schemaList = getSchemaList();
     log.debug("createCompositeSchema; got schemaList: {}", schemaList);
 
@@ -166,7 +177,7 @@ public class SchemaStoreImpl implements SchemaStore {
         for (String schemaId : schemaList.get(SchemaType.ONTOLOGY)) {
           ContentAccessor schemaContent = getSchema(schemaId);
           StringReader schemaContentReader = new StringReader(schemaContent.getContentAsString());
-          model.read(schemaContentReader,  "","TURTLE");
+          model.read(schemaContentReader, "", "TURTLE");
           unionModel.add(model);
         }
         break;
@@ -174,7 +185,7 @@ public class SchemaStoreImpl implements SchemaStore {
         for (String schemaId : schemaList.get(SchemaType.SHAPE)) {
           ContentAccessor schemaContent = getSchema(schemaId);
           StringReader schemaContentReader = new StringReader(schemaContent.getContentAsString());
-          model.read(schemaContentReader,  "","TURTLE");
+          model.read(schemaContentReader, "", "TURTLE");
           unionModel.add(model);
         }
         break;
@@ -182,7 +193,7 @@ public class SchemaStoreImpl implements SchemaStore {
         for (String schemaId : schemaList.get(SchemaType.VOCABULARY)) {
           ContentAccessor schemaContent = getSchema(schemaId);
           StringReader schemaContentReader = new StringReader(schemaContent.getContentAsString());
-          model.read(schemaContentReader,  "","TURTLE");
+          model.read(schemaContentReader, "", "TURTLE");
           unionModel.add(model);
         }
         break;
@@ -191,10 +202,8 @@ public class SchemaStoreImpl implements SchemaStore {
 
     }
     RDFDataMgr.write(out, unionModel, Lang.TURTLE);
-    log.debug("createCompositeSchema.exit; returning: {}", out);
-    ContentAccessor compositeSchemaExpected = getAccessor("dummy/dummySchema.ttl");
-
-    return new ContentAccessorDirect(compositeSchemaExpected.getContentAsString());
+    log.debug("createCompositeSchema.exit;");
+    return new ContentAccessorDirect(out.toString());
   }
 
   @Override
