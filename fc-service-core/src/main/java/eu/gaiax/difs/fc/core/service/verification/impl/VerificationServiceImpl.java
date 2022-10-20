@@ -48,7 +48,6 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -80,9 +79,9 @@ public class VerificationServiceImpl implements VerificationService {
   private static final Set<String> SERVICE_OFFERING_TYPES = Set.of("ServiceOfferingExperimental", "http://w3id.org/gaia-x/service#ServiceOffering", "gax-service:ServiceOffering");
   private static final Set<String> SIGNATURES = Set.of("JsonWebSignature2020"); //, "Ed25519Signature2018");
   
-  private int VRT_UNKNOWN = 0;
-  private int VRT_PARTICIPANT= 1;
-  private int VRT_OFFERING = 2;
+  private static final int VRT_UNKNOWN = 0;
+  private static final int VRT_PARTICIPANT= 1;
+  private static final int VRT_OFFERING = 2;
 
   @Autowired
   private SchemaStore schemaStore;
@@ -126,7 +125,7 @@ public class VerificationServiceImpl implements VerificationService {
     return verifySelfDescription(payload, false, VRT_UNKNOWN, verifySemantics, verifySchema, verifySignatures);
   }
 
-  private VerificationResult verifySelfDescription(ContentAccessor payload, boolean strict, int exceptedType, 
+  private VerificationResult verifySelfDescription(ContentAccessor payload, boolean strict, int expectedType, 
           boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException {
     log.debug("verifySelfDescription.enter;");
 
@@ -157,11 +156,11 @@ public class VerificationServiceImpl implements VerificationService {
         if (type.getRight()) { 
           throw new VerificationException("Semantic error: SD is both, a Participant and an Service Offering SD");
         }
-        if (exceptedType == VRT_OFFERING) {
+        if (expectedType == VRT_OFFERING) {
           throw new VerificationException("Semantic error: Expected Service Offering SD, got Participant SD");
         }
       } else if (type.getRight()) {
-        if (exceptedType == VRT_PARTICIPANT) {
+        if (expectedType == VRT_PARTICIPANT) {
           throw new VerificationException("Semantic error: Expected Participant SD, got Service Offering SD");
         }
       } else {
