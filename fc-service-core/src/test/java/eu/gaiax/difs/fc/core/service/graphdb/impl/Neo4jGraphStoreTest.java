@@ -129,7 +129,7 @@ public class Neo4jGraphStoreTest {
      * form which is invalid and try uploading to graphDB
      */
     @Test
-    void testAddClaimsException() throws Exception {
+    void testAddClaimsException() {
         List<SdClaim> sdClaimList = new ArrayList<>();
 
         String credentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
@@ -143,21 +143,21 @@ public class Neo4jGraphStoreTest {
         );
 
         SdClaim claimWBrokenSubject = new SdClaim(
-                "<htw3id.org/gaia-x/indiv#serviceElasticSearch.json>",
-                "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                "<__http://w3id.org/gaia-x/indiv#serviceElasticSearch.json__>",
+                "<http://w3.org/1999/02/22-rdf-syntax-ns#type>",
                 "<http://w3id.org/gaia-x/service#ServiceOffering>"
         );
 
         SdClaim claimWBrokenPredicate = new SdClaim(
                 "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
-                "<httw3.org/1999/02/22-rdf-syntax-ns#type>",
+                "<__http://w3.org/1999/02/22-rdf-syntax-ns#type__>",
                 "<http://w3id.org/gaia-x/service#ServiceOffering>"
         );
 
         SdClaim claimWBrokenObjectIRI = new SdClaim(
                 "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
                 "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
-                "<htw3id.org/gaia-x/service#ServiceOffering>"
+                "<__http://w3id.org/gaia-x/service#ServiceOffering__>"
         );
 
         SdClaim claimWBrokenLiteral01 = new SdClaim(
@@ -172,10 +172,28 @@ public class Neo4jGraphStoreTest {
                 "\"Missing quotes^^<http://www.w3.org/2001/XMLSchema#string>"
         );
 
+        SdClaim claimWBlankNodeSubject = new SdClaim(
+                "_:23",
+                "<http://ex.com/some_property>",
+                "<http://ex.com/resource23>"
+        );
+
         SdClaim claimWBlankNodeObject = new SdClaim(
                 "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
                 "<http://ex.com/some_property>",
                 "_:23"
+        );
+
+        SdClaim claimWDIDSubject = new SdClaim(
+                "<did:example:123456789#v1>",
+                "<http://ex.com/some_property>",
+                "<http://ex.com/resource23>"
+        );
+
+        SdClaim claimWDIDObject = new SdClaim(
+                "<http://ex.com/resource42>",
+                "<http://ex.com/some_property>",
+                "<did:example:987654321#v2>"
         );
 
         // Everything should work well with the syntactically correct claim
@@ -184,7 +202,9 @@ public class Neo4jGraphStoreTest {
                 () -> graphGaia.addClaims(
                     Collections.singletonList(syntacticallyCorrectClaim),
                     credentialSubject
-                )
+                ),
+                "A syntactically correct triple should pass but " +
+                        "was rejected by the claim validation"
         );
 
         // If a claim with a broken subject was passed it should be rejected
@@ -194,7 +214,9 @@ public class Neo4jGraphStoreTest {
                 () -> graphGaia.addClaims(
                         Collections.singletonList(claimWBrokenSubject),
                         credentialSubject
-                )
+                ),
+                "A syntax error should have been found for the " +
+                        "invalid URI of the input triple subject, but wasn't"
         );
         Assertions.assertTrue(
                 exception.getMessage().contains("Subject in triple"),
@@ -208,7 +230,9 @@ public class Neo4jGraphStoreTest {
                 () -> graphGaia.addClaims(
                         Collections.singletonList(claimWBrokenPredicate),
                         credentialSubject
-                )
+                ),
+                "A syntax error should have been found for the " +
+                        "invalid URI of the input triple predicate, but wasn't"
         );
         Assertions.assertTrue(
                 exception.getMessage().contains("Predicate in triple"),
@@ -223,7 +247,9 @@ public class Neo4jGraphStoreTest {
                 () -> graphGaia.addClaims(
                         Collections.singletonList(claimWBrokenObjectIRI),
                         credentialSubject
-                )
+                ),
+                "A syntax error should have been found for the " +
+                        "invalid URI of the input triple object, but wasn't"
         );
         Assertions.assertTrue(
                 exception.getMessage().contains("Object in triple"),
@@ -239,7 +265,9 @@ public class Neo4jGraphStoreTest {
                 () -> graphGaia.addClaims(
                         Collections.singletonList(claimWBrokenLiteral01),
                         credentialSubject
-                )
+                ),
+                "A syntax error should have been found for the " +
+                        "broken input literal, but wasn't"
         );
         Assertions.assertTrue(
                 exception.getMessage().contains("Object in triple"),
@@ -252,7 +280,9 @@ public class Neo4jGraphStoreTest {
                 () -> graphGaia.addClaims(
                         Collections.singletonList(claimWBrokenLiteral02),
                         credentialSubject
-                )
+                ),
+                "A syntax error should have been found for the " +
+                        "broken input literal, but wasn't"
         );
         Assertions.assertTrue(
                 exception.getMessage().contains("Object in triple"),
@@ -260,24 +290,44 @@ public class Neo4jGraphStoreTest {
                         "triple object, but wasn't"
         );
 
-        // Blank nodes
-        // ===========
-        // As far as it was communicated, there should be no blank nodes in a
-        // claim. We explicitly check this for objects. Blank nodes on a
-        // triple's subject position won't make much sense as the credential
-        // subject must not be blank node. Blank nodes on predicate position
-        // don't make sense either and are assumed to not occur.
-        exception = Assertions.assertThrows(
-                QueryException.class,
+        // blank nodes should pass
+        Assertions.assertDoesNotThrow(
+                () -> graphGaia.addClaims(
+                        Collections.singletonList(claimWBlankNodeSubject),
+                        credentialSubject
+                ),
+                "A blank node should be accepted on a triple's " +
+                        "subject position but was rejected by the claim " +
+                        "validation"
+        );
+
+        Assertions.assertDoesNotThrow(
                 () -> graphGaia.addClaims(
                         Collections.singletonList(claimWBlankNodeObject),
                         credentialSubject
-                )
+                ),
+                "A blank node should be accepted on a triple's " +
+                        "object position but was rejected by the claim " +
+                        "validation"
         );
-        Assertions.assertTrue(
-                exception.getMessage().contains("Object in triple"),
-                "A syntax error should have been found for the " +
-                        "triple object, but wasn't"
+
+        // DIDs should pass as well
+        Assertions.assertDoesNotThrow(
+                () -> graphGaia.addClaims(
+                        Collections.singletonList(claimWDIDSubject),
+                        credentialSubject
+                ),
+                "A DID should be accepted on a triple's subject " +
+                        "position but was rejected by the claim validation"
+        );
+
+        Assertions.assertDoesNotThrow(
+                () -> graphGaia.addClaims(
+                        Collections.singletonList(claimWDIDObject),
+                        credentialSubject
+                ),
+                "A DID should be accepted on a triple's object " +
+                        "position but was rejected by the claim validation"
         );
     }
 
