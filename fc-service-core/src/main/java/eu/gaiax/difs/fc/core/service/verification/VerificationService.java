@@ -39,6 +39,19 @@ public interface VerificationService {
   VerificationResult verifySelfDescription(ContentAccessor payload) throws VerificationException;
 
   /**
+   * The function validates the Self-Description as JSON and tries to parse the json handed over.
+   * 
+   * @param payload
+   * @param verifySemantics
+   * @param verifySchema
+   * @param verifySignatures
+   * @return
+   * @throws VerificationException
+   */
+  VerificationResult verifySelfDescription(ContentAccessor payload, 
+          boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException;
+
+  /**
    * The function checks if a Validator is valid of if it has changed
    *
    * @param validator the validator to check

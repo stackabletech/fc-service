@@ -1,6 +1,5 @@
 package eu.gaiax.difs.fc.core.pojo;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -21,14 +20,14 @@ public class VerificationResultOffering extends VerificationResult {
    * @param issuedDate issuing date of the SD
    */
   public VerificationResultOffering(
-          String id,
-          String issuer,
           OffsetDateTime verificationTimestamp,
           String lifecycleStatus,
-          LocalDate issuedDate,
-          List<Validator> validators,
-          List<SdClaim> claims) {
-    super(id, claims, validators, verificationTimestamp, lifecycleStatus, issuer, issuedDate);
+          String issuer,
+          OffsetDateTime issuedDateTime,
+          String id,
+          List<SdClaim> claims,
+          List<Validator> validators) {
+    super(verificationTimestamp, lifecycleStatus, issuer, issuedDateTime, id, claims, validators);
   }
 
 }

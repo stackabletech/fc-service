@@ -6,6 +6,7 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.persistence.Access;
@@ -163,6 +164,9 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
     this.setUploadTime(sdMeta.getUploadDatetime().toInstant());
     this.setStatusTime(sdMeta.getStatusDatetime().toInstant());
     this.setSelfDescription(sdMeta.getSelfDescription());
-    this.setValidatorDids(sdMeta.getValidatorDids());
+    // better to reset it to some mutable List
+    if (sdMeta.getValidatorDids() != null) {
+      this.setValidatorDids(new ArrayList<>(sdMeta.getValidatorDids()));
+    }
   }
 }

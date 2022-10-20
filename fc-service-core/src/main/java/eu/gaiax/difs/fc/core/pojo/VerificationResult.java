@@ -1,10 +1,7 @@
 package eu.gaiax.difs.fc.core.pojo;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,8 +24,9 @@ public class VerificationResult extends eu.gaiax.difs.fc.api.generated.model.Ver
   @JsonIgnore
   private List<Validator> validators;
 
-  public VerificationResult(String id, List<SdClaim> claims, List<Validator> validators, OffsetDateTime verificationTimestamp, String lifecycleStatus, String issuer, LocalDate issuedDate) {
-    super(verificationTimestamp, lifecycleStatus, issuer, issuedDate, null);
+  public VerificationResult(OffsetDateTime verificationTimestamp, String lifecycleStatus, String issuer, OffsetDateTime issuedDateTime,
+          String id, List<SdClaim> claims, List<Validator> validators) {
+    super(verificationTimestamp, lifecycleStatus, issuer, issuedDateTime, null);
     this.id = id;
     this.claims = claims;
     this.setValidators(validators);
@@ -56,7 +54,11 @@ public class VerificationResult extends eu.gaiax.difs.fc.api.generated.model.Ver
 
   public void setValidators(List<Validator> validators) {
     //TODO: Check what parts of the validators should be added to the response
-    super.setValidatorDids(validators.stream().map(Validator::getDidURI).collect(Collectors.toList()));
+    if (validators == null) {
+      super.setValidatorDids(null);  
+    } else {
+      super.setValidatorDids(validators.stream().map(Validator::getDidURI).collect(Collectors.toList()));
+    }
     this.validators = validators;
   }
 }
