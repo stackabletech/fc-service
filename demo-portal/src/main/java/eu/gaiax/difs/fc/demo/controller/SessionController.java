@@ -27,8 +27,4 @@ public class SessionController {
       ssnClient.deleteCurrentSession();
   }
 
-  @PostMapping
-  public void logoutSession() { ssnClient.logoutCurrentSession();
-  }
-
 }
