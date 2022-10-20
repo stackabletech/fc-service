@@ -293,6 +293,9 @@ public class SchemaStoreImpl implements SchemaStore {
     // Check duplicate terms
     List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)
         .multiLoad(result.getExtractedUrls());
+    redefines = redefines.stream()
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
     if (!redefines.isEmpty()) {
       currentSession.clear();
       throw new ConflictException("Schema redefines " + redefines.size() + " terms. First: " + redefines.get(0));

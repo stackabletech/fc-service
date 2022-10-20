@@ -87,18 +87,18 @@ public class SchemaManagementImplTest {
   public void testVerifyValidSchema() throws UnsupportedEncodingException {
     String path = "Schema-Tests/valid-schemaShape.ttl";
     ContentAccessor content = getAccessor(path);
-    boolean actual =  schemaStore.verifySchema(content);
+    boolean actual = schemaStore.verifySchema(content);
     assertTrue(actual);
   }
+
   @Test
   public void testVerifyInvalidSchema() throws UnsupportedEncodingException {
     String path = "Schema-Tests/invalid-schemaShape.ttl";
     ContentAccessor content = getAccessor(path);
-    boolean actual =  schemaStore.verifySchema(content);
+    boolean actual = schemaStore.verifySchema(content);
     assertFalse(actual);
 
   }
-
 
   /**
    * Test of addSchema method, of class SchemaManagementImpl.
@@ -137,7 +137,7 @@ public class SchemaManagementImplTest {
    *
    */
   @Test
-  public void testAddSchemaWithLongContent() throws IOException  {
+  public void testAddSchemaWithLongContent() throws IOException {
     log.info("testAddSchemaWithLongContent");
 
     String path = "Schema-Tests/schema.ttl";
@@ -148,8 +148,8 @@ public class SchemaManagementImplTest {
 
     ContentAccessor ContentAccessor = schemaStore.getSchema(schemaId1);
 
-    assertEquals(schema1, ContentAccessor.getContentAsString(), "Checking schema content stored properly " +
-            "and retrieved properly");
+    assertEquals(schema1, ContentAccessor.getContentAsString(), "Checking schema content stored properly "
+        + "and retrieved properly");
 
     schemaStore.deleteSchema(schemaId1);
   }
@@ -161,13 +161,11 @@ public class SchemaManagementImplTest {
   @Test
   public void testAddDuplicateSchema() throws IOException {
     log.info("testAddDuplicateSchema");
-    String schema1 = "Some Schema Content";
-    String schema2 = "Some Schema Content";
+    String path = "Schema-Tests/valid-schemaShape.ttl";
+    schemaStore.addSchema(getAccessor(path));
+    assertThrowsExactly(ConflictException.class, () -> schemaStore.addSchema(getAccessor(path)));
 
-    schemaStore.addSchema(new ContentAccessorDirect(schema1));
-    assertThrowsExactly(ConflictException.class, () -> schemaStore.addSchema(new ContentAccessorDirect(schema2)));
-
-    fileStore.deleteFile(HashUtils.calculateSha256AsHex(schema2));
+    fileStore.clearStorage();
   }
 
   /**
@@ -176,13 +174,13 @@ public class SchemaManagementImplTest {
   @Test
   public void testUpdateSchema() throws IOException {
     log.info("UpdateSchema");
-    String schema1 = "Some Schema Content";
-    String schema2 = "Some Schema Content2";
+    String path1 = "Schema-Tests/valid-schemaShapeReduced.ttl";
+    String path2 = "Schema-Tests/valid-schemaShape.ttl";
 
-    String schemaId = schemaStore.addSchema(new ContentAccessorDirect(schema1));
-    schemaStore.updateSchema(schemaId, new ContentAccessorDirect(schema2));
+    String schemaId = schemaStore.addSchema(getAccessor(path1));
+    schemaStore.updateSchema(schemaId, getAccessor(path2));
 
-    assertEquals(schema2, fileStore.readFile(schemaId).getContentAsString(), "The content of the updated schema is stored in the schema file.");
+    assertEquals(getAccessor(path2).getContentAsString(), fileStore.readFile(schemaId).getContentAsString(), "The content of the updated schema should be stored in the schema file.");
 
     schemaStore.deleteSchema(schemaId);
     int count = 0;
@@ -239,9 +237,10 @@ public class SchemaManagementImplTest {
 
     SchemaStore.SchemaType actual = schemaAnalysisResult.getSchemaType();
     SchemaStore.SchemaType expected = SHAPE;
-    assertEquals(expected.toString(),actual.toString());
+    assertEquals(expected.toString(), actual.toString());
 
   }
+
   @Test
   public void testGetSchemasForTypeVocabulary() throws UnsupportedEncodingException {
     String path = "Schema-Tests/skosConcept.ttl";
@@ -249,7 +248,7 @@ public class SchemaManagementImplTest {
     SchemaAnalysisResult schemaAnalysisResult = schemaStore.analyseSchema(content);
     SchemaStore.SchemaType actual = schemaAnalysisResult.getSchemaType();
     SchemaStore.SchemaType expected = VOCABULARY;
-    assertEquals(expected.toString(),actual.toString());
+    assertEquals(expected.toString(), actual.toString());
   }
 
   /**
@@ -273,7 +272,7 @@ public class SchemaManagementImplTest {
     schemaStore.addSchema(getAccessor(schemaPath1));
     schemaStore.addSchema(getAccessor(schemaPath2));
 
-    SchemaAnalysisResult schemaResult= schemaStore.analyseSchema(schema01Content);
+    SchemaAnalysisResult schemaResult = schemaStore.analyseSchema(schema01Content);
 
     ContentAccessor compositeSchemaActual = schemaStore.getCompositeSchema(SHAPE);
 
@@ -281,23 +280,21 @@ public class SchemaManagementImplTest {
 
     StringReader schemaContentReaderComposite = new StringReader(compositeSchemaActual.getContentAsString());
 
-    modelActual.read(schemaContentReaderComposite,  "","TURTLE");
+    modelActual.read(schemaContentReaderComposite, "", "TURTLE");
 
-    assertTrue(isExistTriple(modelActual,sub, pre, obj));
+    assertTrue(isExistTriple(modelActual, sub, pre, obj));
   }
 
-
- private static boolean isExistTriple(Model model,String sub,String pre,String obj){
-   StmtIterator iterActual = model.listStatements();
-   while(iterActual.hasNext()) {
-     Statement stmt = iterActual.nextStatement();
-     if (sub.equals(stmt.getSubject().toString()) && pre.equals(stmt.getPredicate().toString()) && obj.equals(stmt.getObject().toString()))
-            {
-              return true;
-            }
-   }
-    return  false;
- }
+  private static boolean isExistTriple(Model model, String sub, String pre, String obj) {
+    StmtIterator iterActual = model.listStatements();
+    while (iterActual.hasNext()) {
+      Statement stmt = iterActual.nextStatement();
+      if (sub.equals(stmt.getSubject().toString()) && pre.equals(stmt.getPredicate().toString()) && obj.equals(stmt.getObject().toString())) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   private static ContentAccessorFile getAccessor(String path) throws UnsupportedEncodingException {
     URL url = SchemaManagementImplTest.class.getClassLoader().getResource(path);
