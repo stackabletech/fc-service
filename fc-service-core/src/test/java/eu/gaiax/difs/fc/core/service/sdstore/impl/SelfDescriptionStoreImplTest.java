@@ -27,7 +27,6 @@ import java.io.UnsupportedEncodingException;
 import java.time.Instant;
 import liquibase.repackaged.org.apache.commons.collections4.IterableUtils;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -129,8 +128,8 @@ public class SelfDescriptionStoreImplTest {
   }
 
   private static VerificationResult createVerificationResult(final int idSuffix, String subject) {
-      return new VerificationResultOffering("id" + idSuffix, "issuer" + idSuffix, OffsetDateTime.now(),
-          SelfDescriptionStatus.ACTIVE.getValue(), LocalDate.now(), new ArrayList<>(), createClaims(subject));
+      return new VerificationResultOffering(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer" + idSuffix, OffsetDateTime.now(), 
+              "id" + idSuffix, createClaims(subject), new ArrayList<>());
     }
 
   private static VerificationResult createVerificationResult(final int idSuffix) {
@@ -711,7 +710,8 @@ public class SelfDescriptionStoreImplTest {
     signatures.add(new Validator("did:first", "", firstSigInstant));
     signatures.add(new Validator("did:second", "", Instant.now().plus(1, ChronoUnit.DAYS)));
     signatures.add(new Validator("did:third", "", Instant.now().plus(2, ChronoUnit.DAYS)));
-    return new VerificationResult(id, new ArrayList<>(), signatures, OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer", LocalDate.now());
+    return new VerificationResult(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer", OffsetDateTime.now(), 
+            id, new ArrayList<>(), signatures);
   }
 
   @Test

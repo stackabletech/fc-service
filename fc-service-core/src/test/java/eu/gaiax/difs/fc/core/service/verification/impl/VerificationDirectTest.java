@@ -11,9 +11,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import com.danubetech.verifiablecredentials.VerifiableCredential;
 import com.danubetech.verifiablecredentials.VerifiablePresentation;
+import com.danubetech.verifiablecredentials.validation.Validation;
 import com.github.jsonldjava.core.JsonLdOptions;
 import com.github.jsonldjava.core.JsonLdProcessor;
 import com.github.jsonldjava.utils.JsonUtils;
@@ -76,6 +79,20 @@ public class VerificationDirectTest {
         //log.debug("big participant RDF: {}", vp.getVerifiableCredential().getCredentialSubject().toDataset().toList());
     }
     
+    @Test
+    void validateVP() throws Exception {
+        //validate(VerifiableCredential verifiableCredential)
+        ContentAccessor content = getAccessor("VerificationService/jsonld/input.vp.jsonld");
+        VerifiablePresentation vp = VerifiablePresentation.fromJson(content.getContentAsString());
+        try {
+            Validation.validate(vp);
+            Assertions.assertNotNull(vp.getVerifiableCredential());
+            Validation.validate(vp.getVerifiableCredential());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+    
     private static ContentAccessor getAccessor(String path) throws UnsupportedEncodingException {
         URL url = VerificationServiceImplTest.class.getClassLoader().getResource(path);
         String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8.name());
@@ -85,3 +102,4 @@ public class VerificationDirectTest {
     }
     
 }
+ 

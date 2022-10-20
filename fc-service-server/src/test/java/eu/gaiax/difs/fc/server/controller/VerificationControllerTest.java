@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.event.annotation.BeforeTestClass;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -16,13 +15,23 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
+import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
+import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
+import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -30,11 +39,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(SpringExtension.class)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 public class VerificationControllerTest {
-    // TODO: 18.07.2022 After adding business logic, need to fix/add tests, taking into account exceptions
 
     @Autowired
     private WebApplicationContext context;
-
+    @Autowired
+    private ObjectMapper objectMapper;
     @Autowired
     private MockMvc mockMvc;
 
@@ -46,20 +55,68 @@ public class VerificationControllerTest {
     @Test
     public void getVerifyPageShouldReturnSuccessResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/verification")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(header().stringValues("Content-Type", "text/html"));
+               .contentType(MediaType.APPLICATION_JSON)
+               .accept(MediaType.APPLICATION_JSON))
+               .andExpect(status().isOk())
+               .andExpect(header().stringValues("Content-Type", "text/html"));
     }
 
     @Test
-    @Disabled("Test fails even though the behavior is desired")
-    public void verifySDsShouldReturnSuccessResponse() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/verification")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+    public void verifyParticipantShouldReturnSuccessResponse() throws Exception {
+        String json = getMockFileDataAsString("default_participant.json");
+        String response = mockMvc.perform(MockMvcRequestBuilders.post("/verification")
+               .contentType(MediaType.APPLICATION_JSON)
+               .accept(MediaType.APPLICATION_JSON)
+               .content(json))
+               .andExpect(status().isOk())
+               .andReturn()
+               .getResponse()
+               .getContentAsString();
+        VerificationResult partResult = objectMapper.readValue(response, VerificationResult.class);
+        assertEquals("did:example:issuer", partResult.getIssuer());
+        assertEquals(OffsetDateTime.of(2010, 1, 1, 19, 23, 24, 0, ZoneOffset.UTC), partResult.getIssuedDateTime()); 
     }
+ 
+    @Test
+    public void verifyNoProofsShouldReturnClientError() throws Exception {
+        String json = getMockFileDataAsString("participant_without_proofs.json");
+        mockMvc.perform(MockMvcRequestBuilders.post("/verification")
+               .contentType(MediaType.APPLICATION_JSON)
+               .accept(MediaType.APPLICATION_JSON)
+               .content(json))
+               .andExpect(status().isBadRequest());
+    }
+    
+    @Test
+    public void verifyNoProofsNoSignsShouldReturnSuccessResponse() throws Exception {
+        String json = getMockFileDataAsString("participant_without_proofs.json");
+        mockMvc.perform(MockMvcRequestBuilders.post("/verification")
+               .queryParam("verifySignatures", "false")
+               .contentType(MediaType.APPLICATION_JSON)
+               .accept(MediaType.APPLICATION_JSON)
+               .content(json))
+               .andExpect(status().isOk());
+    }
+
+    @Test
+    public void verifySDNoCSShouldReturnClientError() throws Exception {
+        String json = getMockFileDataAsString("sd-without-credential-subject.json");
+        mockMvc.perform(MockMvcRequestBuilders.post("/verification")
+               .contentType(MediaType.APPLICATION_JSON)
+               .accept(MediaType.APPLICATION_JSON)
+               .content(json))
+               .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void verifySDNoCSNoSemanticsShouldReturnSuccessResponse() throws Exception {
+        String json = getMockFileDataAsString("sd-without-credential-subject.json");
+        mockMvc.perform(MockMvcRequestBuilders.post("/verification")
+               .queryParam("verifySemantics", "false")
+               .contentType(MediaType.APPLICATION_JSON)
+               .accept(MediaType.APPLICATION_JSON)
+               .content(json))
+               .andExpect(status().isOk());
+    }
+    
 }
