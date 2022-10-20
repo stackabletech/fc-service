@@ -45,8 +45,8 @@ public class SessionDaoImpl implements SessionDao {
 
     @Override
     public void delete(String id) {
-        keycloak.realm(realm).deleteSession(id);
-        // keycloak.realm(realm).users().get(id).logout(); ??
+        // keycloak.realm(realm).deleteSession(id);
+         keycloak.realm(realm).users().get(id).logout();
     }
 
 }

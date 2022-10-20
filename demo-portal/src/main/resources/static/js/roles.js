@@ -11,7 +11,7 @@ $(document).ready(function() {
                          success: function (response) {
                              $.each(response, function(index, item) {
                                // access the properties of each user
-                              console.log(item);
+                              //console.log(item);
                               var obj = { "name" : item
                                        }
                                      result.push(obj);
