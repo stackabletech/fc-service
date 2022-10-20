@@ -42,13 +42,17 @@ import org.springframework.stereotype.Component;
 import org.topbraid.shacl.validation.ValidationUtil;
 import org.topbraid.shacl.vocabulary.SH;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+
+import java.security.GeneralSecurityException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -62,7 +66,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// TODO: 26.07.2022 Awaiting approval and implementation by Fraunhofer.
 /**
  * Implementation of the {@link VerificationService} interface.
  */
@@ -532,7 +535,7 @@ public class VerificationServiceImpl implements VerificationService {
       if (_parts.length == 1) {
         url = new URL("https://" + _parts[0] +"/.well-known/did.json");
       } else {
-        url = new URL("https://" + _parts[0] +"/.well-known/did.json" + _parts[1]);
+        url = new URL("https://" + _parts[0] +"/.well-known/did.json#" + _parts[1]);
       }
       log.debug("readDIDFromURI; requesting DIDDocument from: {}", url.toString());
       InputStream stream = url.openStream();
@@ -570,24 +573,49 @@ public class VerificationServiceImpl implements VerificationService {
     return jwt.getHeader().getAlgorithm().getName();
   }
 
-  private Instant hasPEMTrustAnchorAndIsNotDeprecated (String uri) throws IOException {
-    //Is the PEM anchor in the registry?
-    HttpClient httpclient = HttpClients.createDefault();
-    HttpPost httppost = new HttpPost("https://registry.lab.gaia-x.eu/v2206/api/trustAnchor/chain/file");
+  private Instant hasPEMTrustAnchorAndIsNotDeprecated (String uri) throws IOException, CertificateException {
+    StringBuilder result = new StringBuilder();
+    URL url = new URL(uri);
+    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    conn.setRequestMethod("GET");
+    try (BufferedReader reader = new BufferedReader(
+            new InputStreamReader(conn.getInputStream()))) {
+      for (String line; (line = reader.readLine()) != null; ) {
+        result.append(line + System.lineSeparator());
+      }
+    }
+    String pem = result.toString();
+    InputStream certStream = new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8));
+    CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+    List<X509Certificate> certs = (List<X509Certificate>) certFactory.generateCertificates(certStream);
 
-    // Request parameters and other properties.
-    List<NameValuePair> params = new ArrayList<NameValuePair>(1);
-    params.add(new BasicNameValuePair("uri", uri));
-    httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
+    //Then extract relevant cert
+    X509Certificate relevant = null;
 
-    //Execute and get the response.
-    HttpResponse response = httpclient.execute(httppost);
-    if (response.getStatusLine().getStatusCode() != 200) {
+    for (X509Certificate cert : certs) {
+      try {
+        cert.checkValidity();
+        if (relevant == null || relevant.getNotAfter().after(cert.getNotAfter())) {
+          relevant = cert;
+        }
+      } catch (Exception e) {
+        log.debug("hasPEMTrustAnchorAndIsNotDeprecated.error: {}", e.getMessage());
+      }
+    }
+
+    if (relevant == null) {
+        // ?!
+        return null;
+    }
+    
+    //Second, extract required information
+    Instant exp = relevant.getNotAfter().toInstant();
+
+    if (!checkTrustAnchor(uri)) {
       throw new VerificationException("Signatures error; The trust anchor is not set in the registry. URI: " + uri);
     }
 
-    //TODO deprecation time from pem from URI
-    return Instant.now(); // The registry is down, thus this code fails
+    return exp;
   }
 
   private LdVerifier getVerifierFromValidator(Validator validator) throws IOException, ParseException {
@@ -604,4 +632,24 @@ public class VerificationServiceImpl implements VerificationService {
     return new JsonWebSignature2020LdVerifier(pubKey);
   }
 
+  private boolean checkTrustAnchor(String uri) throws IOException {
+    log.debug("checkTrustAnchor.enter; uri: {}", uri);
+    //Check the validity of the cert
+    //Is the PEM anchor in the registry?
+    // we could use some singleton cache client, probably
+    HttpClient httpclient = HttpClients.createDefault();
+    // must be moved to some config
+    HttpPost httppost = new HttpPost("https://registry.lab.gaia-x.eu/v2206/api/trustAnchor/chain/file");
+
+    // Request parameters and other properties.
+    List<NameValuePair> params = List.of(new BasicNameValuePair("uri", uri));
+    // use standard constant for UTF-8
+    httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8")); 
+
+    //Execute and get the response.
+    HttpResponse response = httpclient.execute(httppost);
+    // what if code is 2xx or 3xx?  
+    log.debug("checkTrustAnchor.exit; status code: {}", response.getStatusLine().getStatusCode());
+    return response.getStatusLine().getStatusCode() == 200;   
+  }
 }

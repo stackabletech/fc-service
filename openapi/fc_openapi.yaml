@@ -694,9 +694,6 @@ paths:
       summary: 'Get the full list of ontologies, shapes and vocabularies.'
       description: 'The schema identifiers, returned by this endpoint can be used to download the schema files.'
       operationId: getSchemas
-      parameters:
-        - $ref: '#/components/parameters/OffsetParam'
-        - $ref: '#/components/parameters/LimitParam'
       responses:
         '200':
           description: 'References to ontologies, shapes and vocabularies.'

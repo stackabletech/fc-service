@@ -73,13 +73,9 @@ public class UserDaoImpl implements UserDao {
   @Override
   public UserProfile select(String userId) {
     UsersResource instance = keycloak.realm(realm).users();
-    try {
-      UserResource userResource = instance.get(userId);
-      UserRepresentation userRepo = userResource.toRepresentation();
-      return toUserProfile(userRepo, userResource.roles().realmLevel().listAll());
-    } catch (NotFoundException exception) {
-      throw new eu.gaiax.difs.fc.core.exception.NotFoundException("User with id " + userId + " not found");
-    }
+    UserResource userResource = instance.get(userId);
+    UserRepresentation userRepo = getUserRepresentation(userResource, userId);
+    return toUserProfile(userRepo, userResource.roles().realmLevel().listAll());
   }
 
   /**
@@ -117,8 +113,8 @@ public class UserDaoImpl implements UserDao {
   public UserProfile delete(String userId) {
     UsersResource instance = keycloak.realm(realm).users();
     UserResource userResource = instance.get(userId);
+    UserRepresentation userRepo = getUserRepresentation(userResource, userId);
     List<RoleRepresentation> roles = userResource.roles().realmLevel().listAll();
-    UserRepresentation userRepo = userResource.toRepresentation();
 
     Response response = instance.delete(userId);
     if (response.getStatus() != HttpStatus.SC_NO_CONTENT) {
@@ -147,7 +143,7 @@ public class UserDaoImpl implements UserDao {
     // no Response ?
 
     userResource = instance.get(userId);
-    userRepo = userResource.toRepresentation();
+    userRepo = getUserRepresentation(userResource, userId);
     return toUserProfile(userRepo, userResource.roles().realmLevel().listAll());
   }
 
@@ -162,14 +158,14 @@ public class UserDaoImpl implements UserDao {
   public UserProfile updateRoles(String userId, List<String> roles) {
     UsersResource instance = keycloak.realm(realm).users();
     UserResource userResource = instance.get(userId);
-    UserRepresentation userRepo = userResource.toRepresentation();
+    UserRepresentation userRepo = getUserRepresentation(userResource, userId);
     userRepo.setRealmRoles(roles);
     userResource.update(userRepo);
     assignRoleToUser(userResource, roles);
     // no Response ?
 
     userResource = instance.get(userId);
-    userRepo = userResource.toRepresentation();
+    userRepo = getUserRepresentation(userResource, userId);
     return toUserProfile(userRepo, userResource.roles().realmLevel().listAll());
   }
 
@@ -196,7 +192,7 @@ public class UserDaoImpl implements UserDao {
     userRepo.setFirstName(user.getFirstName());
     userRepo.setLastName(user.getLastName());
     userRepo.setEmail(user.getEmail());
-    userRepo.setUsername(getUsername(user)); // use email instead?
+    userRepo.setUsername(user.getEmail());
     userRepo.setAttributes(Map.of(ATR_PARTICIPANT_ID, List.of(user.getParticipantId())));
     userRepo.setEnabled(true);
     userRepo.setEmailVerified(false);
@@ -220,6 +216,14 @@ public class UserDaoImpl implements UserDao {
     return roleRepresentations.stream().map(RoleRepresentation::getName).collect(Collectors.toList());
   }
 
+  private UserRepresentation getUserRepresentation(UserResource userResource, String id) {
+    try {
+      return userResource.toRepresentation();
+    } catch (NotFoundException exception) {
+      throw new eu.gaiax.difs.fc.core.exception.NotFoundException("User with id " + id + " not found");
+    }
+  }
+
   /**
    * Utility method for Convert UserRepresentation to UserProfile.
    *
@@ -232,16 +236,6 @@ public class UserDaoImpl implements UserDao {
     String participantId = partIds == null ? null : partIds.get(0);
     return new UserProfile(participantId, userRepo.getFirstName(), userRepo.getLastName(), userRepo.getEmail(),
         toRoleIds(roles), userRepo.getId(), userRepo.getFirstName() + " " + userRepo.getLastName());
-  }
-
-  /**
-   * Get user as string format.
-   *
-   * @param user User entity
-   * @return string formatted user
-   */
-  public static String getUsername(User user) {
-    return user.getParticipantId() + "{" + user.getFirstName() + " " + user.getLastName() + "}";
   }
 
   /**
