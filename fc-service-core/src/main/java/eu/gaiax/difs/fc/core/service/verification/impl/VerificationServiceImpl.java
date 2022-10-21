@@ -14,6 +14,7 @@ import com.danubetech.verifiablecredentials.validation.Validation;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTParser;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
+import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.*;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
@@ -240,7 +241,7 @@ public class VerificationServiceImpl implements VerificationService {
       return VerifiablePresentation.fromJson(content.getContentAsString());
     } catch (Exception ex) {
       log.error("parseContent.syntactic error;", ex);
-      throw new VerificationException("Syntactic error: " + ex.getMessage(), ex);
+      throw new ClientException("Syntactic error: " + ex.getMessage(), ex);
     }
   }
   

@@ -6,7 +6,13 @@ package eu.gaiax.difs.fc.core.exception;
  * serialisation, e.g. broken URIs, invalid literals etc.
  */
 public class QueryException extends ServerException {
-    public QueryException(String msg) {
-        super(msg);
-    }
+    
+  public QueryException(String msg) {
+    super(msg);
+  }
+
+  public QueryException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
 }

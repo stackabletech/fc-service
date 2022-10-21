@@ -82,12 +82,6 @@ public class SelfDescriptionControllerTest {
     @Autowired
     private Neo4j embeddedDatabaseServer;
 
-    @AfterAll
-    void closeNeo4j() {
-        embeddedDatabaseServer.close();
-    }
-
-    // TODO: 14.07.2022 After adding business logic, need to fix/add tests, taking into account exceptions
     private static SelfDescriptionMetadata sdMeta;
 
     @Autowired
