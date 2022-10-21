@@ -172,34 +172,15 @@ public class SchemaStoreImpl implements SchemaStore {
 
     Model model = ModelFactory.createDefaultModel();
     Model unionModel = ModelFactory.createDefaultModel();
-    switch (type) {
-      case ONTOLOGY:
-        for (String schemaId : schemaList.get(SchemaType.ONTOLOGY)) {
-          ContentAccessor schemaContent = getSchema(schemaId);
-          StringReader schemaContentReader = new StringReader(schemaContent.getContentAsString());
-          model.read(schemaContentReader, "", "TURTLE");
-          unionModel.add(model);
-        }
-        break;
-      case SHAPE:
-        for (String schemaId : schemaList.get(SchemaType.SHAPE)) {
-          ContentAccessor schemaContent = getSchema(schemaId);
-          StringReader schemaContentReader = new StringReader(schemaContent.getContentAsString());
-          model.read(schemaContentReader, "", "TURTLE");
-          unionModel.add(model);
-        }
-        break;
-      case VOCABULARY:
-        for (String schemaId : schemaList.get(SchemaType.VOCABULARY)) {
-          ContentAccessor schemaContent = getSchema(schemaId);
-          StringReader schemaContentReader = new StringReader(schemaContent.getContentAsString());
-          model.read(schemaContentReader, "", "TURTLE");
-          unionModel.add(model);
-        }
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown schema type: " + type.name());
-
+    List<String> schemaListForType = schemaList.get(type);
+    if (schemaListForType == null) {
+      return new ContentAccessorDirect("");
+    }
+    for (String schemaId : schemaListForType) {
+      ContentAccessor schemaContent = getSchema(schemaId);
+      StringReader schemaContentReader = new StringReader(schemaContent.getContentAsString());
+      model.read(schemaContentReader, "", "TURTLE");
+      unionModel.add(model);
     }
     RDFDataMgr.write(out, unionModel, Lang.TURTLE);
     log.debug("createCompositeSchema.exit;");
