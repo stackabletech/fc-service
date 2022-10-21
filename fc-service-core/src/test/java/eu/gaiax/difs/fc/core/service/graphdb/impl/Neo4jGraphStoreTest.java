@@ -76,7 +76,7 @@ public class Neo4jGraphStoreTest {
                     credentialSubject.substring(1, credentialSubject.length() - 1));
         }
         OpenCypherQuery queryFull = new OpenCypherQuery(
-                "MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 25", Map.of());
+                "MATCH (n:ServiceOffering) RETURN n LIMIT 25", Map.of());
         List<Map<String, Object>> responseFull = graphGaia.queryData(queryFull).getResults();
         Assertions.assertEquals(resultListFull, responseFull);
     }
@@ -103,7 +103,7 @@ public class Neo4jGraphStoreTest {
             graphGaia.addClaims(sdClaimList, credentialSubject.substring(1, credentialSubject.length() - 1));
         }
         OpenCypherQuery queryDelta = new OpenCypherQuery(
-                "MATCH (n:ns1__LegalPerson) WHERE n.ns1__name = $name RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
+                "MATCH (n:LegalPerson) WHERE n.name = $name RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
         Assertions.assertEquals(resultListDelta, responseDelta);
     }
@@ -200,7 +200,6 @@ public class Neo4jGraphStoreTest {
                 exception.getMessage().contains("Subject in triple"),
                 "Syntax error should have been found for the triple " +
                         "subject, but wasn't");
-
         // If a claim with a broken predicate was passed it should be rejected
         // with a server exception
         exception = Assertions.assertThrows(
@@ -260,25 +259,6 @@ public class Neo4jGraphStoreTest {
                         "triple object, but wasn't"
         );
 
-        // Blank nodes
-        // ===========
-        // As far as it was communicated, there should be no blank nodes in a
-        // claim. We explicitly check this for objects. Blank nodes on a
-        // triple's subject position won't make much sense as the credential
-        // subject must not be blank node. Blank nodes on predicate position
-        // don't make sense either and are assumed to not occur.
-        exception = Assertions.assertThrows(
-                QueryException.class,
-                () -> graphGaia.addClaims(
-                        Collections.singletonList(claimWBlankNodeObject),
-                        credentialSubject
-                )
-        );
-        Assertions.assertTrue(
-                exception.getMessage().contains("Object in triple"),
-                "A syntax error should have been found for the " +
-                        "triple object, but wasn't"
-        );
     }
 
     private List<SdClaim> loadTestClaims(String path) throws Exception {
@@ -334,7 +314,7 @@ public class Neo4jGraphStoreTest {
     @Test
     void testQueryDataTimeout() {
         int acceptableDuration = graphGaia.queryTimeoutInSeconds * 1000;
-        int tooLongDuration = (graphGaia.queryTimeoutInSeconds + 1) * 1000;  // a second more than acceptable
+        int tooLongDuration = (graphGaia.queryTimeoutInSeconds + 5) * 1000;  // a second more than acceptable
 
         Assertions.assertDoesNotThrow(
                 () -> graphGaia.queryData(
