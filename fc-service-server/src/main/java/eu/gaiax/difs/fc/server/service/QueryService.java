@@ -1,6 +1,5 @@
 package eu.gaiax.difs.fc.server.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.gaiax.difs.fc.api.generated.model.Results;
 import eu.gaiax.difs.fc.api.generated.model.Statement;
 import eu.gaiax.difs.fc.core.exception.ServerException;
@@ -11,7 +10,6 @@ import eu.gaiax.difs.fc.server.generated.controller.QueryApiDelegate;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,12 +33,7 @@ public class QueryService implements QueryApiDelegate {
   private ResourceLoader resourceLoader;
 
   @Autowired
-  private ObjectMapper jsonMapper;
-
-  @Autowired
   private GraphStore graphStore;
-
-
 
   /**
    * Get List of results from catalogue for provided {@link Statement}.
@@ -63,7 +56,6 @@ public class QueryService implements QueryApiDelegate {
     log.debug("query.exit; returning results: {}", result);
     return ResponseEntity.ok(result);
   }
-
 
   /**
    * {@inheritDoc}
