@@ -97,15 +97,15 @@ public class QueryControllerTest {
     }
 
     
-    String QUERY_REQUEST_GET = "{\"statement\": \"MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 1\", " +
+    String QUERY_REQUEST_GET = "{\"statement\": \"MATCH (n:ServiceOffering) RETURN n LIMIT 1\", " +
         "\"parameters\": " +
         "null}}";
 
-    String QUERY_REQUEST_GET_WITH_PARAMETERS = "{\"statement\": \"MATCH (n:ns0__ServiceOffering) where n.ns0__name = " +
+    String QUERY_REQUEST_GET_WITH_PARAMETERS = "{\"statement\": \"MATCH (n:ServiceOffering) where n.name = " +
         "$name RETURN n \", \"parameters\": { \"name\": \"EuProGigant Portal\"}}";
 
-    String QUERY_REQUEST_GET_WITH_PARAMETERS_UNKNOWN = "{\"statement\": \"MATCH (n:ns0__ServiceOffering) where " +
-        "n.ns0__name = $name RETURN n \", \"parameters\": { \"name\": \"notFound\"}}";
+    String QUERY_REQUEST_GET_WITH_PARAMETERS_UNKNOWN = "{\"statement\": \"MATCH (n:ServiceOffering) where " +
+        "n.name = $name RETURN n \", \"parameters\": { \"name\": \"notFound\"}}";
 
     String QUERY_REQUEST_POST = "{\"statement\": \" CREATE (n:Person {name: 'TestUser', title: 'Developer'})\", " +
         "\"parameters\": null}";
@@ -115,7 +115,7 @@ public class QueryControllerTest {
         "\"parameters\": " +
         "null}";
 
-    String QUERY_REQUEST_DELETE = "{\"statement\": \"MATCH (n:ns0__ServiceOffering) where n.ns0__name = 'EuProGigant " +
+    String QUERY_REQUEST_DELETE = "{\"statement\": \"MATCH (n:ServiceOffering) where n.name = 'EuProGigant " +
         "Portal' DETACH DELETE m\", " +
         "\"parameters\": " +
         "null}";
