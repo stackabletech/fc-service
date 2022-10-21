@@ -7,6 +7,8 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
 import eu.gaiax.difs.fc.api.generated.model.Results;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
@@ -137,13 +139,24 @@ public class QueryControllerTest {
                 .content(QUERY_REQUEST_GET)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Produces","application/json","application/sparql-results+xml", "text/turtle", "text/html")
-                .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
-                .header("query-language","application/sparql-query"))
+                .header("Produces", "application/json")
+                .header("Accept", "application/json"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
+    @Test
+    public void postUsupportedQueryReturnNotImplementedResponse() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/query")
+                .content(QUERY_REQUEST_GET)
+                .contentType(MediaType.APPLICATION_JSON)
+                .queryParam("queryLanguage", QueryLanguage.SPARQL.getValue())
+                .header("Produces", "application/json")
+                .header("Accept", "application/json"))
+            .andExpect(status().isNotImplemented());
+    }
+    
     @Test
     public void postGetQueriesReturnSuccessResponse() throws Exception {
 
@@ -151,14 +164,12 @@ public class QueryControllerTest {
                         .content(QUERY_REQUEST_GET)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Produces","application/json","application/sparql-results+xml", "text/turtle", "text/html")
-                        .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
-                        .header("query-language","application/sparql-query"))
+                        .header("Produces", "application/json")
+                        .header("Accept", "application/json"))
                         .andExpect(status().isOk())
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-
 
         Results result = objectMapper.readValue(response, Results.class);
         assertEquals(1, result.getItems().size());
@@ -170,16 +181,13 @@ public class QueryControllerTest {
 
         String response =  mockMvc.perform(MockMvcRequestBuilders.post("/query")
                 .content(QUERY_REQUEST_GET_WITH_PARAMETERS)
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Produces","application/json","application/sparql-results+xml", "text/turtle", "text/html")
-                .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
-                .header("query-language","application/sparql-query"))
+                .header("Produces", "application/json")
+                .header("Accept", "application/json"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
             .getContentAsString();
-
 
         Results result = objectMapper.readValue(response, Results.class);
         assertEquals(1, result.getItems().size());
@@ -192,16 +200,13 @@ public class QueryControllerTest {
 
         String response =  mockMvc.perform(MockMvcRequestBuilders.post("/query")
                 .content(QUERY_REQUEST_GET_WITH_PARAMETERS_UNKNOWN)
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Produces","application/json","application/sparql-results+xml", "text/turtle", "text/html")
-                .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
-                .header("query-language","application/sparql-query"))
+                .header("Produces", "application/json")
+                .header("Accept", "application/json"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
             .getContentAsString();
-
 
         Results result = objectMapper.readValue(response, Results.class);
         assertEquals(0, result.getItems().size());
@@ -211,11 +216,9 @@ public class QueryControllerTest {
     public void postQueryReturnForbiddenResponse() throws Exception {
           mockMvc.perform(MockMvcRequestBuilders.post("/query")
                 .content(QUERY_REQUEST_POST)
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Produces","application/json","application/sparql-results+xml", "text/turtle", "text/html")
-                .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
-                .header("query-language","application/sparql-query"))
+                .header("Produces", "application/json")
+                .header("Accept", "application/json")) 
             .andExpect(status().is5xxServerError());
     }
     
@@ -223,11 +226,9 @@ public class QueryControllerTest {
     public void postQueryForUpdateReturnForbiddenResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/query")
                 .content(QUERY_REQUEST_UPDATE)
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Produces","application/json","application/sparql-results+xml", "text/turtle", "text/html")
-                .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
-                .header("query-language","application/sparql-query"))
+                .header("Produces", "application/json")
+                .header("Accept", "application/json"))
             .andExpect(status().is5xxServerError());
 
     }
@@ -238,9 +239,8 @@ public class QueryControllerTest {
                 .content(QUERY_REQUEST_DELETE)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Produces","application/json","application/sparql-results+xml", "text/turtle", "text/html")
-                .header("Accept","application/json") //,"application/sparql-query","application/sparql*")
-                .header("query-language","application/sparql-query"))
+                .header("Produces", "application/json")
+                .header("Accept", "application/json"))
             .andExpect(status().is5xxServerError());
     }
 
@@ -248,7 +248,7 @@ public class QueryControllerTest {
 
         fileStore.clearStorage();
 
-        ContentAccessorDirect contentAccessor = new ContentAccessorDirect(FileReaderHelper.getMockFileDataAsString("default_participant.json")); //SD_FILE_NAME));
+        ContentAccessorDirect contentAccessor = new ContentAccessorDirect(FileReaderHelper.getMockFileDataAsString("default_participant.json")); 
         //try {
         VerificationResultParticipant verificationResult = verificationService.verifyParticipantSelfDescription(contentAccessor);
 

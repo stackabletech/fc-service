@@ -1,7 +1,8 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
+import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
 import eu.gaiax.difs.fc.core.exception.ServerException;
-import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
@@ -27,9 +28,6 @@ import java.util.Map;
 @Configuration
 @Component
 public class Neo4jGraphStore implements GraphStore {
-
-    @Value("${graphstore.query-timeout-in-seconds}")
-    protected int queryTimeoutInSeconds;
 
     @Autowired
     private Driver driver;
@@ -87,13 +85,18 @@ public class Neo4jGraphStore implements GraphStore {
      * {@inheritDoc}
      */
     @Override
-    public PaginatedResults<Map<String, Object>> queryData(OpenCypherQuery sdQuery) {
+    public PaginatedResults<Map<String, Object>> queryData(GraphQuery sdQuery) {
         log.debug("queryData.enter; got query: {}", sdQuery);
+        
+        if (sdQuery.getQueryLanguage() != QueryLanguage.OPENCYPHER) {
+            throw new UnsupportedOperationException(sdQuery.getQueryLanguage() + " query language is not supported yet");
+        }
+        
         try (Session session = driver.session()) {
             //In this function we use read transaction to avoid any Cypher query that modifies data
             TransactionConfig transactionConfig =
                     TransactionConfig.builder()
-                            .withTimeout(Duration.ofSeconds(queryTimeoutInSeconds))
+                            .withTimeout(Duration.ofSeconds(sdQuery.getTimeout()))
                             .build();
 
             return session.readTransaction(
@@ -136,7 +139,7 @@ public class Neo4jGraphStore implements GraphStore {
         }
     }
 
-  private String getDynamicallyAddedCountClauseQuery(OpenCypherQuery sdQuery) {
+  private String getDynamicallyAddedCountClauseQuery(GraphQuery sdQuery) {
     log.debug("getDynamicallyAddedCountClauseQuery.enter; actual query: {}", sdQuery.getQuery());
      /*get string before statements and append count clause*/
     String statement = "return";

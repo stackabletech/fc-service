@@ -4,7 +4,9 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
+
 
 import eu.gaiax.difs.fc.api.generated.model.Error;
 import eu.gaiax.difs.fc.core.exception.ClientException;
@@ -91,7 +93,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    * Method handles the Verification Exception.
    *
    * @param exception Thrown Server Exception.
-   * @return The custom Federated Catalogue application error with status code 400.
+   * @return The custom Federated Catalogue application error with status code 422.
    */
   @ExceptionHandler({VerificationException.class})
   protected ResponseEntity<Error> handleVerificationException(VerificationException exception) {
@@ -99,4 +101,17 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     return new ResponseEntity<>(new Error("verification_error", exception.getMessage()), UNPROCESSABLE_ENTITY);
   }
 
+  /**
+   * Method handles the UnsupportedOperation Exception.
+   *
+   * @param exception Thrown Server Exception.
+   * @return The custom Federated Catalogue application error with status code 401.
+   */
+  @ExceptionHandler({UnsupportedOperationException.class})
+  protected ResponseEntity<Error> handleUnsupportedOperationException(UnsupportedOperationException exception) {
+    log.info("handleVerificationException; Verification error: {}", exception.getMessage());
+    return new ResponseEntity<>(new Error("processing_error", exception.getMessage()), NOT_IMPLEMENTED);
+  }
+  
+  
 }
