@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.core.util;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.Triple;
+import org.apache.jena.rdf.model.AnonId;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
@@ -28,9 +29,12 @@ public class ExtendClaims {
         Node o = triple.getObject();
         Resource subject = model.createResource(s.getURI());
         model.add(subject, claimsGraphUri, credentialSubject);
-        if (!o.isLiteral() && !p.equals(RDF.type.asNode())) {
+        if (!o.isLiteral() && !p.equals(RDF.type.asNode()) && !(o.isBlank())) {
             Resource object = model.createResource(o.getURI());
             model.add(object, claimsGraphUri, credentialSubject);
+        } else if (o.isBlank()) {
+            Resource blankNode = model.createResource(new AnonId(o.getBlankNodeId()));
+            model.add(blankNode, claimsGraphUri, credentialSubject);
         }
         OutputStream outputstream = new ByteArrayOutputStream();
         model.write(outputstream, "N-TRIPLES");
