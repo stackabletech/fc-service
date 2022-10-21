@@ -16,12 +16,16 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import eu.gaiax.difs.fc.api.generated.model.Error;
 import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
+import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
+import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -74,13 +78,13 @@ public class VerificationControllerTest {
     }
  
     @Test
-    public void verifyNoProofsShouldReturnClientError() throws Exception {
+    public void verifyNoProofsShouldReturnUnprocessibleEntity() throws Exception {
         String json = getMockFileDataAsString("participant_without_proofs.json");
         mockMvc.perform(MockMvcRequestBuilders.post("/verification")
                .contentType(MediaType.APPLICATION_JSON)
                .accept(MediaType.APPLICATION_JSON)
                .content(json))
-               .andExpect(status().isBadRequest());
+               .andExpect(status().isUnprocessableEntity());
     }
     
     @Test
@@ -96,17 +100,20 @@ public class VerificationControllerTest {
     }
 
     @Test
-    public void verifySDNoCSShouldReturnClientError() throws Exception {
+    public void verifySDNoCSShouldReturnUnprocessibleEntity() throws Exception {
         String json = getMockFileDataAsString("sd-without-credential-subject.json");
         String response = mockMvc.perform(MockMvcRequestBuilders.post("/verification")
                .contentType(MediaType.APPLICATION_JSON)
                .accept(MediaType.APPLICATION_JSON)
                .content(json))
-               .andExpect(status().isBadRequest())
+               .andExpect(status().isUnprocessableEntity())
                .andReturn()
                .getResponse()
                .getContentAsString();
-        System.out.println("response: " + response);
+        Error error = objectMapper.readValue(response, Error.class);
+        assertEquals("verification_error", error.getCode());
+        assertTrue(error.getMessage().startsWith("Semantic Errors:"));
+        assertTrue(error.getMessage().contains("VerifiableCredential must contain 'credentialSubject' property")); 
     }
 
     @Test

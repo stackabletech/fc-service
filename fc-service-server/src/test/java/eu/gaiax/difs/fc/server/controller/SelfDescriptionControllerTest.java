@@ -329,7 +329,7 @@ public class SelfDescriptionControllerTest {
               .with(csrf())
               .contentType(MediaType.APPLICATION_JSON)
               .accept(MediaType.APPLICATION_JSON))
-          .andExpect(status().isBadRequest());
+          .andExpect(status().isUnprocessableEntity());
     }
 
     @Test
