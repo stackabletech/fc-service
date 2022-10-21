@@ -11,6 +11,7 @@ import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -89,12 +90,12 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    * Method handles the Verification Exception.
    *
    * @param exception Thrown Server Exception.
-   * @return The custom Federated Catalogue application error with status code 404.
+   * @return The custom Federated Catalogue application error with status code 400.
    */
   @ExceptionHandler({VerificationException.class})
   protected ResponseEntity<Error> handleVerificationException(VerificationException exception) {
     log.info("handleVerificationException; Verification error: {}", exception.getMessage());
     return new ResponseEntity<>(new Error("verification_error", exception.getMessage()), BAD_REQUEST);
   }
-  
+
 }

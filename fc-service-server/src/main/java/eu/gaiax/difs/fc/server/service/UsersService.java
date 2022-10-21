@@ -9,6 +9,7 @@ import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.UserDao;
+import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.server.generated.controller.UsersApiDelegate;
 import java.net.URI;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 /**
  * Service for the crud operation of the user . Implementation of the {@link UsersApiDelegate }.
@@ -43,6 +45,7 @@ public class UsersService implements UsersApiDelegate {
   @Override
   public ResponseEntity<UserProfile> addUser(User user) {
     log.debug("addUser.enter; got user: {}", user);
+    if(ObjectUtils.isEmpty(user)) throw new ClientException("User cannot be null!");
     checkParticipantAccess(user.getParticipantId());
     UserProfile profile = userDao.create(user);
     log.debug("addUser.exit; returning: {}", profile);
