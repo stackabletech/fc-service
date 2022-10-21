@@ -13,8 +13,8 @@
       "@id": "https://delta-dao.com/.well-known/participant.json",
       "issuer": "https://www.handelsregister.de/" ,
       "issuanceDate": "2010-01-01T19:73:24Z",
-      "@type": [
-        "VerifiableCredential"
+      "type": [
+        "VerifiableCredential", "LegalPerson"
       ],
       "credentialSubject": {
         "@context": {

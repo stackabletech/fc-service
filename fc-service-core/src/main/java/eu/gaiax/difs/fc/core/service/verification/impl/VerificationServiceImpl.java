@@ -54,9 +54,7 @@ import java.security.cert.X509Certificate;
 
 import java.text.ParseException;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
@@ -137,8 +135,6 @@ public class VerificationServiceImpl implements VerificationService {
     VerifiableCredential vc; 
     if (verifySemantics) {
       try {
-        //Validation.validate(vp);
-        //Validation.validate(vc);
         vc = verifyPresentation(vp);
       } catch (VerificationException ex) {
         throw ex;
@@ -148,15 +144,17 @@ public class VerificationServiceImpl implements VerificationService {
       }
     } else {
       vc = getCredential(vp);
-      // what if vc is null?
+      if (vc == null) {
+        throw new VerificationException("Semantic error: VerifiablePresentation must contain 'verifiableCredential' property");
+      }
     }
     
-    Pair<Boolean, Boolean> type = getSDType(vp, vc);
+    Pair<Boolean, Boolean> type = getSDTypes(vc);
     if (strict) {
       if (type.getLeft()) {
-        if (type.getRight()) { 
-          throw new VerificationException("Semantic error: SD is both, a Participant and an Service Offering SD");
-        }
+        //if (type.getRight()) { 
+        //  throw new VerificationException("Semantic error: SD is both, a Participant and a Service Offering SD");
+        //}
         if (expectedType == VRT_OFFERING) {
           throw new VerificationException("Semantic error: Expected Service Offering SD, got Participant SD");
         }
@@ -165,7 +163,7 @@ public class VerificationServiceImpl implements VerificationService {
           throw new VerificationException("Semantic error: Expected Participant SD, got Service Offering SD");
         }
       } else {
-        throw new VerificationException("Semantic error: SD is neither a Participant SD nor a Service Offering SD");
+        throw new VerificationException("Semantic error: SD is neither a Participant nor a Service Offering SD");
       }
     }
     
@@ -196,7 +194,7 @@ public class VerificationServiceImpl implements VerificationService {
     CredentialSubject credentialSubject = getCredentialSubject(vc);
     if (credentialSubject == null) {
       if (strict) {
-        throw new VerificationException("Semantic error: could not find CS in VC");
+        throw new VerificationException("Semantic error: VerifiableCredential must contain 'credentialSubject' property");
       }
     } else {
       claims = extractClaims(credentialSubject);
@@ -247,72 +245,115 @@ public class VerificationServiceImpl implements VerificationService {
   }
   
   private VerifiableCredential verifyPresentation(VerifiablePresentation presentation) {
-    // VP must have VC
+    StringBuilder sb = new StringBuilder();
+    String sep = System.getProperty("line.separator");  
+    if (checkAbsence(presentation, "@context")) { 
+      sb.append(" - VerifiablePresentation must contain '@context' property").append(sep);
+    }
+    if (checkAbsence(presentation, "type", "@type")) {
+      sb.append(" - VerifiablePresentation must contain 'type' property").append(sep);
+    }
+    //if (presentation.getJsonObject().get("proof") == null) {
+    //  sb.append(" - VerifiablePresentation must contain 'proof' property").append(sep);
+    //}
+    if (checkAbsence(presentation, "verifiableCredential")) {
+      sb.append(" - VerifiablePresentation must contain 'verifiableCredential' property").append(sep);
+    }
     VerifiableCredential credential = getCredential(presentation);
-    if (credential == null) {
-      throw new VerificationException("Semantic error: could not find VC in SD");
-    }
-    String vcId = getID(credential);
-    if (vcId == null) {
-      throw new VerificationException("Semantic error: could not find ID in VC");
-    }
+    if (credential != null) {
+      if (checkAbsence(credential, "@context")) {
+        sb.append(" - VerifiableCredential must contain '@context' property").append(sep);
+      }
+      if (checkAbsence(credential, "type", "@type")) {
+        sb.append(" - VerifiableCredential must contain 'type' property").append(sep);
+      }
+      if (checkAbsence(credential, "credentialSubject")) {
+        sb.append(" - VerifiableCredential must contain 'credentialSubject' property").append(sep);
+      }
+      if (checkAbsence(credential, "issuer")) {
+        sb.append(" - VerifiableCredential must contain 'issuer' property").append(sep);
+      }
+      if (checkAbsence(credential, "issuanceDate")) {
+        sb.append(" - VerifiableCredential must contain 'issuanceDate' property").append(sep);
+      }
+      //CredentialSubject subject = getCredentialSubject(credential);
+      //if (subject != null) {
+      //  if (checkAbsence(subject, "id", "@id")) {
+      //    sb.append(" - CredentialSubject must contain 'id' property").append(sep);
+      //  }
+      //}
     
-    CredentialSubject subject = getCredentialSubject(credential);
-    if (subject == null) {
-      throw new VerificationException("Semantic error: could not find CS in VC");
+      Date today = Date.from(Instant.now());
+      Date issDate = credential.getIssuanceDate();
+      if (issDate != null && issDate.after(today)) { 
+        sb.append(" - 'issuanceDate' must be in the past").append(sep);
+      }
+      Date expDate = credential.getExpirationDate();
+      if (expDate != null && expDate.before(today)) {
+        sb.append(" - 'expirationDate' must be in the future").append(sep);
+      }
     }
-    
-    Date today = Date.from(Instant.now());
-    Date issDate = credential.getIssuanceDate();
-    if (issDate != null && issDate.after(today)) {
-      throw new VerificationException("Semantic error: issuanceDate must be in the past");
+    if (sb.length() > 0) {
+      sb.insert(0, "Semantic Errors:").insert(16,  sep);
+      throw new VerificationException(sb.toString());  
     }
-
-    Date expDate = credential.getExpirationDate();
-    if (expDate != null && expDate.before(today)) {
-      throw new VerificationException("Semantic error: expirationDate must be in the future");
-    }
-    
     return credential;
   }
-  
-  private Pair<Boolean, Boolean> getSDType(VerifiablePresentation presentation, VerifiableCredential credential) {
-    boolean isParticipant = false;
-    boolean isServiceOffering = false;
 
-    try {
-      CredentialSubject cs = getCredentialSubject(credential);
-      if (cs != null) {
-        log.debug("getSDType; type: {}, types: {}", cs.getType(), cs.getTypes());
-        for (String key : TYPE_KEYS) {
-          Object _type = cs.getJsonObject().get(key);
-          log.debug("getSDType; key: {}, value: {}", key, _type);
-          if (_type == null) continue;
-           
-          List<String> types;
-          if (_type instanceof List) {
-            types = (List<String>) _type;
-          } else {
-            types = List.of((String) _type);
+  private boolean checkAbsence(JsonLDObject container, String ... keys) {
+      boolean found = false;
+      for (String key: keys) {
+          if (container.getJsonObject().containsKey(key)) {
+              found = true; break;
           }
+      }
+      return !found;
+  }
+  
+  private Pair<Boolean, Boolean> getSDTypes(VerifiableCredential credential) {
+    Boolean result = getSDType(credential);
+    if (result == null) {
+      CredentialSubject subject = getCredentialSubject(credential);
+      if (subject != null) {
+        result = getSDType(subject);
+      }
+    }
     
-          for (String type : types) {
-            if (PARTICIPANT_TYPES.contains(type)) {
-              isParticipant = true;
-            }
-            if (SERVICE_OFFERING_TYPES.contains(type)) {
-              isServiceOffering = true;
-            }
+    if (result == null) {
+      return Pair.of(false, false); 
+    }
+    return result ? Pair.of(true,  false) : Pair.of(false, true);
+  }
+  
+  private Boolean getSDType(JsonLDObject container) {
+    try {
+      for (String key : TYPE_KEYS) {
+        Object _type = container.getJsonObject().get(key);
+        log.debug("getSDType; key: {}, value: {}", key, _type);
+        if (_type == null) continue;
+             
+        List<String> types;
+        if (_type instanceof List) {
+          types = (List<String>) _type;
+        } else {
+          types = List.of((String) _type);
+        }
+      
+        for (String type : types) {
+          if (PARTICIPANT_TYPES.contains(type)) {
+            return Boolean.TRUE;
+          }
+          if (SERVICE_OFFERING_TYPES.contains(type)) {
+            return Boolean.FALSE;
           }
         }
-      }
+      } 
     } catch (Exception e) {
       log.debug("getSDType.error: {}", e.getMessage());  
-      throw new VerificationException("Semantic error: could not extract SD type", e);
     }
-
-    return Pair.of(isParticipant, isServiceOffering);
+    return null;
   }
+  
 
   /**
    * A method that returns a list of claims given a self-description's VerifiablePresentation
@@ -327,20 +368,10 @@ public class VerificationServiceImpl implements VerificationService {
      try {
        for (RdfNQuad nquad: cs.toDataset().toList()) {
          log.debug("extractClaims; got NQuad: {}", nquad);
-         if (nquad.getSubject().isIRI()) {
-           String sub = rdf2String(nquad.getSubject());
-           if (sub != null) {
-             String pre = rdf2String(nquad.getPredicate());
-             if (pre != null) {
-               String obj = rdf2String(nquad.getObject());
-               if (obj != null) {
-                 SdClaim claim = new SdClaim(sub, pre, obj);
-                 claims.add(claim);
-               }
-             }
-           }
-         }
-       }
+         SdClaim claim = new SdClaim(rdf2String(nquad.getSubject()), rdf2String(nquad.getPredicate()), rdf2String(nquad.getObject()));
+         claims.add(claim);
+       }  
+       //log.debug("extractClaims; claims: {}", cs.getClaims());
      } catch (JsonLDException ex) {
        throw new VerificationException("Semantic error: " + ex.getMessage());
      }
@@ -351,9 +382,8 @@ public class VerificationServiceImpl implements VerificationService {
   private String rdf2String(RdfValue rdf) {
      if (rdf.isBlankNode()) return rdf.getValue();
      if (rdf.isLiteral()) return "\"" + rdf.getValue() + "\"";
-     // this is IRI, Neo4J does not process namespaced IRIs yet
-     if (rdf.getValue().startsWith("http://") || rdf.getValue().startsWith("https://")) return "<" + rdf.getValue() + ">";
-     return null;
+     // rdf is IRI. here we could try to make it absolute..
+     return "<" + rdf.getValue() + ">";
   }
   
   private VerifiableCredential getCredential(VerifiablePresentation presentation) {
@@ -460,6 +490,9 @@ public class VerificationServiceImpl implements VerificationService {
     Map<String, Object> proof_map = (Map<String, Object>) payload.getJsonObject().get("proof");
     if (proof_map == null) {
       throw new VerificationException("Signarures error; No proof found");
+    }
+    if (proof_map.get("type") == null) {
+      throw new VerificationException("Signarures error; Proof must have 'type' property");
     }
 
     LdProof proof = LdProof.fromMap(proof_map);

@@ -41,7 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @SpringBootTest
-@ActiveProfiles({"test", "tests-sdstore"})
+@ActiveProfiles({"tests-sdstore"}) //"test", 
 @ContextConfiguration(classes = {
     Neo4jGraphStoreAccuracyTest.class, Neo4jGraphStore.class,
     SelfDescriptionStoreImpl.class,
