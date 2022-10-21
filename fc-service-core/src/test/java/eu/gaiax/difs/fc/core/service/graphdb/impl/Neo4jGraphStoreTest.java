@@ -118,18 +118,32 @@ public class Neo4jGraphStoreTest {
 
     @Test
     void testDeleteClaims() throws Exception {
-        List<SdClaim> sdClaimSample = new ArrayList<>();
-        SdClaim syntacticallyCorrectClaim = new SdClaim(
+        List<SdClaim> sdClaimElasticSearch = new ArrayList<>();
+        SdClaim ElasticSearchTypeClaim = new SdClaim(
                 "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
                 "<http://w3.org/1999/02/22-rdf-syntax-ns#type>",
                 "<http://w3id.org/gaia-x/service#ServiceOffering>"
         );
-        sdClaimSample.add(syntacticallyCorrectClaim);
-        List<Map<String, String>> resultListDelta = new ArrayList<Map<String, String>>();
-        graphGaia.addClaims(sdClaimSample, "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
+        sdClaimElasticSearch.add(ElasticSearchTypeClaim);
+        SdClaim ElasticSearchFactClaim = new SdClaim(
+                "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                "<http://w3id.org/gaia-x/service#providedBy>",
+                "<https://delta-dao.com/.well-known/participant.json>"
+        );
+        sdClaimElasticSearch.add(ElasticSearchFactClaim);
+        List<SdClaim> sdClaimParticipant = new ArrayList<>();
+        SdClaim participantType = new SdClaim(
+                "<https://delta-dao.com/.well-known/participant.json>",
+                "<http://w3.org/1999/02/22-rdf-syntax-ns#type>",
+                "<http://w3id.org/gaia-x/participant#LegalPerson>"
+        );
+        sdClaimParticipant.add(participantType);
+        graphGaia.addClaims(sdClaimElasticSearch, "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
+        graphGaia.addClaims(sdClaimParticipant, "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
         graphGaia.deleteClaims("http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
+        graphGaia.deleteClaims("https://delta-dao.com/.well-known/participant.json");
         OpenCypherQuery queryDelta = new OpenCypherQuery(
-                "MATCH (n{uri:'http://w3id.org/gaia-x/indiv#serviceElasticSearch.json'}) RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
+                "MATCH (n{uri:'https://delta-dao.com/.well-known/participant.json'}) RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
         Assertions.assertTrue(responseDelta.isEmpty());
     }
