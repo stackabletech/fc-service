@@ -85,7 +85,7 @@ public class SchemaManagementImplTest {
 
   @Test
   public void testVerifyValidSchema() throws UnsupportedEncodingException {
-    String path = "Schema-Tests/valid-schemaShape.ttl";
+    String path = "Schema-Tests/test-schema.ttl";
     ContentAccessor content = getAccessor(path);
     boolean actual = schemaStore.verifySchema(content);
     assertTrue(actual);
