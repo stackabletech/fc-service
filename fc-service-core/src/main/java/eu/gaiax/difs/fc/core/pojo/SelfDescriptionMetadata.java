@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -36,11 +35,11 @@ public class SelfDescriptionMetadata extends SelfDescription {
     this.selfDescription = contentAccessor;
   }
 
-  public SelfDescriptionMetadata(ContentAccessorDirect contentAccessorDirect, VerificationResultParticipant verificationResult) {
-    super(calculateSha256AsHex(contentAccessorDirect.getContentAsString()), verificationResult.getId(), SelfDescriptionStatus.ACTIVE,
-            verificationResult.getIssuer(), Collections.emptyList(), verificationResult.getVerificationTimestamp(),
+  public SelfDescriptionMetadata(ContentAccessor contentAccessor, VerificationResult verificationResult) {
+    super(calculateSha256AsHex(contentAccessor.getContentAsString()), verificationResult.getId(), SelfDescriptionStatus.ACTIVE,
+            verificationResult.getIssuer(), verificationResult.getValidatorDids(), verificationResult.getVerificationTimestamp(),
             verificationResult.getVerificationTimestamp());
-    this.selfDescription = contentAccessorDirect;
+    this.selfDescription = contentAccessor;
   }
   
   @Override

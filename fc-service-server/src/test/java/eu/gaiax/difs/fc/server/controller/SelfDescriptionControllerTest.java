@@ -323,13 +323,13 @@ public class SelfDescriptionControllerTest {
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
-    public void addSDWithoutIssuerReturnForbiddenResponse() throws Exception {
+    public void addSDWithoutIssuerReturnBadRequestResponse() throws Exception {
       mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
               .content(getMockFileDataAsString("sd-without-issuer.json"))
               .with(csrf())
               .contentType(MediaType.APPLICATION_JSON)
               .accept(MediaType.APPLICATION_JSON))
-          .andExpect(status().isForbidden());
+          .andExpect(status().isBadRequest());
     }
 
     @Test

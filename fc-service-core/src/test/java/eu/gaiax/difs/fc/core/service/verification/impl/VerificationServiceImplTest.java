@@ -23,7 +23,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -74,7 +73,8 @@ public class VerificationServiceImplTest {
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
-        assertEquals("Semantic error: could not find VC in SD", ex.getMessage());
+        assertTrue(ex.getMessage().contains("VerifiablePresentation must contain 'type' property")); 
+        assertTrue(ex.getMessage().contains("VerifiablePresentation must contain 'verifiableCredential' property")); 
     }
 
     @Test
@@ -102,6 +102,7 @@ public class VerificationServiceImplTest {
     }
 
     @Test
+    @Disabled("invalid SO generated")
     void validSyntax_ValidService() throws Exception {
         String path = "VerificationService/syntax/service1.jsonld";
         VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
@@ -116,6 +117,7 @@ public class VerificationServiceImplTest {
     }
 
     @Test
+    @Disabled("invalid SO generated")
     void validSyntax_ValidService2() throws Exception {
         String path = "VerificationService/syntax/service2.jsonld";
         VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
@@ -128,6 +130,7 @@ public class VerificationServiceImplTest {
     }
     
     @Test
+    @Disabled("invalid LP generated")
     void validSyntax_ValidPerson() throws Exception {
         String path = "VerificationService/syntax/legalPerson1.jsonld";
         VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
@@ -154,9 +157,8 @@ public class VerificationServiceImplTest {
         String path = "VerificationService/sign/hasNoSignature1.jsonld";
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
-                verificationService.verifySelfDescription(getAccessor(path)));
-        System.out.println(ex.getMessage());
-        assertEquals("Signarures error; No proof found", ex.getMessage()); 
+                verificationService.verifySelfDescription(getAccessor(path), false, true, true));
+        assertEquals("Signarures error; No proof found", ex.getMessage());
         assertNull(ex.getCause());
     }
 
@@ -177,8 +179,7 @@ public class VerificationServiceImplTest {
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
-        System.out.println(ex.getMessage());
-        assertEquals("No proof found", ex.getMessage());
+        assertEquals("Signarures error; No proof found", ex.getMessage());
         assertNull(ex.getCause());
     }
 
@@ -189,7 +190,6 @@ public class VerificationServiceImplTest {
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
-        System.out.println(ex.getMessage());
         assertTrue(ex.getMessage().contains("does not match with proof"));
     }
 

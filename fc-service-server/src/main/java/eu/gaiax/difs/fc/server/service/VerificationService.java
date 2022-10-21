@@ -1,6 +1,5 @@
 package eu.gaiax.difs.fc.server.service;
 
-import com.github.jsonldjava.utils.JsonUtils;
 import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
@@ -8,7 +7,6 @@ import eu.gaiax.difs.fc.server.generated.controller.VerificationApiDelegate;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -25,7 +23,6 @@ import org.springframework.util.FileCopyUtils;
 @Slf4j
 @Service
 public class VerificationService implements VerificationApiDelegate {
-  // TODO: 18.07.2022 Need to replace mocked Data with business logic
 
   @Autowired
   private eu.gaiax.difs.fc.core.service.verification.VerificationService verificationService;
@@ -51,15 +48,8 @@ public class VerificationService implements VerificationApiDelegate {
           String body) {
     log.debug("verify.enter; got body of length: {}; verify semantics: {}, schema: {}, signatures: {}", 
             body.length(), verifySemantics, verifySchema, verifySignatures);
-    VerificationResult verificationResult;
-    try {
-    //VerificationResult 
-    verificationResult = verificationService.verifySelfDescription(new ContentAccessorDirect(body), 
+    VerificationResult verificationResult = verificationService.verifySelfDescription(new ContentAccessorDirect(body), 
             verifySemantics, verifySchema, verifySignatures);
-    } catch (Exception ex) {
-        ex.printStackTrace();
-        throw ex;
-    }
     log.debug("verify.exit; returning result: {}", verificationResult);
     return ResponseEntity.ok(verificationResult);
 

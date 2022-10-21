@@ -1,6 +1,5 @@
 package eu.gaiax.difs.fc.server.controller;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +17,11 @@ import org.springframework.web.context.WebApplicationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
-import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
-import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -91,6 +87,7 @@ public class VerificationControllerTest {
     public void verifyNoProofsNoSignsShouldReturnSuccessResponse() throws Exception {
         String json = getMockFileDataAsString("participant_without_proofs.json");
         mockMvc.perform(MockMvcRequestBuilders.post("/verification")
+               .queryParam("verifySemantics", "false")
                .queryParam("verifySignatures", "false")
                .contentType(MediaType.APPLICATION_JSON)
                .accept(MediaType.APPLICATION_JSON)
@@ -101,11 +98,15 @@ public class VerificationControllerTest {
     @Test
     public void verifySDNoCSShouldReturnClientError() throws Exception {
         String json = getMockFileDataAsString("sd-without-credential-subject.json");
-        mockMvc.perform(MockMvcRequestBuilders.post("/verification")
+        String response = mockMvc.perform(MockMvcRequestBuilders.post("/verification")
                .contentType(MediaType.APPLICATION_JSON)
                .accept(MediaType.APPLICATION_JSON)
                .content(json))
-               .andExpect(status().isBadRequest());
+               .andExpect(status().isBadRequest())
+               .andReturn()
+               .getResponse()
+               .getContentAsString();
+        System.out.println("response: " + response);
     }
 
     @Test
