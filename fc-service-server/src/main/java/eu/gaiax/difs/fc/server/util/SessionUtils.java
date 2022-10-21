@@ -1,15 +1,14 @@
 package eu.gaiax.difs.fc.server.util;
 
+import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
+
 import java.util.Collection;
-import javax.servlet.http.HttpServletRequest;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
-import org.keycloak.enums.TokenStore;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 
 /**
  * Utility class with static methods for getting data from the active user session.
@@ -34,7 +33,6 @@ public class SessionUtils {
   /**
    * Public static method to get User ID from the active user session.
    *
-   *
    * @return String user Id.
    */
   public static String getSessionUserId() {
@@ -48,7 +46,7 @@ public class SessionUtils {
   }
 
   /**
-   * Checks user session role.
+   * Public static method to check if a user has a role.
    *
    * @param role role to be checked.
    * @return boolean status.
@@ -56,14 +54,22 @@ public class SessionUtils {
   public static boolean sessionUserHasRole(String role) {
     Collection<GrantedAuthority> authorities = (Collection<GrantedAuthority>)
         SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-    boolean hasRole = false;
-    for (GrantedAuthority authority : authorities) {
-      hasRole = authority.getAuthority().equals(role);
-      if (hasRole) {
-        break;
-      }
+    return authorities.stream().anyMatch(authority -> authority.getAuthority().equals(role));
+  }
+
+  /**
+   * Internal service method for checking user access to a particular Participant.
+   *
+   * @param participantId The Participant issuer of SD (required).
+   */
+  public static void checkParticipantAccess(String participantId) {
+    String sessionParticipantId = SessionUtils.getSessionParticipantId();
+    if (!SessionUtils.sessionUserHasRole(CATALOGUE_ADMIN_ROLE_WITH_PREFIX) && (Objects.isNull(participantId)
+        || Objects.isNull(sessionParticipantId) || !participantId.equals(sessionParticipantId))) {
+      log.debug("checkParticipantAccess; The user does not have access to the specified participant."
+          + " User incoming participant id = {}, session participant id = {}.", sessionParticipantId, participantId);
+      throw new AccessDeniedException("The user does not have access to the specified participant.");
     }
-    return hasRole;
   }
 
   /**
@@ -75,5 +81,4 @@ public class SessionUtils {
     SecurityContextHolder.clearContext();
     log.debug("logoutSessionUser.exit;");
   }
-
 }

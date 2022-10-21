@@ -1,7 +1,7 @@
 package eu.gaiax.difs.fc.server.service;
 
 import static eu.gaiax.difs.fc.server.util.SelfDescriptionHelper.parseTimeRange;
-import static eu.gaiax.difs.fc.server.util.SessionUtils.getSessionParticipantId;
+import static eu.gaiax.difs.fc.server.util.SessionUtils.checkParticipantAccess;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionResult;
@@ -17,6 +17,7 @@ import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate;
+import eu.gaiax.difs.fc.server.util.SessionUtils;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Arrays;
@@ -30,11 +31,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
 
 /**
  * Implementation of the {@link eu.gaiax.difs.fc.server.generated.controller.SelfDescriptionsApiDelegate} interface.
@@ -226,22 +225,6 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     return new ResponseEntity<>(sdMetadata, HttpStatus.OK);
   }
 
-  /**
-   * Internal service method for checking user access to a particular Participant.
-   *
-   * @param sdIssuer The Participant issuer of SD (required).
-   */
-  // TODO: 24.08.2022 It is required to rewrite the logic when the SD parsing methods are ready.
-  // does it still requires rewrite?!
-  private void checkParticipantAccess(String sdIssuer) {
-    String sessionParticipantId = getSessionParticipantId();
-    if (Objects.isNull(sdIssuer) || Objects.isNull(sessionParticipantId) || !sdIssuer.equals(sessionParticipantId)) {
-      log.debug("checkParticipantAccess; The user does not have access to the specified participant."
-          + " User participant id = {}, self-description participant id = {}.", sessionParticipantId, sdIssuer);
-      throw new AccessDeniedException("The user does not have access to the specified participant.");
-    }
-  }
-
   private boolean isNotNullObjects(Object... objs) {
     return Arrays.stream(objs).anyMatch(x -> !Objects.isNull(x));
   }
@@ -251,11 +234,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     SdFilter filterParams = new SdFilter();
     filterParams.setIds(ids);
     filterParams.setHashes(hashes);
-    if (statuses == null) {
-        filterParams.setStatuses(List.of(SelfDescriptionStatus.ACTIVE));
-    } else {
-        filterParams.setStatuses(statuses);
-    }
+    filterParams.setStatuses(Objects.requireNonNullElseGet(statuses, () -> List.of(SelfDescriptionStatus.ACTIVE)));
     filterParams.setIssuers(issuers);
     filterParams.setValidators(validators);
     if (uploadTr != null) {

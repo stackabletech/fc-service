@@ -1,8 +1,10 @@
 package eu.gaiax.difs.fc.server.controller;
 
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
 import static eu.gaiax.difs.fc.server.helper.UserServiceHelper.getAllRoles;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.TestCommonConstants.SD_ADMIN_ROLE_WITH_PREFIX;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
@@ -100,8 +102,6 @@ import org.springframework.web.context.WebApplicationContext;
 //@Transactional
 //@DirtiesContext
 public class ParticipantsControllerTest {
-    private final String CATALOGUE_ADMIN_ROLE_WITH_PREFIX = "ROLE_" + CATALOGUE_ADMIN_ROLE;
-
     @Autowired
     private WebApplicationContext context;
     @Autowired
@@ -180,8 +180,8 @@ public class ParticipantsControllerTest {
 
         String response = mockMvc
             .perform(MockMvcRequestBuilders.post("/participants")
-            .contentType("application/json")
-            .content(json))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -214,7 +214,7 @@ public class ParticipantsControllerTest {
 
         mockMvc
             .perform(MockMvcRequestBuilders.post("/participants")
-                .contentType("application/json")
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
             .andExpect(status().isConflict());
     }
@@ -231,6 +231,15 @@ public class ParticipantsControllerTest {
             .perform(MockMvcRequestBuilders.get("/participants/{participantId}", part.getId())
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(authorities = SD_ADMIN_ROLE_WITH_PREFIX)
+    public void getParticipantsShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.get("/participants")
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isForbidden());
     }
 
     @Test
@@ -314,6 +323,16 @@ public class ParticipantsControllerTest {
     }
 
     @Test
+    @WithMockUser(authorities = SD_ADMIN_ROLE_WITH_PREFIX)
+    public void addParticipantShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.post("/participants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     @Order(25)
     public void addParticipantFailWithSameSDShouldReturnConflictFromKeyCloakWithoutDBStore() throws Exception {
@@ -324,7 +343,7 @@ public class ParticipantsControllerTest {
 
          mockMvc
             .perform(MockMvcRequestBuilders.post("/participants")
-                .contentType("application/json")
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
             .andExpect(status().isConflict());
 
@@ -349,7 +368,7 @@ public class ParticipantsControllerTest {
 
         mockMvc
             .perform(MockMvcRequestBuilders.post("/participants")
-                .contentType("application/json")
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
             .andExpect(status().is5xxServerError());
 
@@ -398,6 +417,18 @@ public class ParticipantsControllerTest {
     }
 
     @Test
+    @WithMockJwtAuth(authorities = {"ROLE_" + PARTICIPANT_ADMIN_ROLE},
+        claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
+            {@StringClaim(name = "participant_id", value = "wrongId")})))
+    public void updateParticipantShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.put("/participants/{participantId}", "123")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
             {@StringClaim(name = "participant_id", value = "did:example:issuer")})))
@@ -425,7 +456,7 @@ public class ParticipantsControllerTest {
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
-            {@StringClaim(name = "participant_id", value = "did:example:new-issuer")}))) 
+            {@StringClaim(name = "participant_id", value = "did:example:new-issuer")})))
     @Order(30)
     public void updateParticipantFailWithKeycloakErrorShouldReturnErrorWithoutDBStore() throws Exception {
 
@@ -460,6 +491,18 @@ public class ParticipantsControllerTest {
 
         mockMvc
             .perform(MockMvcRequestBuilders.delete("/participants/{participantId}", part.getId()))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockJwtAuth(authorities = {"ROLE_" + PARTICIPANT_ADMIN_ROLE},
+        claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
+            {@StringClaim(name = "participant_id", value = "wrongId")})))
+    public void deleteParticipantShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.delete("/participants/{participantId}","123")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE)))
             .andExpect(status().isForbidden());
     }
 
