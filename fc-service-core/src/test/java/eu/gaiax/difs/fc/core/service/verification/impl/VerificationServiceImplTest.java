@@ -1,6 +1,7 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
+import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.*;
 import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
@@ -66,7 +67,7 @@ public class VerificationServiceImplTest {
     void invalidSyntax_MissingQuote() {
         String path = "VerificationService/syntax/missingQuote.jsonld";
 
-        Exception ex = assertThrowsExactly(VerificationException.class, () ->
+        Exception ex = assertThrowsExactly(ClientException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
         assertTrue(ex.getMessage().startsWith("Syntactic error: "));
         assertNotNull(ex.getCause());
