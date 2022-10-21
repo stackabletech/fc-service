@@ -34,8 +34,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 public class SecurityConfig {
   private static final ObjectMapper mapper = new ObjectMapper();
 
-  private static final Error FORBIDDEN_ERROR = new Error("forbidden_error",
-      "User does not have permission to execute this request.");
+  private static final String COMMON_FORBIDDEN_ERROR_MESSAGE = "User does not have permission to execute this request.";
 
   @Value("${keycloak.resource}")
   private String resourceId;
@@ -58,8 +57,7 @@ public class SecurityConfig {
           .antMatchers(HttpMethod.POST, "/schemas").hasRole(CATALOGUE_ADMIN_ROLE)
           .antMatchers(HttpMethod.DELETE, "/schemas/**").hasRole(CATALOGUE_ADMIN_ROLE)
           .antMatchers(HttpMethod.PUT, "/schemas").hasRole(CATALOGUE_ADMIN_ROLE)
-          .antMatchers(HttpMethod.GET, "/schemas", "/schemas/**")
-          .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
+          .antMatchers(HttpMethod.GET, "/schemas", "/schemas/**").authenticated()
 
           // Query APIs
           .antMatchers("/query").permitAll()
@@ -69,8 +67,7 @@ public class SecurityConfig {
           
           // Self-Description APIs
           .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()
-          .antMatchers(HttpMethod.GET, "/self-descriptions/{self_description_hash}")
-          .authenticated()
+          .antMatchers(HttpMethod.GET, "/self-descriptions/{self_description_hash}").authenticated()
           .antMatchers(HttpMethod.POST, "/self-descriptions")
           .hasAnyRole(CATALOGUE_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
           .antMatchers(HttpMethod.DELETE, "/self-descriptions/{self_description_hash}")
@@ -80,14 +77,17 @@ public class SecurityConfig {
 
           // Participants API
           .antMatchers(HttpMethod.POST, "/participants").hasRole(CATALOGUE_ADMIN_ROLE)
-          .antMatchers(HttpMethod.GET, "/participants")
-              .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
-          .antMatchers("/participants/*").hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
+          .antMatchers(HttpMethod.GET, "/participants").hasAnyRole(CATALOGUE_ADMIN_ROLE)
+          .antMatchers(HttpMethod.PUT, "/participants/*").hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
+          .antMatchers(HttpMethod.DELETE, "/participants/*").hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
+          .antMatchers(HttpMethod.GET, "/participants/*")
+            .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
           .antMatchers(HttpMethod.GET, "/participants/*/users")
-              .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
+            .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
 
           // User APIs
-          .antMatchers("/users", "users/**")
+          .antMatchers(HttpMethod.GET, "/users").hasAnyRole(CATALOGUE_ADMIN_ROLE)
+          .antMatchers("/users", "/users/**")
               .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
 
           // Roles APIs
@@ -117,8 +117,11 @@ public class SecurityConfig {
             AccessDeniedException accessDeniedException) -> {
       response.setStatus(HttpStatus.FORBIDDEN.value());
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+      Error forbiddenError =
+          new Error("forbidden_error", accessDeniedException.getMessage().contains("Access is denied")
+              ? accessDeniedException.getMessage() : COMMON_FORBIDDEN_ERROR_MESSAGE);
       ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
-      response.getWriter().write(ow.writeValueAsString(FORBIDDEN_ERROR));
+      response.getWriter().write(ow.writeValueAsString(forbiddenError));
     };
   }
 }

@@ -49,6 +49,9 @@
                                     <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Welcome User</a>
                                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                         <a class="dropdown-item" href="#!" onclick="logout()">Logout</a>
+                                        <form action="logout" method="post" id="LogoutForm" hidden>
+                                            <input type="submit" name="Logout"  value="Logout" />
+                                        </form>
                                     </div>
                                 </li>
                             </ul>
@@ -72,7 +75,7 @@
         <script src="js/scripts.js"></script>
          <script>
            function loadPage(page,name){
-             console.log(page);
+             //console.log(page);
              $("#nav-placeholder").load(page);
               $("#pageTask").text(name+" Operation");
            };
@@ -80,10 +83,12 @@
            function logout(){
 
                 $.ajax('/ssn', {
-                    type: 'POST',  // http method
+                    type: 'DELETE',  // http method
                     success: function (data, status, xhr) {
-                        console.log("post delete success");
-                        window.location.url="/index.html";
+                        //console.log("post logout success");
+
+                        //After deleting user session from keyclok now logouting spring context.
+                        $( "#LogoutForm" ).submit();
 
                     },
                     error: function (jqXhr, textStatus, errorMessage) {

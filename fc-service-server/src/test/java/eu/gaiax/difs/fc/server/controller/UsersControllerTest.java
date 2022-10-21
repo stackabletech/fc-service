@@ -4,9 +4,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.toUserRepo;
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.SD_ADMIN_ROLE;
-import static eu.gaiax.difs.fc.server.util.TestCommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
+import static eu.gaiax.difs.fc.server.util.TestCommonConstants.SD_ADMIN_ROLE_WITH_PREFIX;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.DEFAULT_PARTICIPANT_ID;
 import static eu.gaiax.difs.fc.server.helper.UserServiceHelper.getAllRoles;
 import static org.apache.http.HttpStatus.SC_CREATED;
@@ -171,6 +172,17 @@ public class UsersControllerTest {
         assertThatResponseUserHasValidData(user, profile);
     }
 
+
+    @Test
+    @WithMockUser(authorities = SD_ADMIN_ROLE_WITH_PREFIX)
+    public void addUserShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.post("/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new User())))
+            .andExpect(status().isForbidden());
+    }
+
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void addDuplicateSDReturnConflictWithKeycloak() throws Exception {
@@ -209,6 +221,16 @@ public class UsersControllerTest {
     }
 
     @Test
+    @WithMockUser(authorities = SD_ADMIN_ROLE_WITH_PREFIX)
+    public void getUserShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.get("/users/{userId}", "123")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new User())))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void wrongUserShouldReturnNotFoundResponse() throws Exception {
         setupKeycloak(HttpStatus.SC_NOT_FOUND, null, "123");
@@ -241,6 +263,15 @@ public class UsersControllerTest {
     }
 
     @Test
+    @WithMockUser(authorities = SD_ADMIN_ROLE_WITH_PREFIX)
+    public void getUsersShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.get("/users")
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void deleteUserShouldReturnSuccessResponse() throws Exception {
         User user = getTestUser("name5", "surname5");
@@ -255,6 +286,32 @@ public class UsersControllerTest {
             .getContentAsString();
         UserProfile profile = objectMapper.readValue(response, UserProfile.class);
         assertThatResponseUserHasValidData(user, profile);
+    }
+
+    @Test
+    @WithMockUser(authorities = {SD_ADMIN_ROLE_WITH_PREFIX})
+    public void deleteUserShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.delete("/users/{userId}", "123")
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
+    public void updateNonexistentUserShouldReturnNotFoundResponse() throws Exception {
+        setupKeycloak(HttpStatus.SC_NOT_FOUND, null, "123");
+
+        String result = mockMvc
+            .perform(MockMvcRequestBuilders.delete("/users/{userId}", "123"))
+            .andExpect(status().isNotFound())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Error error = objectMapper.readValue(result, Error.class);
+        assertNotNull(error);
+        assertEquals("User with id 123 not found", error.getMessage());
     }
 
     @Test
@@ -294,6 +351,16 @@ public class UsersControllerTest {
     }
 
     @Test
+    @WithMockUser(authorities = {SD_ADMIN_ROLE_WITH_PREFIX})
+    public void updateUserShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.put("/users/{userId}", "123")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new User())))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void updateUserRolesShouldReturnSuccessResponse() throws Exception {
         User user = getTestUser("name7", "surname7");
@@ -314,6 +381,23 @@ public class UsersControllerTest {
         UserProfile profile = objectMapper.readValue(response, UserProfile.class);
         assertEquals(2, profile.getRoleIds().size());
         assertTrue(profile.getRoleIds().containsAll(List.of(PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE)));
+    }
+
+    @Test
+    @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
+    public void updateNonexistentUserRolesShouldReturnNotFoundResponse() throws Exception {
+        setupKeycloak(HttpStatus.SC_NOT_FOUND, null, "123");
+
+        String result = mockMvc
+            .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", "123")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE))))
+            .andExpect(status().isNotFound())
+            .andReturn().getResponse().getContentAsString();
+
+        Error error = objectMapper.readValue(result, Error.class);
+        assertNotNull(error);
+        assertEquals("User with id 123 not found", error.getMessage());
     }
 
     @Test
@@ -397,7 +481,7 @@ public class UsersControllerTest {
             when(usersResource.delete(any())).thenThrow(new NotFoundException("User with id " + id + " not found"));
             when(usersResource.list(any(), any())).thenReturn(List.of());
             when(usersResource.search(any())).thenReturn(List.of());
-            when(usersResource.get(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
+            when(usersResource.get(any())).thenThrow(new NotFoundException("User with id " + id + " not found"));
         } else {
             when(usersResource.create(any())).thenReturn(Response.status(SC_CREATED).entity(user).build());
             when(usersResource.delete(any())).thenReturn(Response.status(status).build());

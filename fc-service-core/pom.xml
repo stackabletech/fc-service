@@ -77,13 +77,13 @@
             <artifactId>jsonld-java</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.neo4j.driver</groupId>
-            <artifactId>neo4j-java-driver-spring-boot-starter</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver-spring-boot-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
@@ -101,10 +101,6 @@
         <dependency>
             <groupId>org.topbraid</groupId>
             <artifactId>shacl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-validator</groupId>
-            <artifactId>commons-validator</artifactId>
         </dependency>
         <dependency>
             <groupId>com.danubetech</groupId>

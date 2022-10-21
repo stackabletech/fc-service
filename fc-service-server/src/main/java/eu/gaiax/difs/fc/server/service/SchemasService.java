@@ -54,8 +54,6 @@ public class SchemasService implements SchemasApiDelegate {
   /**
    * Service method for GET /schemas : Get the full list of ontologies, shapes and vocabularies.
    *
-   * @param offset The number of items to skip before starting to collect the result set. (optional, default to 0)
-   * @param limit The number of items to return. (optional, default to 100)
    * @return References to ontologies, shapes and vocabularies. (status code 200)
    *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
    *         or Forbidden. The user does not have the permission to execute this request. (status code 403)
@@ -63,11 +61,8 @@ public class SchemasService implements SchemasApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<OntologySchema> getSchemas(Integer offset, Integer limit) {
-    log.debug("getSchemas.enter; got offset {}, limit {}", offset, limit);
-
-    // TODO: 01.09.2022 How to handle offset and limit?
-    //  Perhaps it is worth passing them to the schema store interface. Requires discussion.
+  public ResponseEntity<OntologySchema> getSchemas() {
+    log.debug("getSchemas.enter");
     Map<SchemaType, List<String>> schemaListMap = schemaStore.getSchemaList();
 
     OntologySchema schema = new OntologySchema();

@@ -1,18 +1,22 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
-import eu.gaiax.difs.fc.core.exception.QueryException;
 import eu.gaiax.difs.fc.core.exception.ServerException;
-import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
-import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import eu.gaiax.difs.fc.core.exception.QueryException;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.runners.MethodSorters;
-import org.neo4j.graphdb.Result;
-import org.neo4j.graphdb.Transaction;
 import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -24,12 +28,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.SdClaim;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 public class Neo4jGraphStoreTest {
     @Autowired
     private Neo4j embeddedDatabaseServer;
-
+    
     @Autowired
     private Neo4jGraphStore graphGaia;
 
@@ -84,8 +84,8 @@ public class Neo4jGraphStoreTest {
     /**
      * Given set of credentials connect to graph and upload self description.
      * Instantiate list of claims with subject predicate and object in N-triples
-     * form along with literals and upload to graph. Verify if the claim has
-     * been uploaded using query service
+     * form along with literals and upload to graph. Verify if the claim has been uploaded using
+     * query service
      */
 
     @Test
@@ -108,127 +108,19 @@ public class Neo4jGraphStoreTest {
         Assertions.assertEquals(resultListDelta, responseDelta);
     }
 
-
-    /**
-     * Given set of credentials connect to graph and upload self description.
-     * Instantiate list of claims with subject predicate and object in N-triples
-     * form along with literals and upload to graph. Delete claims by credential
-     * subject and Verify if the claim has been deleted using query service
-     */
-
-    @Test
-    void testDeleteClaims() throws Exception {
-        List<SdClaim> sdClaimElasticSearch = new ArrayList<>();
-        SdClaim ElasticSearchTypeClaim = new SdClaim(
-                "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
-                "<http://w3.org/1999/02/22-rdf-syntax-ns#type>",
-                "<http://w3id.org/gaia-x/service#ServiceOffering>"
-        );
-        sdClaimElasticSearch.add(ElasticSearchTypeClaim);
-        SdClaim ElasticSearchFactClaim = new SdClaim(
-                "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
-                "<http://w3id.org/gaia-x/service#providedBy>",
-                "<https://delta-dao.com/.well-known/participant.json>"
-        );
-        sdClaimElasticSearch.add(ElasticSearchFactClaim);
-        List<SdClaim> sdClaimParticipant = new ArrayList<>();
-        SdClaim participantType = new SdClaim(
-                "<https://delta-dao.com/.well-known/participant.json>",
-                "<http://w3.org/1999/02/22-rdf-syntax-ns#type>",
-                "<http://w3id.org/gaia-x/participant#LegalPerson>"
-        );
-        sdClaimParticipant.add(participantType);
-        graphGaia.addClaims(sdClaimElasticSearch, "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
-        graphGaia.addClaims(sdClaimParticipant, "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
-        graphGaia.deleteClaims("http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
-        graphGaia.deleteClaims("https://delta-dao.com/.well-known/participant.json");
-        OpenCypherQuery queryDelta = new OpenCypherQuery(
-                "MATCH (n{uri:'https://delta-dao.com/.well-known/participant.json'}) RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
-        List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
-        Assertions.assertTrue(responseDelta.isEmpty());
-    }
-
-
     /**
      * Given set of credentials connect to graph and upload self description.
      * Instantiate list of claims with subject predicate and object in N-triples
      * form along with literals and upload to graph.
-     * <p>
-     * To be able to reference sets of claims (i.e. claim triples) that belong
-     * to the same credential subject, we mimic separate graphs. The graphs here
-     * are just attributes that are added to the nodes.
      */
     @Test
     void testAddClaims() throws Exception {
-        String credentialSubject = "<http://example.org/test-issuer2>";
-        List<SdClaim> sdClaimList = Arrays.asList(
-                new SdClaim(
-                        credentialSubject,
-                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
-                        "<http://w3id.org/gaia-x/participant#Participant>"
-                ),
-                new SdClaim(
-                        credentialSubject,
-                        "<http://w3id.org/gaia-x/participant#hasMemberParticipant>",
-                        "<https://example.org/member-participant23>"
-                )
-        );
-
-        graphGaia.addClaims(sdClaimList, credentialSubject);
-
-        /*
-         * Adding those claim triples to the graph DB should result in the
-         * following triples stored (given that <http://ex.com/claimsGraphUri>
-         * is used to assign mimicked graphs to RDF resources):
-         *
-         * <http://example.org/test-issuer2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://w3id.org/gaia-x/participant#Participant> .
-         * <http://example.org/test-issuer2> <http://ex.com/claimsGraphUri> "http://example.org/test-issuer2" .  ##
-         * <http://example.org/test-issuer2> <http://w3id.org/gaia-x/participant#hasMemberParticipant> <https://example.org/member-participant23> .
-         * <https://example.org/member-participant23> <http://ex.com/claimsGraphUri> "http://example.org/test-issuer2" .  ##
-         * <http://example.org/test-issuer2> <http://w3id.org/gaia-x/service#hasLegallyBindingAddress> _:b52 .
-         * _:b52 <http://ex.com/claimsGraphUri> "http://example.org/test-issuer2" .  ##
-         * _:b52 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2006/vcard/ns#Address> .
-         * _:b52 <http://www.w3.org/2006/vcard/ns#street-address> "123 Example Road" .
-         *
-         * Triples marked with ## should be added by the graph DB
-         * implementation. Those additions concern triples with object
-         * properties. Here the triple subject and the triple object
-         * gets a graph string assigned. For all other triples the subject gets
-         * the graph assignment.
-         */
-
-        // add a second set of claims with a different credential subject/
-        // mimicked graph
-        String credentialSubject2 = "<http://example.org/test-issuer2>";
-        List<SdClaim> sdClaimList2 = Arrays.asList(
-                new SdClaim(
-                        credentialSubject2,
-                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
-                        "<http://w3id.org/gaia-x/participant#Participant>"
-                ),
-                new SdClaim(
-                        credentialSubject2,
-                        "<http://w3id.org/gaia-x/participant#hasMemberParticipant>",
-                        "<https://example.org/member-participant23>"
-                )
-        );
-
-        // Queries are run on the underlying Neo4J DB as the graphdb should
-        // make the additional graphUri attributes invisible
-        try (Transaction tx = embeddedDatabaseServer.defaultDatabaseService().beginTx()) {
-
-            Result res = tx.execute(
-                    "MATCH (n {graphURI: '" + credentialSubject.substring(1, credentialSubject.length() - 1) + "'}) " +
-                            "RETURN count(n)"
-            );
-
-            // TODO: get result and check count
-
-            // TODO: add further queries
-        }
-
-        // TODO: Clean up!
-        Assertions.assertTrue(true);
+        List<SdClaim> sdClaimList = new ArrayList<>();
+        SdClaim sdClaim = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/service#ServiceOffering>");
+        sdClaimList.add(sdClaim);
+        SdClaim sdClaimSecond = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>", "<http://w3id.org/gaia-x/service#providedBy>", "<https://delta-dao.com/.well-known/participant.json>");
+        sdClaimList.add(sdClaimSecond);
+        graphGaia.addClaims(sdClaimList, "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
     }
 
     /**
@@ -290,8 +182,8 @@ public class Neo4jGraphStoreTest {
         // and the correct credential subject
         Assertions.assertDoesNotThrow(
                 () -> graphGaia.addClaims(
-                        Collections.singletonList(syntacticallyCorrectClaim),
-                        credentialSubject
+                    Collections.singletonList(syntacticallyCorrectClaim),
+                    credentialSubject
                 )
         );
 
