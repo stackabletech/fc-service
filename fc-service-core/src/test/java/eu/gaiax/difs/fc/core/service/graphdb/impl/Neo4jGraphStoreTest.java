@@ -382,7 +382,7 @@ public class Neo4jGraphStoreTest {
     }
 
     @Test
-    @Disabled("doesn't work any more..")
+    @Disabled("It is necessary to check and fix this test, it does not always work")
     void testQueryDataTimeout() {
         int acceptableDuration = graphGaia.queryTimeoutInSeconds * 1000;
         int tooLongDuration = (graphGaia.queryTimeoutInSeconds + 1) * 1000;  // a second more than acceptable

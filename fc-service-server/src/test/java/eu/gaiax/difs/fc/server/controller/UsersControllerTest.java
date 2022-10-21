@@ -4,9 +4,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.toUserRepo;
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.SD_ADMIN_ROLE;
-import static eu.gaiax.difs.fc.server.util.TestCommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
+import static eu.gaiax.difs.fc.server.util.TestCommonConstants.SD_ADMIN_ROLE_WITH_PREFIX;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.DEFAULT_PARTICIPANT_ID;
 import static eu.gaiax.difs.fc.server.helper.UserServiceHelper.getAllRoles;
 import static org.apache.http.HttpStatus.SC_CREATED;
@@ -171,6 +172,17 @@ public class UsersControllerTest {
         assertThatResponseUserHasValidData(user, profile);
     }
 
+
+    @Test
+    @WithMockUser(authorities = SD_ADMIN_ROLE_WITH_PREFIX)
+    public void addUserShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.post("/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new User())))
+            .andExpect(status().isForbidden());
+    }
+
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void addDuplicateSDReturnConflictWithKeycloak() throws Exception {
@@ -209,6 +221,16 @@ public class UsersControllerTest {
     }
 
     @Test
+    @WithMockUser(authorities = SD_ADMIN_ROLE_WITH_PREFIX)
+    public void getUserShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.get("/users/{userId}", "123")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new User())))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void wrongUserShouldReturnNotFoundResponse() throws Exception {
         setupKeycloak(HttpStatus.SC_NOT_FOUND, null, "123");
@@ -241,6 +263,15 @@ public class UsersControllerTest {
     }
 
     @Test
+    @WithMockUser(authorities = SD_ADMIN_ROLE_WITH_PREFIX)
+    public void getUsersShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.get("/users")
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void deleteUserShouldReturnSuccessResponse() throws Exception {
         User user = getTestUser("name5", "surname5");
@@ -255,6 +286,15 @@ public class UsersControllerTest {
             .getContentAsString();
         UserProfile profile = objectMapper.readValue(response, UserProfile.class);
         assertThatResponseUserHasValidData(user, profile);
+    }
+
+    @Test
+    @WithMockUser(authorities = {SD_ADMIN_ROLE_WITH_PREFIX})
+    public void deleteUserShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.delete("/users/{userId}", "123")
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isForbidden());
     }
 
     @Test
@@ -308,6 +348,16 @@ public class UsersControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(user)))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(authorities = {SD_ADMIN_ROLE_WITH_PREFIX})
+    public void updateUserShouldReturnForbiddenResponse() throws Exception {
+        mockMvc
+            .perform(MockMvcRequestBuilders.put("/users/{userId}", "123")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new User())))
+            .andExpect(status().isForbidden());
     }
 
     @Test

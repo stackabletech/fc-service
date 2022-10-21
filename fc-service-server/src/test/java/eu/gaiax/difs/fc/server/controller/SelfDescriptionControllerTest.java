@@ -1,7 +1,8 @@
 package eu.gaiax.difs.fc.server.controller;
 
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
-import static eu.gaiax.difs.fc.server.util.TestCommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
+import static eu.gaiax.difs.fc.server.util.TestCommonConstants.SD_ADMIN_ROLE_WITH_PREFIX;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -24,7 +25,6 @@ import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
-import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.core.util.HashUtils;
@@ -45,11 +45,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import javax.transaction.Transactional;
-
-import org.junit.jupiter.api.*;
-
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -264,7 +259,7 @@ public class SelfDescriptionControllerTest {
     }
 
     @Test
-    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+    @WithMockJwtAuth(authorities = SD_ADMIN_ROLE_WITH_PREFIX, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = "")})))
     public void deleteSdWithoutIssuerReturnForbiddenResponse() throws Exception {
       sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
@@ -323,7 +318,10 @@ public class SelfDescriptionControllerTest {
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
-    public void addSDWithoutIssuerReturnBadRequestResponse() throws Exception {
+    public void addSDWithoutIssuerReturnUnprocessableEntity() throws Exception {
+//    @WithMockJwtAuth(authorities = SD_ADMIN_ROLE_WITH_PREFIX, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+//        @StringClaim(name = "participant_id", value = "")})))
+//    public void addSDWithoutIssuerReturnForbiddenResponse() throws Exception {
       mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
               .content(getMockFileDataAsString("sd-without-issuer.json"))
               .with(csrf())
