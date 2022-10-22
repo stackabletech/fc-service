@@ -1,9 +1,15 @@
 package eu.gaiax.difs.fc.server.service;
 
+import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
+import static eu.gaiax.difs.fc.server.util.SessionUtils.checkParticipantAccess;
+import static eu.gaiax.difs.fc.server.util.SessionUtils.sessionUserHasRole;
+
 import eu.gaiax.difs.fc.api.generated.model.User;
 import eu.gaiax.difs.fc.api.generated.model.UserProfile;
 import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
 import eu.gaiax.difs.fc.core.dao.UserDao;
+import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.server.generated.controller.UsersApiDelegate;
 import java.net.URI;
@@ -11,7 +17,9 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 /**
  * Service for the crud operation of the user . Implementation of the {@link UsersApiDelegate }.
@@ -37,6 +45,8 @@ public class UsersService implements UsersApiDelegate {
   @Override
   public ResponseEntity<UserProfile> addUser(User user) {
     log.debug("addUser.enter; got user: {}", user);
+    if(ObjectUtils.isEmpty(user)) throw new ClientException("User cannot be null!");
+    checkParticipantAccess(user.getParticipantId());
     UserProfile profile = userDao.create(user);
     log.debug("addUser.exit; returning: {}", profile);
     return ResponseEntity.created(URI.create("/users/" + profile.getId())).body(profile);
@@ -57,7 +67,9 @@ public class UsersService implements UsersApiDelegate {
   @Override
   public ResponseEntity<UserProfile> updateUser(String userId, User user) {
     log.debug("updateUser.enter; got userId: {}", userId);
-    UserProfile profile = userDao.update(userId, user);
+    UserProfile profile = userDao.select(userId);
+    checkParticipantAccess(profile.getParticipantId());
+    profile = userDao.update(userId, user);
     log.debug("updateUser.exit; returning: {}", profile);
     return ResponseEntity.ok(profile);
   }
@@ -77,7 +89,9 @@ public class UsersService implements UsersApiDelegate {
   @Override
   public ResponseEntity<UserProfile> deleteUser(String userId) {
     log.debug("deleteUser.enter; got userId: {}", userId);
-    UserProfile profile = userDao.delete(userId);
+    UserProfile profile = userDao.select(userId);
+    checkParticipantAccess(profile.getParticipantId());
+    profile = userDao.delete(userId);
     log.debug("deleteUser.exit; returning: {}", profile);
     return ResponseEntity.ok(profile);
   }
@@ -97,6 +111,7 @@ public class UsersService implements UsersApiDelegate {
   public ResponseEntity<UserProfile> getUser(String userId) {
     log.debug("getUser.enter; got userId: {}", userId);
     UserProfile profile = userDao.select(userId);
+    checkParticipantAccess(profile.getParticipantId());
     log.debug("getUser.exit; returning: {}", profile);
     return ResponseEntity.ok(profile);
   }
@@ -135,6 +150,7 @@ public class UsersService implements UsersApiDelegate {
   public ResponseEntity<List<String>> getUserRoles(String userId) {
     log.debug("getUserRoles.enter; got userId: {}", userId);
     UserProfile profile = userDao.select(userId);
+    checkParticipantAccess(profile.getParticipantId());
     log.debug("getUserRoles.exit; returning: {}", profile.getRoleIds());
     return ResponseEntity.ok(profile.getRoleIds());
   }
@@ -154,7 +170,12 @@ public class UsersService implements UsersApiDelegate {
   @Override
   public ResponseEntity<UserProfile> updateUserRoles(String userId, List<String> roles) {
     log.debug("updateUserRoles.enter; got userId: {}, roles: {}", userId, roles);
-    UserProfile profile = userDao.updateRoles(userId, roles);
+    if (!sessionUserHasRole(CATALOGUE_ADMIN_ROLE_WITH_PREFIX) && roles.contains(CATALOGUE_ADMIN_ROLE)) {
+      throw new AccessDeniedException("The user does not have permission to add an internal role to users.");
+    }
+    UserProfile profile = userDao.select(userId);
+    checkParticipantAccess(profile.getParticipantId());
+    profile = userDao.updateRoles(userId, roles);
     log.debug("updateUserRoles.exit; returning: {}", profile);
     return ResponseEntity.ok(profile);
   }

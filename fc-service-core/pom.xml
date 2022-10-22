@@ -103,10 +103,6 @@
             <artifactId>shacl</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-validator</groupId>
-            <artifactId>commons-validator</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.danubetech</groupId>
             <artifactId>verifiable-credentials-java</artifactId>
         </dependency>
@@ -117,10 +113,6 @@
         <dependency>
             <groupId>decentralized-identity</groupId>
             <artifactId>did-common-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-validator</groupId>
-            <artifactId>commons-validator</artifactId>
         </dependency>
     </dependencies>
 

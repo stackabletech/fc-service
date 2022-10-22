@@ -275,6 +275,8 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
         .uniqueResult();
 
     final SdMetaRecord sdmRecord = new SdMetaRecord(sdMetadata);
+    // we must reset ValidatorDids in sdnRecord.. 
+    //sdmRecord.setValidatorDids(new ArrayList<>());
 
     final List<Validator> validators = verificationResult.getValidators();
     final boolean registerValidators = sdMetadata.getValidatorDids() == null || sdMetadata.getValidatorDids().isEmpty();

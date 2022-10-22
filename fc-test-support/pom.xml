@@ -47,7 +47,6 @@
         <dependency>
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver-test-harness-spring-boot-autoconfigure</artifactId>
-            <version>${neo4j-java-driver-spring-boot-starter.version}</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
@@ -58,16 +57,12 @@
             <artifactId>proc</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.neo4j.procedure</groupId>
+            <artifactId>apoc</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.neo4j.test</groupId>
             <artifactId>neo4j-harness</artifactId>
-            <version>${neo4j.test-harness.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>slf4j-nop</artifactId>
-                    <!-- Since 4.0.1 -->
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -84,10 +79,6 @@
                     <artifactId>log4j</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.neo4j.procedure</groupId>
-            <artifactId>apoc</artifactId>
         </dependency>
     </dependencies>
 </project>

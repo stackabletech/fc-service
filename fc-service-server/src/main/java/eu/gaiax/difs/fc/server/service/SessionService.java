@@ -6,6 +6,9 @@ import eu.gaiax.difs.fc.api.generated.model.Session;
 import eu.gaiax.difs.fc.core.dao.SessionDao;
 import eu.gaiax.difs.fc.server.generated.controller.SessionApiDelegate;
 
+import eu.gaiax.difs.fc.server.util.SessionUtils;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Context;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -39,13 +42,14 @@ public class SessionService implements SessionApiDelegate {
   }
   
   /**
-   * Logout for current session.
+   * DELETE /session : Logout for current session.
    */
   @Override
   public ResponseEntity<Void> logoutCurrentSession() {
     String userId = getSessionUserId();
     log.debug("logoutCurrentSession.enter; got userId: {}", userId);
     ssnDao.delete(userId);
+    SessionUtils.logoutSessionUser();
     log.debug("logoutCurrentSession.exit;");
     return ResponseEntity.ok(null);
   }

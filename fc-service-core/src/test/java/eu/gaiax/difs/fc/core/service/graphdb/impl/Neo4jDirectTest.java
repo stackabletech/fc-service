@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @EnableAutoConfiguration(exclude = {LiquibaseAutoConfiguration.class, DataSourceAutoConfiguration.class})
-@ActiveProfiles({/*"test",*/ "tests-sdstore"})
+@ActiveProfiles({"tests-sdstore"})
 @ContextConfiguration(classes = {Neo4jDirectTest.class})
 @Import(EmbeddedNeo4JConfig.class)
 public class Neo4jDirectTest {
@@ -59,11 +59,12 @@ public class Neo4jDirectTest {
     @Test
     void testDirectLoadJsonLd() throws Exception {
         //String path = "Claims-Extraction-Tests/neo4jTest.jsonld"; 
-        String path = "Claims-Extraction-Tests/participantTest.jsonld"; //providerTest.jsonld";
+        //String path = "Claims-Extraction-Tests/participantTest.jsonld"; 
+        String path = "Claims-Extraction-Tests/providerTest.jsonld";
         ContentAccessor content = getAccessor(path);
         
         try (Session session = driver.session()) {
-            String query = "CALL n10s.rdf.import.inline($payload, \"JSON-LD\", {safe: false})\n"
+            String query = "CALL n10s.rdf.import.inline($payload, \"JSON-LD\")\n"
                     + "YIELD terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo\n"
                     + "RETURN terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo";
             

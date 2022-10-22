@@ -4,12 +4,15 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 
 import eu.gaiax.difs.fc.api.generated.model.Error;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.exception.VerificationException;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -82,6 +85,18 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
   protected ResponseEntity<Error> handleRsNotFoundException(javax.ws.rs.NotFoundException exception) {
     log.info("handleRsNotFoundException; Not found error: {}", exception.getMessage()); 
     return new ResponseEntity<>(new Error("not_found_error", exception.getMessage()), NOT_FOUND);
+  }
+
+  /**
+   * Method handles the Verification Exception.
+   *
+   * @param exception Thrown Server Exception.
+   * @return The custom Federated Catalogue application error with status code 400.
+   */
+  @ExceptionHandler({VerificationException.class})
+  protected ResponseEntity<Error> handleVerificationException(VerificationException exception) {
+    log.info("handleVerificationException; Verification error: {}", exception.getMessage());
+    return new ResponseEntity<>(new Error("verification_error", exception.getMessage()), UNPROCESSABLE_ENTITY);
   }
 
 }

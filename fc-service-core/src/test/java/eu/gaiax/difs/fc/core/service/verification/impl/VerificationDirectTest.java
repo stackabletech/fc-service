@@ -1,26 +1,21 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static eu.gaiax.difs.fc.core.util.TestUtil.getAccessor;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import com.danubetech.verifiablecredentials.VerifiableCredential;
 import com.danubetech.verifiablecredentials.VerifiablePresentation;
+import com.danubetech.verifiablecredentials.validation.Validation;
 import com.github.jsonldjava.core.JsonLdOptions;
 import com.github.jsonldjava.core.JsonLdProcessor;
 import com.github.jsonldjava.utils.JsonUtils;
 
-import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
-import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -33,7 +28,7 @@ public class VerificationDirectTest {
         //String path = "Claims-Extraction-Tests/participantTest.jsonld";
         String path = "Claims-Extraction-Tests/neo4jTest.jsonld";
         //String path = "Claims-Extraction-Tests/providerTest.jsonld";
-        ContentAccessor content = getAccessor(path);
+        ContentAccessor content = getAccessor(VerificationDirectTest.class, path);
 
         // Read the file into an Object (The type of this object will be a List, Map, String, Boolean,
         // Number or null depending on the root object in the file).
@@ -54,14 +49,14 @@ public class VerificationDirectTest {
 
     @Test
     void extractClaimsDirectly() throws Exception {
-        ContentAccessor content = getAccessor("Claims-Extraction-Tests/providerTest.jsonld");
+        ContentAccessor content = getAccessor(VerificationDirectTest.class, "Claims-Extraction-Tests/providerTest.jsonld");
         VerifiablePresentation vp = VerifiablePresentation.fromJson(content.getContentAsString()
                   .replaceAll("JsonWebKey2020", "JsonWebSignature2020"));
         Map<String, Object> claims = vp.getVerifiableCredential().getCredentialSubject().getClaims();
         log.debug("provider claims: {}", claims);
         log.debug("provider RDF: {}", vp.getVerifiableCredential().getCredentialSubject().toDataset().toList());
 
-        content = getAccessor("Claims-Extraction-Tests/participantTest.jsonld");
+        content = getAccessor(VerificationDirectTest.class, "Claims-Extraction-Tests/participantTest.jsonld");
         vp = VerifiablePresentation.fromJson(content.getContentAsString()
                   .replaceAll("JsonWebKey2020", "JsonWebSignature2020"));
         claims = vp.getVerifiableCredential().getCredentialSubject().getClaims();
@@ -76,12 +71,19 @@ public class VerificationDirectTest {
         //log.debug("big participant RDF: {}", vp.getVerifiableCredential().getCredentialSubject().toDataset().toList());
     }
     
-    private static ContentAccessor getAccessor(String path) throws UnsupportedEncodingException {
-        URL url = VerificationServiceImplTest.class.getClassLoader().getResource(path);
-        String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8.name());
-        File file = new File(str);
-        ContentAccessor accessor = new ContentAccessorFile(file);
-        return accessor;
+    @Test
+    void validateVP() throws Exception {
+        //validate(VerifiableCredential verifiableCredential)
+        ContentAccessor content = getAccessor(VerificationDirectTest.class, "VerificationService/jsonld/input.vp.jsonld");
+        VerifiablePresentation vp = VerifiablePresentation.fromJson(content.getContentAsString());
+        try {
+            Validation.validate(vp);
+            Assertions.assertNotNull(vp.getVerifiableCredential());
+            Validation.validate(vp.getVerifiableCredential());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
-    
+        
 }
+ 

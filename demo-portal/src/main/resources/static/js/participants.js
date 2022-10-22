@@ -88,18 +88,18 @@ $(document).ready(function() {
                          if (check == true) {
                              //console.log("Confirm delete");
                              var data = partDataTable.row( $(this).parents('tr')).data();
-                             console.log("delete call"+JSON.stringify(data));
+                            // console.log("delete call"+JSON.stringify(data));
 
                                  $.ajax('/parts/'+data.id, {
                                     type: 'DELETE',  // http method
                                     contentType: "application/json;charset=utf-8",
                                     success: function (data, status, xhr) {
-                                        console.log("post delete success");
+                                        //console.log("post delete success");
                                         partDataTable.ajax.reload();
 
                                     },
                                     error: function (jqXhr, textStatus, errorMessage) {
-                                        console.log("post delete failure"+jqXhr);
+                                        //console.log("post delete failure"+jqXhr);
                                          alert(JSON.stringify(jqXhr));
 
                                     }
@@ -120,18 +120,18 @@ $(document).ready(function() {
                  var normalData=$("#editData").val();
                  var data=JSON.parse(normalData);
                  //console.log("data"+data);
-                 console.log("data::"+data['id']);
+                 //console.log("data::"+data['id']);
                      $.ajax('/parts/'+data['id'], {
                             type: 'PUT',  // http method
                             contentType: "application/json;charset=utf-8",
                             data: JSON.stringify(data),  // data to submit
                             success: function (data, status, xhr) {
-                             console.log("post edit success");
+                            // console.log("post edit success");
                               $('#editModal').modal('hide');
                               partDataTable.ajax.reload();
                             },
                             error: function (jqXhr, textStatus, errorMessage) {
-                             console.log("post edit failure:"+jqXhr+"textStatus:"+textStatus+"errorMessage : "+errorMessage);
+                            // console.log("post edit failure:"+jqXhr+"textStatus:"+textStatus+"errorMessage : "+errorMessage);
                              alert(JSON.stringify(jqXhr));
                             }
                      });

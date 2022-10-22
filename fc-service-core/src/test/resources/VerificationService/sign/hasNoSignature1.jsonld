@@ -1,11 +1,9 @@
 {
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
 	"@id": "http://example.edu/verifiablePresentation/self-description1",
-	"@type": [
-		"VerifiablePresentation",
-        "LegalPerson"
+	"type": [
+		"VerifiablePresentation"
 	],
-	"issuer": "https://example.edu/issuers/particiant1",
-	"issuanceDate": "2010-01-01T00:00:00Z",
 	"verifiableCredential": [{
 			"@id": "http://example.edu/verifiableCred/participantVC",
 			"type": [

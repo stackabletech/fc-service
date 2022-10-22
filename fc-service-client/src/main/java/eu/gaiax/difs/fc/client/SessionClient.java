@@ -24,5 +24,4 @@ public class SessionClient extends ServiceClient {
         doDelete(baseUrl + "/session", Map.of(), Void.class);
     }
 
-    public void logoutCurrentSession() { doPost(baseUrl + "/session/logout", Map.of(), Void.class);}
 }

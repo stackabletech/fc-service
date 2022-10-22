@@ -49,6 +49,7 @@
         <spring.version>5.3.20</spring.version>
         <spring-boot.version>2.7.0</spring-boot.version>
         <spring.security.version>5.7.2</spring.security.version>
+        <spring-cloud-contract-wiremock.version>3.1.4</spring-cloud-contract-wiremock.version>
         <security.test-addons.version>3.0.1</security.test-addons.version>
         <springdoc.version>1.6.8</springdoc.version>
         <lombok.version>1.18.22</lombok.version>
@@ -57,8 +58,6 @@
         <embedded.postgres.version>2.0.1</embedded.postgres.version>
         <embedded.postgres.test.version>2.1.2</embedded.postgres.test.version>
         <commons-lang3.version>3.9</commons-lang3.version>
-        <neo4j.harness.version>4.4.10</neo4j.harness.version>
-        <commons.validator.version>1.4.1</commons.validator.version>
         <jsonld.version>0.13.4</jsonld.version>
         <jena.version>4.4.0</jena.version>
         <topbraid.version>1.4.2</topbraid.version>
@@ -66,12 +65,12 @@
         <vc.version>1.0.0</vc.version>
         <key-format.version>1.5.0</key-format.version>
         <did.version>1.0.0</did.version>
-        <spring-cloud-contract-wiremock.version>3.1.4</spring-cloud-contract-wiremock.version>
         <jose4j.version>0.8.0</jose4j.version>
         <neo4j-java-driver-spring-boot-starter.version>4.3.6.0</neo4j-java-driver-spring-boot-starter.version>
         <neo4j.neosemantics.version>4.4.0.1</neo4j.neosemantics.version>
         <neo4j.gds.version>2.0.5</neo4j.gds.version>
         <neo4j.test-harness.version>4.4.10</neo4j.test-harness.version>
+        <neo4j.apoc.version>3.5.0.7</neo4j.apoc.version>
         <bcpkix.jdk15on.version>1.70</bcpkix.jdk15on.version>
         <!-- plugins -->
         <plugin.jib.version>3.2.1</plugin.jib.version>
@@ -220,6 +219,34 @@
                 <version>${neo4j.gds.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.neo4j.procedure</groupId>
+                <artifactId>apoc</artifactId>
+                <version>${neo4j.apoc.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.github.javafaker</groupId>
+                        <artifactId>javafaker</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.neo4j.driver</groupId>
+                <artifactId>neo4j-java-driver-test-harness-spring-boot-autoconfigure</artifactId>
+                <version>${neo4j-java-driver-spring-boot-starter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.neo4j.test</groupId>
+                <artifactId>neo4j-harness</artifactId>
+                <version>${neo4j.test-harness.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>slf4j-nop</artifactId>
+                        <!-- Since 4.0.1 -->
+                        <groupId>org.slf4j</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>com.github.jsonld-java</groupId>
                 <artifactId>jsonld-java</artifactId>
                 <version>${jsonld.version}</version>
@@ -234,11 +261,6 @@
                 <groupId>org.topbraid</groupId>
                 <artifactId>shacl</artifactId>
                 <version>${topbraid.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-validator</groupId>
-                <artifactId>commons-validator</artifactId>
-                <version>${commons.validator.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
@@ -265,17 +287,6 @@
                 <groupId>decentralized-identity</groupId>
                 <artifactId>did-common-java</artifactId>
                 <version>${did.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.neo4j.procedure</groupId>
-                <artifactId>apoc</artifactId>
-                <version>3.5.0.7</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.github.javafaker</groupId>
-                        <artifactId>javafaker</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
