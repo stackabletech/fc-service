@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -101,15 +102,15 @@ public class SchemaStoreImpl implements SchemaStore {
    */
   public SchemaAnalysisResult analyseSchema(ContentAccessor schema) {
     SchemaAnalysisResult result = new SchemaAnalysisResult();
-    List<String> extractedUrlsDupliacte = new ArrayList<>();
+    Set<String> extractedUrlsSet = new HashSet<>();
     Model model = ModelFactory.createDefaultModel();
     try {
-      StringReader schemaReader = new StringReader(schema.getContentAsString());
-      model.read(schemaReader, null, "TTL");
+      model.read(schema.getContentAsStream(), null, "TTL");
       result.setValid(true);
-    } catch (Throwable t) {
+    } catch (Exception exc) {
       result.setValid(false);
-      //  throw new VerificationException(t.getMessage());
+      result.setErrorMessage(exc.getMessage());
+      return result;
     }
     StmtIterator iter = model.listStatements();
     while (iter.hasNext()) {
@@ -121,21 +122,21 @@ public class SchemaStoreImpl implements SchemaStore {
         if (predicate.toLowerCase().indexOf("/skos") > 0) {
           result.setSchemaType(SchemaType.VOCABULARY);
           if (stmt.getObject().isURIResource()) {
-            extractedUrlsDupliacte.add(object.toString());
+            extractedUrlsSet.add(object.toString());
           }
           if (subject != null) {
-            extractedUrlsDupliacte.add(predicate);
-            extractedUrlsDupliacte.add(subject);
+            extractedUrlsSet.add(predicate);
+            extractedUrlsSet.add(subject);
           }
           break;
         } else if (predicate.toLowerCase().indexOf("/shacl") > 0) {
           result.setSchemaType(SchemaType.SHAPE);
           if (stmt.getObject().isURIResource()) {
-            extractedUrlsDupliacte.add(object.toString());
+            extractedUrlsSet.add(object.toString());
           }
           if (subject != null) {
-            extractedUrlsDupliacte.add(predicate);
-            extractedUrlsDupliacte.add(subject);
+            extractedUrlsSet.add(predicate);
+            extractedUrlsSet.add(subject);
           }
           ResIterator res = model.listSubjects();
           while (res.hasNext()) {
@@ -148,16 +149,15 @@ public class SchemaStoreImpl implements SchemaStore {
         } else {
           result.setSchemaType(SchemaType.ONTOLOGY);
           if (stmt.getObject().isURIResource()) {
-            extractedUrlsDupliacte.add(object.toString());
+            extractedUrlsSet.add(object.toString());
           }
           if (subject != null) {
-            extractedUrlsDupliacte.add(predicate);
-            extractedUrlsDupliacte.add(subject);
+            extractedUrlsSet.add(predicate);
+            extractedUrlsSet.add(subject);
           }
         }
       }
     }
-    Set<String> extractedUrlsSet = new LinkedHashSet<>(extractedUrlsDupliacte);
     List<String> extractedUrls = new ArrayList<>(extractedUrlsSet);
     result.setExtractedUrls(extractedUrls);
     return result;
@@ -197,7 +197,7 @@ public class SchemaStoreImpl implements SchemaStore {
   public String addSchema(ContentAccessor schema) {
     SchemaAnalysisResult result = analyseSchema(schema);
     if (!result.isValid()) {
-      throw new VerificationException("Schema is not valid.");
+      throw new VerificationException("Schema is not valid: " + result.getErrorMessage());
     }
     String schemaId = result.getExtractedId();
     String nameHash;
@@ -210,7 +210,6 @@ public class SchemaStoreImpl implements SchemaStore {
     }
 
     Session currentSession = sessionFactory.getCurrentSession();
-    Transaction transaction = currentSession.getTransaction();
 
     // Check duplicate terms
     List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)
@@ -227,14 +226,12 @@ public class SchemaStoreImpl implements SchemaStore {
     try {
       currentSession.persist(newRecord);
     } catch (EntityExistsException ex) {
-      transaction.rollback();
       throw new ConflictException("A schema with id " + schemaId + " already exists.");
     }
 
     try {
       fileStore.storeFile(nameHash, schema);
     } catch (IOException ex) {
-      transaction.rollback();
       throw new RuntimeException("Failed to store schema file", ex);
     }
 
