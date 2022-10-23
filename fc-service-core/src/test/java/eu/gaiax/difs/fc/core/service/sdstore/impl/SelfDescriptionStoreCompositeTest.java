@@ -31,7 +31,7 @@ import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
-import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
@@ -141,12 +141,12 @@ public class SelfDescriptionStoreCompositeTest {
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
 
     List<Map<String, Object>> claims = graphStore.queryData(
-            new OpenCypherQuery("MATCH (n {uri: $uri}) RETURN labels(n)", Map.of("uri", sdMeta.getId()))).getResults();
+            new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n)", Map.of("uri", sdMeta.getId()))).getResults();
     log.debug("test01StoreSelfDescription; got claims: {}", claims);
     //Assertions.assertEquals(5, claims.size()); only 1 node found..
 
     List<Map<String, Object>> nodes = graphStore.queryData(
-            new OpenCypherQuery("MATCH (n) RETURN labels(n)", Map.of())).getResults();
+            new GraphQuery("MATCH (n) RETURN labels(n)", Map.of())).getResults();
     log.debug("test01StoreSelfDescription; got nodes: {}", nodes);
     
     //final ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
@@ -157,7 +157,7 @@ public class SelfDescriptionStoreCompositeTest {
     assertAllSdFilesDeleted();
 
     claims = graphStore.queryData(
-            new OpenCypherQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
+            new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
     Assertions.assertEquals(0, claims.size());
 
     Assertions.assertThrows(NotFoundException.class, () -> {

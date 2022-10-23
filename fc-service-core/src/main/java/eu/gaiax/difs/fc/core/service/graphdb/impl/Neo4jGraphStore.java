@@ -1,7 +1,9 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
+import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
 import eu.gaiax.difs.fc.core.exception.ServerException;
-import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.exception.TimeoutException;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
@@ -11,6 +13,7 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.TransactionConfig;
+import org.neo4j.driver.exceptions.DatabaseException;
 import org.neo4j.driver.internal.InternalNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,9 +30,6 @@ import java.util.Map;
 @Configuration
 @Component
 public class Neo4jGraphStore implements GraphStore {
-
-    @Value("${graphstore.query-timeout-in-seconds}")
-    protected int queryTimeoutInSeconds;
 
     @Autowired
     private Driver driver;
@@ -87,14 +87,20 @@ public class Neo4jGraphStore implements GraphStore {
      * {@inheritDoc}
      */
     @Override
-    public PaginatedResults<Map<String, Object>> queryData(OpenCypherQuery sdQuery) {
+    public PaginatedResults<Map<String, Object>> queryData(GraphQuery sdQuery) {
         log.debug("queryData.enter; got query: {}", sdQuery);
+        
+        if (sdQuery.getQueryLanguage() != QueryLanguage.OPENCYPHER) {
+            throw new UnsupportedOperationException(sdQuery.getQueryLanguage() + " query language is not supported yet");
+        }
+
+        TransactionConfig transactionConfig = TransactionConfig.builder()
+                        .withTimeout(Duration.ofSeconds(sdQuery.getTimeout()))
+                        .build();
+        
+        long stamp = System.currentTimeMillis();
         try (Session session = driver.session()) {
             //In this function we use read transaction to avoid any Cypher query that modifies data
-            TransactionConfig transactionConfig =
-                    TransactionConfig.builder()
-                            .withTimeout(Duration.ofSeconds(queryTimeoutInSeconds))
-                            .build();
 
             return session.readTransaction(
                     tx -> {
@@ -131,12 +137,22 @@ public class Neo4jGraphStore implements GraphStore {
                     transactionConfig
             );
         } catch (Exception e) {
+            stamp = System.currentTimeMillis() - stamp;
             log.error("queryData.error", e);
+            if (e instanceof DatabaseException ) {
+                // TODO: here we must recognize a scenario when we get DatabaseException because of the query timeout
+                // if no better solution, when we can check exception stack for the following text:
+                // Suppressed: org.neo4j.driver.exceptions.ServiceUnavailableException: Connection to the database terminated.
+                // and also check the stamp value > query timeout:
+                if (stamp > sdQuery.getTimeout() * 1000) {
+                    throw new TimeoutException("query timeout (" + sdQuery.getTimeout() + " sec) exceeded)");
+                }
+            }
             throw new ServerException("error querying data " + e.getMessage());
         }
     }
 
-  private String getDynamicallyAddedCountClauseQuery(OpenCypherQuery sdQuery) {
+  private String getDynamicallyAddedCountClauseQuery(GraphQuery sdQuery) {
     log.debug("getDynamicallyAddedCountClauseQuery.enter; actual query: {}", sdQuery.getQuery());
      /*get string before statements and append count clause*/
     String statement = "return";

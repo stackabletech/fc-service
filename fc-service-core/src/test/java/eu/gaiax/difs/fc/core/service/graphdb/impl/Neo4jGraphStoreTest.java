@@ -1,6 +1,7 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
 import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.exception.TimeoutException;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.runners.MethodSorters;
 import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration;
@@ -28,7 +30,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
-import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -39,6 +41,10 @@ import eu.gaiax.difs.fc.core.pojo.SdClaim;
 @ContextConfiguration(classes = {Neo4jGraphStore.class})
 @Import(EmbeddedNeo4JConfig.class)
 public class Neo4jGraphStoreTest {
+
+    @Value("${graphstore.query-timeout-in-seconds}")
+    private int queryTimeoutInSeconds;
+    
     @Autowired
     private Neo4j embeddedDatabaseServer;
     
@@ -75,7 +81,7 @@ public class Neo4jGraphStoreTest {
                     sdClaimList,
                     credentialSubject.substring(1, credentialSubject.length() - 1));
         }
-        OpenCypherQuery queryFull = new OpenCypherQuery(
+        GraphQuery queryFull = new GraphQuery(
                 "MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 25", Map.of());
         List<Map<String, Object>> responseFull = graphGaia.queryData(queryFull).getResults();
         Assertions.assertEquals(resultListFull, responseFull);
@@ -102,7 +108,7 @@ public class Neo4jGraphStoreTest {
             String credentialSubject = sdClaimList.get(0).getSubject();
             graphGaia.addClaims(sdClaimList, credentialSubject.substring(1, credentialSubject.length() - 1));
         }
-        OpenCypherQuery queryDelta = new OpenCypherQuery(
+        GraphQuery queryDelta = new GraphQuery(
                 "MATCH (n:ns1__LegalPerson) WHERE n.ns1__name = $name RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
         Assertions.assertEquals(resultListDelta, responseDelta);
@@ -362,7 +368,7 @@ public class Neo4jGraphStoreTest {
 
     @Test
     void testRejectQueriesThatModifyData() throws Exception {
-        OpenCypherQuery queryDelete = new OpenCypherQuery(
+        GraphQuery queryDelete = new GraphQuery(
                 "MATCH (n) DETACH DELETE n;", null);
         Assertions.assertThrows(
                 ServerException.class,
@@ -371,7 +377,7 @@ public class Neo4jGraphStoreTest {
                 }
         );
 
-        OpenCypherQuery queryUpdate = new OpenCypherQuery(
+        GraphQuery queryUpdate = new GraphQuery(
                 "MATCH (n) SET n.name = 'Santa' RETURN n;", null);
         Assertions.assertThrows(
                 ServerException.class,
@@ -382,25 +388,22 @@ public class Neo4jGraphStoreTest {
     }
 
     @Test
-    @Disabled("It is necessary to check and fix this test, it does not always work")
     void testQueryDataTimeout() {
-        int acceptableDuration = graphGaia.queryTimeoutInSeconds * 1000;
-        int tooLongDuration = (graphGaia.queryTimeoutInSeconds + 1) * 1000;  // a second more than acceptable
+        int acceptableDuration = (queryTimeoutInSeconds - 1) * 1000;
+        int tooLongDuration = (queryTimeoutInSeconds + 2) * 1000;  // two seconds more than acceptable
 
         Assertions.assertDoesNotThrow(
                 () -> graphGaia.queryData(
-                        new OpenCypherQuery(
-                                "CALL apoc.util.sleep(" + acceptableDuration + ")",
-                                null
+                        new GraphQuery(
+                                "CALL apoc.util.sleep(" + acceptableDuration + ")", null
                         )
                 )
         );
 
-        // doesn't work any more(
         Assertions.assertThrows(
-                ServerException.class,
+                TimeoutException.class,
                 () -> graphGaia.queryData(
-                        new OpenCypherQuery(
+                        new GraphQuery(
                                 "CALL apoc.util.sleep(" + tooLongDuration + ")", null
                         )
                 )
