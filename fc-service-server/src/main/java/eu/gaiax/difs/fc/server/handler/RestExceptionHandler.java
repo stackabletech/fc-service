@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.server.handler;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.GATEWAY_TIMEOUT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
@@ -13,8 +14,8 @@ import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.exception.TimeoutException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -105,13 +106,24 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    * Method handles the UnsupportedOperation Exception.
    *
    * @param exception Thrown Server Exception.
-   * @return The custom Federated Catalogue application error with status code 401.
+   * @return The custom Federated Catalogue application error with status code 501.
    */
   @ExceptionHandler({UnsupportedOperationException.class})
   protected ResponseEntity<Error> handleUnsupportedOperationException(UnsupportedOperationException exception) {
-    log.info("handleVerificationException; Verification error: {}", exception.getMessage());
+    log.info("handleUnsupportedOperationException; handleUnsupportedOperation error: {}", exception.getMessage());
     return new ResponseEntity<>(new Error("processing_error", exception.getMessage()), NOT_IMPLEMENTED);
   }
   
+  /**
+   * Method handles the Timeout Exception.
+   *
+   * @param exception Thrown Server Exception.
+   * @return The custom Federated Catalogue application error with status code 504.
+   */
+  @ExceptionHandler({TimeoutException.class})
+  protected ResponseEntity<Error> handleTimeoutException(TimeoutException exception) {
+    log.info("handleVerificationException; Verification error: {}", exception.getMessage());
+    return new ResponseEntity<>(new Error("timeout_error", exception.getMessage()), GATEWAY_TIMEOUT);
+  }
   
 }

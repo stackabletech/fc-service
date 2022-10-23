@@ -1,6 +1,7 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
 import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.exception.TimeoutException;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -387,23 +388,20 @@ public class Neo4jGraphStoreTest {
     }
 
     @Test
-    @Disabled("It is necessary to check and fix this test, it does not always work")
     void testQueryDataTimeout() {
-        int acceptableDuration = queryTimeoutInSeconds * 1000;
-        int tooLongDuration = (queryTimeoutInSeconds + 1) * 1000;  // a second more than acceptable
+        int acceptableDuration = (queryTimeoutInSeconds - 1) * 1000;
+        int tooLongDuration = (queryTimeoutInSeconds + 2) * 1000;  // two seconds more than acceptable
 
         Assertions.assertDoesNotThrow(
                 () -> graphGaia.queryData(
                         new GraphQuery(
-                                "CALL apoc.util.sleep(" + acceptableDuration + ")",
-                                null
+                                "CALL apoc.util.sleep(" + acceptableDuration + ")", null
                         )
                 )
         );
 
-        // doesn't work any more(
         Assertions.assertThrows(
-                ServerException.class,
+                TimeoutException.class,
                 () -> graphGaia.queryData(
                         new GraphQuery(
                                 "CALL apoc.util.sleep(" + tooLongDuration + ")", null

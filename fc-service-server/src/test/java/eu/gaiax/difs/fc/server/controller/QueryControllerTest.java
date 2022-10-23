@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
 import eu.gaiax.difs.fc.api.generated.model.Results;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
@@ -99,28 +100,27 @@ public class QueryControllerTest {
     }
 
     
-    String QUERY_REQUEST_GET = "{\"statement\": \"MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 1\", " +
-        "\"parameters\": " +
-        "null}}";
+    private String QUERY_REQUEST_GET = "{\"statement\": \"MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 1\", " +
+        "\"parameters\": null}}";
+    
+    private String QUERY_REQUEST_TIMEOUT = "{\"statement\": \"CALL apoc.util.sleep($duration)\", \"parameters\": {\"duration\": 3000}}";
 
-    String QUERY_REQUEST_GET_WITH_PARAMETERS = "{\"statement\": \"MATCH (n:ns0__ServiceOffering) where n.ns0__name = " +
+    private String QUERY_REQUEST_GET_WITH_PARAMETERS = "{\"statement\": \"MATCH (n:ns0__ServiceOffering) where n.ns0__name = " +
         "$name RETURN n \", \"parameters\": { \"name\": \"EuProGigant Portal\"}}";
 
-    String QUERY_REQUEST_GET_WITH_PARAMETERS_UNKNOWN = "{\"statement\": \"MATCH (n:ns0__ServiceOffering) where " +
+    private String QUERY_REQUEST_GET_WITH_PARAMETERS_UNKNOWN = "{\"statement\": \"MATCH (n:ns0__ServiceOffering) where " +
         "n.ns0__name = $name RETURN n \", \"parameters\": { \"name\": \"notFound\"}}";
 
-    String QUERY_REQUEST_POST = "{\"statement\": \" CREATE (n:Person {name: 'TestUser', title: 'Developer'})\", " +
+    private String QUERY_REQUEST_POST = "{\"statement\": \" CREATE (n:Person {name: 'TestUser', title: 'Developer'})\", " +
         "\"parameters\": null}";
 
-    String QUERY_REQUEST_UPDATE = "{\"statement\": \"Match (m:Person) where m.name = 'TestUser' SET m.name = " +
+    private String QUERY_REQUEST_UPDATE = "{\"statement\": \"Match (m:Person) where m.name = 'TestUser' SET m.name = " +
         "'TestUserUpdated' RETURN m\", " +
-        "\"parameters\": " +
-        "null}";
+        "\"parameters\": null}";
 
-    String QUERY_REQUEST_DELETE = "{\"statement\": \"MATCH (n:ns0__ServiceOffering) where n.ns0__name = 'EuProGigant " +
-        "Portal' DETACH DELETE m\", " +
-        "\"parameters\": " +
-        "null}";
+    private String QUERY_REQUEST_DELETE = "{\"statement\": \"MATCH (n:ns0__ServiceOffering) where n.ns0__name = 'EuProGigant " +
+        "Portal' DETACH DELETE n\", " +
+        "\"parameters\": null}";
     
     @Test
     public void getQueryPageShouldReturnSuccessResponse() throws Exception {
@@ -243,6 +243,25 @@ public class QueryControllerTest {
                 .header("Accept", "application/json"))
             .andExpect(status().is5xxServerError());
     }
+    
+    @Test
+    public void tooLongQueryReturnTimeoutResponse() throws Exception {
+
+        String response =  mockMvc.perform(MockMvcRequestBuilders.post("/query")
+                        .content(QUERY_REQUEST_TIMEOUT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .queryParam("timeout", "1")
+                        .header("Produces", "application/json")
+                        .header("Accept", "application/json"))
+                        .andExpect(status().isGatewayTimeout())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        eu.gaiax.difs.fc.api.generated.model.Error result = objectMapper.readValue(response, eu.gaiax.difs.fc.api.generated.model.Error.class);
+        assertEquals("timeout_error", result.getCode());
+    }
+    
 
     private void initialiseAllDataBaseWithManuallyAddingSDFromRepository() throws Exception {
 
