@@ -9,21 +9,16 @@ import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
-import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
-//import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
 import static eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
-import eu.gaiax.difs.fc.core.util.HashUtils;
+import eu.gaiax.difs.fc.core.util.TestUtil;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
 import java.io.*;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +35,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.neo4j.cypher.internal.expressions.True;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
@@ -86,7 +80,7 @@ public class SchemaManagementImplTest {
   @Test
   public void testVerifyValidSchema() throws UnsupportedEncodingException {
     String path = "Schema-Tests/test-schema.ttl";
-    ContentAccessor content = getAccessor(path);
+    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     boolean actual = schemaStore.verifySchema(content);
     assertTrue(actual);
   }
@@ -94,7 +88,7 @@ public class SchemaManagementImplTest {
   @Test
   public void testVerifyInvalidSchema() throws UnsupportedEncodingException {
     String path = "Schema-Tests/invalid-schemaShape.ttl";
-    ContentAccessor content = getAccessor(path);
+    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     boolean actual = schemaStore.verifySchema(content);
     assertFalse(actual);
 
@@ -107,7 +101,7 @@ public class SchemaManagementImplTest {
   public void testAddSchema() throws UnsupportedEncodingException {
     log.info("testAddSchema");
     String path = "Schema-Tests/valid-schemaShapeCopy.ttl";
-    ContentAccessor content = getAccessor(path);
+    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     // String schema1 = "Some Schema Content";
 
     String schemaId1 = schemaStore.addSchema(content);
@@ -142,7 +136,7 @@ public class SchemaManagementImplTest {
 
     String path = "Schema-Tests/schema.ttl";
 
-    String schema1 = getAccessor(path).getContentAsString();
+    String schema1 = TestUtil.getAccessor(getClass(), path).getContentAsString();
 
     String schemaId1 = schemaStore.addSchema(new ContentAccessorDirect(schema1));
 
@@ -162,8 +156,8 @@ public class SchemaManagementImplTest {
   public void testAddDuplicateSchema() throws IOException {
     log.info("testAddDuplicateSchema");
     String path = "Schema-Tests/valid-schemaShape.ttl";
-    schemaStore.addSchema(getAccessor(path));
-    assertThrowsExactly(ConflictException.class, () -> schemaStore.addSchema(getAccessor(path)));
+    schemaStore.addSchema(TestUtil.getAccessor(getClass(), path));
+    assertThrowsExactly(ConflictException.class, () -> schemaStore.addSchema(TestUtil.getAccessor(getClass(), path)));
 
     fileStore.clearStorage();
   }
@@ -177,10 +171,10 @@ public class SchemaManagementImplTest {
     String path1 = "Schema-Tests/valid-schemaShapeReduced.ttl";
     String path2 = "Schema-Tests/valid-schemaShape.ttl";
 
-    String schemaId = schemaStore.addSchema(getAccessor(path1));
-    schemaStore.updateSchema(schemaId, getAccessor(path2));
+    String schemaId = schemaStore.addSchema(TestUtil.getAccessor(getClass(), path1));
+    schemaStore.updateSchema(schemaId, TestUtil.getAccessor(getClass(), path2));
 
-    assertEquals(getAccessor(path2).getContentAsString(), fileStore.readFile(schemaId).getContentAsString(), "The content of the updated schema should be stored in the schema file.");
+    assertEquals(TestUtil.getAccessor(getClass(), path2).getContentAsString(), fileStore.readFile(schemaId).getContentAsString(), "The content of the updated schema should be stored in the schema file.");
 
     schemaStore.deleteSchema(schemaId);
     int count = 0;
@@ -232,7 +226,7 @@ public class SchemaManagementImplTest {
   @Test
   public void testGetSchemasForTypeShape() throws UnsupportedEncodingException {
     String path = "Schema-Tests/valid-schemaShape.ttl";
-    ContentAccessor content = getAccessor(path);
+    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult schemaAnalysisResult = schemaStore.analyseSchema(content);
 
     SchemaStore.SchemaType actual = schemaAnalysisResult.getSchemaType();
@@ -244,7 +238,7 @@ public class SchemaManagementImplTest {
   @Test
   public void testGetSchemasForTypeVocabulary() throws UnsupportedEncodingException {
     String path = "Schema-Tests/skosConcept.ttl";
-    ContentAccessor content = getAccessor(path);
+    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult schemaAnalysisResult = schemaStore.analyseSchema(content);
     SchemaStore.SchemaType actual = schemaAnalysisResult.getSchemaType();
     SchemaStore.SchemaType expected = VOCABULARY;
@@ -264,13 +258,13 @@ public class SchemaManagementImplTest {
     String schemaPath1 = "Schema-Tests/FirstValidSchemaShape.ttl";
     String schemaPath2 = "Schema-Tests/SecondValidSchemaShape.ttl";
 
-    ContentAccessor schema01Content = getAccessor(schemaPath1);
-    ContentAccessor schema02Content = getAccessor(schemaPath2);
+    ContentAccessor schema01Content = TestUtil.getAccessor(getClass(), schemaPath1);
+    ContentAccessor schema02Content = TestUtil.getAccessor(getClass(), schemaPath2);
 
     storageSelfCleaning();
 
-    schemaStore.addSchema(getAccessor(schemaPath1));
-    schemaStore.addSchema(getAccessor(schemaPath2));
+    schemaStore.addSchema(TestUtil.getAccessor(getClass(), schemaPath1));
+    schemaStore.addSchema(TestUtil.getAccessor(getClass(), schemaPath2));
 
     SchemaAnalysisResult schemaResult = schemaStore.analyseSchema(schema01Content);
 
@@ -296,11 +290,4 @@ public class SchemaManagementImplTest {
     return false;
   }
 
-  private static ContentAccessorFile getAccessor(String path) throws UnsupportedEncodingException {
-    URL url = SchemaManagementImplTest.class.getClassLoader().getResource(path);
-    String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8.name());
-    File file = new File(str);
-    ContentAccessorFile accessor = new ContentAccessorFile(file);
-    return accessor;
-  }
 }
