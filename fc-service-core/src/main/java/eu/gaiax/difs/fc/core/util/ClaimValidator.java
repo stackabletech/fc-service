@@ -4,7 +4,6 @@ import eu.gaiax.difs.fc.core.exception.QueryException;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.jena.datatypes.DatatypeFormatException;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.Triple;
@@ -17,6 +16,8 @@ import org.apache.jena.util.iterator.ExtendedIterator;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 @Slf4j
 public class ClaimValidator {
@@ -117,31 +118,32 @@ public class ClaimValidator {
                 // angle brackets) will already be rejected above as Jena
                 // should complain about the not defined prefix (e.g. ex in
                 // the ex:Foo example above).
-                String subjectStr =
-                        removeEnclosingAngleBrackets(sdClaim.getSubject());
-                UrlValidator urlValidator = new UrlValidator();
-                if (!urlValidator.isValid(subjectStr)) {
+                try {
+                    String subjectStr =
+                            removeEnclosingAngleBrackets(sdClaim.getSubject());
+                    URI uri = new URI(subjectStr);
+
+                } catch (URISyntaxException e) {
                     throw new QueryException(
                             "Subject in triple " +
                                     sdClaim.asTriple() +
                                     " is not a valid URI: ");
-                }
-
-            } // else it should be a blank node
-
+                } // else it should be a blank node
+            }
             // --- predicate --------------------------------------------------
             Node p = triple.getPredicate();
             if (p.isURI()) {
-
-                // c.f. the comment for handling subject nodes above
-                String predicateStr =
-                        removeEnclosingAngleBrackets(sdClaim.getPredicate());
-                UrlValidator urlValidator = new UrlValidator();
-                if (!urlValidator.isValid(predicateStr)) {
+                try {
+                    // c.f. the comment for handling subject nodes above
+                    String predicateStr =
+                            removeEnclosingAngleBrackets(sdClaim.getPredicate());
+                    URI uri = new URI(predicateStr);
+                } catch (URISyntaxException e) {
                     throw new QueryException(
                             "Predicate in triple " +
                                     sdClaim.asTriple() +
                                     " is not a valid URI: ");
+
                 }
             } else {
                 // TODO: should we allow blank nodes?
@@ -150,21 +152,20 @@ public class ClaimValidator {
                                 sdClaim.asTriple() +
                                 " is not a valid URI");
             }
-
             // --- object -----------------------------------------------------
             Node o = triple.getObject();
             if (o.isURI()) {
                 // c.f. the comment for handling subject nodes above
-                String objectStr =
-                        removeEnclosingAngleBrackets(sdClaim.getObject());
-                UrlValidator urlValidator = new UrlValidator();
-                if (!urlValidator.isValid(objectStr)) {
+                try {
+                    String objectStr =
+                            removeEnclosingAngleBrackets(sdClaim.getObject());
+                    URI uri = new URI(objectStr);
+                } catch (URISyntaxException e) {
                     throw new QueryException(
                             "Object in triple " +
                                     sdClaim.asTriple() +
                                     " is not a valid URI: ");
                 }
-
             } else if (o.isLiteral()) {
                 // Nothing needs to be done here as literal syntax errors and
                 // datatype errors are already handled by the parser directly.
