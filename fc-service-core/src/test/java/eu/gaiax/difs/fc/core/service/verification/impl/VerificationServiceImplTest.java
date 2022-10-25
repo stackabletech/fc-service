@@ -1,14 +1,23 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
+import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.*;
+import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
+import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
+import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImplTest;
+import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import org.junit.jupiter.api.*;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.jena.atlas.logging.Log;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -19,6 +28,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
+import javax.transaction.Transactional;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -28,6 +38,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.security.NoSuchAlgorithmException;
+import java.security.Signature;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -40,11 +55,12 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("tests-sdstore")
 @ContextConfiguration(classes = {VerificationServiceImplTest.TestApplication.class, FileStoreConfig.class,
-        VerificationServiceImpl.class, SchemaStoreImpl.class})
+        VerificationServiceImpl.class, SchemaStoreImpl.class, DatabaseConfig.class, ValidatorCacheImpl.class})
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
+@Transactional
 public class VerificationServiceImplTest {
-
-    static Path base_path = Paths.get(".").toAbsolutePath().normalize();
+    @Autowired
+    ValidatorCacheImpl validatorCache;
 
     @SpringBootApplication
     public static class TestApplication {
@@ -79,8 +95,8 @@ public class VerificationServiceImplTest {
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
-        assertTrue(ex.getMessage().contains("VerifiablePresentation must contain 'type' property")); 
-        assertTrue(ex.getMessage().contains("VerifiablePresentation must contain 'verifiableCredential' property")); 
+        assertTrue(ex.getMessage().contains("VerifiablePresentation must contain 'type' property"));
+        assertTrue(ex.getMessage().contains("VerifiablePresentation must contain 'verifiableCredential' property"));
     }
 
     @Test
@@ -167,17 +183,17 @@ public class VerificationServiceImplTest {
         assertEquals("Signarures error; No proof found", ex.getMessage());
         assertNull(ex.getCause());
     }
-    
+
     @Test
     void invalidProof_UnknownVerificationMethod () throws Exception {
         String path = "VerificationService/sign/hasInvalidSignatureType.jsonld";
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
-        assertEquals("Signatures error; Unknown Verification Method: https://example.edu/issuers/565049#key-1", ex.getMessage()); 
+        assertEquals("Signatures error; Unknown Verification Method: https://example.edu/issuers/565049#key-1", ex.getMessage());
         assertNull(ex.getCause());
     }
-    
+
     @Test
     @Disabled("We need an SD with valid proofs")
     void invalidProof_SignaturesMissing2() throws IOException {
@@ -200,26 +216,35 @@ public class VerificationServiceImplTest {
     }
 
     @Test
+    @Disabled("We have no valid SD yet") //TODO
+    void validSD () {
+        String path = "JSON-LD-Tests/validSD.jsonld";
+
+        assertDoesNotThrow(() ->
+                verificationService.verifySelfDescription(getAccessor(path)));
+    }
+
+    @Test
     //@Disabled("This test wont work like this anymore since some functions are private now")
     void providerClaimsTest() throws Exception {
         String path = "Claims-Extraction-Tests/providerTest.jsonld";
 
         VerificationResult result = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
         List<SdClaim> actualClaims = result.getClaims();
-        
+
         log.debug("providerClaimsTest; actual claims: {}", actualClaims);
 
         List<SdClaim> expectedClaims = new ArrayList<>();
         expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#Provider>"));
-        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b1")); 
-        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#legalName>", "\"deltaDAO AG\"")); 
+        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b1"));
+        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#legalName>", "\"deltaDAO AG\""));
         expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#name>", "\"deltaDAO AG\""));
         expectedClaims.add(new SdClaim("_:b1", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#Address>"));
-        expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#country>", "\"DE\"")); 
-        expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#locality>", "\"Hamburg\"")); 
-        expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#postal-code>", "\"22303\"")); 
+        expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#country>", "\"DE\""));
+        expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#locality>", "\"Hamburg\""));
+        expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#postal-code>", "\"22303\""));
         expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#street-address>", "\"Geibelstra?e 46b\""));
-        
+
         //expectedClaims.add(new SdClaim("_:b0", "<vcard:country-name>", "\"Country Name 2\""));
         //expectedClaims.add(new SdClaim("_:b0", "<vcard:locality>", "\"City Name 2\""));
         //expectedClaims.add(new SdClaim("_:b0", "<vcard:postal-code>", "\"99999\""));
@@ -231,7 +256,7 @@ public class VerificationServiceImplTest {
         assertEquals(expectedClaims.size(), actualClaims.size());
         //assertEquals(expectedClaims, actualClaims); do not match, for some reason..
     }
-    
+
     @Test
     void verifyValidationResult() throws IOException {
         String dataPath = "Validation-Tests/DataCenterDataGraph.jsonld";

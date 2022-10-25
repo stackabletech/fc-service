@@ -8,12 +8,14 @@ import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import eu.gaiax.difs.fc.core.service.validatorcache.ValidatorCache;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * A cache for Validator information that is loaded from a DID.
  *
  * @author hylke
  */
+@Transactional
 @Component
 @Slf4j
 public class ValidatorCacheImpl implements ValidatorCache {

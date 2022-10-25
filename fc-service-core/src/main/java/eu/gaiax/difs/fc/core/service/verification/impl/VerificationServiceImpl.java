@@ -10,7 +10,6 @@ import com.danubetech.keyformats.keytypes.KeyTypeName_for_JWK;
 import com.danubetech.verifiablecredentials.CredentialSubject;
 import com.danubetech.verifiablecredentials.VerifiableCredential;
 import com.danubetech.verifiablecredentials.VerifiablePresentation;
-import com.danubetech.verifiablecredentials.validation.Validation;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTParser;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
@@ -18,6 +17,7 @@ import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.*;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
+import eu.gaiax.difs.fc.core.service.validatorcache.ValidatorCache;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.jsonld.JsonLDException;
@@ -38,6 +38,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.topbraid.shacl.validation.ValidationUtil;
@@ -48,22 +49,15 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-
+import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Implementation of the {@link VerificationService} interface.
@@ -85,6 +79,13 @@ public class VerificationServiceImpl implements VerificationService {
 
   @Autowired
   private SchemaStore schemaStore;
+
+  @Autowired
+  private ValidatorCache validatorCache;
+
+  public VerificationServiceImpl () {
+    Security.addProvider(new BouncyCastleProvider());
+  }
 
   /**
    * The function validates the Self-Description as JSON and tries to parse the json handed over.
@@ -356,6 +357,7 @@ public class VerificationServiceImpl implements VerificationService {
   }
   
 
+  /*package private functions*/
   /**
    * A method that returns a list of claims given a self-description's VerifiablePresentation
    *
@@ -504,17 +506,19 @@ public class VerificationServiceImpl implements VerificationService {
   private Validator checkSignature (JsonLDObject payload, LdProof proof) throws IOException, ParseException {
     log.debug("checkSignature.enter; got payload: {}, proof: {}", payload, proof);
     LdVerifier verifier;
-    Validator validator = null; //TODO Cache.getValidator(proof.getVerificationMethod().toString());
+    Validator validator = validatorCache.getFromCache(proof.getVerificationMethod().toString());
     if (validator == null) {
       log.debug("checkSignature; validator was not cached");
       Pair<PublicKeyVerifier, Validator> pkVerifierAndValidator = getVerifiedVerifier(proof);
       PublicKeyVerifier publicKeyVerifier = pkVerifierAndValidator.getLeft();
       validator = pkVerifierAndValidator.getRight();
       verifier = new JsonWebSignature2020LdVerifier(publicKeyVerifier);
+      validatorCache.addToCache(validator);
     } else {
       log.debug("checkSignature; validator was cached");
       verifier = getVerifierFromValidator(validator);
     }
+
     //TODO    if(!verifier.verify(payload)) throw new VerificationException(payload.getClass().getName() + "does not match with proof");
 
     log.debug("checkSignature.exit; returning: {}", validator);
@@ -673,7 +677,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     PublicKeyVerifier pubKey = PublicKeyVerifierFactory.publicKeyVerifierForKey(
             KeyTypeName_for_JWK.keyTypeName_for_JWK(jwk),
-            getAlgorithmFromJWT((String) jwk_map_uncleaned.get("alg")),
+            (String) jwk_map_uncleaned.get("alg"),
             JWK_to_PublicKey.JWK_to_anyPublicKey(jwk));
     return new JsonWebSignature2020LdVerifier(pubKey);
   }
