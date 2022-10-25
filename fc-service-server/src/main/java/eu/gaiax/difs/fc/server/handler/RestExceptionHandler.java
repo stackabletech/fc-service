@@ -2,14 +2,19 @@ package eu.gaiax.difs.fc.server.handler;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.GATEWAY_TIMEOUT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
+import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
+
 
 import eu.gaiax.difs.fc.api.generated.model.Error;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.exception.TimeoutException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -89,12 +94,36 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    * Method handles the Verification Exception.
    *
    * @param exception Thrown Server Exception.
-   * @return The custom Federated Catalogue application error with status code 404.
+   * @return The custom Federated Catalogue application error with status code 422.
    */
   @ExceptionHandler({VerificationException.class})
   protected ResponseEntity<Error> handleVerificationException(VerificationException exception) {
     log.info("handleVerificationException; Verification error: {}", exception.getMessage());
-    return new ResponseEntity<>(new Error("verification_error", exception.getMessage()), BAD_REQUEST);
+    return new ResponseEntity<>(new Error("verification_error", exception.getMessage()), UNPROCESSABLE_ENTITY);
+  }
+
+  /**
+   * Method handles the UnsupportedOperation Exception.
+   *
+   * @param exception Thrown Server Exception.
+   * @return The custom Federated Catalogue application error with status code 501.
+   */
+  @ExceptionHandler({UnsupportedOperationException.class})
+  protected ResponseEntity<Error> handleUnsupportedOperationException(UnsupportedOperationException exception) {
+    log.info("handleUnsupportedOperationException; handleUnsupportedOperation error: {}", exception.getMessage());
+    return new ResponseEntity<>(new Error("processing_error", exception.getMessage()), NOT_IMPLEMENTED);
+  }
+  
+  /**
+   * Method handles the Timeout Exception.
+   *
+   * @param exception Thrown Server Exception.
+   * @return The custom Federated Catalogue application error with status code 504.
+   */
+  @ExceptionHandler({TimeoutException.class})
+  protected ResponseEntity<Error> handleTimeoutException(TimeoutException exception) {
+    log.info("handleVerificationException; Verification error: {}", exception.getMessage());
+    return new ResponseEntity<>(new Error("timeout_error", exception.getMessage()), GATEWAY_TIMEOUT);
   }
   
 }

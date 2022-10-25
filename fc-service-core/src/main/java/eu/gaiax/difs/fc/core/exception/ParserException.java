@@ -1,18 +1,17 @@
 package eu.gaiax.difs.fc.core.exception;
 
-import eu.gaiax.difs.fc.core.exception.ServiceException;
-import lombok.Getter;
-import lombok.Setter;
-
 /**
  * ParserException is an exception that can be thrown to customize the Self-Description parse error of the Federated
  * Catalogue server application.
  * Implementation of the {@link ServiceException} exception.
  */
-@Getter
-@Setter
 public class ParserException extends ServiceException {
-  /**
+
+  public ParserException(String message) {
+    super(message);
+  }
+
+   /**
    * Constructs a new Parser exception with the specified detail message and cause.
    *
    * @param message Detailed message about the thrown exception.

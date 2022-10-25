@@ -1,10 +1,13 @@
 {
+  "@context": [
+    "http://www.w3.org/ns/shacl#",
+    "http://www.w3.org/2001/XMLSchema#",
+    "http://w3id.org/gaia-x/participant#"
+  ],
   "@id": "http://example.edu/verifiablePresentation/self-description1",
   "type": [
     "VerifiablePresentation"
   ],
-  "issuer": "https://example.edu/issuers/particiant1",
-  "issuanceDate": "2010-01-01T00:00:00Z",
   "verifiableCredential": [
     {
       "@context": [
@@ -14,9 +17,11 @@
         "@nest"
       ],
       "@id": "https://delta-dao.com/.well-known/participant.json",
-      "@type": [
-        "VerifiableCredential"
+      "type": [
+        "VerifiableCredential", "LegalPerson"
       ],
+      "issuer": "https://example.edu/issuers/particiant1",
+      "issuanceDate": "2010-01-01T00:00:00Z",
       "credentialSubject": {
         "id": "did:web:delta-dao.com",
         "@type": [
@@ -124,10 +129,12 @@
     }
   ],
   "proof": {
-    "type": "JsonWebSignature2020",
-    "created": "2022-02-25T14:58:43Z",
-    "verificationMethod": "https://example.edu/issuers/565049#key-1",
-    "proofPurpose": "assertionMethod",
-    "jws": "XXX"
+	"type": "JsonWebSignature2020",
+	"created": "2018-09-14T21:19:10Z",
+	"proofPurpose": "authentication",
+	"verificationMethod": "did:web:delta-dao.com",
+	"challenge": "1f44d55f-f161-4938-a659-f8026467f126",
+	"domain": "4jt78h47fh47",
+	"jws": "eyJhbGciOiJSUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..kTCYt5XsITJX1CxPCT8yAV-TVIw5WEuts01mqpQy7UJiN5mgREEMGlv50aqzpqh4Qq_PbChOMqsLfRoPsnsgxD-WUcX16dUOqV0G_zS245-kronKb78cPktb3rk-BuQy72IFLN25DYuNzVBAh4vGHSrQyHUGlcTwLtjPAnKb78"
   }
 }
