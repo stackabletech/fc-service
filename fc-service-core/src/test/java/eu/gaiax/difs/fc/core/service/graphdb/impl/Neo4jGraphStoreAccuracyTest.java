@@ -10,6 +10,7 @@ import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
+import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
 import eu.gaiax.difs.fc.core.service.verification.impl.VerificationServiceImpl;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -47,7 +48,7 @@ import org.springframework.transaction.annotation.Transactional;
     SelfDescriptionStoreImpl.class,
     FileStoreConfig.class,
     VerificationServiceImpl.class, DatabaseConfig.class,
-    SchemaStoreImpl.class})
+    SchemaStoreImpl.class, ValidatorCacheImpl.class})
 @DirtiesContext
 @Transactional
 @Import(EmbeddedNeo4JConfig.class)
