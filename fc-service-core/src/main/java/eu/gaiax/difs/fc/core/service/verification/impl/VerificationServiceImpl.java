@@ -49,6 +49,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -492,10 +493,10 @@ public class VerificationServiceImpl implements VerificationService {
   private Validator checkSignature (JsonLDObject payload) throws IOException, ParseException {
     Map<String, Object> proof_map = (Map<String, Object>) payload.getJsonObject().get("proof");
     if (proof_map == null) {
-      throw new VerificationException("Signarures error; No proof found");
+      throw new VerificationException("Signatures error; No proof found");
     }
     if (proof_map.get("type") == null) {
-      throw new VerificationException("Signarures error; Proof must have 'type' property");
+      throw new VerificationException("Signatures error; Proof must have 'type' property");
     }
 
     LdProof proof = LdProof.fromMap(proof_map);
@@ -519,7 +520,15 @@ public class VerificationServiceImpl implements VerificationService {
       verifier = getVerifierFromValidator(validator);
     }
 
-    //TODO    if(!verifier.verify(payload)) throw new VerificationException(payload.getClass().getName() + "does not match with proof");
+    try {
+      if (!verifier.verify(payload)) {
+        throw new VerificationException("Signatures error; " + payload.getClass().getName() + " does not match with proof");
+      }
+    } catch (JsonLDException | GeneralSecurityException e) {
+      throw new VerificationException("Signatures error; " + e.getMessage(), e);
+    } catch (VerificationException e) {
+      throw e;
+    }
 
     log.debug("checkSignature.exit; returning: {}", validator);
     return validator;
