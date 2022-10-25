@@ -74,11 +74,11 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public void deleteClaims(String credentialSubject) {
         log.debug("deleteClaims.enter; Beginning claims deletion, subject: {}", credentialSubject);
-        String queryDelete = "MATCH (n {claimsGraphUri: ['"+credentialSubject+"']})\n" +
+        String queryDelete = "MATCH (n {claimsGraphUri: [$uri]})\n" +
                 "DETACH DELETE n;";
         String queryUpdate = "MATCH (n)\n" +
-                "WHERE '"+credentialSubject+"' IN n.claimsGraphUri\n" +
-                "SET n.claimsGraphUri = [g IN n.claimsGraphUri WHERE g <> '"+credentialSubject+"'];";
+                "WHERE $uri IN n.claimsGraphUri\n" +
+                "SET n.claimsGraphUri = [g IN n.claimsGraphUri WHERE g <> $uri];";
         try (Session session = driver.session()) {
             Result rsDelelte = session.run(queryDelete, Map.of("uri", credentialSubject));
             Result rsUpdate  = session.run(queryUpdate, Map.of("uri", credentialSubject));
