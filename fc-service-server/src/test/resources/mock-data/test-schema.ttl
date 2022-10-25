@@ -20,6 +20,7 @@
 @prefix gax-resource: <http://w3id.org/gaia-x/resource>.
 @prefix foaf: <http://xmlns.com/foaf/0.1>.
 @prefix gax: <http://w3id.org/gaia-x/core#>.
+
 gax: a voaf:Vocabulary, owl:Ontology ;
     rdfs:label "Gaia-X Ontology"@en ;
     cc:license <http://www.apache.org/licenses/LICENSE-2.0> ;

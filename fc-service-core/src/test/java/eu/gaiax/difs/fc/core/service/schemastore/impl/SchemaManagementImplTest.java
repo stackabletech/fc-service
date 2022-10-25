@@ -79,7 +79,7 @@ public class SchemaManagementImplTest {
 
   @Test
   public void testVerifyValidSchema() throws UnsupportedEncodingException {
-    String path = "Schema-Tests/test-schema.ttl";
+    String path = "Schema-Tests/valid-schemaShape.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     boolean actual = schemaStore.verifySchema(content);
     assertTrue(actual);
@@ -93,6 +93,30 @@ public class SchemaManagementImplTest {
     assertFalse(actual);
 
   }
+  @Test
+  public void testIsValidShape() throws UnsupportedEncodingException {
+   String path = "Schema-Tests/valid-schemaShape.ttl";
+    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
+    boolean actual = schemaStore.isSchemaType(content, SHAPE);
+    assertTrue(actual);
+  }
+  @Test
+  public void testNoOntologyIRI() throws UnsupportedEncodingException {
+    String path = "Schema-Tests/noOntologyIRI.ttl";
+    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
+    String actual = schemaStore.analyseSchema(content).getErrorMessage();
+    String expected = "Ontology Schema has no ontology IRI";
+    assertEquals(expected,actual);
+  }
+  @Test
+  public void testIsInvalidVocabulary() throws UnsupportedEncodingException {
+    String path = "JSON-LD-Tests/skosConceptInvalid.ttl";
+    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
+    String actual = schemaStore.analyseSchema(content).getErrorMessage();
+    String expected = "Vocabulary Schema has more than one skos concept";
+    assertEquals(expected,actual);
+  }
+
 
   /**
    * Test of addSchema method, of class SchemaManagementImpl.
@@ -237,7 +261,7 @@ public class SchemaManagementImplTest {
 
   @Test
   public void testGetSchemasForTypeVocabulary() throws UnsupportedEncodingException {
-    String path = "Schema-Tests/skosConcept.ttl";
+    String path = "Schema-Tests/skosConceptInvalid.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult schemaAnalysisResult = schemaStore.analyseSchema(content);
     SchemaStore.SchemaType actual = schemaAnalysisResult.getSchemaType();

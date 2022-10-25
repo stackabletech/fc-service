@@ -92,7 +92,7 @@ public class VerificationServiceImplTest {
         VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
         assertEquals("https://www.handelsregister.de/", vrp.getId());
         assertEquals("https://www.handelsregister.de/", vrp.getIssuer());
-        assertEquals(OffsetDateTime.of(2010, 1, 1, 19, 37, 24, 0, ZoneOffset.UTC), vrp.getIssuedDateTime()); //2010-01-01T19:73:24
+        assertEquals(OffsetDateTime.of(2010, 1, 1, 19, 37, 24, 0, ZoneOffset.UTC), vrp.getIssuedDate()); //2010-01-01T19:73:24
     }
 
     @Test

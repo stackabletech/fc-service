@@ -22,14 +22,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.persistence.EntityExistsException;
@@ -44,9 +37,11 @@ import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.shacl.parser.NodeShape;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -68,6 +63,19 @@ public class SchemaStoreImpl implements SchemaStore {
   private SessionFactory sessionFactory;
 
   private static final Map<SchemaType, ContentAccessor> COMPOSITE_SCHEMAS = new ConcurrentHashMap<>();
+
+  private final String RDFS_CLASS = "http://www.w3.org/2000/01/rdf-schema#Class";
+  private final String RDF_PROPERTY = "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property";
+  private final String OWL_INDIVIDUAL ="http://www.w3.org/2002/07/owl#Individual" ;
+  private final String OWL_ONTOLOGY ="http://www.w3.org/2002/07/owl#Ontology";
+  private final String OWL_CLASS ="http://www.w3.org/2002/07/owl#Class";
+  private final String SH_NODESHAPE = "http://www.w3.org/ns/shacl#NodeShape";
+  private final String SH_PROPERTYSHAPE ="http://www.w3.org/ns/shacl#PropertyShape" ;
+
+  private final String SKOS_CONCEPT= "http://www.w3.org/2004/02/skos/core#Concept";
+
+  private final String SKOS_CONCEPTSCHEME ="http://www.w3.org/2004/02/skos/core#ConceptScheme";
+
 
   @Override
   public void initializeDefaultSchemas() {
@@ -101,66 +109,78 @@ public class SchemaStoreImpl implements SchemaStore {
    * @return The analysis results.
    */
   public SchemaAnalysisResult analyseSchema(ContentAccessor schema) {
+    int countSkosConcept = 0;
     SchemaAnalysisResult result = new SchemaAnalysisResult();
     Set<String> extractedUrlsSet = new HashSet<>();
     Model model = ModelFactory.createDefaultModel();
-    try {
-      model.read(schema.getContentAsStream(), null, "TTL");
-      result.setValid(true);
-    } catch (Exception exc) {
-      result.setValid(false);
-      result.setErrorMessage(exc.getMessage());
-      return result;
+    List<String> schemaType = Arrays.asList("JSON-LD","RDF/XML","TTL");
+    for (String type :schemaType){
+      try {
+        model.read(schema.getContentAsStream(),null,type);
+        result.setValid(true);
+      } catch (Exception exc) {
+        result.setValid(false);
+        result.setErrorMessage(exc.getMessage());
+      }
     }
     StmtIterator iter = model.listStatements();
     while (iter.hasNext()) {
       Statement stmt = iter.nextStatement();
       String predicate = stmt.getPredicate().getURI();
       String subject = stmt.getSubject().getURI();
-      Object object = stmt.getObject();
-      if (predicate != null) {
-        if (predicate.toLowerCase().indexOf("/skos") > 0) {
-          result.setSchemaType(SchemaType.VOCABULARY);
-          if (stmt.getObject().isURIResource()) {
-            extractedUrlsSet.add(object.toString());
-          }
-          if (subject != null) {
-            extractedUrlsSet.add(predicate);
-            extractedUrlsSet.add(subject);
-          }
-          break;
-        } else if (predicate.toLowerCase().indexOf("/shacl") > 0) {
+     // Object object = stmt.getObject();
+      String object = stmt.getObject().toString();
+
+      if (object != null) {
+        if ( object.equals(SH_NODESHAPE)|| object.equals(SH_PROPERTYSHAPE)) {
+          result.setExtractedId(null);
           result.setSchemaType(SchemaType.SHAPE);
-          if (stmt.getObject().isURIResource()) {
-            extractedUrlsSet.add(object.toString());
-          }
           if (subject != null) {
-            extractedUrlsSet.add(predicate);
             extractedUrlsSet.add(subject);
           }
-          ResIterator res = model.listSubjects();
-          while (res.hasNext()) {
-            String extractedID = res.nextResource().getURI();
-            if (extractedID != null) {
-              result.setExtractedId(extractedID);
-            }
-          }
-          break;
-        } else {
-          result.setSchemaType(SchemaType.ONTOLOGY);
-          if (stmt.getObject().isURIResource()) {
-            extractedUrlsSet.add(object.toString());
+        } else if(object.equals(OWL_ONTOLOGY) || object.equals(OWL_INDIVIDUAL) || object.equals(RDF_PROPERTY) || object.equals(RDFS_CLASS) || object.equals(OWL_CLASS) ) {
+          if (predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && subject != null) {
+            result.setExtractedId(subject);
+            result.setSchemaType(SchemaType.ONTOLOGY);
+          } else {
+            result.setValid(false);
+            result.setErrorMessage("Ontology Schema has no ontology IRI");
+            break;
           }
           if (subject != null) {
-            extractedUrlsSet.add(predicate);
+            extractedUrlsSet.add(subject);
+          }
+        }else if  ( object.equals(SKOS_CONCEPT) || object.equals(SKOS_CONCEPTSCHEME)) {
+          countSkosConcept++;
+          if (predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && subject != null && countSkosConcept == 1) {
+            result.setExtractedId(subject);
+            result.setSchemaType(SchemaType.VOCABULARY);
+          } else {
+            result.setValid(false);
+            result.setErrorMessage("Vocabulary Schema has more than one skos concept");
+            break;
+          }
+          if (subject != null) {
             extractedUrlsSet.add(subject);
           }
         }
+        } else {
+            result.setErrorMessage("Schema is not supported");
+        }
       }
-    }
+
     List<String> extractedUrls = new ArrayList<>(extractedUrlsSet);
     result.setExtractedUrls(extractedUrls);
     return result;
+  }
+
+  public boolean isSchemaType(ContentAccessor schema,SchemaType type) {
+    SchemaAnalysisResult result = analyseSchema(schema);
+    if(result.getSchemaType().equals(type)) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   private ContentAccessor createCompositeSchema(SchemaType type) {
@@ -192,6 +212,7 @@ public class SchemaStoreImpl implements SchemaStore {
     SchemaAnalysisResult result = analyseSchema(schema);
     return result.isValid();
   }
+
 
   @Override
   public String addSchema(ContentAccessor schema) {

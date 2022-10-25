@@ -10,3 +10,12 @@ ex:cat rdf:type skos:Concept;
   skos:definition "A small carnivorous mammal with soft fur, a short snout, and retractable claws."@en;
   skos:editorialNote "Review this term after merge."@en;
   skos:changeNote "Added hidden label."@en.
+
+  ex:dog rdf:type skos:Concept;
+    skos:prefLabel "cat"@en;
+    skos:prefLabel "Katze"@de;
+    skos:altLabel "kitten"@en;
+    skos:hiddenLabel "katze"@de;
+    skos:definition "A small carnivorous mammal with soft fur, a short snout, and retractable claws."@en;
+    skos:editorialNote "Review this term after merge."@en;
+    skos:changeNote "Added hidden label."@en.
