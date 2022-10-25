@@ -385,26 +385,92 @@ public class Neo4jGraphStoreTest {
         );
     }
 
+    /**
+     * This test adds two sets of claims and after deleting the first set
+     * - there should be no nodes with their graphUri list containing the
+     *   credential subject of the first set
+     * - no added nodes referenced by their URI directly.
+     *
+     * But the nodes of the second set of claims should still be there, assuring
+     * we do not delete more than the claims of the first set.
+     *
+     * TODO: Extend the test to check shared nodes which are in both sets
+     */
     @Test
-    void testDeleteClaims() throws Exception {
-        String credentialSubject="http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
-        List<SdClaim> sdClaimList = new ArrayList<>();
-        SdClaim sdClaim = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/service#ServiceOffering>");
-        sdClaimList.add(sdClaim);
-        SdClaim sdClaimSecond = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>", "<http://w3id.org/gaia-x/service#providedBy>", "<https://delta-dao.com/.well-known/participant.json>");
-        sdClaimList.add(sdClaimSecond);
-        SdClaim claimWBlankNodeObject = new SdClaim(
-                "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
-                "<http://ex.com/some_property>",
-                "_:23"
+    void testDeleteClaims() {
+        String credentialSubject1 = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
+        List<SdClaim> sdClaimList = Arrays.asList(
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                ),
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://ex.com/some_property>",
+                        "_:23"
+                ),
+                new SdClaim(
+                        "_:23",
+                        "<http://ex.com/some_other_property>",
+                        "<http:ex.com/some_service>"
+                ),
+                new SdClaim(
+                        "<http:ex.com/some_service>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                )
         );
-        sdClaimList.add(claimWBlankNodeObject);
-        graphGaia.addClaims(sdClaimList, credentialSubject);
-        graphGaia.deleteClaims(credentialSubject);
+
+        String credentialSubject2 = "http://ex.com/credentialSubject2";
+        List<SdClaim> sdClaimsWOtherCredSubject = Arrays.asList(
+                new SdClaim(
+                        "<http://ex.com/credentialSubject2>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                ),
+                new SdClaim(
+                        "<http://ex.com/credentialSubject2>",
+                        "<http://ex.com/some_property>",
+                        "<http://ex.com/resource23>"
+                )
+        );
+
+        graphGaia.addClaims(sdClaimList, credentialSubject1);
+        graphGaia.addClaims(sdClaimsWOtherCredSubject, credentialSubject2);
+
+        graphGaia.deleteClaims(credentialSubject1);
+
+        // The (virtual) graph of nodes belonging to credentialSubject1 should
+        // be empty
         GraphQuery queryDelta = new GraphQuery(
-                "MATCH (n) WHERE '"+credentialSubject+"' IN n.claimsGraphUri RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
+                "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
+                Map.of("graphUri", credentialSubject1));
+
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
         Assertions.assertTrue(responseDelta.isEmpty());
+
+        // The credentialSubject1 node should be gone
+        queryDelta = new GraphQuery(
+                "MATCH (n {uri: $uri}) RETURN n",
+                Map.of("uri", credentialSubject1)
+        );
+        responseDelta = graphGaia.queryData(queryDelta).getResults();
+        Assertions.assertTrue(responseDelta.isEmpty());
+
+        // But the other claims belonging to the (virtual) graph of
+        // credentialSubject2 should still be there. There are two:
+        // - <http://ex.com/credentialSubject2>
+        // - <http://ex.com/resource23>
+        queryDelta = new GraphQuery(
+                "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
+                Map.of("graphUri", credentialSubject2)
+        );
+        responseDelta = graphGaia.queryData(queryDelta).getResults();
+        Assertions.assertEquals(2, responseDelta.size());
+
+        // clean up
+        graphGaia.deleteClaims(credentialSubject2);
     }
 
     @Test
