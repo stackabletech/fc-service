@@ -27,7 +27,13 @@ public class ExtendClaims {
         Node s = triple.getSubject();
         Node p = triple.getPredicate();
         Node o = triple.getObject();
-        Resource subject = model.createResource(s.getURI());
+
+        Resource subject;
+        if (s.isURI())
+            subject = model.createResource(s.getURI());
+        else // assuming it is a blank node
+            subject = model.createResource(new AnonId(s.getBlankNodeLabel()));
+
         model.add(subject, claimsGraphUri, credentialSubject);
         if (!o.isLiteral() && !p.equals(RDF.type.asNode()) && !(o.isBlank())) {
             Resource object = model.createResource(o.getURI());
@@ -38,6 +44,7 @@ public class ExtendClaims {
         }
         OutputStream outputstream = new ByteArrayOutputStream();
         model.write(outputstream, "N-TRIPLES");
+
         return outputstream.toString();
     }
 
