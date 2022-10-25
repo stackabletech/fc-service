@@ -3,6 +3,7 @@ package eu.gaiax.difs.fc.core.service.graphdb.impl;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.exception.TimeoutException;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -44,10 +45,10 @@ public class Neo4jGraphStoreTest {
 
     @Value("${graphstore.query-timeout-in-seconds}")
     private int queryTimeoutInSeconds;
-    
+
     @Autowired
     private Neo4j embeddedDatabaseServer;
-    
+
     @Autowired
     private Neo4jGraphStore graphGaia;
 
@@ -90,8 +91,8 @@ public class Neo4jGraphStoreTest {
     /**
      * Given set of credentials connect to graph and upload self description.
      * Instantiate list of claims with subject predicate and object in N-triples
-     * form along with literals and upload to graph. Verify if the claim has been uploaded using
-     * query service
+     * form along with literals and upload to graph. Verify if the claim has
+     * been uploaded using query service
      */
 
     @Test
@@ -188,8 +189,8 @@ public class Neo4jGraphStoreTest {
         // and the correct credential subject
         Assertions.assertDoesNotThrow(
                 () -> graphGaia.addClaims(
-                    Collections.singletonList(syntacticallyCorrectClaim),
-                    credentialSubject
+                        Collections.singletonList(syntacticallyCorrectClaim),
+                        credentialSubject
                 )
         );
 
@@ -315,6 +316,28 @@ public class Neo4jGraphStoreTest {
                     graphGaia.queryData(queryUpdate);
                 }
         );
+    }
+
+    @Test
+    void testDeleteClaims() throws Exception {
+        String credentialSubject="http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
+        List<SdClaim> sdClaimList = new ArrayList<>();
+        SdClaim sdClaim = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/service#ServiceOffering>");
+        sdClaimList.add(sdClaim);
+        SdClaim sdClaimSecond = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>", "<http://w3id.org/gaia-x/service#providedBy>", "<https://delta-dao.com/.well-known/participant.json>");
+        sdClaimList.add(sdClaimSecond);
+        SdClaim claimWBlankNodeObject = new SdClaim(
+                "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                "<http://ex.com/some_property>",
+                "_:23"
+        );
+        sdClaimList.add(claimWBlankNodeObject);
+        graphGaia.addClaims(sdClaimList, credentialSubject);
+        graphGaia.deleteClaims(credentialSubject);
+        GraphQuery queryDelta = new GraphQuery(
+                "MATCH (n) WHERE '"+credentialSubject+"' IN n.claimsGraphUri RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
+        List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
+        Assertions.assertTrue(responseDelta.isEmpty());
     }
 
     @Test
