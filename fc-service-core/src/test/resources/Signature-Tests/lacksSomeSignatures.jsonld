@@ -33,7 +33,7 @@
 	"proof": {
 		"type": "JsonWebSignature2020",
 		"created": "2022-02-25T14:58:43Z",
-		"verificationMethod": "https://example.edu/issuers/565049#key-1",
+		"verificationMethod": "did:web:example",
 		"proofPurpose": "assertionMethod",
 		"jws": "XXX"
 	}
