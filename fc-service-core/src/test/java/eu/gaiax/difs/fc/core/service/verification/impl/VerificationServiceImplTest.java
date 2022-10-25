@@ -5,19 +5,11 @@ import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.*;
-import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
-import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
-import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImplTest;
 import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
-import org.junit.jupiter.api.*;
 import lombok.extern.slf4j.Slf4j;
 
-import org.apache.jena.atlas.logging.Log;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -35,14 +27,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.security.NoSuchAlgorithmException;
-import java.security.Signature;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -176,17 +160,17 @@ public class VerificationServiceImplTest {
     
     @Test
     void invalidProof_MissingProofs() throws IOException {
-        String path = "VerificationService/sign/hasNoSignature1.jsonld";
+        String path = "VerificationService/sign/hasNoSignature1.json";
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path), false, true, true));
-        assertEquals("Signarures error; No proof found", ex.getMessage());
+        assertEquals("Signatures error; No proof found", ex.getMessage());
         assertNull(ex.getCause());
     }
 
     @Test
     void invalidProof_UnknownVerificationMethod () throws Exception {
-        String path = "VerificationService/sign/hasInvalidSignatureType.jsonld";
+        String path = "VerificationService/sign/hasInvalidSignatureType.json";
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
@@ -195,33 +179,29 @@ public class VerificationServiceImplTest {
     }
 
     @Test
-    @Disabled("We need an SD with valid proofs")
     void invalidProof_SignaturesMissing2() throws IOException {
-        String path = "VerificationService/sign/lacksSomeSignatures.jsonld";
+        String path = "VerificationService/sign/lacksSomeSignatures.json";
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
-        assertEquals("Signarures error; No proof found", ex.getMessage());
+        assertEquals("Signatures error; No proof found", ex.getMessage());
         assertNull(ex.getCause());
     }
 
     @Test
-    @Disabled() //TODO
     void verifySignature_InvalidSignature () throws UnsupportedEncodingException {
-        String path = "VerificationService/sign/hasInvalidSignature.jsonld";
+        String path = "VerificationService/sign/hasInvalidSignature.json";
 
         Exception ex = assertThrowsExactly(VerificationException.class, () ->
                 verificationService.verifySelfDescription(getAccessor(path)));
-        assertTrue(ex.getMessage().contains("does not match with proof"));
+        assertEquals("Signatures error; com.danubetech.verifiablecredentials.VerifiableCredential does not match with proof", ex.getMessage());
     }
 
     @Test
-    @Disabled("We have no valid SD yet") //TODO
-    void validSD () {
-        String path = "JSON-LD-Tests/validSD.jsonld";
+    void validSD () throws UnsupportedEncodingException {
+        String path = "VerificationService/sign/valid_signature.json";
 
-        assertDoesNotThrow(() ->
-                verificationService.verifySelfDescription(getAccessor(path)));
+        verificationService.verifySelfDescription(getAccessor(path));
     }
 
     @Test

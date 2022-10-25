@@ -164,7 +164,8 @@ public class Neo4jGraphStoreAccuracyTest {
     fileStore.clearStorage();
 
     ContentAccessorDirect contentAccessor = new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME));
-    VerificationResultOffering verificationResult = verificationService.verifyOfferingSelfDescription(contentAccessor);
+    VerificationResultOffering verificationResult =
+            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, true, false);
 
     //TODO:: adding manually claims, after final implementation we will remove it and change the query according to sd
 
@@ -188,7 +189,8 @@ public class Neo4jGraphStoreAccuracyTest {
     //adding 2 sd skipping sd validation as we don't have full implementation
     ContentAccessorDirect contentAccessorDirect2 =
         new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME1));
-    VerificationResultOffering verificationResult2 = verificationService.verifyOfferingSelfDescription(contentAccessor);
+    VerificationResultOffering verificationResult2 =
+            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, true, false);
 
     SdClaim sdClaim1 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal2.json>",
         "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
@@ -211,7 +213,8 @@ public class Neo4jGraphStoreAccuracyTest {
     //adding sd 3
     ContentAccessorDirect contentAccessorDirect3 =
         new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME2));
-    VerificationResultOffering verificationResult3 = verificationService.verifyOfferingSelfDescription(contentAccessor);
+    VerificationResultOffering verificationResult3 =
+            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, true, false);
 
     SdClaim sdClaim3 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal3.json>",
         "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
@@ -235,7 +238,8 @@ public class Neo4jGraphStoreAccuracyTest {
     //adding sd 3
     ContentAccessorDirect contentAccessorDirect4 =
         new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME3));
-    VerificationResultOffering verificationResult4 = verificationService.verifyOfferingSelfDescription(contentAccessor);
+    VerificationResultOffering verificationResult4 =
+            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, true, false);
 
 
     SdClaim sdClaim4 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json>",

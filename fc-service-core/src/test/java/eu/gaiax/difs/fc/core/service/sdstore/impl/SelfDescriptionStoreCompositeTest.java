@@ -132,7 +132,7 @@ public class SelfDescriptionStoreCompositeTest {
     log.info("test01StoreSelfDescription");
 
     ContentAccessor content = getAccessor(VerificationDirectTest.class, "Claims-Extraction-Tests/participantSD.jsonld");
-    VerificationResultParticipant result = verificationService.verifyParticipantSelfDescription(content);
+    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, true, false);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
     sdStore.storeSelfDescription(sdMeta, result);
     
