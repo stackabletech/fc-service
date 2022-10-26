@@ -35,10 +35,10 @@ public class ExtendClaims {
             subject = model.createResource(new AnonId(s.getBlankNodeLabel()));
 
         model.add(subject, claimsGraphUri, credentialSubject);
-        if (!o.isLiteral() && !p.equals(RDF.type.asNode()) && !(o.isBlank())) {
+        if (o.isURI() && !p.equals(RDF.type.asNode())) {
             Resource object = model.createResource(o.getURI());
             model.add(object, claimsGraphUri, credentialSubject);
-        } else if (o.isBlank()) {
+        } else if (o.isBlank() && !p.equals(RDF.type.asNode())) {
             Resource blankNode = model.createResource(new AnonId(o.getBlankNodeId()));
             model.add(blankNode, claimsGraphUri, credentialSubject);
         }
