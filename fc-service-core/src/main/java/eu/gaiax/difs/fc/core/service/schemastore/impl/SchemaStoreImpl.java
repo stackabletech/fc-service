@@ -70,7 +70,6 @@ public class SchemaStoreImpl implements SchemaStore {
   private final String RDF_PROPERTY = "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property";
   private final String OWL_NAMED_INDIVIDUAL ="http://www.w3.org/2002/07/owl#NamedIndividual" ;
   private final String OWL_ONTOLOGY ="http://www.w3.org/2002/07/owl#Ontology";
-  private final String OWL_ONTOLOGY_IRI ="http://www.w3.org/2002/07/owl#ontologyIRI";
   private final String OWL_CLASS ="http://www.w3.org/2002/07/owl#Class";
   private final String SH_NODESHAPE = "http://www.w3.org/ns/shacl#NodeShape";
   private final String SH_PROPERTYSHAPE ="http://www.w3.org/ns/shacl#PropertyShape" ;
@@ -112,10 +111,10 @@ public class SchemaStoreImpl implements SchemaStore {
    * @return The analysis results.
    */
   public SchemaAnalysisResult analyseSchema(ContentAccessor schema) {
-    int countSkosConcept = 0;
     SchemaAnalysisResult result = new SchemaAnalysisResult();
     Set<String> extractedUrlsSet = new HashSet<>();
-    Model model = ModelFactory.createDefaultModel();
+    Model defaultModel = ModelFactory.createDefaultModel();
+    Model model = ModelFactory.createRDFSModel(defaultModel);
     List<String> schemaType = Arrays.asList("JSON-LD","RDF/XML","TTL");
     for (String type :schemaType){
       try {
@@ -132,7 +131,7 @@ public class SchemaStoreImpl implements SchemaStore {
      result.setSchemaType(SchemaType.SHAPE);
      result.setExtractedId(null);
    } else {
-     ResIterator resIteratorProperty =  model.listResourcesWithProperty(model.createProperty(OWL_ONTOLOGY_IRI));
+     ResIterator resIteratorProperty =  model.listResourcesWithProperty(RDF.type,OWL.Ontology);
      if(resIteratorProperty.hasNext()){
        Resource resource = resIteratorProperty.nextResource();
        result.setSchemaType(SchemaType.ONTOLOGY);
@@ -148,7 +147,7 @@ public class SchemaStoreImpl implements SchemaStore {
          result.setSchemaType(SchemaType.VOCABULARY);
          result.setExtractedId(resource.getURI());
          if(resIteratorProperty.hasNext()){
-           result.setErrorMessage("Vocabulary contains  multiple concept schemes ");
+           result.setErrorMessage("Vocabulary contains multiple concept schemes");
            result.setValid(false);
          }
        } else {
@@ -160,37 +159,18 @@ public class SchemaStoreImpl implements SchemaStore {
    if (result.isValid()) {
      switch (result.getSchemaType()) {
        case SHAPE:
-         ResIterator resIteratorNode = model.listResourcesWithProperty(RDF.type, SHACLM.NodeShape);
-         while (resIteratorNode.hasNext()) {
-           extractedUrlsSet.add(resIteratorNode.nextResource().getURI());
-         }
-         resIteratorNode = model.listResourcesWithProperty(RDF.type, SHACLM.PropertyShape);
-         while (resIteratorNode.hasNext()) {
-           extractedUrlsSet.add(resIteratorNode.nextResource().getURI());
-         }
+         setExtractedUrlsSet(model, defaultModel, SHACLM.NodeShape, extractedUrlsSet);
+         setExtractedUrlsSet(model, defaultModel, SHACLM.PropertyShape, extractedUrlsSet);
          break;
 
        case ONTOLOGY:
-         resIteratorNode = model.listResourcesWithProperty(RDF.type, OWL2.NamedIndividual);
-
-         while (resIteratorNode.hasNext()) {
-           extractedUrlsSet.add(resIteratorNode.nextResource().getURI());
-         }
-         resIteratorNode = model.listResourcesWithProperty(RDF.type, RDF.Property);
-         while (resIteratorNode.hasNext()) {
-           extractedUrlsSet.add(resIteratorNode.nextResource().getURI());
-         }
-         resIteratorNode = model.listResourcesWithProperty(RDF.type, RDFS.Class);
-         while (resIteratorNode.hasNext()) {
-           extractedUrlsSet.add(resIteratorNode.nextResource().getURI());
-         }
+         setExtractedUrlsSet(model, defaultModel, OWL2.NamedIndividual, extractedUrlsSet);
+         setExtractedUrlsSet(model, defaultModel, RDF.Property, extractedUrlsSet);
+         setExtractedUrlsSet(model, defaultModel, RDFS.Class, extractedUrlsSet);
          break;
 
        case VOCABULARY:
-         resIteratorNode = model.listResourcesWithProperty(RDF.type, SKOS.Concept);
-         while (resIteratorNode.hasNext()) {
-           extractedUrlsSet.add(resIteratorNode.nextResource().getURI());
-         }
+         setExtractedUrlsSet(model, defaultModel, SKOS.Concept, extractedUrlsSet);
          break;
        default:
          // this will not happen
@@ -200,6 +180,15 @@ public class SchemaStoreImpl implements SchemaStore {
     result.setExtractedUrls(extractedUrls);
     return result;
   }
+public void setExtractedUrlsSet(Model model, Model defaultModel, RDFNode node, Set<String> extractedSet) {
+  ResIterator resIteratorNode = model.listResourcesWithProperty(RDF.type, node);
+  while (resIteratorNode.hasNext()) {
+    Resource rs = resIteratorNode.nextResource();
+    if (defaultModel.contains(rs, (Property) null, (RDFNode) null)) {
+      extractedSet.add(rs.getURI());
+    }
+  }
+}
 
   public boolean isSchemaType(ContentAccessor schema,SchemaType type) {
     SchemaAnalysisResult result = analyseSchema(schema);
