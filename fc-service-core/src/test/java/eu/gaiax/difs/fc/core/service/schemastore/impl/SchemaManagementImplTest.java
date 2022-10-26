@@ -1,8 +1,5 @@
 package eu.gaiax.difs.fc.core.service.schemastore.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
-
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
@@ -12,6 +9,7 @@ import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import static eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.util.TestUtil;
@@ -99,6 +97,7 @@ public class SchemaManagementImplTest {
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     boolean actual = schemaStore.isSchemaType(content, SHAPE);
     assertTrue(actual);
+    assertNull(schemaStore.analyseSchema(content).getExtractedId());
   }
   @Test
   public void testNoOntologyIRI() throws UnsupportedEncodingException {
@@ -107,13 +106,32 @@ public class SchemaManagementImplTest {
     String actual = schemaStore.analyseSchema(content).getErrorMessage();
     String expected = "Ontology Schema has no ontology IRI";
     assertEquals(expected,actual);
+    assertNull(schemaStore.analyseSchema(content).getExtractedId());
+  }
+  @Test
+  public void testValidOntology() throws UnsupportedEncodingException {
+    String path = "Schema-Tests/validOntology.ttl";
+    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
+    boolean actual = schemaStore.isSchemaType(content, ONTOLOGY);
+    assertTrue(actual);
+    assertTrue(schemaStore.verifySchema(content));
   }
   @Test
   public void testIsInvalidVocabulary() throws UnsupportedEncodingException {
-    String path = "JSON-LD-Tests/skosConceptInvalid.ttl";
+    String path = "Schema-Tests/skosConceptInvalid.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     String actual = schemaStore.analyseSchema(content).getErrorMessage();
     String expected = "Vocabulary Schema has more than one skos concept";
+    assertFalse(schemaStore.analyseSchema(content).isValid());
+    assertEquals(expected,actual);
+  }
+  @Test
+  public void testIsInvalidSchema() throws UnsupportedEncodingException {
+    String path = "Schema-Tests/invalidSchema.ttl";
+    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
+    String actual = schemaStore.analyseSchema(content).getErrorMessage();
+    String expected = "Schema is not supported";
+    assertFalse(schemaStore.analyseSchema(content).isValid());
     assertEquals(expected,actual);
   }
 

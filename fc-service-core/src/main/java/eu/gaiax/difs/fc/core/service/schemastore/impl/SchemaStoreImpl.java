@@ -30,11 +30,7 @@ import javax.persistence.LockModeType;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.ResIterator;
-import org.apache.jena.rdf.model.Statement;
-import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.shacl.parser.NodeShape;
@@ -46,6 +42,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.apache.jena.vocabulary.RDF;
+import org.apache.jena.vocabulary.RDFS;
+import org.apache.jena.vocabulary.SKOS;
+import org.apache.jena.vocabulary.OWL;
+import org.apache.jena.shacl.vocabulary.SHACLM;
+import org.apache.jena.vocabulary.OWL2;
 
 /**
  *
@@ -66,8 +68,9 @@ public class SchemaStoreImpl implements SchemaStore {
 
   private final String RDFS_CLASS = "http://www.w3.org/2000/01/rdf-schema#Class";
   private final String RDF_PROPERTY = "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property";
-  private final String OWL_INDIVIDUAL ="http://www.w3.org/2002/07/owl#Individual" ;
+  private final String OWL_NAMED_INDIVIDUAL ="http://www.w3.org/2002/07/owl#NamedIndividual" ;
   private final String OWL_ONTOLOGY ="http://www.w3.org/2002/07/owl#Ontology";
+  private final String OWL_ONTOLOGY_IRI ="http://www.w3.org/2002/07/owl#ontologyIRI";
   private final String OWL_CLASS ="http://www.w3.org/2002/07/owl#Class";
   private final String SH_NODESHAPE = "http://www.w3.org/ns/shacl#NodeShape";
   private final String SH_PROPERTYSHAPE ="http://www.w3.org/ns/shacl#PropertyShape" ;
@@ -76,7 +79,7 @@ public class SchemaStoreImpl implements SchemaStore {
 
   private final String SKOS_CONCEPTSCHEME ="http://www.w3.org/2004/02/skos/core#ConceptScheme";
 
-
+  private final String RDF_TYPE ="http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
   @Override
   public void initializeDefaultSchemas() {
     Session currentSession = sessionFactory.getCurrentSession();
@@ -118,57 +121,81 @@ public class SchemaStoreImpl implements SchemaStore {
       try {
         model.read(schema.getContentAsStream(),null,type);
         result.setValid(true);
+        break;
       } catch (Exception exc) {
         result.setValid(false);
         result.setErrorMessage(exc.getMessage());
       }
     }
-    StmtIterator iter = model.listStatements();
-    while (iter.hasNext()) {
-      Statement stmt = iter.nextStatement();
-      String predicate = stmt.getPredicate().getURI();
-      String subject = stmt.getSubject().getURI();
-     // Object object = stmt.getObject();
-      String object = stmt.getObject().toString();
+   if ( model.contains(null, RDF.type , SHACLM.NodeShape) ||
+           model.contains(null, RDF.type, SHACLM.PropertyShape) ) {
+     result.setSchemaType(SchemaType.SHAPE);
+     result.setExtractedId(null);
+   } else {
+     ResIterator resIteratorProperty =  model.listResourcesWithProperty(model.createProperty(OWL_ONTOLOGY_IRI));
+     if(resIteratorProperty.hasNext()){
+       Resource resource = resIteratorProperty.nextResource();
+       result.setSchemaType(SchemaType.ONTOLOGY);
+       result.setExtractedId(resource.getURI());
+       if(resIteratorProperty.hasNext()){
+         result.setErrorMessage("Ontology Schema has multiple Ontology IRIs");
+         result.setValid(false);
+       }
+     } else {
+       resIteratorProperty =  model.listResourcesWithProperty(RDF.type, SKOS.ConceptScheme);
+       if(resIteratorProperty.hasNext()) {
+         Resource resource = resIteratorProperty.nextResource();
+         result.setSchemaType(SchemaType.VOCABULARY);
+         result.setExtractedId(resource.getURI());
+         if(resIteratorProperty.hasNext()){
+           result.setErrorMessage("Vocabulary contains  multiple concept schemes ");
+           result.setValid(false);
+         }
+       } else {
+         result.setValid(false);
+         result.setErrorMessage("Schema is not supported");
+       }
+     }
+   }
+   if (result.isValid()) {
+     switch (result.getSchemaType()) {
+       case SHAPE:
+         ResIterator resIteratorNode = model.listResourcesWithProperty(RDF.type, SHACLM.NodeShape);
+         while (resIteratorNode.hasNext()) {
+           extractedUrlsSet.add(resIteratorNode.nextResource().getURI());
+         }
+         resIteratorNode = model.listResourcesWithProperty(RDF.type, SHACLM.PropertyShape);
+         while (resIteratorNode.hasNext()) {
+           extractedUrlsSet.add(resIteratorNode.nextResource().getURI());
+         }
+         break;
 
-      if (object != null) {
-        if ( object.equals(SH_NODESHAPE)|| object.equals(SH_PROPERTYSHAPE)) {
-          result.setExtractedId(null);
-          result.setSchemaType(SchemaType.SHAPE);
-          if (subject != null) {
-            extractedUrlsSet.add(subject);
-          }
-        } else if(object.equals(OWL_ONTOLOGY) || object.equals(OWL_INDIVIDUAL) || object.equals(RDF_PROPERTY) || object.equals(RDFS_CLASS) || object.equals(OWL_CLASS) ) {
-          if (predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && subject != null) {
-            result.setExtractedId(subject);
-            result.setSchemaType(SchemaType.ONTOLOGY);
-          } else {
-            result.setValid(false);
-            result.setErrorMessage("Ontology Schema has no ontology IRI");
-            break;
-          }
-          if (subject != null) {
-            extractedUrlsSet.add(subject);
-          }
-        }else if  ( object.equals(SKOS_CONCEPT) || object.equals(SKOS_CONCEPTSCHEME)) {
-          countSkosConcept++;
-          if (predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && subject != null && countSkosConcept == 1) {
-            result.setExtractedId(subject);
-            result.setSchemaType(SchemaType.VOCABULARY);
-          } else {
-            result.setValid(false);
-            result.setErrorMessage("Vocabulary Schema has more than one skos concept");
-            break;
-          }
-          if (subject != null) {
-            extractedUrlsSet.add(subject);
-          }
-        }
-        } else {
-            result.setErrorMessage("Schema is not supported");
-        }
-      }
+       case ONTOLOGY:
+         resIteratorNode = model.listResourcesWithProperty(RDF.type, OWL2.NamedIndividual);
 
+         while (resIteratorNode.hasNext()) {
+           extractedUrlsSet.add(resIteratorNode.nextResource().getURI());
+         }
+         resIteratorNode = model.listResourcesWithProperty(RDF.type, RDF.Property);
+         while (resIteratorNode.hasNext()) {
+           extractedUrlsSet.add(resIteratorNode.nextResource().getURI());
+         }
+         resIteratorNode = model.listResourcesWithProperty(RDF.type, RDFS.Class);
+         while (resIteratorNode.hasNext()) {
+           extractedUrlsSet.add(resIteratorNode.nextResource().getURI());
+         }
+         break;
+
+       case VOCABULARY:
+         resIteratorNode = model.listResourcesWithProperty(RDF.type, SKOS.Concept);
+         while (resIteratorNode.hasNext()) {
+           extractedUrlsSet.add(resIteratorNode.nextResource().getURI());
+         }
+         break;
+       default:
+         // this will not happen
+     }
+   }
     List<String> extractedUrls = new ArrayList<>(extractedUrlsSet);
     result.setExtractedUrls(extractedUrls);
     return result;
