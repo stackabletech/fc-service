@@ -1,69 +1,64 @@
 {
-	"@context": [
-		"https://www.w3.org/2018/credentials/v1"
-	],
+	"@context": ["https://www.w3.org/2018/credentials/v1"],
 	"@id": "http://example.edu/verifiablePresentation/self-description1",
-	"@type": [
-		"VerifiablePresentation"
-	],
+	"type": ["VerifiablePresentation"],
 	"verifiableCredential": {
-		"@context": [
-			"https://www.w3.org/2018/credentials/v1"
-		],
+		"@context": ["https://www.w3.org/2018/credentials/v1"],
 		"@id": "https://delta-dao.com/.well-known/participant.json",
-		"@type": [
-			"VerifiableCredential"
-		],
-		"credentialSubject": {
-			"@context": {
-				"owl": "http://www.w3.org/2002/07/owl#",
-				"rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-				"rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-				"xsd": "http://www.w3.org/2001/XMLSchema#"
-			},
-			"@graph": [
-				{
-					"@id": "http://w3id.org/gaia-x/service#service2",
-					"@type": "http://w3id.org/gaia-x/service#ServiceOffering",
-					"http://w3id.org/gaia-x/service#dataExport": {
-						"@id": "_:N0cf4fefd0613452fb82caeaeab5144bb"
-					},
-					"http://w3id.org/gaia-x/service#providedBy": {
-						"@id": "http://w3id.org/gaia-x/participant#provider2"
-					},
-					"http://w3id.org/gaia-x/service#serviceTitle": "Service Title",
-					"http://w3id.org/gaia-x/service#termsAndConditions": {
-						"@id": "_:N077bb07b6c7445eeb52e25aa2aa14a7a"
-					},
-					"http://www.w3.org/ns/dcat#keyword": [
-						"Keyword1",
-						"Keyword2",
-						"Keyword3",
-						"Keyword4",
-						"Keyword5",
-						"Keyword6",
-						"Keyword7",
-						"Keyword8",
-						"Keyword9",
-						"Keyword10"
-					]
-				},
-				{
-					"@id": "_:N077bb07b6c7445eeb52e25aa2aa14a7a",
-					"@type": "http://w3id.org/gaia-x/core#TermsAndConditions",
-					"http://w3id.org/gaia-x/core#content": {
-						"@type": "xsd:anyURI",
-						"@value": "http://example.org/tac"
-					},
-					"http://w3id.org/gaia-x/core#hash": "1234"
-				},
-				{
-					"@id": "_:N0cf4fefd0613452fb82caeaeab5144bb",
-					"http://w3id.org/gaia-x/core#accessType": "access type",
-					"http://w3id.org/gaia-x/core#formatType": "format type",
-					"http://w3id.org/gaia-x/core#requestType": "request type"
-				}
-			]
-		}
-	}
+		"@type": ["VerifiableCredential"],
+		"issuer": "http://gaiax.de",
+		"issuanceDate": "2022-10-19T18:48:09Z",
+		"credentialSubject":
+{
+  "@context": {
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "@graph": [
+    {
+      "@id": "http://w3id.org/gaia-x/service#service2",
+      "@type": "http://w3id.org/gaia-x/service#ServiceOffering",
+      "http://w3id.org/gaia-x/service#dataExport": {
+        "@id": "_:Nee1beb2691ca424d89401614c2b2daa0"
+      },
+      "http://w3id.org/gaia-x/service#providedBy": {
+        "@id": "http://w3id.org/gaia-x/participant#provider2"
+      },
+      "http://w3id.org/gaia-x/service#serviceTitle": "Service Title",
+      "http://w3id.org/gaia-x/service#termsAndConditions": {
+        "@id": "_:Nd60e3aed239b491ba1ec66a968e03830"
+      },
+      "http://www.w3.org/ns/dcat#keyword": [
+        "Keyword1",
+        "Keyword2",
+        "Keyword3",
+        "Keyword4",
+        "Keyword5",
+        "Keyword6",
+        "Keyword7",
+        "Keyword8",
+        "Keyword9",
+        "Keyword10"
+      ]
+    },
+    {
+      "@id": "_:Nd60e3aed239b491ba1ec66a968e03830",
+      "@type": "http://w3id.org/gaia-x/core#TermsAndConditions",
+      "http://w3id.org/gaia-x/core#content": {
+        "@type": "xsd:anyURI",
+        "@value": "http://example.org/tac"
+      },
+      "http://w3id.org/gaia-x/core#hash": "1234"
+    },
+    {
+      "@id": "_:Nee1beb2691ca424d89401614c2b2daa0",
+      "http://w3id.org/gaia-x/core#accessType": "access type",
+      "http://w3id.org/gaia-x/core#formatType": "format type",
+      "http://w3id.org/gaia-x/core#requestType": "request type"
+    }
+  ]
+}
+}
 }

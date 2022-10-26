@@ -1,13 +1,13 @@
 package eu.gaiax.difs.fc.core.pojo;
 
 import static eu.gaiax.difs.fc.core.util.HashUtils.calculateSha256AsHex;
-import static java.time.OffsetDateTime.now;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import eu.gaiax.difs.fc.api.generated.model.SelfDescription;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -31,7 +31,7 @@ public class SelfDescriptionMetadata extends SelfDescription {
 
   public SelfDescriptionMetadata(String id, String issuer, List<Validator> validators, ContentAccessorDirect contentAccessor) {
     super(calculateSha256AsHex(contentAccessor.getContentAsString()), id, SelfDescriptionStatus.ACTIVE, issuer, 
-            validators.stream().map(Validator::getDidURI).collect(Collectors.toList()), now(), now());
+            validators.stream().map(Validator::getDidURI).collect(Collectors.toList()), Instant.now(), Instant.now());
     this.selfDescription = contentAccessor;
   }
 

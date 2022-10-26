@@ -18,8 +18,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.gaiax.difs.fc.api.generated.model.Error;
 import eu.gaiax.difs.fc.api.generated.model.VerificationResult;
-import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
-import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
@@ -30,8 +28,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -74,7 +71,7 @@ public class VerificationControllerTest {
                .getContentAsString();
         VerificationResult partResult = objectMapper.readValue(response, VerificationResult.class);
         assertEquals("did:example:issuer", partResult.getIssuer());
-        assertEquals(OffsetDateTime.of(2010, 1, 1, 19, 23, 24, 0, ZoneOffset.UTC), partResult.getIssuedDateTime()); 
+        assertEquals(Instant.parse("2010-01-01T19:23:24Z"), partResult.getIssuedDateTime()); 
     }
  
     @Test

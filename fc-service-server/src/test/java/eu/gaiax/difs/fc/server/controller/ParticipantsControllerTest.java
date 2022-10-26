@@ -82,9 +82,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.event.annotation.BeforeTestClass;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -99,8 +97,6 @@ import org.springframework.web.context.WebApplicationContext;
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Import(EmbeddedNeo4JConfig.class)
-//@Transactional
-//@DirtiesContext
 public class ParticipantsControllerTest {
     @Autowired
     private WebApplicationContext context;
@@ -117,7 +113,6 @@ public class ParticipantsControllerTest {
     private UserDaoImpl userDao;
     @Autowired
     private ObjectMapper objectMapper;
-
     @Autowired
     private MockMvc mockMvc;
     
