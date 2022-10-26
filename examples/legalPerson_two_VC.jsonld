@@ -1,4 +1,5 @@
-{
+[
+  {
 	"@context": ["https://www.w3.org/2018/credentials/v1"],
 	"@id": "http://example.edu/verifiablePresentation/self-description1",
 	"type": ["VerifiablePresentation"],
@@ -10,8 +11,7 @@
 		"issuer": "http://gaiax.de",
 		"issuanceDate": "2022-10-19T18:48:09Z",
 		"credentialSubject":
-        [
-          {
+        {
             "@id": "http://w3id.org/gaia-x/participant#Provider1",
             "@type": [
               "http://w3id.org/gaia-x/participant#LegalPerson"
@@ -61,57 +61,16 @@
                 "@id": "_:N3c57e46392ea4004807475ab484ceae0"
               }
             ]
-          },
-          {
-            "@id": "_:N65aaf93709ec4d25a50a5b0db383b055",
-            "http://www.w3.org/2006/vcard/ns#country-name": [
-              {
-                "@value": "Country"
-              }
-            ],
-            "http://www.w3.org/2006/vcard/ns#locality": [
-              {
-                "@value": "Town Name"
-              }
-            ],
-            "http://www.w3.org/2006/vcard/ns#postal-code": [
-              {
-                "@value": "1234"
-              }
-            ],
-            "http://www.w3.org/2006/vcard/ns#street-address": [
-              {
-                "@value": "Street Name"
-              }
-            ]
-          },
-          {
-            "@id": "_:N3c57e46392ea4004807475ab484ceae0",
-            "@type": [
-              "http://w3id.org/gaia-x/core#TermsAndConditions"
-            ],
-            "http://w3id.org/gaia-x/core#content": [
-              {
-                "@type": "http://www.w3.org/2001/XMLSchema#anyURI",
-                "@value": "http://example.org/tac"
-              }
-            ],
-            "http://w3id.org/gaia-x/core#hash": [
-              {
-                "@value": "1234"
-              }
-            ]
           }
-        ]
-    },{
+    },
+    {
 		"@context": ["https://www.w3.org/2018/credentials/v1"],
 		"@id": "https://www.example.org/legalPerson2.json",
 		"@type": ["VerifiableCredential"],
 		"issuer": "http://gaiax.de",
 		"issuanceDate": "2022-10-19T18:48:09Z",
 		"credentialSubject":
-        [
-          {
+        {
             "@id": "http://w3id.org/gaia-x/participant#Provider1",
             "@type": [
               "http://w3id.org/gaia-x/participant#LegalPerson"
@@ -149,47 +108,48 @@
                 "@id": "_:N3c57e46392ea4004807475ab484ceae0"
               }
             ]
-          },
-          {
-            "@id": "_:N65aaf93709ec4d25a50a5b0db383b055",
-            "http://www.w3.org/2006/vcard/ns#country-name": [
-              {
-                "@value": "Country"
-              }
-            ],
-            "http://www.w3.org/2006/vcard/ns#locality": [
-              {
-                "@value": "Town Name"
-              }
-            ],
-            "http://www.w3.org/2006/vcard/ns#postal-code": [
-              {
-                "@value": "1234"
-              }
-            ],
-            "http://www.w3.org/2006/vcard/ns#street-address": [
-              {
-                "@value": "Street Name"
-              }
-            ]
-          },
-          {
-            "@id": "_:N3c57e46392ea4004807475ab484ceae0",
-            "@type": [
-              "http://w3id.org/gaia-x/core#TermsAndConditions"
-            ],
-            "http://w3id.org/gaia-x/core#content": [
-              {
-                "@type": "http://www.w3.org/2001/XMLSchema#anyURI",
-                "@value": "http://example.org/tac"
-              }
-            ],
-            "http://w3id.org/gaia-x/core#hash": [
-              {
-                "@value": "1234"
-              }
-            ]
-          }
-        ]
-    } ]
-}
+        }
+    }
+    ]
+  },
+  {
+    "@id": "_:N65aaf93709ec4d25a50a5b0db383b055",
+    "http://www.w3.org/2006/vcard/ns#country-name": [
+      {
+        "@value": "Country"
+      }
+    ],
+    "http://www.w3.org/2006/vcard/ns#locality": [
+      {
+        "@value": "Town Name"
+      }
+    ],
+    "http://www.w3.org/2006/vcard/ns#postal-code": [
+      {
+        "@value": "1234"
+      }
+    ],
+    "http://www.w3.org/2006/vcard/ns#street-address": [
+      {
+        "@value": "Street Name"
+      }
+    ]
+  },
+  {
+    "@id": "_:N3c57e46392ea4004807475ab484ceae0",
+    "@type": [
+      "http://w3id.org/gaia-x/core#TermsAndConditions"
+    ],
+    "http://w3id.org/gaia-x/core#content": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#anyURI",
+        "@value": "http://example.org/tac"
+      }
+    ],
+    "http://w3id.org/gaia-x/core#hash": [
+      {
+        "@value": "1234"
+      }
+    ]
+  }
+]
