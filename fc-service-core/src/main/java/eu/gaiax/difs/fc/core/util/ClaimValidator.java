@@ -127,7 +127,7 @@ public class ClaimValidator {
                     throw new QueryException(
                             "Subject in triple " +
                                     sdClaim.asTriple() +
-                                    " is not a valid URI: ");
+                                    " is not a valid URI ");
                 } // else it should be a blank node
             }
             // --- predicate --------------------------------------------------
@@ -142,7 +142,7 @@ public class ClaimValidator {
                     throw new QueryException(
                             "Predicate in triple " +
                                     sdClaim.asTriple() +
-                                    " is not a valid URI: ");
+                                    " is not a valid URI ");
 
                 }
             } else {
@@ -164,7 +164,7 @@ public class ClaimValidator {
                     throw new QueryException(
                             "Object in triple " +
                                     sdClaim.asTriple() +
-                                    " is not a valid URI: ");
+                                    " is not a valid URI ");
                 }
             } else if (o.isLiteral()) {
                 // Nothing needs to be done here as literal syntax errors and
