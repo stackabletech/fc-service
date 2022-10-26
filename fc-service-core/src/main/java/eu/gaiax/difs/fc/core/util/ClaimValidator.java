@@ -145,13 +145,7 @@ public class ClaimValidator {
                                     " is not a valid URI ");
 
                 }
-            } else {
-                // TODO: should we allow blank nodes?
-                throw new QueryException(
-                        "Predicate in triple " +
-                                sdClaim.asTriple() +
-                                " is not a valid URI");
-            }
+            } 
             // --- object -----------------------------------------------------
             Node o = triple.getObject();
             if (o.isURI()) {
