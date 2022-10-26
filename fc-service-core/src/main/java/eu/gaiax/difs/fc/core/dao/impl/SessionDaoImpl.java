@@ -1,7 +1,6 @@
 package eu.gaiax.difs.fc.core.dao.impl;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,7 +35,7 @@ public class SessionDaoImpl implements SessionDao {
             log.debug("select; session {} of {}, started at: {}, last accessed at: {}, from: {}", 
                     ssn.getId(), ssn.getUsername(), ssn.getStart(), ssn.getLastAccess(), ssn.getIpAddress());
             java.util.Date start = new java.util.Date(ssn.getStart());
-            OffsetDateTime started = start.toInstant().atOffset(ZoneOffset.UTC); 
+            Instant started = start.toInstant(); 
             return new Session(ssn.getUserId(), started, "ACTIVE", // what it should be??
                     user.roles().getAll().getRealmMappings().stream().map(rr -> rr.getName()).collect(Collectors.toList()));
         }

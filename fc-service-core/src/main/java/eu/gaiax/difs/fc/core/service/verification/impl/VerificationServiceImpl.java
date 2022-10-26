@@ -1,7 +1,5 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
-import com.apicatalog.rdf.RdfNQuad;
-import com.apicatalog.rdf.RdfValue;
 import com.danubetech.keyformats.JWK_to_PublicKey;
 import com.danubetech.keyformats.crypto.PublicKeyVerifier;
 import com.danubetech.keyformats.crypto.PublicKeyVerifierFactory;
@@ -17,6 +15,7 @@ import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.*;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
+import eu.gaiax.difs.fc.core.service.verification.ClaimExtractor;
 import eu.gaiax.difs.fc.core.service.validatorcache.ValidatorCache;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import foundation.identity.did.DIDDocument;
@@ -56,8 +55,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.*;
 
 /**
@@ -73,6 +70,8 @@ public class VerificationServiceImpl implements VerificationService {
   private static final Set<String> PARTICIPANT_TYPES = Set.of("LegalPerson", "http://w3id.org/gaia-x/participant#LegalPerson", "gax-participant:LegalPerson");
   private static final Set<String> SERVICE_OFFERING_TYPES = Set.of("ServiceOfferingExperimental", "http://w3id.org/gaia-x/service#ServiceOffering", "gax-service:ServiceOffering");
   private static final Set<String> SIGNATURES = Set.of("JsonWebSignature2020"); //, "Ed25519Signature2018");
+  
+  private static final ClaimExtractor[] extractors = new ClaimExtractor[] {new TitaniumClaimExtractor(), new DanubeTechClaimExtractor()};
   
   private static final int VRT_UNKNOWN = 0;
   private static final int VRT_PARTICIPANT= 1;
@@ -191,17 +190,9 @@ public class VerificationServiceImpl implements VerificationService {
       issuer = vc.getIssuer().toString();
     }
     Date issDate = vc.getIssuanceDate();
-    OffsetDateTime issuedDate = issDate == null ? OffsetDateTime.now() : issDate.toInstant().atOffset(ZoneOffset.UTC); 
+    Instant issuedDate = issDate == null ? Instant.now() : issDate.toInstant(); 
 
-    List<SdClaim> claims = null;
-    CredentialSubject credentialSubject = getCredentialSubject(vc);
-    if (credentialSubject == null) {
-      if (strict) {
-        throw new VerificationException("Semantic error: VerifiableCredential must contain 'credentialSubject' property");
-      }
-    } else {
-      claims = extractClaims(credentialSubject);
-    }
+    List<SdClaim> claims = extractClaims(payload);
     
     VerificationResult result;
     if (type.getLeft()) {
@@ -214,13 +205,13 @@ public class VerificationServiceImpl implements VerificationService {
       }
       URI holder = vp.getHolder();
       String name = holder == null ? issuer : holder.toString();
-      result = new VerificationResultParticipant(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
+      result = new VerificationResultParticipant(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
               claims, validators, name, key);
     } else if (type.getRight()) {
-      result = new VerificationResultOffering(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
+      result = new VerificationResultOffering(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
               id, claims, validators);
     } else {
-      result = new VerificationResult(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
+      result = new VerificationResult(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
             id, claims, validators);
     }
 
@@ -256,9 +247,6 @@ public class VerificationServiceImpl implements VerificationService {
     if (checkAbsence(presentation, "type", "@type")) {
       sb.append(" - VerifiablePresentation must contain 'type' property").append(sep);
     }
-    //if (presentation.getJsonObject().get("proof") == null) {
-    //  sb.append(" - VerifiablePresentation must contain 'proof' property").append(sep);
-    //}
     if (checkAbsence(presentation, "verifiableCredential")) {
       sb.append(" - VerifiablePresentation must contain 'verifiableCredential' property").append(sep);
     }
@@ -279,12 +267,6 @@ public class VerificationServiceImpl implements VerificationService {
       if (checkAbsence(credential, "issuanceDate")) {
         sb.append(" - VerifiableCredential must contain 'issuanceDate' property").append(sep);
       }
-      //CredentialSubject subject = getCredentialSubject(credential);
-      //if (subject != null) {
-      //  if (checkAbsence(subject, "id", "@id")) {
-      //    sb.append(" - CredentialSubject must contain 'id' property").append(sep);
-      //  }
-      //}
     
       Date today = Date.from(Instant.now());
       Date issDate = credential.getIssuanceDate();
@@ -365,31 +347,21 @@ public class VerificationServiceImpl implements VerificationService {
    * @param cs a self-description as Verifiable Presentation for claims extraction
    * @return a list of claims.
    */
-   private List<SdClaim> extractClaims(CredentialSubject cs) {
-
-     log.debug("extractClaims.enter; got credential subject: {}", cs);
-     List<SdClaim> claims = new ArrayList<>();
-     try {
-       for (RdfNQuad nquad: cs.toDataset().toList()) {
-         log.debug("extractClaims; got NQuad: {}", nquad);
-         SdClaim claim = new SdClaim(rdf2String(nquad.getSubject()), rdf2String(nquad.getPredicate()), rdf2String(nquad.getObject()));
-         claims.add(claim);
-       }  
-       //log.debug("extractClaims; claims: {}", cs.getClaims());
-     } catch (JsonLDException ex) {
-       throw new VerificationException("Semantic error: " + ex.getMessage());
+   private List<SdClaim> extractClaims(ContentAccessor payload) {
+     List<SdClaim> claims = null;  
+     for (ClaimExtractor extra: extractors) {
+       try {
+         claims = extra.extractClaims(payload);
+         if (claims != null) {
+           break;
+         }
+       } catch (Exception ex) {
+         log.error("extractClaims.error: ", ex);
+       }
      }
-     log.debug("extractClaims.exit; returning claims: {}", claims);
      return claims;
   }
 
-  private String rdf2String(RdfValue rdf) {
-     if (rdf.isBlankNode()) return rdf.getValue();
-     if (rdf.isLiteral()) return "\"" + rdf.getValue() + "\"";
-     // rdf is IRI. here we could try to make it absolute..
-     return "<" + rdf.getValue() + ">";
-  }
-  
   private VerifiableCredential getCredential(VerifiablePresentation presentation) {
     try {
       VerifiableCredential credential = presentation.getVerifiableCredential();
@@ -419,7 +391,15 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   private String getID(VerifiableCredential credential) {
-    return getID(credential.getJsonObject());
+    String id = null;
+    CredentialSubject subject = getCredentialSubject(credential);
+    if (subject != null) {
+      id = getID(subject.getJsonObject());  
+    }
+    if (id == null) {
+      id = getID(credential.getJsonObject());  
+    }
+    return id;
   }
 
   private String getID (Map<String, Object> map) {
@@ -433,7 +413,7 @@ public class VerificationServiceImpl implements VerificationService {
         }
       }
     }
-    throw new VerificationException("Semantic error: could not find Credential ID");
+    return null;
   }
 
   /* SD validation against SHACL Schemas */

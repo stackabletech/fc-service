@@ -1,14 +1,22 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
-import eu.gaiax.difs.fc.core.config.DatabaseConfig;
-import eu.gaiax.difs.fc.core.config.FileStoreConfig;
-import eu.gaiax.difs.fc.core.exception.ClientException;
-import eu.gaiax.difs.fc.core.exception.VerificationException;
-import eu.gaiax.difs.fc.core.pojo.*;
-import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
-import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
-import lombok.extern.slf4j.Slf4j;
+import static eu.gaiax.difs.fc.core.util.TestUtil.getAccessor;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -20,19 +28,20 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
-import javax.transaction.Transactional;
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
+import eu.gaiax.difs.fc.core.config.DatabaseConfig;
+import eu.gaiax.difs.fc.core.config.FileStoreConfig;
+import eu.gaiax.difs.fc.core.exception.ClientException;
+import eu.gaiax.difs.fc.core.exception.VerificationException;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
+import eu.gaiax.difs.fc.core.pojo.SdClaim;
+import eu.gaiax.difs.fc.core.pojo.SemanticValidationResult;
+import eu.gaiax.difs.fc.core.pojo.VerificationResult;
+import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
+import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
+import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
+import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @SpringBootTest
@@ -41,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = {VerificationServiceImplTest.TestApplication.class, FileStoreConfig.class,
         VerificationServiceImpl.class, SchemaStoreImpl.class, DatabaseConfig.class, ValidatorCacheImpl.class})
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
-@Transactional
+//@Transactional
 public class VerificationServiceImplTest {
     @Autowired
     ValidatorCacheImpl validatorCache;
@@ -57,18 +66,12 @@ public class VerificationServiceImplTest {
     @Autowired
     private VerificationServiceImpl verificationService;
 
-    private static ContentAccessor getAccessor(String path) throws UnsupportedEncodingException {
-        URL url = VerificationServiceImplTest.class.getClassLoader().getResource(path);
-        String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8.name());
-        return new ContentAccessorFile(new File(str));
-    }
-
     @Test
-    void invalidSyntax_MissingQuote() {
+    void invalidSyntax_MissingQuote() throws Exception {
         String path = "VerificationService/syntax/missingQuote.jsonld";
-
+        ContentAccessor content = getAccessor(path);
         Exception ex = assertThrowsExactly(ClientException.class, () ->
-                verificationService.verifySelfDescription(getAccessor(path)));
+                verificationService.verifySelfDescription(content));
         assertTrue(ex.getMessage().startsWith("Syntactic error: "));
         assertNotNull(ex.getCause());
     }
@@ -92,7 +95,7 @@ public class VerificationServiceImplTest {
         VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
         assertEquals("https://www.handelsregister.de/", vrp.getId());
         assertEquals("https://www.handelsregister.de/", vrp.getIssuer());
-        assertEquals(OffsetDateTime.of(2010, 1, 1, 19, 37, 24, 0, ZoneOffset.UTC), vrp.getIssuedDateTime()); //2010-01-01T19:73:24
+        assertEquals(Instant.parse("2010-01-01T19:37:24Z"), vrp.getIssuedDateTime()); 
     }
 
     @Test
@@ -123,7 +126,7 @@ public class VerificationServiceImplTest {
     }
 
     @Test
-    @Disabled("invalid SO generated")
+    //@Disabled("invalid SO generated")
     void validSyntax_ValidService2() throws Exception {
         String path = "VerificationService/syntax/service2.jsonld";
         VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
@@ -200,49 +203,66 @@ public class VerificationServiceImplTest {
     @Test
     void validSD () throws UnsupportedEncodingException {
         String path = "VerificationService/sign/valid_signature.json";
-
         verificationService.verifySelfDescription(getAccessor(path));
     }
 
     @Test
-    //@Disabled("This test wont work like this anymore since some functions are private now")
-    void providerClaimsTest() throws Exception {
-        String path = "Claims-Extraction-Tests/providerTest.jsonld";
-
-        VerificationResult result = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
+    void extractClaims_providerTest() throws Exception {
+        ContentAccessor content = getAccessor("Claims-Extraction-Tests/providerTest.jsonld");
+        VerificationResult result = verificationService.verifySelfDescription(content, true, true, false);
         List<SdClaim> actualClaims = result.getClaims();
+        log.debug("extractClaims_providerTest; actual claims: {}", actualClaims);
 
-        log.debug("providerClaimsTest; actual claims: {}", actualClaims);
-
-        List<SdClaim> expectedClaims = new ArrayList<>();
-        expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#Provider>"));
-        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b1"));
-        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#legalName>", "\"deltaDAO AG\""));
-        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#name>", "\"deltaDAO AG\""));
-        expectedClaims.add(new SdClaim("_:b1", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#Address>"));
-        expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#country>", "\"DE\""));
-        expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#locality>", "\"Hamburg\""));
-        expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#postal-code>", "\"22303\""));
-        expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#street-address>", "\"Geibelstra?e 46b\""));
-
-        //expectedClaims.add(new SdClaim("_:b0", "<vcard:country-name>", "\"Country Name 2\""));
-        //expectedClaims.add(new SdClaim("_:b0", "<vcard:locality>", "\"City Name 2\""));
-        //expectedClaims.add(new SdClaim("_:b0", "<vcard:postal-code>", "\"99999\""));
-        //expectedClaims.add(new SdClaim("_:b0", "<vcard:street-address>", "\"Example street 2\""));
-        //expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<gax:Provider>"));
-        //expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<gax:hasLegallyBindingAddress>", "_:b0"));
-        //expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<gax:hasLegallyBindingName>", "\"My example provider\""));
-
+        Set<SdClaim> expectedClaims = new HashSet<>();
+        expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#Provider>"));
+        expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b0")); 
+        expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#legalName>", "\"deltaDAO AG\"")); 
+        expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#name>", "\"deltaDAO AG\""));
+        expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#Address>"));
+        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#country>", "\"DE\"")); 
+        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#locality>", "\"Hamburg\"")); 
+        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#postal-code>", "\"22303\"")); 
+        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#street-address>", "\"Geibelstraße 46b\""));
         assertEquals(expectedClaims.size(), actualClaims.size());
-        //assertEquals(expectedClaims, actualClaims); do not match, for some reason..
+        assertEquals(expectedClaims, new HashSet<>(actualClaims)); 
+    }
+
+    @Test
+    void extractClaims_participantTest() throws Exception {
+        ContentAccessor content = getAccessor("Claims-Extraction-Tests/participantSD.jsonld");
+        VerificationResult result = verificationService.verifySelfDescription(content, true, true, false);
+        List<SdClaim> actualClaims = result.getClaims();
+        log.debug("extractClaims_participantTest; actual claims: {}", actualClaims);
+
+        Set<SdClaim> expectedClaims = new HashSet<>();
+        expectedClaims.add(new SdClaim("_:b0", "<gx-participant:ethereumAddress>", "\"0x4C84a36fCDb7Bc750294A7f3B5ad5CA8F74C4A52\""));
+        expectedClaims.add(new SdClaim("_:b0", "<gx-participant:headquarterAddress>", "_:b1"));
+        expectedClaims.add(new SdClaim("_:b0", "<gx-participant:legalAddress>", "_:b2"));
+        expectedClaims.add(new SdClaim("_:b0", "<gx-participant:legalName>", "\"deltaDAO AG\""));
+        expectedClaims.add(new SdClaim("_:b0", "<gx-participant:leiCode>", "\"391200FJBNU0YW987L26\""));
+        expectedClaims.add(new SdClaim("_:b0", "<gx-participant:name>", "\"deltaDAO AG\""));
+        expectedClaims.add(new SdClaim("_:b0", "<gx-participant:registrationNumber>", "\"DEK1101R.HRB170364\""));
+        expectedClaims.add(new SdClaim("_:b0", "<gx-service-offering:TermsAndConditions>", "_:b3"));
+        expectedClaims.add(new SdClaim("_:b1", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<gx-participant:Address>"));
+        expectedClaims.add(new SdClaim("_:b1", "<gx-participant:country>", "\"DE\""));
+        expectedClaims.add(new SdClaim("_:b1", "<gx-participant:locality>", "\"Hamburg\""));
+        expectedClaims.add(new SdClaim("_:b1", "<gx-participant:postal-code>", "\"22303\""));
+        expectedClaims.add(new SdClaim("_:b1", "<gx-participant:street-address>", "\"Geibelstraße 46b\""));
+        expectedClaims.add(new SdClaim("_:b2", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<gx-participant:Address>"));
+        expectedClaims.add(new SdClaim("_:b2", "<gx-participant:country>", "\"DE\""));
+        expectedClaims.add(new SdClaim("_:b2", "<gx-participant:locality>", "\"Hamburg\""));
+        expectedClaims.add(new SdClaim("_:b2", "<gx-participant:postal-code>", "\"22303\""));
+        expectedClaims.add(new SdClaim("_:b2", "<gx-participant:street-address>", "\"Geibelstraße 46b\""));
+        expectedClaims.add(new SdClaim("_:b3", "<gx-service-offering:hash>", "\"36ba819f30a3c4d4a7f16ee0a77259fc92f2e1ebf739713609f1c11eb41499e7aa2cd3a5d2011e073f9ba9c107493e3e8629cc15cd4fc07f67281d7ea9023db0\""));
+        expectedClaims.add(new SdClaim("_:b3", "<gx-service-offering:url>", "\"https://gaia-x.gitlab.io/policy-rules-committee/trust-framework/participant/#legal-person\""));        
+        assertEquals(expectedClaims.size(), actualClaims.size());
+        assertEquals(expectedClaims, new HashSet<>(actualClaims)); 
     }
 
     @Test
     void verifyValidationResult() throws IOException {
-        String dataPath = "Validation-Tests/DataCenterDataGraph.jsonld";
-        String shapePath = "Validation-Tests/physical-resourceShape.ttl";
         SemanticValidationResult validationResult = verificationService.validatePayloadAgainstSchema(
-                getAccessor(dataPath), getAccessor(shapePath));
+                getAccessor("Validation-Tests/DataCenterDataGraph.jsonld"), getAccessor("Validation-Tests/physical-resourceShape.ttl"));
 
         if (!validationResult.isConforming()) {
             assertTrue(validationResult.getValidationReport().contains("Property needs to have at least 1 value"));

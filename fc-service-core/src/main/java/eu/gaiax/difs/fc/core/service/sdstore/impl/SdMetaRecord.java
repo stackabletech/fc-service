@@ -5,7 +5,7 @@ import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -86,17 +86,8 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
    * @return The upload time Instant
    */
   @Column(name = "uploadtime", nullable = false)
-  public Instant getUploadTime() {
-    return super.getUploadDatetime().toInstant();
-  }
-
-  /**
-   * Set the uploadTime from an Instant.
-   *
-   * @param uploadTime the upload time as Instant.
-   */
-  public void setUploadTime(Instant uploadTime) {
-    super.setUploadDatetime(uploadTime.atOffset(ZoneOffset.UTC));
+  public Instant getUploadDatetime() {
+    return super.getUploadDatetime(); 
   }
 
   /**
@@ -105,17 +96,8 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
    * @return the status time as Instant.
    */
   @Column(name = "statustime", nullable = false)
-  public Instant getStatusTime() {
-    return super.getStatusDatetime().toInstant();
-  }
-
-  /**
-   * Set the statucTime from an Instant.
-   *
-   * @param statusTime the upload time as Instant.
-   */
-  public void setStatusTime(Instant statusTime) {
-    super.setStatusDatetime(statusTime.atOffset(ZoneOffset.UTC));
+  public Instant getStatusDatetime() {
+    return super.getStatusDatetime(); 
   }
 
   @Column(columnDefinition = "TEXT", name = "content", nullable = false)
@@ -161,8 +143,8 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
     this.setSubjectId(sdMeta.getId());
     this.setStatus(sdMeta.getStatus());
     this.setIssuer(sdMeta.getIssuer());
-    this.setUploadTime(sdMeta.getUploadDatetime().toInstant());
-    this.setStatusTime(sdMeta.getStatusDatetime().toInstant());
+    this.setUploadDatetime(sdMeta.getUploadDatetime());
+    this.setStatusDatetime(sdMeta.getStatusDatetime());
     this.setSelfDescription(sdMeta.getSelfDescription());
     // better to reset it to some mutable List
     if (sdMeta.getValidatorDids() != null) {

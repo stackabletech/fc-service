@@ -275,9 +275,6 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
         .uniqueResult();
 
     final SdMetaRecord sdmRecord = new SdMetaRecord(sdMetadata);
-    // we must reset ValidatorDids in sdnRecord.. 
-    //sdmRecord.setValidatorDids(new ArrayList<>());
-
     final List<Validator> validators = verificationResult.getValidators();
     final boolean registerValidators = sdMetadata.getValidatorDids() == null || sdMetadata.getValidatorDids().isEmpty();
     if (validators != null) {
@@ -296,7 +293,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
     if (existingSd != null) {
       existingSd.setStatus(SelfDescriptionStatus.DEPRECATED);
-      existingSd.setStatusTime(Instant.now());
+      existingSd.setStatusDatetime(Instant.now()); 
       currentSession.update(existingSd);
       currentSession.flush();
       graphDb.deleteClaims(existingSd.getSubjectId());
@@ -343,7 +340,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       throw new ConflictException(message);
     }
     sdmRecord.setStatus(targetStatus);
-    sdmRecord.setStatusTime(Instant.now());
+    sdmRecord.setStatusDatetime(Instant.now());
     currentSession.update(sdmRecord);
 
     graphDb.deleteClaims(sdmRecord.getSubjectId());

@@ -1,6 +1,6 @@
 package eu.gaiax.difs.fc.core.pojo;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -19,14 +19,8 @@ public class VerificationResultOffering extends VerificationResult {
    * @param issuer Issuer of the offering
    * @param issuedDate issuing date of the SD
    */
-  public VerificationResultOffering(
-          OffsetDateTime verificationTimestamp,
-          String lifecycleStatus,
-          String issuer,
-          OffsetDateTime issuedDateTime,
-          String id,
-          List<SdClaim> claims,
-          List<Validator> validators) {
+  public VerificationResultOffering(Instant verificationTimestamp, String lifecycleStatus, String issuer, Instant issuedDateTime,
+          String id, List<SdClaim> claims, List<Validator> validators) {
     super(verificationTimestamp, lifecycleStatus, issuer, issuedDateTime, id, claims, validators);
   }
 

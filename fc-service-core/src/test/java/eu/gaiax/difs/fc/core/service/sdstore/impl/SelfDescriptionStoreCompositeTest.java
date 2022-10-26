@@ -94,16 +94,16 @@ public class SelfDescriptionStoreCompositeTest {
 
   // Since SdMetaRecord class extends SelfDescriptionMetadata class instead of being formed from it, then check
   // in the equals method will always be false. Because we are downcasting SdMetaRecord to SelfDescriptionMetadata.
-  private static void assertThatSdHasTheSameData(final SelfDescriptionMetadata excepted,
+  private static void assertThatSdHasTheSameData(final SelfDescriptionMetadata expected,
       final SelfDescriptionMetadata actual) {
-    assertEquals(actual.getId(), excepted.getId());
-    assertEquals(actual.getSdHash(), excepted.getSdHash());
-    assertEquals(actual.getStatus(), excepted.getStatus());
-    assertEquals(actual.getIssuer(), excepted.getIssuer());
-    assertEquals(actual.getValidatorDids(), excepted.getValidatorDids());
-    //assertEquals(actual.getUploadDatetime(), excepted.getUploadDatetime());
-    //assertEquals(actual.getStatusDatetime(), excepted.getStatusDatetime());
-    assertEquals(actual.getSelfDescription().getContentAsString(), excepted.getSelfDescription().getContentAsString());
+    assertEquals(expected.getId(), actual.getId());
+    assertEquals(expected.getSdHash(), actual.getSdHash());
+    assertEquals(expected.getStatus(), actual.getStatus());
+    assertEquals(expected.getIssuer(), actual.getIssuer());
+    assertEquals(expected.getValidatorDids(), actual.getValidatorDids());
+    assertEquals(expected.getUploadDatetime(), actual.getUploadDatetime());
+    assertEquals(expected.getStatusDatetime(), actual.getStatusDatetime());
+    assertEquals(expected.getSelfDescription().getContentAsString(), actual.getSelfDescription().getContentAsString());
   }
 
   private void assertStoredSdFiles(final int expected) {
@@ -130,8 +130,7 @@ public class SelfDescriptionStoreCompositeTest {
   @Test
   void test01StoreSelfDescription() throws Exception {
     log.info("test01StoreSelfDescription");
-
-    ContentAccessor content = getAccessor(VerificationDirectTest.class, "Claims-Extraction-Tests/participantSD.jsonld");
+    ContentAccessor content = getAccessor("Claims-Extraction-Tests/participantSD.jsonld");
     VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, true, false);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
     sdStore.storeSelfDescription(sdMeta, result);
