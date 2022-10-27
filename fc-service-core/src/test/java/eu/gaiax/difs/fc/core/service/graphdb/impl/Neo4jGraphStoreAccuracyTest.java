@@ -101,7 +101,7 @@ public class Neo4jGraphStoreAccuracyTest {
         Map.of("n.uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal.json"));
 
     GraphQuery queryDelta = new GraphQuery(
-        "MATCH (n:ns0__ServiceOffering) WHERE n.ns0__name = $name RETURN n LIMIT $limit",
+        "MATCH (n:ServiceOffering) WHERE n.name = $name RETURN n LIMIT $limit",
         Map.of("name", "Portal","limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
     Assertions.assertEquals(resultListExpected, responseList);
@@ -111,10 +111,10 @@ public class Neo4jGraphStoreAccuracyTest {
   void testCypherServiceOfferingByURIAccuracy() throws Exception {
     /*expected only one node as previous added claims with same ID deleted from code*/
     List<Map<String, String>> resultListExpected = List.of(
-        Map.of("n.ns0__name", "Portal3"));
+        Map.of("n.name", "Portal3"));
 
     GraphQuery queryDelta = new GraphQuery(
-        "MATCH (n:ns0__ServiceOffering) WHERE n.uri = $uri RETURN n.ns0__name LIMIT $limit",
+        "MATCH (n:ServiceOffering) WHERE n.uri = $uri RETURN n.name LIMIT $limit",
         Map.of("uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal3.json","limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
     Assertions.assertEquals(resultListExpected, responseList);
@@ -130,7 +130,7 @@ public class Neo4jGraphStoreAccuracyTest {
         Map.of("n.uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json"));
 
     GraphQuery queryDelta = new GraphQuery(
-        "MATCH (n:ns0__ServiceOffering)  RETURN n LIMIT $limit", Map.of("limit", 25));
+        "MATCH (n:ServiceOffering)  RETURN n LIMIT $limit", Map.of("limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
     Assertions.assertEquals(resultListExpected, responseList);
   }
@@ -144,8 +144,8 @@ public class Neo4jGraphStoreAccuracyTest {
         Map.of("name", "Portal2" ,"uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json"));
 
     GraphQuery queryDelta = new GraphQuery(
-        "CALL {MATCH (n:ns0__ServiceOffering) WHERE n.ns0__name = $name RETURN n.uri as urlList} MATCH " +
-            "(n:ns0__ServiceOffering) WHERE n.uri IN [urlList] RETURN n.uri as uri, n.ns0__name as name LIMIT $limit",
+        "CALL {MATCH (n:ServiceOffering) WHERE n.name = $name RETURN n.uri as urlList} MATCH " +
+            "(n:ServiceOffering) WHERE n.uri IN [urlList] RETURN n.uri as uri, n.name as name LIMIT $limit",
         Map.of("name", "Portal2","limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
     Assertions.assertEquals(resultListExpected, responseList);
@@ -156,7 +156,7 @@ public class Neo4jGraphStoreAccuracyTest {
     GraphQuery queryDelta = new GraphQuery(
         "MATCH (n)  RETURN n LIMIT $limit", Map.of("limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
-    Assertions.assertEquals(6, responseList.size());
+    Assertions.assertEquals(5, responseList.size());
   }
 
   private void initialiseAllDataBaseWithManuallyAddingSD() throws Exception {

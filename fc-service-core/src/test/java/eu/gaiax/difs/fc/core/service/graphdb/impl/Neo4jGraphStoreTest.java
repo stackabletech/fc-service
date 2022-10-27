@@ -3,6 +3,7 @@ package eu.gaiax.difs.fc.core.service.graphdb.impl;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.exception.TimeoutException;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -14,7 +15,6 @@ import eu.gaiax.difs.fc.core.exception.QueryException;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.runners.MethodSorters;
@@ -44,10 +44,10 @@ public class Neo4jGraphStoreTest {
 
     @Value("${graphstore.query-timeout-in-seconds}")
     private int queryTimeoutInSeconds;
-    
+
     @Autowired
     private Neo4j embeddedDatabaseServer;
-    
+
     @Autowired
     private Neo4jGraphStore graphGaia;
 
@@ -82,7 +82,7 @@ public class Neo4jGraphStoreTest {
                     credentialSubject.substring(1, credentialSubject.length() - 1));
         }
         GraphQuery queryFull = new GraphQuery(
-                "MATCH (n:ns0__ServiceOffering) RETURN n LIMIT 25", Map.of());
+                "MATCH (n:ServiceOffering) RETURN n LIMIT 25", Map.of());
         List<Map<String, Object>> responseFull = graphGaia.queryData(queryFull).getResults();
         Assertions.assertEquals(resultListFull, responseFull);
     }
@@ -90,8 +90,8 @@ public class Neo4jGraphStoreTest {
     /**
      * Given set of credentials connect to graph and upload self description.
      * Instantiate list of claims with subject predicate and object in N-triples
-     * form along with literals and upload to graph. Verify if the claim has been uploaded using
-     * query service
+     * form along with literals and upload to graph. Verify if the claim has
+     * been uploaded using query service
      */
 
     @Test
@@ -109,7 +109,7 @@ public class Neo4jGraphStoreTest {
             graphGaia.addClaims(sdClaimList, credentialSubject.substring(1, credentialSubject.length() - 1));
         }
         GraphQuery queryDelta = new GraphQuery(
-                "MATCH (n:ns1__LegalPerson) WHERE n.ns1__name = $name RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
+                "MATCH (n:LegalPerson) WHERE n.name = $name RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
         Assertions.assertEquals(resultListDelta, responseDelta);
     }
@@ -135,9 +135,7 @@ public class Neo4jGraphStoreTest {
      * form which is invalid and try uploading to graphDB
      */
     @Test
-    void testAddClaimsException() {
-        List<SdClaim> sdClaimList = new ArrayList<>();
-
+    void testAddClaimsException() throws Exception {
         String credentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
         String wrongCredentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch";
 
@@ -206,8 +204,8 @@ public class Neo4jGraphStoreTest {
         // and the correct credential subject
         Assertions.assertDoesNotThrow(
                 () -> graphGaia.addClaims(
-                    Collections.singletonList(syntacticallyCorrectClaim),
-                    credentialSubject
+                        Collections.singletonList(syntacticallyCorrectClaim),
+                        credentialSubject
                 ),
                 "A syntactically correct triple should pass but " +
                         "was rejected by the claim validation"
@@ -385,6 +383,94 @@ public class Neo4jGraphStoreTest {
                     graphGaia.queryData(queryUpdate);
                 }
         );
+    }
+
+    /**
+     * This test adds two sets of claims and after deleting the first set
+     * - there should be no nodes with their graphUri list containing the
+     *   credential subject of the first set
+     * - no added nodes referenced by their URI directly.
+     *
+     * But the nodes of the second set of claims should still be there, assuring
+     * we do not delete more than the claims of the first set.
+     *
+     * TODO: Extend the test to check shared nodes which are in both sets
+     */
+    @Test
+    void testDeleteClaims() {
+        String credentialSubject1 = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
+        List<SdClaim> sdClaimList = Arrays.asList(
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                ),
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://ex.com/some_property>",
+                        "_:23"
+                ),
+                new SdClaim(
+                        "_:23",
+                        "<http://ex.com/some_other_property>",
+                        "<http:ex.com/some_service>"
+                ),
+                new SdClaim(
+                        "<http:ex.com/some_service>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                )
+        );
+
+        String credentialSubject2 = "http://ex.com/credentialSubject2";
+        List<SdClaim> sdClaimsWOtherCredSubject = Arrays.asList(
+                new SdClaim(
+                        "<http://ex.com/credentialSubject2>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                ),
+                new SdClaim(
+                        "<http://ex.com/credentialSubject2>",
+                        "<http://ex.com/some_property>",
+                        "<http://ex.com/resource23>"
+                )
+        );
+
+        graphGaia.addClaims(sdClaimList, credentialSubject1);
+        graphGaia.addClaims(sdClaimsWOtherCredSubject, credentialSubject2);
+
+        graphGaia.deleteClaims(credentialSubject1);
+
+        // The (virtual) graph of nodes belonging to credentialSubject1 should
+        // be empty
+        GraphQuery queryDelta = new GraphQuery(
+                "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
+                Map.of("graphUri", credentialSubject1));
+
+        List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
+        Assertions.assertTrue(responseDelta.isEmpty());
+
+        // The credentialSubject1 node should be gone
+        queryDelta = new GraphQuery(
+                "MATCH (n {uri: $uri}) RETURN n",
+                Map.of("uri", credentialSubject1)
+        );
+        responseDelta = graphGaia.queryData(queryDelta).getResults();
+        Assertions.assertTrue(responseDelta.isEmpty());
+
+        // But the other claims belonging to the (virtual) graph of
+        // credentialSubject2 should still be there. There are two:
+        // - <http://ex.com/credentialSubject2>
+        // - <http://ex.com/resource23>
+        queryDelta = new GraphQuery(
+                "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
+                Map.of("graphUri", credentialSubject2)
+        );
+        responseDelta = graphGaia.queryData(queryDelta).getResults();
+        Assertions.assertEquals(2, responseDelta.size());
+
+        // clean up
+        graphGaia.deleteClaims(credentialSubject2);
     }
 
     @Test
