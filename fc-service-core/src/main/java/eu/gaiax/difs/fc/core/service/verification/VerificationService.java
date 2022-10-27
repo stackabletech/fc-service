@@ -50,12 +50,4 @@ public interface VerificationService {
    */
   VerificationResult verifySelfDescription(ContentAccessor payload, 
           boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException;
-
-  /**
-   * The function checks if a Validator is valid of if it has changed
-   *
-   * @param validator the validator to check
-   * @return boolean if the validator is valid
-   */
-  boolean checkValidator (Validator validator);
 }
