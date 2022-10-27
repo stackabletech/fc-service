@@ -119,7 +119,7 @@ public class QueryControllerTest {
         "\"parameters\": null}";
 
     private String QUERY_REQUEST_DELETE = "{\"statement\": \"MATCH (n:ServiceOffering) where n.name = 'EuProGigant " +
-        "Portal' DETACH DELETE m\", " +
+        "Portal' DETACH DELETE n\", " +
         "\"parameters\": null}";
     
     @Test
