@@ -135,6 +135,7 @@ public class SchemaStoreImpl implements SchemaStore {
        result.setExtractedId(resource.getURI());
        if(resIteratorProperty.hasNext()){
          result.setErrorMessage("Ontology Schema has multiple Ontology IRIs");
+         result.setExtractedId(null);
          result.setValid(false);
        }
      } else {
@@ -145,6 +146,7 @@ public class SchemaStoreImpl implements SchemaStore {
          result.setExtractedId(resource.getURI());
          if(resIteratorProperty.hasNext()){
            result.setErrorMessage("Vocabulary contains multiple concept schemes");
+           result.setExtractedId(null);
            result.setValid(false);
          }
        } else {
@@ -183,7 +185,6 @@ public class SchemaStoreImpl implements SchemaStore {
   }
 public void addExtractedUrls(Model model, RDFNode node, Set<String> extractedSet) {
   ResIterator resIteratorNode = model.listResourcesWithProperty(RDF.type, node);
-
   while (resIteratorNode.hasNext()) {
     Resource rs = resIteratorNode.nextResource();
     extractedSet.add(rs.getURI());

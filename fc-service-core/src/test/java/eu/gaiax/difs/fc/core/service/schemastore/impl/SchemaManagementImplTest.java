@@ -72,40 +72,37 @@ public class SchemaManagementImplTest {
   public void storageSelfCleaning() throws IOException {
     fileStore.clearStorage();
   }
-
   @Test
   public void testIsValidShape() throws UnsupportedEncodingException {
-    List<String> extractedUrlsExpected = new ArrayList<>();
-    extractedUrlsExpected.add("http://w3id.org/gaia-x/core#providesResourcesFrom");
-    extractedUrlsExpected.add("http://w3id.org/gaia-x/core#Interconnection");
-    extractedUrlsExpected.add("http://w3id.org/gaia-x/core#Consumer");
-    extractedUrlsExpected.add( "http://w3id.org/gaia-x/core#MustCriterion");
-    extractedUrlsExpected.add( "http://w3id.org/gaia-x/core#Provider");
-    extractedUrlsExpected.add(  "http://w3id.org/gaia-x/core#AssetOwner");
+    Set<String> expectedExtractedUrlsSet = new HashSet<>();
+    expectedExtractedUrlsSet.add("http://w3id.org/gaia-x/validation#PhysicalResourceShape");
     String path = "Schema-Tests/valid-schemaShape.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult result = schemaStore.analyseSchema(content);
     boolean actual = schemaStore.isSchemaType(content, SHAPE);
-    List<String> extractedUrlsActual = result.getExtractedUrls();
+    List<String> actualExtractedUrlsList = result.getExtractedUrls();
+    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
+    actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
+    assertTrue( actualExtractedUrlsSet.isEmpty());
     assertNull(result.getExtractedId());
     assertTrue(actual);
     assertTrue(schemaStore.verifySchema(content));
   }
   @Test
   public void testValidVocabulary() throws UnsupportedEncodingException {
-    List<String> extractedUrlsExpected = new ArrayList<>();
-    extractedUrlsExpected.add("http://w3id.org/gaia-x/core#providesResourcesFrom");
-    extractedUrlsExpected.add("http://w3id.org/gaia-x/core#Interconnection");
-    extractedUrlsExpected.add("http://w3id.org/gaia-x/core#Consumer");
-    extractedUrlsExpected.add( "http://w3id.org/gaia-x/core#MustCriterion");
-    extractedUrlsExpected.add( "http://w3id.org/gaia-x/core#Provider");
-    extractedUrlsExpected.add(  "http://w3id.org/gaia-x/core#AssetOwner");
-    String path = "Schema-Tests/invalidOntologyWithTwoIRIs.ttl";
+    Set<String> expectedExtractedUrlsSet = new HashSet<>();
+    expectedExtractedUrlsSet.add("http://www.example.com/cat");
+    String path = "Schema-Tests/validSkosWith2Urls.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult result = schemaStore.analyseSchema(content);
     boolean actual = schemaStore.isSchemaType(content, VOCABULARY);
-    List<String> extractedUrlsActual = result.getExtractedUrls();
+    List<String> actualExtractedUrlsList = result.getExtractedUrls();
+    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
+    actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
     String extractedIdActual = result.getExtractedId();
+    String extractedIdExpected = "http://www.example.com/animals";
+    assertTrue(actualExtractedUrlsSet.isEmpty());
+    assertEquals(extractedIdExpected,extractedIdActual);
     assertTrue(actual);
     assertTrue(schemaStore.verifySchema(content));
   }
@@ -127,6 +124,8 @@ public class SchemaManagementImplTest {
     Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
     actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
     String extractedIdActual = result.getExtractedId();
+    String extractedIdExpected = "http://w3id.org/gaia-x/core#";
+    assertEquals(extractedIdExpected,extractedIdActual);
     assertTrue( actualExtractedUrlsSet.isEmpty());
     assertTrue(actual);
     assertTrue(schemaStore.verifySchema(content));
@@ -135,10 +134,12 @@ public class SchemaManagementImplTest {
   public void testNoOntologyIRI() throws UnsupportedEncodingException {
     String path = "Schema-Tests/noOntologyIRI.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
-    String actual = schemaStore.analyseSchema(content).getErrorMessage();
+    SchemaAnalysisResult result = schemaStore.analyseSchema(content);
+    String actual = result.getErrorMessage();
     String expected = "Schema is not supported";
     assertEquals(expected,actual);
-    assertNull(schemaStore.analyseSchema(content).getExtractedId());
+    assertTrue(result.getExtractedUrls().isEmpty());
+    assertNull(result.getExtractedId());
   }
   @Test
   public void testInvalidOntologyWith2IRI() throws UnsupportedEncodingException {
@@ -148,8 +149,9 @@ public class SchemaManagementImplTest {
     String actual = result.getErrorMessage();
     String expected = "Ontology Schema has multiple Ontology IRIs";
     assertEquals(expected,actual);
+    assertFalse(result.isValid());
     assertNull(result.getExtractedId());
-    assertNull(result.getExtractedUrls());
+    assertTrue(result.getExtractedUrls().isEmpty());
 
   }
 
@@ -161,7 +163,7 @@ public class SchemaManagementImplTest {
     String expected = "Vocabulary contains multiple concept schemes";
     assertFalse(result.isValid());
     assertNull(result.getExtractedId());
-    assertNull(result.getExtractedUrls());
+    assertTrue(result.getExtractedUrls().isEmpty());
     assertEquals(expected,result.getErrorMessage());
   }
   @Test
@@ -172,8 +174,8 @@ public class SchemaManagementImplTest {
     String actual = result.getErrorMessage();
     String expected = "Schema is not supported";
     assertNull(result.getExtractedId());
-    assertNull(result.getExtractedUrls());
-    assertFalse(schemaStore.verifySchema(content));
+    assertTrue(result.getExtractedUrls().isEmpty());
+    assertFalse(result.isValid());
     assertEquals(expected,actual);
   }
 
@@ -302,31 +304,6 @@ public class SchemaManagementImplTest {
   @Test
   @Disabled
   public void testGetSchema() {
-  }
-
-  /**
-   * Test of getSchemasForType method, of class SchemaManagementImpl.
-   */
-  @Test
-  public void testGetSchemasForTypeShape() throws UnsupportedEncodingException {
-    String path = "Schema-Tests/valid-schemaShape.ttl";
-    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
-    SchemaAnalysisResult schemaAnalysisResult = schemaStore.analyseSchema(content);
-
-    SchemaStore.SchemaType actual = schemaAnalysisResult.getSchemaType();
-    SchemaStore.SchemaType expected = SHAPE;
-    assertEquals(expected.toString(), actual.toString());
-
-  }
-
-  @Test
-  public void testGetSchemasForTypeVocabulary() throws UnsupportedEncodingException {
-    String path = "Schema-Tests/skosConceptInvalid.ttl";
-    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
-    SchemaAnalysisResult schemaAnalysisResult = schemaStore.analyseSchema(content);
-    SchemaStore.SchemaType actual = schemaAnalysisResult.getSchemaType();
-    SchemaStore.SchemaType expected = VOCABULARY;
-    assertEquals(expected.toString(), actual.toString());
   }
 
   /**
