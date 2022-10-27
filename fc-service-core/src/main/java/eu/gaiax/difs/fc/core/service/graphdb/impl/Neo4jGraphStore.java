@@ -136,6 +136,13 @@ public class Neo4jGraphStore implements GraphStore {
                             resultList.add(outputMap);
                         }
                         log.debug("queryData.exit; returning: {}", resultList);
+
+                        // shuffle list to guarantee results won't appear in
+                        // a deterministic order thus giving certain results
+                        // an advantage over others as they would always be
+                        // in the top n result entries.
+                        Collections.shuffle(resultList);
+
                         return new PaginatedResults<>(totalCount, resultList);
                     },
                     transactionConfig

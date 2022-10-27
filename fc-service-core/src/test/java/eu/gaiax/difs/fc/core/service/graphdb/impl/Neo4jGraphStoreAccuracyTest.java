@@ -21,6 +21,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -104,7 +106,11 @@ public class Neo4jGraphStoreAccuracyTest {
         "MATCH (n:ServiceOffering) WHERE n.name = $name RETURN n LIMIT $limit",
         Map.of("name", "Portal","limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
-    Assertions.assertEquals(resultListExpected, responseList);
+
+    Assertions.assertTrue(
+            CollectionUtils.isEqualCollection(resultListExpected, responseList),
+            resultListExpected + " != " + responseList
+    );
   }
 
   @Test
@@ -117,7 +123,11 @@ public class Neo4jGraphStoreAccuracyTest {
         "MATCH (n:ServiceOffering) WHERE n.uri = $uri RETURN n.name LIMIT $limit",
         Map.of("uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal3.json","limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
-    Assertions.assertEquals(resultListExpected, responseList);
+
+    Assertions.assertTrue(
+            CollectionUtils.isEqualCollection(resultListExpected, responseList),
+            resultListExpected + " != " + responseList
+    );
   }
 
   @Test
@@ -132,7 +142,11 @@ public class Neo4jGraphStoreAccuracyTest {
     GraphQuery queryDelta = new GraphQuery(
         "MATCH (n:ServiceOffering)  RETURN n LIMIT $limit", Map.of("limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
-    Assertions.assertEquals(resultListExpected, responseList);
+
+    Assertions.assertTrue(
+            CollectionUtils.isEqualCollection(resultListExpected, responseList),
+            resultListExpected + " != " + responseList
+    );
   }
 
 
@@ -148,7 +162,11 @@ public class Neo4jGraphStoreAccuracyTest {
             "(n:ServiceOffering) WHERE n.uri IN [urlList] RETURN n.uri as uri, n.name as name LIMIT $limit",
         Map.of("name", "Portal2","limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
-    Assertions.assertEquals(resultListExpected, responseList);
+
+    Assertions.assertTrue(
+            CollectionUtils.isEqualCollection(responseList, resultListExpected),
+            resultListExpected + " != " + responseList
+    );
   }
   @Test
   void testCypherTotalCount() throws Exception {
@@ -156,6 +174,7 @@ public class Neo4jGraphStoreAccuracyTest {
     GraphQuery queryDelta = new GraphQuery(
         "MATCH (n)  RETURN n LIMIT $limit", Map.of("limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
+
     Assertions.assertEquals(5, responseList.size());
   }
 
