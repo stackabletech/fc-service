@@ -1,15 +1,15 @@
 package eu.gaiax.difs.fc.core.pojo;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
 
 public class VerificationResult extends eu.gaiax.difs.fc.api.generated.model.VerificationResult {
 
+  private static final long serialVersionUID = 1L;
+  
   /**
    * credentialSubject (id) of this SD.
    */
@@ -26,9 +26,9 @@ public class VerificationResult extends eu.gaiax.difs.fc.api.generated.model.Ver
   @JsonIgnore
   private List<Validator> validators;
 
-  public VerificationResult(OffsetDateTime verificationTimestamp, String lifecycleStatus, String issuer, OffsetDateTime issuedDateTime,
+  public VerificationResult(Instant verificationTimestamp, String lifecycleStatus, String issuer, Instant issuedDateTime,
           String id, List<SdClaim> claims, List<Validator> validators) {
-    super(verificationTimestamp, lifecycleStatus, issuer, LocalDate.from(issuedDateTime), null);
+    super(verificationTimestamp, lifecycleStatus, issuer, issuedDateTime, null);
     this.id = id;
     this.claims = claims;
     this.setValidators(validators);

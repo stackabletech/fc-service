@@ -3,3 +3,8 @@ federated-catalogue:
 
 graphstore:
   query-timeout-in-seconds: 5
+
+spring:
+  liquibase:
+    contexts: test
+

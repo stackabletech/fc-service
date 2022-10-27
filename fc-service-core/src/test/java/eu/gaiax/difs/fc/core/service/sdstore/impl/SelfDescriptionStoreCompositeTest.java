@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -31,7 +32,7 @@ import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
-import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
@@ -51,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
 @ContextConfiguration(classes = {SelfDescriptionStoreCompositeTest.TestApplication.class, FileStoreConfig.class, VerificationServiceImpl.class, 
-  SelfDescriptionStoreImpl.class, SelfDescriptionStoreCompositeTest.class, SchemaStoreImpl.class, DatabaseConfig.class, Neo4jGraphStore.class})
+  SelfDescriptionStoreImpl.class, SelfDescriptionStoreCompositeTest.class, SchemaStoreImpl.class, DatabaseConfig.class, Neo4jGraphStore.class, ValidatorCacheImpl.class})
 @DirtiesContext
 @Transactional
 @Slf4j
@@ -93,16 +94,16 @@ public class SelfDescriptionStoreCompositeTest {
 
   // Since SdMetaRecord class extends SelfDescriptionMetadata class instead of being formed from it, then check
   // in the equals method will always be false. Because we are downcasting SdMetaRecord to SelfDescriptionMetadata.
-  private static void assertThatSdHasTheSameData(final SelfDescriptionMetadata excepted,
+  private static void assertThatSdHasTheSameData(final SelfDescriptionMetadata expected,
       final SelfDescriptionMetadata actual) {
-    assertEquals(actual.getId(), excepted.getId());
-    assertEquals(actual.getSdHash(), excepted.getSdHash());
-    assertEquals(actual.getStatus(), excepted.getStatus());
-    assertEquals(actual.getIssuer(), excepted.getIssuer());
-    assertEquals(actual.getValidatorDids(), excepted.getValidatorDids());
-    //assertEquals(actual.getUploadDatetime(), excepted.getUploadDatetime());
-    //assertEquals(actual.getStatusDatetime(), excepted.getStatusDatetime());
-    assertEquals(actual.getSelfDescription().getContentAsString(), excepted.getSelfDescription().getContentAsString());
+    assertEquals(expected.getId(), actual.getId());
+    assertEquals(expected.getSdHash(), actual.getSdHash());
+    assertEquals(expected.getStatus(), actual.getStatus());
+    assertEquals(expected.getIssuer(), actual.getIssuer());
+    assertEquals(expected.getValidatorDids(), actual.getValidatorDids());
+    assertEquals(expected.getUploadDatetime(), actual.getUploadDatetime());
+    assertEquals(expected.getStatusDatetime(), actual.getStatusDatetime());
+    assertEquals(expected.getSelfDescription().getContentAsString(), actual.getSelfDescription().getContentAsString());
   }
 
   private void assertStoredSdFiles(final int expected) {
@@ -129,9 +130,8 @@ public class SelfDescriptionStoreCompositeTest {
   @Test
   void test01StoreSelfDescription() throws Exception {
     log.info("test01StoreSelfDescription");
-
-    ContentAccessor content = getAccessor(VerificationDirectTest.class, "Claims-Extraction-Tests/participantSD.jsonld");
-    VerificationResultParticipant result = verificationService.verifyParticipantSelfDescription(content);
+    ContentAccessor content = getAccessor("Claims-Extraction-Tests/participantSD.jsonld");
+    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, true, false);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
     sdStore.storeSelfDescription(sdMeta, result);
     
@@ -141,12 +141,12 @@ public class SelfDescriptionStoreCompositeTest {
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
 
     List<Map<String, Object>> claims = graphStore.queryData(
-            new OpenCypherQuery("MATCH (n {uri: $uri}) RETURN labels(n)", Map.of("uri", sdMeta.getId()))).getResults();
+            new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n)", Map.of("uri", sdMeta.getId()))).getResults();
     log.debug("test01StoreSelfDescription; got claims: {}", claims);
     //Assertions.assertEquals(5, claims.size()); only 1 node found..
 
     List<Map<String, Object>> nodes = graphStore.queryData(
-            new OpenCypherQuery("MATCH (n) RETURN labels(n)", Map.of())).getResults();
+            new GraphQuery("MATCH (n) RETURN labels(n)", Map.of())).getResults();
     log.debug("test01StoreSelfDescription; got nodes: {}", nodes);
     
     //final ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
@@ -157,7 +157,7 @@ public class SelfDescriptionStoreCompositeTest {
     assertAllSdFilesDeleted();
 
     claims = graphStore.queryData(
-            new OpenCypherQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
+            new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
     Assertions.assertEquals(0, claims.size());
 
     Assertions.assertThrows(NotFoundException.class, () -> {

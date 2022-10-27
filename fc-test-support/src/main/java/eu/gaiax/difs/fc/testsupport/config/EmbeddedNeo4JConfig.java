@@ -65,7 +65,7 @@ public class EmbeddedNeo4JConfig {
         return driver;
       }
     }
-    session.run("CALL n10s.graphconfig.init();"); /// run only when creating a new graph
+    session.run("CALL n10s.graphconfig.init({handleVocabUris:'MAP',handleMultival:\"ARRAY\",multivalPropList:[\"http://w3id.org/gaia-x/service#claimsGraphUri\"] });"); /// run only when creating a new graph
     session.run("CREATE CONSTRAINT n10s_unique_uri IF NOT EXISTS ON (r:Resource) ASSERT r.uri IS UNIQUE");
     log.info("n10 procedure and Constraints are loaded successfully");
     return driver;

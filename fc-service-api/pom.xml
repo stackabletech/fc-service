@@ -66,6 +66,12 @@
                                 <generateModelTests>true</generateModelTests>
                                 <generateModelDocumentation>true</generateModelDocumentation>
                             </configOptions>
+                            <typeMappings>
+                                <typeMapping>OffsetDateTime=Instant</typeMapping>
+                            </typeMappings>
+                            <importMappings>                                
+                                <importMapping>java.time.OffsetDateTime=java.time.Instant</importMapping>
+                            </importMappings>
                         </configuration>
                     </execution>
                 </executions>

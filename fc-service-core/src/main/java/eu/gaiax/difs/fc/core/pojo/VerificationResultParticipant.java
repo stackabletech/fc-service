@@ -1,7 +1,7 @@
 package eu.gaiax.difs.fc.core.pojo;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -34,15 +34,8 @@ public class VerificationResultParticipant extends VerificationResult {
    * @param validators Validators, signing parts of the SD
    * @param claims List of claims in the SD
    */
-  public VerificationResultParticipant(
-          OffsetDateTime verificationTimestamp,
-          String lifecycleStatus,
-          String id,
-          OffsetDateTime issuedDateTime,
-          List<SdClaim> claims,
-          List<Validator> validators,
-          String participantName,
-          String participantPublicKey) {
+  public VerificationResultParticipant(Instant verificationTimestamp, String lifecycleStatus, String id, Instant issuedDateTime,
+          List<SdClaim> claims, List<Validator> validators, String participantName, String participantPublicKey) {
     super(verificationTimestamp, lifecycleStatus, id, issuedDateTime, id, claims, validators);
     this.participantName = participantName;
     this.participantPublicKey = participantPublicKey;

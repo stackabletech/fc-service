@@ -95,7 +95,7 @@
         "type": "JsonWebSignature2020",
         "created": "2022-06-19T07:01:07.916Z",
         "proofPurpose": "assertionMethod",
-        "verificationMethod": "did:web:delta-dao.com",
+        "verificationMethod": "did:web:example",
         "jws": "eyJhbGciOiJQUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..ei4-mDyfi5sD8JyVAn2hgb-JMVVpWwxrteCYTLspo_L0dQlSmRFjBrjEWzOi-dF3XReitNEfoEZfZv4wU7q5HgI3rtVHIoKZ1xxvgOGYnQ2KhWGkm3Xlx2gRZPvNeMURSbTYNvrPWqEcDF_lwN_p4tBlWxlzgPrlFIf_ovd76OaUGXeLvfBSxchlVuDNRLyAuzzI6JYIrnM9gW4bf0XhNrEeRVmGmq5DmaZXyD6zJjpQU9XEhYnnq43_8wQrEFT81rcqazIRE3BvgFuk9l1lI6G5G9VJtCik_CNE3O4tjLIp1zneJlNu1IiyhJzS2RoDsg7vCgUKlVF38ivBNH0dWQ"
       }
     },
@@ -119,14 +119,14 @@
         "created": "2022-06-19T07:01:10.156Z",
         "proofPurpose": "assertionMethod",
         "jws": "eyJhbGciOiJQUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..q0ctApcPM80NgXdAFrrwhUrEXChxYGM0KidC58Ed0G6mZ0IEqTefuB2XIHjhtPcl526MzAY6cSknEO3E5eiu7zFvxWI-jjpzSJpqX6CfYDG0_oWf56HaemJPHAmxRYnp0FeHwT9BE5U568-7w79lSJYYt8awdS4171gTtumYu4ZGaAGKbewgyv5WfvtCo7Z_P5PyBtZl_QO1gYwu3NmD0s9BFIi_P_wveTQHZnb8mcgUW86uPh9MeoBPBKMpMSN9lTiWdVIznLhv3k2ytNVSuFptD8QZwOjf-UvkaFPsS_dJryZZkZxEPAVfnaSJHQQtNNqKE5L5_sc7igJo0ZsjdQ",
-        "verificationMethod": "did:web:compliance.gaia-x.eu"
+        "verificationMethod": "did:web:example"
       }
     }
   ],
   "proof": {
     "type": "JsonWebSignature2020",
     "created": "2022-02-25T14:58:43Z",
-    "verificationMethod": "https://example.edu/issuers/565049#key-1",
+    "verificationMethod": "did:web:example",
     "proofPurpose": "assertionMethod",
     "jws": "XXX"
   }

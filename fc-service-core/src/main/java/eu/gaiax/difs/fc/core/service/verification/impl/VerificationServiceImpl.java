@@ -1,7 +1,5 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
-import com.apicatalog.rdf.RdfNQuad;
-import com.apicatalog.rdf.RdfValue;
 import com.danubetech.keyformats.JWK_to_PublicKey;
 import com.danubetech.keyformats.crypto.PublicKeyVerifier;
 import com.danubetech.keyformats.crypto.PublicKeyVerifierFactory;
@@ -10,14 +8,13 @@ import com.danubetech.keyformats.keytypes.KeyTypeName_for_JWK;
 import com.danubetech.verifiablecredentials.CredentialSubject;
 import com.danubetech.verifiablecredentials.VerifiableCredential;
 import com.danubetech.verifiablecredentials.VerifiablePresentation;
-import com.danubetech.verifiablecredentials.validation.Validation;
-import com.nimbusds.jwt.JWT;
-import com.nimbusds.jwt.JWTParser;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.*;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
+import eu.gaiax.difs.fc.core.service.verification.ClaimExtractor;
+import eu.gaiax.difs.fc.core.service.validatorcache.ValidatorCache;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.jsonld.JsonLDException;
@@ -38,6 +35,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.topbraid.shacl.validation.ValidationUtil;
@@ -48,22 +46,14 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-
+import java.security.GeneralSecurityException;
+import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-
 import java.text.ParseException;
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Implementation of the {@link VerificationService} interface.
@@ -79,12 +69,21 @@ public class VerificationServiceImpl implements VerificationService {
   private static final Set<String> SERVICE_OFFERING_TYPES = Set.of("ServiceOfferingExperimental", "http://w3id.org/gaia-x/service#ServiceOffering", "gax-service:ServiceOffering");
   private static final Set<String> SIGNATURES = Set.of("JsonWebSignature2020"); //, "Ed25519Signature2018");
   
+  private static final ClaimExtractor[] extractors = new ClaimExtractor[] {new TitaniumClaimExtractor(), new DanubeTechClaimExtractor()};
+  
   private static final int VRT_UNKNOWN = 0;
   private static final int VRT_PARTICIPANT= 1;
   private static final int VRT_OFFERING = 2;
 
   @Autowired
   private SchemaStore schemaStore;
+
+  @Autowired
+  private ValidatorCache validatorCache;
+
+  public VerificationServiceImpl () {
+    Security.addProvider(new BouncyCastleProvider());
+  }
 
   /**
    * The function validates the Self-Description as JSON and tries to parse the json handed over.
@@ -189,21 +188,12 @@ public class VerificationServiceImpl implements VerificationService {
       issuer = vc.getIssuer().toString();
     }
     Date issDate = vc.getIssuanceDate();
-    OffsetDateTime issuedDate = issDate == null ? OffsetDateTime.now() : issDate.toInstant().atOffset(ZoneOffset.UTC); 
+    Instant issuedDate = issDate == null ? Instant.now() : issDate.toInstant(); 
 
-    List<SdClaim> claims = null;
-    CredentialSubject credentialSubject = getCredentialSubject(vc);
-    if (credentialSubject == null) {
-      if (strict) {
-        throw new VerificationException("Semantic error: VerifiableCredential must contain 'credentialSubject' property");
-      }
-    } else {
-      claims = extractClaims(credentialSubject);
-    }
+    List<SdClaim> claims = extractClaims(payload);
     
     VerificationResult result;
     if (type.getLeft()) {
-        // take it from validators?
       LdProof proof = vp.getLdProof();
       URI method = proof == null ? null : proof.getVerificationMethod();
       String key = method == null ? null : method.toString();
@@ -212,26 +202,18 @@ public class VerificationServiceImpl implements VerificationService {
       }
       URI holder = vp.getHolder();
       String name = holder == null ? issuer : holder.toString();
-      result = new VerificationResultParticipant(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
+      result = new VerificationResultParticipant(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
               claims, validators, name, key);
     } else if (type.getRight()) {
-      result = new VerificationResultOffering(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
+      result = new VerificationResultOffering(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
               id, claims, validators);
     } else {
-      result = new VerificationResult(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
+      result = new VerificationResult(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
             id, claims, validators);
     }
 
     log.debug("verifySelfDescription.exit;");
     return result;
-  }
-  
-  @Override
-  public boolean checkValidator(Validator validator) {
-    //Todo delete this function as it's unused?
-    //check if pubkey is the same
-    //check if pubkey is trusted
-    return true; //if all checks succeeded the validator is valid
   }
   
   /* SD parsing, semantic validation */
@@ -254,9 +236,6 @@ public class VerificationServiceImpl implements VerificationService {
     if (checkAbsence(presentation, "type", "@type")) {
       sb.append(" - VerifiablePresentation must contain 'type' property").append(sep);
     }
-    //if (presentation.getJsonObject().get("proof") == null) {
-    //  sb.append(" - VerifiablePresentation must contain 'proof' property").append(sep);
-    //}
     if (checkAbsence(presentation, "verifiableCredential")) {
       sb.append(" - VerifiablePresentation must contain 'verifiableCredential' property").append(sep);
     }
@@ -277,12 +256,6 @@ public class VerificationServiceImpl implements VerificationService {
       if (checkAbsence(credential, "issuanceDate")) {
         sb.append(" - VerifiableCredential must contain 'issuanceDate' property").append(sep);
       }
-      //CredentialSubject subject = getCredentialSubject(credential);
-      //if (subject != null) {
-      //  if (checkAbsence(subject, "id", "@id")) {
-      //    sb.append(" - CredentialSubject must contain 'id' property").append(sep);
-      //  }
-      //}
     
       Date today = Date.from(Instant.now());
       Date issDate = credential.getIssuanceDate();
@@ -356,37 +329,28 @@ public class VerificationServiceImpl implements VerificationService {
   }
   
 
+  /*package private functions*/
   /**
    * A method that returns a list of claims given a self-description's VerifiablePresentation
    *
    * @param cs a self-description as Verifiable Presentation for claims extraction
    * @return a list of claims.
    */
-   private List<SdClaim> extractClaims(CredentialSubject cs) {
-
-     log.debug("extractClaims.enter; got credential subject: {}", cs);
-     List<SdClaim> claims = new ArrayList<>();
-     try {
-       for (RdfNQuad nquad: cs.toDataset().toList()) {
-         log.debug("extractClaims; got NQuad: {}", nquad);
-         SdClaim claim = new SdClaim(rdf2String(nquad.getSubject()), rdf2String(nquad.getPredicate()), rdf2String(nquad.getObject()));
-         claims.add(claim);
-       }  
-       //log.debug("extractClaims; claims: {}", cs.getClaims());
-     } catch (JsonLDException ex) {
-       throw new VerificationException("Semantic error: " + ex.getMessage());
+   private List<SdClaim> extractClaims(ContentAccessor payload) {
+     List<SdClaim> claims = null;  
+     for (ClaimExtractor extra: extractors) {
+       try {
+         claims = extra.extractClaims(payload);
+         if (claims != null) {
+           break;
+         }
+       } catch (Exception ex) {
+         log.error("extractClaims.error: ", ex);
+       }
      }
-     log.debug("extractClaims.exit; returning claims: {}", claims);
      return claims;
   }
 
-  private String rdf2String(RdfValue rdf) {
-     if (rdf.isBlankNode()) return rdf.getValue();
-     if (rdf.isLiteral()) return "\"" + rdf.getValue() + "\"";
-     // rdf is IRI. here we could try to make it absolute..
-     return "<" + rdf.getValue() + ">";
-  }
-  
   private VerifiableCredential getCredential(VerifiablePresentation presentation) {
     try {
       VerifiableCredential credential = presentation.getVerifiableCredential();
@@ -416,7 +380,15 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   private String getID(VerifiableCredential credential) {
-    return getID(credential.getJsonObject());
+    String id = null;
+    CredentialSubject subject = getCredentialSubject(credential);
+    if (subject != null) {
+      id = getID(subject.getJsonObject());  
+    }
+    if (id == null) {
+      id = getID(credential.getJsonObject());  
+    }
+    return id;
   }
 
   private String getID (Map<String, Object> map) {
@@ -430,7 +402,7 @@ public class VerificationServiceImpl implements VerificationService {
         }
       }
     }
-    throw new VerificationException("Semantic error: could not find Credential ID");
+    return null;
   }
 
   /* SD validation against SHACL Schemas */
@@ -490,10 +462,10 @@ public class VerificationServiceImpl implements VerificationService {
   private Validator checkSignature (JsonLDObject payload) throws IOException, ParseException {
     Map<String, Object> proof_map = (Map<String, Object>) payload.getJsonObject().get("proof");
     if (proof_map == null) {
-      throw new VerificationException("Signarures error; No proof found");
+      throw new VerificationException("Signatures error; No proof found");
     }
     if (proof_map.get("type") == null) {
-      throw new VerificationException("Signarures error; Proof must have 'type' property");
+      throw new VerificationException("Signatures error; Proof must have 'type' property");
     }
 
     LdProof proof = LdProof.fromMap(proof_map);
@@ -504,24 +476,39 @@ public class VerificationServiceImpl implements VerificationService {
   private Validator checkSignature (JsonLDObject payload, LdProof proof) throws IOException, ParseException {
     log.debug("checkSignature.enter; got payload: {}, proof: {}", payload, proof);
     LdVerifier verifier;
-    Validator validator = null; //TODO Cache.getValidator(proof.getVerificationMethod().toString());
+    Validator validator = validatorCache.getFromCache(proof.getVerificationMethod().toString());
     if (validator == null) {
       log.debug("checkSignature; validator was not cached");
-      Pair<PublicKeyVerifier, Validator> pkVerifierAndValidator = getVerifiedVerifier(proof);
+      Pair<PublicKeyVerifier, Validator> pkVerifierAndValidator = null;
+      try {
+        pkVerifierAndValidator = getVerifiedVerifier(proof);
+      } catch (CertificateException e) {
+        throw new VerificationException("Signatures error; " + e.getMessage(), e);
+      }
       PublicKeyVerifier publicKeyVerifier = pkVerifierAndValidator.getLeft();
       validator = pkVerifierAndValidator.getRight();
       verifier = new JsonWebSignature2020LdVerifier(publicKeyVerifier);
+      validatorCache.addToCache(validator);
     } else {
       log.debug("checkSignature; validator was cached");
       verifier = getVerifierFromValidator(validator);
     }
-    //TODO    if(!verifier.verify(payload)) throw new VerificationException(payload.getClass().getName() + "does not match with proof");
+
+    try {
+      if (!verifier.verify(payload)) {
+        throw new VerificationException("Signatures error; " + payload.getClass().getName() + " does not match with proof");
+      }
+    } catch (JsonLDException | GeneralSecurityException e) {
+      throw new VerificationException("Signatures error; " + e.getMessage(), e);
+    } catch (VerificationException e) {
+      throw e;
+    }
 
     log.debug("checkSignature.exit; returning: {}", validator);
     return validator;
   }
 
-  private Pair<PublicKeyVerifier, Validator> getVerifiedVerifier(LdProof proof) throws IOException {
+  private Pair<PublicKeyVerifier, Validator> getVerifiedVerifier(LdProof proof) throws IOException, CertificateException {
     log.debug("getVerifiedVerifier.enter;");
     URI uri = proof.getVerificationMethod();
     String jwt = proof.getJws();
@@ -536,8 +523,6 @@ public class VerificationServiceImpl implements VerificationService {
     if (!uri.getScheme().equals("did")) {
       throw new VerificationException("Signatures error; Unknown Verification Method: " + uri);
     }
-
-    // TODO: resolve diDoc with Universal Resolver (https://github.com/decentralized-identity/universal-resolver)? 
     
     DIDDocument diDoc = readDIDfromURI(uri);
     log.debug("getVerifiedVerifier; methods: {}", diDoc.getVerificationMethods());
@@ -546,9 +531,7 @@ public class VerificationServiceImpl implements VerificationService {
     Map<String, Object> jwk_map_uncleaned = (Map<String, Object>) method.get("publicKeyJwk");
     Map<String, Object> jwk_map_cleaned = extractRelevantValues(jwk_map_uncleaned);
 
-    Instant deprecation = Instant.now(); 
-    // Skipped due to performance issues
-    // hasPEMTrustAnchorAndIsNotDeprecated((String) jwk_map_uncleaned.get("x5u"));
+    Instant deprecation = hasPEMTrustAnchorAndIsNotDeprecated((String) jwk_map_uncleaned.get("x5u"));
     log.debug("getVerifiedVerifier; key has valid trust anchor");
 
     // use from map and extract only relevant
@@ -563,7 +546,6 @@ public class VerificationServiceImpl implements VerificationService {
                 uri.toString(),
                 JsonLDObject.fromJsonObject(jwk_map_uncleaned).toString(),
                 deprecation);
-    //Does this help? https://www.baeldung.com/java-read-pem-file-keys#2-get-public-key-from-pem-string
 
     log.debug("getVerifiedVerifier.exit;");
     return Pair.of(pubKey, validator);
@@ -571,6 +553,7 @@ public class VerificationServiceImpl implements VerificationService {
   
   //This function becomes obsolete when a did resolver will be available
   //https://gitlab.com/gaia-x/lab/compliance/gx-compliance/-/issues/13
+  //Resolve DID-Doc with Universal Resolver (https://github.com/decentralized-identity/universal-resolver)?
   private static DIDDocument readDIDfromURI (URI uri) throws IOException {
     log.debug("readDIDFromURI.enter; got uri: {}", uri);
     String [] uri_parts = uri.getSchemeSpecificPart().split(":");
@@ -614,11 +597,6 @@ public class VerificationServiceImpl implements VerificationService {
     return new_map;
   }
 
-  private String getAlgorithmFromJWT(String s) throws ParseException {
-    JWT jwt = JWTParser.parse(s);
-    return jwt.getHeader().getAlgorithm().getName();
-  }
-
   private Instant hasPEMTrustAnchorAndIsNotDeprecated (String uri) throws IOException, CertificateException {
     StringBuilder result = new StringBuilder();
     URL url = new URL(uri);
@@ -650,8 +628,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     if (relevant == null) {
-        // ?!
-        return null;
+        throw new VerificationException("Signatures error; PEM file does not contain a public key");
     }
     
     //Second, extract required information
@@ -673,7 +650,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     PublicKeyVerifier pubKey = PublicKeyVerifierFactory.publicKeyVerifierForKey(
             KeyTypeName_for_JWK.keyTypeName_for_JWK(jwk),
-            getAlgorithmFromJWT((String) jwk_map_uncleaned.get("alg")),
+            (String) jwk_map_uncleaned.get("alg"),
             JWK_to_PublicKey.JWK_to_anyPublicKey(jwk));
     return new JsonWebSignature2020LdVerifier(pubKey);
   }

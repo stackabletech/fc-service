@@ -23,8 +23,10 @@
 		}
 	},
 	"proof": {
-		"type": "RsaSignature2018",
-		"created": "2017-06-18T21:19:10Z",
-		"jws": "eyJhbGciOiJSUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM"
-	}
+            "type": "JsonWebSignature2020",
+            "created": "2022-06-20T13:37:29.081Z",
+            "proofPurpose": "assertionMethod",
+            "jws": "eyJhbGciOiJQUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..000O000000Pqq8RHK87iZBZsbhWzClPTXElpd_oR8wQbPVxJ8jQiRiryVcIWJpgPZTK2pyRXzP5hfw-ZH1ccFNQ03Rai2-BCaprBJDPq5zOGvJ0vI5FnjgcmIr-GKT7yyS4s6ms6oszjKkA-j2BklqpXxzPZdnbswWJfCkC2fy6OyM47s_0qk9wRwEFgdt_Wn70KN-XJYh_zN2OqjlGr0WHO1kKYRtiugNFp6d_kCQihZi2LQYaYowEJiWq3teWK0gbT4PeCj21lIuqTMoe7bP9bnHE4-84DAhsW1er4J6XGi-UHrfkK1Nvr21dYY1We-Oe2vnFbMyyUCPWhxXyPug",
+            "verificationMethod": "did:web:example"
+          }
 }

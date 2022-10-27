@@ -7,7 +7,7 @@ import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
-import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
@@ -106,7 +106,7 @@ public class SelfDescriptionStoreImplTest {
   }
 
   private static SelfDescriptionMetadata createSelfDescriptionMeta(final String id, final String issuer,
-      final OffsetDateTime sdt, final OffsetDateTime udt, final String content) {
+      final Instant sdt, final Instant udt, final String content) {
     final String hash = HashUtils.calculateSha256AsHex(content);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata();
     sdMeta.setId(id);
@@ -129,7 +129,7 @@ public class SelfDescriptionStoreImplTest {
   }
 
   private static VerificationResult createVerificationResult(final int idSuffix, String subject) {
-      return new VerificationResultOffering(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer" + idSuffix, OffsetDateTime.now(), 
+      return new VerificationResultOffering(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer" + idSuffix, Instant.now(), 
               "id" + idSuffix, createClaims(subject), new ArrayList<>());
     }
 
@@ -179,7 +179,7 @@ public class SelfDescriptionStoreImplTest {
 
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("https://delta-dao.com/.well-known/serviceMVGPortal.json", // "TestSd/1",
             "TestUser/1",
-        OffsetDateTime.parse("2022-01-01T12:00:00Z"), OffsetDateTime.parse("2022-01-02T12:00:00Z"), content);
+        Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content);
     final String hash = sdMeta.getSdHash();
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
@@ -187,7 +187,7 @@ public class SelfDescriptionStoreImplTest {
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
 
     List<Map<String, Object>> claims = graphStore.queryData(
-            new OpenCypherQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
+            new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
     //Assertions.assertEquals(5, claims.size()); only 1 node found..
 
     final ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
@@ -198,7 +198,7 @@ public class SelfDescriptionStoreImplTest {
     assertAllSdFilesDeleted();
 
     claims = graphStore.queryData(
-            new OpenCypherQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
+            new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
     Assertions.assertEquals(0, claims.size());
 
     Assertions.assertThrows(NotFoundException.class, () -> {
@@ -217,14 +217,14 @@ public class SelfDescriptionStoreImplTest {
     final String content2 = "Some Test Content 2";
 
     final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
-        OffsetDateTime.parse("2022-01-01T12:00:00Z"), OffsetDateTime.parse("2022-01-02T12:00:00Z"), content1);
+            Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content1);
     final String hash1 = sdMeta1.getSdHash();
     sdMeta1.setSelfDescription(new ContentAccessorDirect(content1));
     sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
     assertStoredSdFiles(1);
 
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
-        OffsetDateTime.parse("2022-01-01T13:00:00Z"), OffsetDateTime.parse("2022-01-02T13:00:00Z"), content2);
+            Instant.parse("2022-01-01T13:00:00Z"), Instant.parse("2022-01-02T13:00:00Z"), content2);
     final String hash2 = sdMeta2.getSdHash();
     sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
     assertStoredSdFiles(2);
@@ -254,13 +254,13 @@ public class SelfDescriptionStoreImplTest {
     final String content1 = "Some Test Content";
 
     final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
-        OffsetDateTime.parse("2022-01-01T12:00:00Z"), OffsetDateTime.parse("2022-01-02T12:00:00Z"), content1);
+            Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content1);
     final String hash1 = sdMeta1.getSdHash();
     sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
     assertStoredSdFiles(1);
 
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
-        OffsetDateTime.parse("2022-01-01T13:00:00Z"), OffsetDateTime.parse("2022-01-02T13:00:00Z"), content1);
+            Instant.parse("2022-01-01T13:00:00Z"), Instant.parse("2022-01-02T13:00:00Z"), content1);
     Assertions.assertThrows(ConflictException.class, () -> {
       sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
     });
@@ -289,7 +289,7 @@ public class SelfDescriptionStoreImplTest {
     final String content = "Some Test Content";
 
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
-        OffsetDateTime.parse("2022-01-01T12:00:00Z"), OffsetDateTime.parse("2022-01-02T12:00:00Z"), content);
+            Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content);
     final String hash = sdMeta.getSdHash();
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
@@ -325,8 +325,8 @@ public class SelfDescriptionStoreImplTest {
     final String id = "TestSd/1";
     final String issuer = "TestUser/1";
     final String content = "Test: Fetch SD Meta Data via SD Filter, test for matching issuer";
-    final OffsetDateTime statusTime = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
+    final Instant statusTime = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant uploadTime = Instant.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
@@ -359,8 +359,8 @@ public class SelfDescriptionStoreImplTest {
     final String issuer = "TestUser/1";
     final String otherIssuer = "TestUser/2";
     final String content = "Test: Fetch SD Meta Data via SD Filter, test for non-matching issuer";
-    final OffsetDateTime statusTime = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
+    final Instant statusTime = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant uploadTime = Instant.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
@@ -392,17 +392,17 @@ public class SelfDescriptionStoreImplTest {
     final String id = "TestSd/1";
     final String issuer = "TestUser/1";
     final String content = "Test: Fetch SD Meta Data via SD Filter, test for matching status time start";
-    final OffsetDateTime statusTime = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime statusTimeStart = OffsetDateTime.parse("2021-01-01T12:00:00Z");
-    final OffsetDateTime statusTimeEnd = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
+    final Instant statusTime = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant statusTimeStart = Instant.parse("2021-01-01T12:00:00Z");
+    final Instant statusTimeEnd = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant uploadTime = Instant.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
 
     final SdFilter filterParams = new SdFilter();
-    filterParams.setStatusTimeRange(statusTimeStart.toInstant(), statusTimeEnd.toInstant());
+    filterParams.setStatusTimeRange(statusTimeStart, statusTimeEnd);
     final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
@@ -427,17 +427,17 @@ public class SelfDescriptionStoreImplTest {
     final String id = "TestSd/1";
     final String issuer = "TestUser/1";
     final String content = "Test: Fetch SD Meta Data via SD Filter, test for non-matching issuer";
-    final OffsetDateTime statusTime = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime statusTimeStart = OffsetDateTime.parse("2022-02-01T12:00:00Z");
-    final OffsetDateTime statusTimeEnd = OffsetDateTime.parse("2023-02-01T12:00:00Z");
-    final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
+    final Instant statusTime = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant statusTimeStart = Instant.parse("2022-02-01T12:00:00Z");
+    final Instant statusTimeEnd = Instant.parse("2023-02-01T12:00:00Z");
+    final Instant uploadTime = Instant.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
 
     final SdFilter filterParams = new SdFilter();
-    filterParams.setStatusTimeRange(statusTimeStart.toInstant(), statusTimeEnd.toInstant());
+    filterParams.setStatusTimeRange(statusTimeStart, statusTimeEnd);
     final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
@@ -467,14 +467,14 @@ public class SelfDescriptionStoreImplTest {
     final String content1 = "Test: Fetch SD Meta Data via SD Filter, test for matching status time start (1/3)";
     final String content2 = "Test: Fetch SD Meta Data via SD Filter, test for matching status time start (2/3)";
     final String content3 = "Test: Fetch SD Meta Data via SD Filter, test for matching status time start (3/3)";
-    final OffsetDateTime statusTime1 = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime statusTime2 = OffsetDateTime.parse("2022-01-02T12:00:00Z");
-    final OffsetDateTime statusTime3 = OffsetDateTime.parse("2022-01-03T12:00:00Z");
-    final OffsetDateTime statusTimeStart = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime statusTimeEnd = OffsetDateTime.parse("2022-01-02T12:00:00Z");
-    final OffsetDateTime uploadTime1 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
-    final OffsetDateTime uploadTime2 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
-    final OffsetDateTime uploadTime3 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
+    final Instant statusTime1 = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant statusTime2 = Instant.parse("2022-01-02T12:00:00Z");
+    final Instant statusTime3 = Instant.parse("2022-01-03T12:00:00Z");
+    final Instant statusTimeStart = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant statusTimeEnd = Instant.parse("2022-01-02T12:00:00Z");
+    final Instant uploadTime1 = Instant.parse("2022-02-01T12:00:00Z");
+    final Instant uploadTime2 = Instant.parse("2022-02-01T12:00:00Z");
+    final Instant uploadTime3 = Instant.parse("2022-02-01T12:00:00Z");
     final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta(id1, issuer1, statusTime1, uploadTime1, content1);
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta(id2, issuer2, statusTime2, uploadTime2, content2);
     final SelfDescriptionMetadata sdMeta3 = createSelfDescriptionMeta(id3, issuer3, statusTime3, uploadTime3, content3);
@@ -487,7 +487,7 @@ public class SelfDescriptionStoreImplTest {
     assertStoredSdFiles(3);
 
     final SdFilter filterParams = new SdFilter();
-    filterParams.setStatusTimeRange(statusTimeStart.toInstant(), statusTimeEnd.toInstant());
+    filterParams.setStatusTimeRange(statusTimeStart, statusTimeEnd);
     final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
@@ -532,12 +532,12 @@ public class SelfDescriptionStoreImplTest {
     final String content1 = "Test: Fetch SD Meta Data via SD Filter, test for matching empty filter (1/3)";
     final String content2 = "Test: Fetch SD Meta Data via SD Filter, test for matching empty filter (2/3)";
     final String content3 = "Test: Fetch SD Meta Data via SD Filter, test for matching empty filter (3/3)";
-    final OffsetDateTime statusTime1 = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime statusTime2 = OffsetDateTime.parse("2022-01-02T12:00:00Z");
-    final OffsetDateTime statusTime3 = OffsetDateTime.parse("2022-01-03T12:00:00Z");
-    final OffsetDateTime uploadTime1 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
-    final OffsetDateTime uploadTime2 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
-    final OffsetDateTime uploadTime3 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
+    final Instant statusTime1 = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant statusTime2 = Instant.parse("2022-01-02T12:00:00Z");
+    final Instant statusTime3 = Instant.parse("2022-01-03T12:00:00Z");
+    final Instant uploadTime1 = Instant.parse("2022-02-01T12:00:00Z");
+    final Instant uploadTime2 = Instant.parse("2022-02-01T12:00:00Z");
+    final Instant uploadTime3 = Instant.parse("2022-02-01T12:00:00Z");
     final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta(id1, issuer1, statusTime1, uploadTime1, content1);
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta(id2, issuer2, statusTime2, uploadTime2, content2);
     final SelfDescriptionMetadata sdMeta3 = createSelfDescriptionMeta(id3, issuer3, statusTime3, uploadTime3, content3);
@@ -591,8 +591,8 @@ public class SelfDescriptionStoreImplTest {
     final String validatorId = "TestSd/0815";
     final String issuer = "TestUser/1";
     final String content = "Test: Fetch SD Meta Data via SD Filter, test for matching validator";
-    final OffsetDateTime statusTime = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
+    final Instant statusTime = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant uploadTime = Instant.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     sdMeta.setValidatorDids(Arrays.asList(validatorId, "TestSd/0816", "TestSd/0817"));
     final String hash = sdMeta.getSdHash();
@@ -626,8 +626,8 @@ public class SelfDescriptionStoreImplTest {
     final String validatorId = "TestSd/0815";
     final String issuer = "TestUser/1";
     final String content = "Test: Fetch SD Meta Data via SD Filter, test for non-matching validator";
-    final OffsetDateTime statusTime = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime uploadTime = OffsetDateTime.parse("2022-01-02T12:00:00Z");
+    final Instant statusTime = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant uploadTime = Instant.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     sdMeta.setValidatorDids(Arrays.asList("TestSd/0816", "TestSd/0817"));
     final String hash = sdMeta.getSdHash();
@@ -666,12 +666,12 @@ public class SelfDescriptionStoreImplTest {
     final String content1 = "Test: Fetch SD Meta Data via SD Filter, test for matching empty filter (1/3)";
     final String content2 = "Test: Fetch SD Meta Data via SD Filter, test for matching empty filter (2/3)";
     final String content3 = "Test: Fetch SD Meta Data via SD Filter, test for matching empty filter (3/3)";
-    final OffsetDateTime statusTime1 = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime statusTime2 = OffsetDateTime.parse("2022-01-02T12:00:00Z");
-    final OffsetDateTime statusTime3 = OffsetDateTime.parse("2022-01-03T12:00:00Z");
-    final OffsetDateTime uploadTime1 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
-    final OffsetDateTime uploadTime2 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
-    final OffsetDateTime uploadTime3 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
+    final Instant statusTime1 = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant statusTime2 = Instant.parse("2022-01-02T12:00:00Z");
+    final Instant statusTime3 = Instant.parse("2022-01-03T12:00:00Z");
+    final Instant uploadTime1 = Instant.parse("2022-02-01T12:00:00Z");
+    final Instant uploadTime2 = Instant.parse("2022-02-01T12:00:00Z");
+    final Instant uploadTime3 = Instant.parse("2022-02-01T12:00:00Z");
     final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta(id1, issuer1, statusTime1, uploadTime1, content1);
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta(id2, issuer2, statusTime2, uploadTime2, content2);
     final SelfDescriptionMetadata sdMeta3 = createSelfDescriptionMeta(id3, issuer3, statusTime3, uploadTime3, content3);
@@ -711,7 +711,7 @@ public class SelfDescriptionStoreImplTest {
     signatures.add(new Validator("did:first", "", firstSigInstant));
     signatures.add(new Validator("did:second", "", Instant.now().plus(1, ChronoUnit.DAYS)));
     signatures.add(new Validator("did:third", "", Instant.now().plus(2, ChronoUnit.DAYS)));
-    return new VerificationResult(OffsetDateTime.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer", OffsetDateTime.now(), 
+    return new VerificationResult(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer", Instant.now(), 
             id, new ArrayList<>(), signatures);
   }
 
@@ -727,12 +727,12 @@ public class SelfDescriptionStoreImplTest {
     final String content1 = "Test: SD 1 with future expiration date";
     final String content2 = "Test: SD 2 with past expiration date";
     final String content3 = "Test: SD 3 with future expiration date";
-    final OffsetDateTime statusTime1 = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime statusTime2 = OffsetDateTime.parse("2022-01-02T12:00:00Z");
-    final OffsetDateTime statusTime3 = OffsetDateTime.parse("2022-01-03T12:00:00Z");
-    final OffsetDateTime uploadTime1 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
-    final OffsetDateTime uploadTime2 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
-    final OffsetDateTime uploadTime3 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
+    final Instant statusTime1 = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant statusTime2 = Instant.parse("2022-01-02T12:00:00Z");
+    final Instant statusTime3 = Instant.parse("2022-01-03T12:00:00Z");
+    final Instant uploadTime1 = Instant.parse("2022-02-01T12:00:00Z");
+    final Instant uploadTime2 = Instant.parse("2022-02-01T12:00:00Z");
+    final Instant uploadTime3 = Instant.parse("2022-02-01T12:00:00Z");
     final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta(id1, issuer1, statusTime1, uploadTime1, content1);
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta(id2, issuer2, statusTime2, uploadTime2, content2);
     final SelfDescriptionMetadata sdMeta3 = createSelfDescriptionMeta(id3, issuer3, statusTime3, uploadTime3, content3);
@@ -785,12 +785,12 @@ public class SelfDescriptionStoreImplTest {
     final String content1 = "Test: Fetch SD Meta Data via SD Filter, test for matching empty filter (1/3)";
     final String content2 = "Test: Fetch SD Meta Data via SD Filter, test for matching empty filter (2/3)";
     final String content3 = "Test: Fetch SD Meta Data via SD Filter, test for matching empty filter (3/3)";
-    final OffsetDateTime statusTime1 = OffsetDateTime.parse("2022-01-01T12:00:00Z");
-    final OffsetDateTime statusTime2 = OffsetDateTime.parse("2022-01-02T12:00:00Z");
-    final OffsetDateTime statusTime3 = OffsetDateTime.parse("2022-01-03T12:00:00Z");
-    final OffsetDateTime uploadTime1 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
-    final OffsetDateTime uploadTime2 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
-    final OffsetDateTime uploadTime3 = OffsetDateTime.parse("2022-02-01T12:00:00Z");
+    final Instant statusTime1 = Instant.parse("2022-01-01T12:00:00Z");
+    final Instant statusTime2 = Instant.parse("2022-01-02T12:00:00Z");
+    final Instant statusTime3 = Instant.parse("2022-01-03T12:00:00Z");
+    final Instant uploadTime1 = Instant.parse("2022-02-01T12:00:00Z");
+    final Instant uploadTime2 = Instant.parse("2022-02-01T12:00:00Z");
+    final Instant uploadTime3 = Instant.parse("2022-02-01T12:00:00Z");
     final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta(id1, issuer1, statusTime1, uploadTime1, content1);
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta(id2, issuer2, statusTime2, uploadTime2, content2);
     final SelfDescriptionMetadata sdMeta3 = createSelfDescriptionMeta(id3, issuer3, statusTime3, uploadTime3, content3);

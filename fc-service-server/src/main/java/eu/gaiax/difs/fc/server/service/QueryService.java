@@ -1,9 +1,10 @@
 package eu.gaiax.difs.fc.server.service;
 
+import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
 import eu.gaiax.difs.fc.api.generated.model.Results;
 import eu.gaiax.difs.fc.api.generated.model.Statement;
 import eu.gaiax.difs.fc.core.exception.ServerException;
-import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.server.generated.controller.QueryApiDelegate;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -45,13 +47,13 @@ public class QueryService implements QueryApiDelegate {
    * @return List of {@link Results}
    */
   @Override
-  public ResponseEntity<Results> query(String queryLanguage, Statement statement) {
-    log.debug("query.enter; got queryLanguage: {}, statement: {}", queryLanguage, statement);
+  public ResponseEntity<Results> query(QueryLanguage queryLanguage, Integer timeout, Statement statement) {
+    log.debug("query.enter; got queryLanguage: {}, timeout: {}, statement: {}", queryLanguage, timeout, statement);
     if (!checkIfLimitPresent(statement) && statement.getStatement().toLowerCase().indexOf("return") != -1) {
       addDefaultLimit(statement);
     }
     PaginatedResults<Map<String, Object>> queryResultList =
-        graphStore.queryData(new OpenCypherQuery(statement.getStatement(), statement.getParameters()));
+        graphStore.queryData(new GraphQuery(statement.getStatement(), statement.getParameters(), queryLanguage, timeout));
     Results result = new Results((int) queryResultList.getTotalCount(), queryResultList.getResults());
     log.debug("query.exit; returning results: {}", result);
     return ResponseEntity.ok(result);

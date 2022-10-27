@@ -54,6 +54,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    Unprocessible:
+      description: HTTP Unprocessible Entity 422
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   schemas:
     Error:
       type: object
@@ -87,6 +93,13 @@ components:
       type: object
       additionalProperties:
         type: object
+    QueryLanguage:
+      type: string
+      enum:
+        - OPENCYPHER
+        - SPARQL
+        - GRAPHQL
+      default: OPENCYPHER
     VerificationResult:
       type: object
       properties:
@@ -642,13 +655,17 @@ paths:
       summary: Send a query to the Catalogue
       operationId: query
       parameters:
-        - in: header
-          name: query-language
+        - in: query
+          name: queryLanguage
           schema:
-            type: string
-            enum: [openCypher, application/sparql-query, sparql*]
-            default: openCypher
-          required: true
+            $ref: '#/components/schemas/QueryLanguage'
+          required: false
+        - in: query
+          name: timeout
+          schema:
+            type: integer
+            default: 5
+          required: false
       security:
         - jwt: []
       requestBody:
@@ -661,10 +678,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Statement'
-          application/sparql-query:
-            example: ''
-          application/sparql*:
-            example: ''
       responses:
         '200':
           description: successful query
@@ -672,12 +685,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Results'
-            application/sparql-results+xml:
-              example: ''
-            text/turtle:
-              example: ''
-            text/html:
-              example: ''
         '400': ## Malformed Message: The receveived request cannot be processed, either because its syntax is ## incorrect or forbidden query clauses are used. For instance, it is not allowed to manipulate data ## through the query endpoint
           $ref: '#/components/responses/ClientError'
         '408': ## Query Timeout: the query took longer than the configured timeout
@@ -942,11 +949,8 @@ paths:
                 $ref: '#/components/schemas/VerificationResult'
         '400':
           $ref: '#/components/responses/ClientError'
-        '408':
-          description: >-
-            Query Timeout: the query took longer than the configured timeout
-            interval. The client needs to rewrite the query so it can be
-            processed faster.
+        '422':
+          $ref: '#/components/responses/Unprocessible'
         '500':
           $ref: '#/components/responses/ServerError'
   /participants:

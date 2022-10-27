@@ -53,24 +53,24 @@ public class ClaimValidator {
      * @param sdClaim the claim to be validated
      * @return the claim as a formatted triple string
      */
-    public String validateClaim(SdClaim sdClaim) {
-        validateRDFTripleSyntax(sdClaim);
-        return sdClaim.asTriple();
+    public Model validateClaim(SdClaim sdClaim) {
+        Model model = validateRDFTripleSyntax(sdClaim);
+        return model;
     }
 
     private String removeEnclosingAngleBrackets(String uriStr) {
         int strLen = uriStr.length();
 
-        return uriStr.substring(1, strLen-1);
+        return uriStr.substring(1, strLen - 1);
     }
 
     /**
-     * Method to validate that a claim follow the RDF triple syntax, i.e.,
-     * < (URI, blank node) , URI, (URI, blank node, literal) >
+     * Method to validate that a claim follow the RDF triple syntax, i.e., <
+     * (URI, blank node) , URI, (URI, blank node, literal) >
      *
      * @param sdClaim the claim to be validated
      */
-    private void validateRDFTripleSyntax(SdClaim sdClaim) {
+    private Model validateRDFTripleSyntax(SdClaim sdClaim) {
         Model model = ModelFactory.createDefaultModel();
         try (InputStream in = IOUtils.toInputStream(sdClaim.asTriple(), "UTF-8")) {
             switchOnJenaLiteralValidation();
@@ -102,24 +102,23 @@ public class ClaimValidator {
 
         for (ExtendedIterator<Triple> it = model.getGraph().find(); it.hasNext(); ) {
             Triple triple = it.next();
-
             // --- subject ----------------------------------------------------
             Node s = triple.getSubject();
             if (s.isURI()) {
+                // Caution! Jena will automatically apply modifications
+                // to generate valid URIs. E.g. the broken URI
+                // htw3id.org/gaia-x/indiv#serviceElasticSearch.json
+                // will be converted to the URL
+                // file:///home/user/some/path/fc-service/htw3id.org/gaia-x/indiv#serviceElasticSearch.json
+                // Hence, we have to use the original URI string here
+                // otherwise calling URI.create( ) will not fail in case
+                // of a broken URI.
+                // AND: We will have to strip off the angle brackets!
+                // Any abbreviated URIS (i.e. something like ex:Foo without
+                // angle brackets) will already be rejected above as Jena
+                // should complain about the not defined prefix (e.g. ex in
+                // the ex:Foo example above).
                 try {
-                    // Caution! Jena will automatically apply modifications
-                    // to generate valid URIs. E.g. the broken URI
-                    // htw3id.org/gaia-x/indiv#serviceElasticSearch.json
-                    // will be converted to the URL
-                    // file:///home/user/some/path/fc-service/htw3id.org/gaia-x/indiv#serviceElasticSearch.json
-                    // Hence, we have to use the original URI string here
-                    // otherwise calling URI.create( ) will not fail in case
-                    // of a broken URI.
-                    // AND: We will have to strip off the angle brackets!
-                    // Any abbreviated URIS (i.e. something like ex:Foo without
-                    // angle brackets) will already be rejected above as Jena
-                    // should complain about the not defined prefix (e.g. ex in
-                    // the ex:Foo example above).
                     String subjectStr =
                             removeEnclosingAngleBrackets(sdClaim.getSubject());
                     URI uri = new URI(subjectStr);
@@ -128,11 +127,9 @@ public class ClaimValidator {
                     throw new QueryException(
                             "Subject in triple " +
                                     sdClaim.asTriple() +
-                                    " is not a valid URI: " + e.getMessage());
-                }
-
-            } // else it should be a blank node
-
+                                    " is not a valid URI ");
+                } // else it should be a blank node
+            }
             // --- predicate --------------------------------------------------
             Node p = triple.getPredicate();
             if (p.isURI()) {
@@ -141,38 +138,28 @@ public class ClaimValidator {
                     String predicateStr =
                             removeEnclosingAngleBrackets(sdClaim.getPredicate());
                     URI uri = new URI(predicateStr);
-
-                } catch (URISyntaxException e){
+                } catch (URISyntaxException e) {
                     throw new QueryException(
                             "Predicate in triple " +
                                     sdClaim.asTriple() +
-                                    " is not a valid URI: " + e.getMessage());
+                                    " is not a valid URI ");
+
                 }
-
-            } else {
-                // TODO: should we allow blank nodes?
-                throw new QueryException(
-                        "Predicate in triple " +
-                                sdClaim.asTriple() +
-                                " is not a valid URI");
-            }
-
+            } 
             // --- object -----------------------------------------------------
             Node o = triple.getObject();
             if (o.isURI()) {
+                // c.f. the comment for handling subject nodes above
                 try {
-                    // c.f. the comment for handling subject nodes above
                     String objectStr =
                             removeEnclosingAngleBrackets(sdClaim.getObject());
                     URI uri = new URI(objectStr);
-
-                } catch (URISyntaxException e){
+                } catch (URISyntaxException e) {
                     throw new QueryException(
                             "Object in triple " +
                                     sdClaim.asTriple() +
-                                    " is not a valid URI: " + e.getMessage());
+                                    " is not a valid URI ");
                 }
-
             } else if (o.isLiteral()) {
                 // Nothing needs to be done here as literal syntax errors and
                 // datatype errors are already handled by the parser directly.
@@ -180,5 +167,6 @@ public class ClaimValidator {
 
             } // else it's a blank node, which is OK
         }
+        return model;
     }
 }

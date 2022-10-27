@@ -3,13 +3,14 @@ package eu.gaiax.difs.fc.core.service.graphdb.impl;
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
-import eu.gaiax.difs.fc.core.pojo.OpenCypherQuery;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
+import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
 import eu.gaiax.difs.fc.core.service.verification.impl.VerificationServiceImpl;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -47,7 +48,7 @@ import org.springframework.transaction.annotation.Transactional;
     SelfDescriptionStoreImpl.class,
     FileStoreConfig.class,
     VerificationServiceImpl.class, DatabaseConfig.class,
-    SchemaStoreImpl.class})
+    SchemaStoreImpl.class, ValidatorCacheImpl.class})
 @DirtiesContext
 @Transactional
 @Import(EmbeddedNeo4JConfig.class)
@@ -99,8 +100,8 @@ public class Neo4jGraphStoreAccuracyTest {
     List<Map<String, String>> resultListExpected = List.of(
         Map.of("n.uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal.json"));
 
-    OpenCypherQuery queryDelta = new OpenCypherQuery(
-        "MATCH (n:ns0__ServiceOffering) WHERE n.ns0__name = $name RETURN n LIMIT $limit",
+    GraphQuery queryDelta = new GraphQuery(
+        "MATCH (n:ServiceOffering) WHERE n.name = $name RETURN n LIMIT $limit",
         Map.of("name", "Portal","limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
     Assertions.assertEquals(resultListExpected, responseList);
@@ -110,10 +111,10 @@ public class Neo4jGraphStoreAccuracyTest {
   void testCypherServiceOfferingByURIAccuracy() throws Exception {
     /*expected only one node as previous added claims with same ID deleted from code*/
     List<Map<String, String>> resultListExpected = List.of(
-        Map.of("n.ns0__name", "Portal3"));
+        Map.of("n.name", "Portal3"));
 
-    OpenCypherQuery queryDelta = new OpenCypherQuery(
-        "MATCH (n:ns0__ServiceOffering) WHERE n.uri = $uri RETURN n.ns0__name LIMIT $limit",
+    GraphQuery queryDelta = new GraphQuery(
+        "MATCH (n:ServiceOffering) WHERE n.uri = $uri RETURN n.name LIMIT $limit",
         Map.of("uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal3.json","limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
     Assertions.assertEquals(resultListExpected, responseList);
@@ -128,8 +129,8 @@ public class Neo4jGraphStoreAccuracyTest {
         Map.of("n.uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal3.json"),
         Map.of("n.uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json"));
 
-    OpenCypherQuery queryDelta = new OpenCypherQuery(
-        "MATCH (n:ns0__ServiceOffering)  RETURN n LIMIT $limit", Map.of("limit", 25));
+    GraphQuery queryDelta = new GraphQuery(
+        "MATCH (n:ServiceOffering)  RETURN n LIMIT $limit", Map.of("limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
     Assertions.assertEquals(resultListExpected, responseList);
   }
@@ -142,9 +143,9 @@ public class Neo4jGraphStoreAccuracyTest {
         Map.of("name", "Portal2" ,"uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal2.json"),
         Map.of("name", "Portal2" ,"uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json"));
 
-    OpenCypherQuery queryDelta = new OpenCypherQuery(
-        "CALL {MATCH (n:ns0__ServiceOffering) WHERE n.ns0__name = $name RETURN n.uri as urlList} MATCH " +
-            "(n:ns0__ServiceOffering) WHERE n.uri IN [urlList] RETURN n.uri as uri, n.ns0__name as name LIMIT $limit",
+    GraphQuery queryDelta = new GraphQuery(
+        "CALL {MATCH (n:ServiceOffering) WHERE n.name = $name RETURN n.uri as urlList} MATCH " +
+            "(n:ServiceOffering) WHERE n.uri IN [urlList] RETURN n.uri as uri, n.name as name LIMIT $limit",
         Map.of("name", "Portal2","limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
     Assertions.assertEquals(resultListExpected, responseList);
@@ -152,10 +153,10 @@ public class Neo4jGraphStoreAccuracyTest {
   @Test
   void testCypherTotalCount() throws Exception {
 
-    OpenCypherQuery queryDelta = new OpenCypherQuery(
+    GraphQuery queryDelta = new GraphQuery(
         "MATCH (n)  RETURN n LIMIT $limit", Map.of("limit", 25));
     List<Map<String, Object>> responseList = neo4jGraphStore.queryData(queryDelta).getResults();
-    Assertions.assertEquals(6, responseList.size());
+    Assertions.assertEquals(5, responseList.size());
   }
 
   private void initialiseAllDataBaseWithManuallyAddingSD() throws Exception {
@@ -163,7 +164,8 @@ public class Neo4jGraphStoreAccuracyTest {
     fileStore.clearStorage();
 
     ContentAccessorDirect contentAccessor = new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME));
-    VerificationResultOffering verificationResult = verificationService.verifyOfferingSelfDescription(contentAccessor);
+    VerificationResultOffering verificationResult =
+            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, true, false);
 
     //TODO:: adding manually claims, after final implementation we will remove it and change the query according to sd
 
@@ -187,7 +189,8 @@ public class Neo4jGraphStoreAccuracyTest {
     //adding 2 sd skipping sd validation as we don't have full implementation
     ContentAccessorDirect contentAccessorDirect2 =
         new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME1));
-    VerificationResultOffering verificationResult2 = verificationService.verifyOfferingSelfDescription(contentAccessor);
+    VerificationResultOffering verificationResult2 =
+            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, true, false);
 
     SdClaim sdClaim1 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal2.json>",
         "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
@@ -210,7 +213,8 @@ public class Neo4jGraphStoreAccuracyTest {
     //adding sd 3
     ContentAccessorDirect contentAccessorDirect3 =
         new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME2));
-    VerificationResultOffering verificationResult3 = verificationService.verifyOfferingSelfDescription(contentAccessor);
+    VerificationResultOffering verificationResult3 =
+            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, true, false);
 
     SdClaim sdClaim3 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal3.json>",
         "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
@@ -234,7 +238,8 @@ public class Neo4jGraphStoreAccuracyTest {
     //adding sd 3
     ContentAccessorDirect contentAccessorDirect4 =
         new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME3));
-    VerificationResultOffering verificationResult4 = verificationService.verifyOfferingSelfDescription(contentAccessor);
+    VerificationResultOffering verificationResult4 =
+            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, true, false);
 
 
     SdClaim sdClaim4 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json>",

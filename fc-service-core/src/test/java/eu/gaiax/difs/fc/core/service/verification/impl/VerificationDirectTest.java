@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.danubetech.verifiablecredentials.VerifiableCredential;
@@ -46,26 +47,33 @@ public class VerificationDirectTest {
         // Print out the result (or don't, it's your call!)
         log.debug("RDF: {}; {}", rdf, JsonUtils.toPrettyString(rdf));
     }
-
+    
+    @Test
+    @Disabled()
+    void parseJSONLDDirectly3() throws Exception {
+        String path = "Claims-Extraction-Tests/providerTest.jsonld";
+        ContentAccessor content = getAccessor(VerificationDirectTest.class, path);
+        Object jsonObject = JsonUtils.fromInputStream(content.getContentAsStream());
+        Object rdf = JsonLdProcessor.toRDF(jsonObject, new LoggingTripleCallback());
+        log.debug("RDF: {}; {}", rdf, JsonUtils.toPrettyString(rdf));
+    }
+    
     @Test
     void extractClaimsDirectly() throws Exception {
         ContentAccessor content = getAccessor(VerificationDirectTest.class, "Claims-Extraction-Tests/providerTest.jsonld");
-        VerifiablePresentation vp = VerifiablePresentation.fromJson(content.getContentAsString()
-                  .replaceAll("JsonWebKey2020", "JsonWebSignature2020"));
+        VerifiablePresentation vp = VerifiablePresentation.fromJson(content.getContentAsString());
         Map<String, Object> claims = vp.getVerifiableCredential().getCredentialSubject().getClaims();
         log.debug("provider claims: {}", claims);
         log.debug("provider RDF: {}", vp.getVerifiableCredential().getCredentialSubject().toDataset().toList());
 
         content = getAccessor(VerificationDirectTest.class, "Claims-Extraction-Tests/participantTest.jsonld");
-        vp = VerifiablePresentation.fromJson(content.getContentAsString()
-                  .replaceAll("JsonWebKey2020", "JsonWebSignature2020"));
+        vp = VerifiablePresentation.fromJson(content.getContentAsString());
         claims = vp.getVerifiableCredential().getCredentialSubject().getClaims();
         log.debug("participant claims: {}", claims);
         log.debug("participant RDF: {}", vp.getVerifiableCredential().getCredentialSubject().toDataset().toList());
 
         //content = getAccessor("Claims-Extraction-Tests/participantSD.jsonld");
-        //vp = VerifiablePresentation.fromJson(content.getContentAsString()
-        //          .replaceAll("JsonWebKey2020", "JsonWebSignature2020"));
+        //vp = VerifiablePresentation.fromJson(content.getContentAsString());
         //claims = vp.getVerifiableCredential().getCredentialSubject().getClaims();
         //log.debug("big participant claims: {}", claims);
         //log.debug("big participant RDF: {}", vp.getVerifiableCredential().getCredentialSubject().toDataset().toList());

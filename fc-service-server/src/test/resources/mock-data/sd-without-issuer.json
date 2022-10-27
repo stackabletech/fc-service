@@ -1,41 +1,37 @@
 {
   "@context": [
-    "https://www.w3.org/2018/credentials/v1",
-    "https://w3id.org/gaia-x/context.jsonld"
+    "https://www.w3.org/2018/credentials/v1"
   ],
   "type": "VerifiablePresentation",
   "id": "presentationIDwoIssuer",
   "verifiableCredential": [
     {
       "@context": [
-        "https://www.w3.org/2018/credentials/v1",
-        "https://w3id.org/gaia-x/context.jsonld"
+        "https://www.w3.org/2018/credentials/v1"
       ],
       "id": "http://example.edu/credentials/1872",
       "type": "VerifiableCredential",
       "issuanceDate": "2010-01-01T19:73:24Z",
       "credentialSubject": {
-        "@type": "ServiceOfferingExperimental",      
+        "@type": "ServiceOfferingExperimental",
         "given_name": "Fredrik",
         "family_name": "Str&#246;mberg",
         "birthdate": "1949-01-22"
-      },     
+      },
       "proof": {
         "type": "JsonWebSignature2020",
-        "created": "2017-06-18T21:19:10Z",
+        "created": "2022-10-25T14:49:04Z",
         "proofPurpose": "assertionMethod",
         "verificationMethod": "did:web:compliance.lab.gaia-x.eu",
-        "jws": "eyJhbGciOiJSUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..TCYt5XsITJX1Cx,PCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM"
+        "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..yeopzGntQFLR68v09sNGj_RSejopc0c2b0hfqwPqy2eb3ThuxIS_By2O2FDMyq8JDexZ21KvlSsbyIFGN0ioOxBjwFtOC5EbgvjstW3gYwsl0lVdA1ZT0LuR6V6wZXicBaS-FHj8LUKbTIxIRPp1k3kBYCiNiJ3m83Ava6T4pJF8O5rhYir80SiewoYwGANmHosdOqhVyvKaP8sAvY17_KMQDfkQY0m7DwC2hmRyFYD_JmVp6wfiwvBokBq1z_Idy3maCwgD7HuRULdOY5rrc3y1XqQiW71lMxtEiI7AcxO2CF8SK0EW4_EASUWoONSfOyBkuYm3rQNUFsl-tbSj52KDUzF8lfu2UZHP_vw4JxNmokkyTVQPv0r2pY-CbQtEYmKr0GJtqkY41U74HjVnZQB_2MVJb3sN63GgQPYLvV7XG8MjdqW3Hp3Hun5u_iHpc8MjuauEBwfHNwbtFklBqOMZQy8Wmh2goDS6XRObakARSLRvmD7iryl09MJLL1GtH8Y8lJIAOrtD9JGj_sxQcNC8omxm9fUcu0TWCGnA-1LrP1F_I8RyAZ6dLAdm0cXQiimkal5PED4RxpQPC8EJFqq8MYFvfTlWbgpkf0TWBwVq9-WlvSTty48ICISPfGZxMrZIskHiKP7cL9KckosXMY52qCT5sz-3aWmc9ByCT1g"
       }
     }
   ],
   "proof": {
     "type": "JsonWebSignature2020",
-    "created": "2018-09-14T21:19:10Z",
-    "proofPurpose": "authentication",
+    "created": "2022-10-25T14:49:05Z",
+    "proofPurpose": "assertionMethod",
     "verificationMethod": "did:web:compliance.lab.gaia-x.eu",
-    "challenge": "1f44d55f-f161-4938-a659-f8026467f126",
-    "domain": "4jt78h47fh47",
-    "jws": "eyJhbGciOiJSUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..kTCYt5XsITJX1CxPCT8yAV-TVIw5WEuts01mqpQy7UJiN5mgREEMGlv50aqzpqh4Qq_PbChOMqsLfRoPsnsgxD-WUcX16dUOqV0G_zS245-kronKb78cPktb3rk-BuQy72IFLN25DYuNzVBAh4vGHSrQyHUGlcTwLtjPAnKb78"
+    "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..LHa79Nmj9hFsszuDD9qvrfAPciHmOs3t28K6z73CjHBDP3-ZmPlN9ICBtUOXIpecH4OGNYcw5ZPcIASDKByaKuxT3oiYwQZyexkRDrs7BoR9qaMZdHe_AuJNrn_0rtGhZt7TnmA3ZKMd3SD4ZjvbeyH62DZK5x-Z0ORXdJZ-l8AZRjy7H5aMVDol_5jrk_Rt0XzPdnag7WzNIcxSDJ8e-neBkJQNqvH3fw5hlJ8j6M29iIIjJZnV31Kllbjmi4rVeaYDVWvXgzU9xtgDjVO1GQ5cCgVpuA0SxMthbvKSsqceYmEHteG_Lff5R9sfvY-46iEjADJDCRWiB5QY_xou-kFsjEXPP4Uuhz0_q0tJlIea2CWiC4XVv9I9B5s3jefknuxkakKIHa-612uvCQdh-q533iDW_4TyZ-flkIC5j9R3V9H2R5k7U31AelnffCacPc1J_O74SPLTO6qOpIZaxh6r8EzwIenl3AfLCOKXinG62Fl-d5RbVjCLM7GhKLhDl9Gn4jsojGQXHeq0lMHqVy1Z6Al705kCJFdgKXL0BFnkv-qUIomqRHtRw15dpnjqx78M_1qH1TS5Qz3887ccOpYBfZtq4DNAbqN0LDnbSDczQxx3K_jfEZpogLuKpq1S5PjSWcLYP7fZUAcRn1J9lM1X2ia0kMzzmrNelxeAtXs"
   }
 }

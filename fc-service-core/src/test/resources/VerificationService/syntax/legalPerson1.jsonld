@@ -1,93 +1,86 @@
 {
-	"@context": [
-		"https://www.w3.org/2018/credentials/v1"
-	],
+	"@context": ["https://www.w3.org/2018/credentials/v1"],
 	"@id": "http://example.edu/verifiablePresentation/self-description1",
-	"@type": [
-		"VerifiablePresentation"
-	],
+	"@type": ["VerifiablePresentation"],
 	"issuer": "https://example.edu/issuers/14",
 	"issuanceDate": "2010-01-01T19:23:24Z",
 	"verifiableCredential": {
-		"@context": [
-			"https://www.w3.org/2018/credentials/v1"
-		],
+		"@context": ["https://www.w3.org/2018/credentials/v1"],
 		"@id": "https://delta-dao.com/.well-known/participant.json",
-		"@type": [
-			"VerifiableCredential"
-		],
-		"credentialSubject": {
-			"@context": {
-				"owl": "http://www.w3.org/2002/07/owl#",
-				"rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-				"rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-				"xsd": "http://www.w3.org/2001/XMLSchema#"
-			},
-			"@graph": [
-				{
-					"@id": "http://w3id.org/gaia-x/participant#Provider1",
-					"@type": "http://w3id.org/gaia-x/participant#LegalPerson",
-					"http://w3id.org/gaia-x/participant#headquarterAddress": {
-						"@id": "_:N41e43f0606a94c5a8b5be875e147cc63"
-					},
-					"http://w3id.org/gaia-x/participant#legalAddress": {
-						"@id": "_:N41e43f0606a94c5a8b5be875e147cc63"
-					},
-					"http://w3id.org/gaia-x/participant#legalName": "Provider Name",
-					"http://w3id.org/gaia-x/participant#registrationNumber": "1234",
-					"http://w3id.org/gaia-x/participant#subOrganisation": [
-						{
-							"@id": "http://w3id.org/gaia-x/participant#Provider1"
-						},
-						{
-							"@id": "http://w3id.org/gaia-x/participant#Provider2"
-						},
-						{
-							"@id": "http://w3id.org/gaia-x/participant#Provider3"
-						},
-						{
-							"@id": "http://w3id.org/gaia-x/participant#Provider4"
-						},
-						{
-							"@id": "http://w3id.org/gaia-x/participant#Provider5"
-						},
-						{
-							"@id": "http://w3id.org/gaia-x/participant#Provider6"
-						},
-						{
-							"@id": "http://w3id.org/gaia-x/participant#Provider7"
-						},
-						{
-							"@id": "http://w3id.org/gaia-x/participant#Provider8"
-						},
-						{
-							"@id": "http://w3id.org/gaia-x/participant#Provider9"
-						},
-						{
-							"@id": "http://w3id.org/gaia-x/participant#Provider10"
-						}
-					],
-					"http://w3id.org/gaia-x/participant#termsAndConditions": {
-						"@id": "_:Nfd21de5506a44214bdd9805eda775710"
-					}
-				},
-				{
-					"@id": "_:N41e43f0606a94c5a8b5be875e147cc63",
-					"http://www.w3.org/2006/vcard/ns#country-name": "Country",
-					"http://www.w3.org/2006/vcard/ns#locality": "Town Name",
-					"http://www.w3.org/2006/vcard/ns#postal-code": "1234",
-					"http://www.w3.org/2006/vcard/ns#street-address": "Street Name"
-				},
-				{
-					"@id": "_:Nfd21de5506a44214bdd9805eda775710",
-					"@type": "http://w3id.org/gaia-x/core#TermsAndConditions",
-					"http://w3id.org/gaia-x/core#content": {
-						"@type": "xsd:anyURI",
-						"@value": "http://example.org/tac"
-					},
-					"http://w3id.org/gaia-x/core#hash": "1234"
-				}
-			]
-		}
-	}
+		"@type": ["VerifiableCredential"],
+		"credentialSubject":
+{
+  "@context": {
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "@graph": [
+    {
+      "@id": "http://w3id.org/gaia-x/participant#Provider1",
+      "@type": "http://w3id.org/gaia-x/participant#LegalPerson",
+      "http://w3id.org/gaia-x/participant#headquarterAddress": {
+        "@id": "_:N37939e50cf644a939e9bc99858eb96f7"
+      },
+      "http://w3id.org/gaia-x/participant#legalAddress": {
+        "@id": "_:N37939e50cf644a939e9bc99858eb96f7"
+      },
+      "http://w3id.org/gaia-x/participant#legalName": "Provider Name",
+      "http://w3id.org/gaia-x/participant#registrationNumber": "1234",
+      "http://w3id.org/gaia-x/participant#subOrganisation": [
+        {
+          "@id": "http://w3id.org/gaia-x/participant#Provider1"
+        },
+        {
+          "@id": "http://w3id.org/gaia-x/participant#Provider2"
+        },
+        {
+          "@id": "http://w3id.org/gaia-x/participant#Provider3"
+        },
+        {
+          "@id": "http://w3id.org/gaia-x/participant#Provider4"
+        },
+        {
+          "@id": "http://w3id.org/gaia-x/participant#Provider5"
+        },
+        {
+          "@id": "http://w3id.org/gaia-x/participant#Provider6"
+        },
+        {
+          "@id": "http://w3id.org/gaia-x/participant#Provider7"
+        },
+        {
+          "@id": "http://w3id.org/gaia-x/participant#Provider8"
+        },
+        {
+          "@id": "http://w3id.org/gaia-x/participant#Provider9"
+        },
+        {
+          "@id": "http://w3id.org/gaia-x/participant#Provider10"
+        }
+      ],
+      "http://w3id.org/gaia-x/participant#termsAndConditions": {
+        "@id": "_:N10a09e256aac4d189b82a85d07aa8b15"
+      }
+    },
+    {
+      "@id": "_:N37939e50cf644a939e9bc99858eb96f7",
+      "http://www.w3.org/2006/vcard/ns#country-name": "Country",
+      "http://www.w3.org/2006/vcard/ns#locality": "Town Name",
+      "http://www.w3.org/2006/vcard/ns#postal-code": "1234",
+      "http://www.w3.org/2006/vcard/ns#street-address": "Street Name"
+    },
+    {
+      "@id": "_:N10a09e256aac4d189b82a85d07aa8b15",
+      "@type": "http://w3id.org/gaia-x/core#TermsAndConditions",
+      "http://w3id.org/gaia-x/core#content": {
+        "@type": "xsd:anyURI",
+        "@value": "http://example.org/tac"
+      },
+      "http://w3id.org/gaia-x/core#hash": "1234"
+    }
+  ]
+}
+}
 }
