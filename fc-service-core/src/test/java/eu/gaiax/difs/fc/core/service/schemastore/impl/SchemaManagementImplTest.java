@@ -17,10 +17,13 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Statement;
@@ -31,6 +34,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.neo4j.cypher.internal.expressions.True;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
@@ -71,6 +75,46 @@ public class SchemaManagementImplTest {
   @AfterEach
   public void storageSelfCleaning() throws IOException {
     fileStore.clearStorage();
+  }
+
+  public Set<String> getExtractedTermsSet (ContentAccessor extractedTerms) throws IOException {
+    Set<String> extractedTermsSet = new HashSet<>();
+    try (InputStream resource = extractedTerms.getContentAsStream()) {
+      List<String> extractedList = new BufferedReader(new InputStreamReader(resource,
+              StandardCharsets.UTF_8)).lines().collect(Collectors.toList());
+      extractedTermsSet = new HashSet<>(extractedList);
+    }
+    return extractedTermsSet;
+  }
+  @Test
+  public void testGaxCoreOntologyGraph() throws IOException {
+    String pathTerms = "Schema-Tests/gax-core-ontology-terms.txt";
+    String pathGraph = "Schema-Tests/gax-core-ontology.ttl";
+    ContentAccessor contentTerms = TestUtil.getAccessor(getClass(), pathTerms);
+    ContentAccessor contentGraph = TestUtil.getAccessor(getClass(), pathGraph);
+    Set<String> expectedExtractedUrlsSet = getExtractedTermsSet(contentTerms);
+    SchemaAnalysisResult result = schemaStore.analyseSchema(contentGraph);
+    boolean actual = schemaStore.isSchemaType(contentGraph, ONTOLOGY);
+    List<String> actualExtractedUrlsList = result.getExtractedUrls();
+    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
+    actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
+    assertTrue(actual);
+    assertTrue(actualExtractedUrlsSet.isEmpty());
+  }
+  @Test
+  public void testGaxCoreShapeGraph() throws IOException {
+    String pathTerms = "Schema-Tests/gax-core-shapes-terms.txt";
+    String pathGraph = "Schema-Tests/gax-core-shapes.ttl";
+    ContentAccessor contentTerms = TestUtil.getAccessor(getClass(), pathTerms);
+    ContentAccessor contentGraph = TestUtil.getAccessor(getClass(), pathGraph);
+    Set<String> expectedExtractedUrlsSet = getExtractedTermsSet(contentTerms);
+    SchemaAnalysisResult result = schemaStore.analyseSchema(contentGraph);
+    boolean actual = schemaStore.isSchemaType(contentGraph, SHAPE);
+    List<String> actualExtractedUrlsList = result.getExtractedUrls();
+    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
+    actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
+    assertTrue(actual);
+    assertTrue(actualExtractedUrlsSet.isEmpty());
   }
   @Test
   public void testIsValidShape() throws UnsupportedEncodingException {

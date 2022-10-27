@@ -62,20 +62,6 @@ public class SchemaStoreImpl implements SchemaStore {
   private SessionFactory sessionFactory;
 
   private static final Map<SchemaType, ContentAccessor> COMPOSITE_SCHEMAS = new ConcurrentHashMap<>();
-
-  private final String RDFS_CLASS = "http://www.w3.org/2000/01/rdf-schema#Class";
-  private final String RDF_PROPERTY = "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property";
-  private final String OWL_NAMED_INDIVIDUAL ="http://www.w3.org/2002/07/owl#NamedIndividual" ;
-  private final String OWL_ONTOLOGY ="http://www.w3.org/2002/07/owl#Ontology";
-  private final String OWL_CLASS ="http://www.w3.org/2002/07/owl#Class";
-  private final String SH_NODESHAPE = "http://www.w3.org/ns/shacl#NodeShape";
-  private final String SH_PROPERTYSHAPE ="http://www.w3.org/ns/shacl#PropertyShape" ;
-
-  private final String SKOS_CONCEPT= "http://www.w3.org/2004/02/skos/core#Concept";
-
-  private final String SKOS_CONCEPTSCHEME ="http://www.w3.org/2004/02/skos/core#ConceptScheme";
-
-  private final String RDF_TYPE ="http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
   @Override
   public void initializeDefaultSchemas() {
     Session currentSession = sessionFactory.getCurrentSession();
