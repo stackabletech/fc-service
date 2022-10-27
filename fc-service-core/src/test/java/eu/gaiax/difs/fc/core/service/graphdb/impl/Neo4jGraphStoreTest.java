@@ -129,6 +129,7 @@ public class Neo4jGraphStoreTest {
         graphGaia.addClaims(sdClaimList, "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
     }
 
+
     /**
      * Given set of credentials connect to graph and upload self description.
      * Instantiate list of claims with subject predicate and object in N-triples
@@ -386,14 +387,14 @@ public class Neo4jGraphStoreTest {
     }
 
     /**
-     * This test adds two sets of claims and after deleting the first set
-     * - there should be no nodes with their graphUri list containing the
-     *   credential subject of the first set
-     * - no added nodes referenced by their URI directly.
-     *
+     * This test adds two sets of claims and after deleting the first set -
+     * there should be no nodes with their graphUri list containing the
+     * credential subject of the first set - no added nodes referenced by their
+     * URI directly.
+     * <p>
      * But the nodes of the second set of claims should still be there, assuring
      * we do not delete more than the claims of the first set.
-     *
+     * <p>
      * TODO: Extend the test to check shared nodes which are in both sets
      */
     @Test
