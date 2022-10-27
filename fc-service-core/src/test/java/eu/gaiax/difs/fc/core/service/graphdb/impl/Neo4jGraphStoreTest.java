@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import eu.gaiax.difs.fc.core.exception.QueryException;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -84,7 +85,9 @@ public class Neo4jGraphStoreTest {
         GraphQuery queryFull = new GraphQuery(
                 "MATCH (n:ServiceOffering) RETURN n LIMIT 25", Map.of());
         List<Map<String, Object>> responseFull = graphGaia.queryData(queryFull).getResults();
-        Assertions.assertEquals(resultListFull, responseFull);
+        Assertions.assertTrue(
+                CollectionUtils.isEqualCollection(resultListFull, responseFull),
+                resultListFull + " != " + responseFull);
     }
 
     /**
@@ -111,7 +114,10 @@ public class Neo4jGraphStoreTest {
         GraphQuery queryDelta = new GraphQuery(
                 "MATCH (n:LegalPerson) WHERE n.name = $name RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
-        Assertions.assertEquals(resultListDelta, responseDelta);
+        Assertions.assertTrue(
+                CollectionUtils.isEqualCollection(resultListDelta, responseDelta),
+                resultListDelta + " != " + responseDelta
+        );
     }
 
     /**
@@ -137,8 +143,6 @@ public class Neo4jGraphStoreTest {
     @Test
     void testAddClaimsException() throws Exception {
         String credentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
-        String wrongCredentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch";
-
 
         SdClaim syntacticallyCorrectClaim = new SdClaim(
                 "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
