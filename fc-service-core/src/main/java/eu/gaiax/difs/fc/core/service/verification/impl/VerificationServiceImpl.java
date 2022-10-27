@@ -333,7 +333,7 @@ public class VerificationServiceImpl implements VerificationService {
   /**
    * A method that returns a list of claims given a self-description's VerifiablePresentation
    *
-   * @param cs a self-description as Verifiable Presentation for claims extraction
+   * @param payload a self-description as Verifiable Presentation for claims extraction
    * @return a list of claims.
    */
    private List<SdClaim> extractClaims(ContentAccessor payload) {
@@ -430,13 +430,17 @@ public class VerificationServiceImpl implements VerificationService {
     return new SemanticValidationResult(conforms, report);
   }
 
-  private void validatePayloadAgainstSchema(ContentAccessor payload) {
+  private SemanticValidationResult validatePayloadAgainstCompositeSchema(ContentAccessor payload) {
     ContentAccessor shaclShape = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
     SemanticValidationResult result = validatePayloadAgainstSchema(payload, shaclShape);
     log.debug("validationAgainstShacl.exit; conforms: {}; model: {}", result.isConforming(), result.getValidationReport());
     if (!result.isConforming()) {
       throw new VerificationException("Schema error; Shacl shape schema violated");
     }
+    return result;
+  }
+  public SemanticValidationResult getSemanticValidationResults(ContentAccessor payload){
+    return validatePayloadAgainstCompositeSchema(payload);
   }
   
   /* SD signatures verification */

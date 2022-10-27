@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
+import static eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType.SHAPE;
 import static eu.gaiax.difs.fc.core.util.TestUtil.getAccessor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -18,10 +19,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -65,6 +68,12 @@ public class VerificationServiceImplTest {
 
     @Autowired
     private VerificationServiceImpl verificationService;
+    @Autowired
+    private SchemaStoreImpl schemaStore;
+
+    @Autowired
+    @Qualifier("schemaFileStore")
+    private FileStore fileStore;
 
     @Test
     void invalidSyntax_MissingQuote() throws Exception {
@@ -86,7 +95,7 @@ public class VerificationServiceImplTest {
         assertTrue(ex.getMessage().contains("VerifiablePresentation must contain 'verifiableCredential' property"));
     }
 
-    @Test
+   @Test
     void validSyntax_Participant() throws Exception {
         String path = "VerificationService/syntax/participantSD2.jsonld";
         VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path));
@@ -95,7 +104,7 @@ public class VerificationServiceImplTest {
         VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
         assertEquals("https://www.handelsregister.de/", vrp.getId());
         assertEquals("https://www.handelsregister.de/", vrp.getIssuer());
-        assertEquals(Instant.parse("2010-01-01T19:37:24Z"), vrp.getIssuedDateTime()); 
+       assertEquals(Instant.parse("2010-01-01T19:37:24Z"), vrp.getIssuedDateTime());
     }
 
     @Test
@@ -271,3 +280,4 @@ public class VerificationServiceImplTest {
         }
     }
 }
+

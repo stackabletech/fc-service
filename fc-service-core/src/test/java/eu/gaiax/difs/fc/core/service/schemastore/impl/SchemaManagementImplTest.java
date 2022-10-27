@@ -97,9 +97,10 @@ public class SchemaManagementImplTest {
     boolean actual = schemaStore.isSchemaType(contentGraph, ONTOLOGY);
     List<String> actualExtractedUrlsList = result.getExtractedUrls();
     Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
-    actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
+   actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
     assertTrue(actual);
-    assertTrue(actualExtractedUrlsSet.isEmpty());
+  assertTrue(actualExtractedUrlsSet.isEmpty());
+
   }
   @Test
   public void testGaxCoreShapeGraph() throws IOException {
@@ -112,9 +113,10 @@ public class SchemaManagementImplTest {
     boolean actual = schemaStore.isSchemaType(contentGraph, SHAPE);
     List<String> actualExtractedUrlsList = result.getExtractedUrls();
     Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
-    actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
     assertTrue(actual);
-    assertTrue(actualExtractedUrlsSet.isEmpty());
+    assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
+    assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
+
   }
   @Test
   public void testIsValidShape() throws UnsupportedEncodingException {
