@@ -17,10 +17,8 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.jena.rdf.model.Model;
@@ -113,19 +111,23 @@ public class SchemaManagementImplTest {
   }
   @Test
   public void testValidOntology() throws UnsupportedEncodingException {
-    List<String> extractedUrlsExpected = new ArrayList<>();
-    extractedUrlsExpected.add("http://w3id.org/gaia-x/core#providesResourcesFrom");
-    extractedUrlsExpected.add("http://w3id.org/gaia-x/core#Interconnection");
-    extractedUrlsExpected.add("http://w3id.org/gaia-x/core#Consumer");
-    extractedUrlsExpected.add( "http://w3id.org/gaia-x/core#MustCriterion");
-    extractedUrlsExpected.add( "http://w3id.org/gaia-x/core#Provider");
-    extractedUrlsExpected.add(  "http://w3id.org/gaia-x/core#AssetOwner");
+    Set<String> expectedExtractedUrlsSet = new HashSet<>();
+    expectedExtractedUrlsSet.add("http://w3id.org/gaia-x/core#providesResourcesFrom");
+    expectedExtractedUrlsSet.add("http://w3id.org/gaia-x/core#Interconnection");
+    expectedExtractedUrlsSet.add("http://w3id.org/gaia-x/core#Consumer");
+    expectedExtractedUrlsSet.add( "http://w3id.org/gaia-x/core#Provider");
+    expectedExtractedUrlsSet.add(  "http://w3id.org/gaia-x/core#AssetOwner");
+    expectedExtractedUrlsSet.add(  "http://w3id.org/gaia-x/core#ServiceOffering");
+    expectedExtractedUrlsSet.add(  "http://w3id.org/gaia-x/core#Contract");
     String path = "Schema-Tests/validOntology.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult result = schemaStore.analyseSchema(content);
     boolean actual = schemaStore.isSchemaType(content, ONTOLOGY);
-    List<String> extractedUrlsActual = result.getExtractedUrls();
+    List<String> actualExtractedUrlsList = result.getExtractedUrls();
+    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
+    actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
     String extractedIdActual = result.getExtractedId();
+    assertTrue( actualExtractedUrlsSet.isEmpty());
     assertTrue(actual);
     assertTrue(schemaStore.verifySchema(content));
   }

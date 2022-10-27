@@ -12,7 +12,6 @@ import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -33,11 +32,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.shacl.parser.NodeShape;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -113,8 +110,8 @@ public class SchemaStoreImpl implements SchemaStore {
   public SchemaAnalysisResult analyseSchema(ContentAccessor schema) {
     SchemaAnalysisResult result = new SchemaAnalysisResult();
     Set<String> extractedUrlsSet = new HashSet<>();
-    Model defaultModel = ModelFactory.createDefaultModel();
-    Model model = ModelFactory.createRDFSModel(defaultModel);
+    Model model = ModelFactory.createDefaultModel();
+
     List<String> schemaType = Arrays.asList("JSON-LD","RDF/XML","TTL");
     for (String type :schemaType){
       try {
@@ -159,18 +156,22 @@ public class SchemaStoreImpl implements SchemaStore {
    if (result.isValid()) {
      switch (result.getSchemaType()) {
        case SHAPE:
-         setExtractedUrlsSet(model, defaultModel, SHACLM.NodeShape, extractedUrlsSet);
-         setExtractedUrlsSet(model, defaultModel, SHACLM.PropertyShape, extractedUrlsSet);
+         addExtractedUrls(model, SHACLM.NodeShape, extractedUrlsSet);
+         addExtractedUrls(model,  SHACLM.PropertyShape, extractedUrlsSet);
          break;
 
        case ONTOLOGY:
-         setExtractedUrlsSet(model, defaultModel, OWL2.NamedIndividual, extractedUrlsSet);
-         setExtractedUrlsSet(model, defaultModel, RDF.Property, extractedUrlsSet);
-         setExtractedUrlsSet(model, defaultModel, RDFS.Class, extractedUrlsSet);
+         addExtractedUrls(model, OWL2.NamedIndividual, extractedUrlsSet);
+         addExtractedUrls(model, RDF.Property, extractedUrlsSet);
+         addExtractedUrls(model,  OWL2.DatatypeProperty, extractedUrlsSet);
+         addExtractedUrls(model,  OWL2.ObjectProperty, extractedUrlsSet);
+         addExtractedUrls(model,  RDFS.Class, extractedUrlsSet);
+         addExtractedUrls(model,  OWL2.Class, extractedUrlsSet);
+
          break;
 
        case VOCABULARY:
-         setExtractedUrlsSet(model, defaultModel, SKOS.Concept, extractedUrlsSet);
+         addExtractedUrls(model,  SKOS.Concept, extractedUrlsSet);
          break;
        default:
          // this will not happen
@@ -180,13 +181,12 @@ public class SchemaStoreImpl implements SchemaStore {
     result.setExtractedUrls(extractedUrls);
     return result;
   }
-public void setExtractedUrlsSet(Model model, Model defaultModel, RDFNode node, Set<String> extractedSet) {
+public void addExtractedUrls(Model model, RDFNode node, Set<String> extractedSet) {
   ResIterator resIteratorNode = model.listResourcesWithProperty(RDF.type, node);
+
   while (resIteratorNode.hasNext()) {
     Resource rs = resIteratorNode.nextResource();
-    if (defaultModel.contains(rs, (Property) null, (RDFNode) null)) {
-      extractedSet.add(rs.getURI());
-    }
+    extractedSet.add(rs.getURI());
   }
 }
 
