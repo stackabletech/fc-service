@@ -9,6 +9,8 @@ import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.core.util.ExtendClaims;
 import eu.gaiax.difs.fc.core.util.ClaimValidator;
+import liquibase.pro.packaged.L;
+import liquibase.pro.packaged.T;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.jena.rdf.model.Model;
 import org.neo4j.driver.Driver;
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Configuration
@@ -52,7 +55,7 @@ public class Neo4jGraphStore implements GraphStore {
             try (Session session = driver.session()) {
                 for (SdClaim sdClaim : sdClaimList) {
                     Model model = claimValidator.validateClaim(sdClaim);
-                    String claimsAdded=ExtendClaims.addPropertyGraphUri(model, credentialSubject);
+                    String claimsAdded = ExtendClaims.addPropertyGraphUri(model, credentialSubject);
                     payload.append(claimsAdded);
                     cnt++;
                 }
@@ -81,7 +84,7 @@ public class Neo4jGraphStore implements GraphStore {
                 "SET n.claimsGraphUri = [g IN n.claimsGraphUri WHERE g <> $uri];";
         try (Session session = driver.session()) {
             Result rsDelelte = session.run(queryDelete, Map.of("uri", credentialSubject));
-            Result rsUpdate  = session.run(queryUpdate, Map.of("uri", credentialSubject));
+            Result rsUpdate = session.run(queryUpdate, Map.of("uri", credentialSubject));
             log.debug("deleteClaims.exit; results: {}", rsDelelte.list());
             log.debug("updateClaims.exit; results: {}", rsUpdate.list());
         }
@@ -93,15 +96,15 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public PaginatedResults<Map<String, Object>> queryData(GraphQuery sdQuery) {
         log.debug("queryData.enter; got query: {}", sdQuery);
-        
+
         if (sdQuery.getQueryLanguage() != QueryLanguage.OPENCYPHER) {
             throw new UnsupportedOperationException(sdQuery.getQueryLanguage() + " query language is not supported yet");
         }
 
         TransactionConfig transactionConfig = TransactionConfig.builder()
-                        .withTimeout(Duration.ofSeconds(sdQuery.getTimeout()))
-                        .build();
-        
+                .withTimeout(Duration.ofSeconds(sdQuery.getTimeout()))
+                .build();
+
         long stamp = System.currentTimeMillis();
         try (Session session = driver.session()) {
             //In this function we use read transaction to avoid any Cypher query that modifies data
@@ -124,13 +127,16 @@ public class Neo4jGraphStore implements GraphStore {
                             totalCount = (Long) map.getOrDefault("totalCount", resultList.size());
 
                             for (var entry : map.entrySet()) {
-                                if (entry.getValue() instanceof String) {
-                                    outputMap.put(entry.getKey(), entry.getValue().toString());
-                                } else if (entry.getValue() == null) {
+                                if (entry.getValue() == null) {
                                     outputMap.put(entry.getKey(), null);
                                 } else if (entry.getValue() instanceof InternalNode) {
                                     InternalNode SDNode = (InternalNode) entry.getValue();
                                     outputMap.put("n.uri", SDNode.get("uri").toString().replace("\"", ""));
+                                } else if (entry.getValue() instanceof List) {
+                                    String listString = ((List<?>) entry.getValue()).stream().map(Object::toString).collect(Collectors.joining(", "));
+                                    outputMap.put(entry.getKey(), listString);
+                                } else {
+                                    outputMap.put(entry.getKey(), entry.getValue().toString());
                                 }
                             }
                             resultList.add(outputMap);
@@ -143,7 +149,7 @@ public class Neo4jGraphStore implements GraphStore {
         } catch (Exception e) {
             stamp = System.currentTimeMillis() - stamp;
             log.error("queryData.error", e);
-            if (e instanceof DatabaseException ) {
+            if (e instanceof DatabaseException) {
                 // TODO: here we must recognize a scenario when we get DatabaseException because of the query timeout
                 // if no better solution, when we can check exception stack for the following text:
                 // Suppressed: org.neo4j.driver.exceptions.ServiceUnavailableException: Connection to the database terminated.
