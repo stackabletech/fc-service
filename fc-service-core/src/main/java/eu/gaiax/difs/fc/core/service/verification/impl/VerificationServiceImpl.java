@@ -8,8 +8,6 @@ import com.danubetech.keyformats.keytypes.KeyTypeName_for_JWK;
 import com.danubetech.verifiablecredentials.CredentialSubject;
 import com.danubetech.verifiablecredentials.VerifiableCredential;
 import com.danubetech.verifiablecredentials.VerifiablePresentation;
-import com.nimbusds.jwt.JWT;
-import com.nimbusds.jwt.JWTParser;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
@@ -196,7 +194,6 @@ public class VerificationServiceImpl implements VerificationService {
     
     VerificationResult result;
     if (type.getLeft()) {
-        // take it from validators?
       LdProof proof = vp.getLdProof();
       URI method = proof == null ? null : proof.getVerificationMethod();
       String key = method == null ? null : method.toString();
@@ -217,14 +214,6 @@ public class VerificationServiceImpl implements VerificationService {
 
     log.debug("verifySelfDescription.exit;");
     return result;
-  }
-  
-  @Override
-  public boolean checkValidator(Validator validator) {
-    //Todo delete this function as it's unused?
-    //check if pubkey is the same
-    //check if pubkey is trusted
-    return true; //if all checks succeeded the validator is valid
   }
   
   /* SD parsing, semantic validation */
@@ -490,7 +479,12 @@ public class VerificationServiceImpl implements VerificationService {
     Validator validator = validatorCache.getFromCache(proof.getVerificationMethod().toString());
     if (validator == null) {
       log.debug("checkSignature; validator was not cached");
-      Pair<PublicKeyVerifier, Validator> pkVerifierAndValidator = getVerifiedVerifier(proof);
+      Pair<PublicKeyVerifier, Validator> pkVerifierAndValidator = null;
+      try {
+        pkVerifierAndValidator = getVerifiedVerifier(proof);
+      } catch (CertificateException e) {
+        throw new VerificationException("Signatures error; " + e.getMessage(), e);
+      }
       PublicKeyVerifier publicKeyVerifier = pkVerifierAndValidator.getLeft();
       validator = pkVerifierAndValidator.getRight();
       verifier = new JsonWebSignature2020LdVerifier(publicKeyVerifier);
@@ -514,7 +508,7 @@ public class VerificationServiceImpl implements VerificationService {
     return validator;
   }
 
-  private Pair<PublicKeyVerifier, Validator> getVerifiedVerifier(LdProof proof) throws IOException {
+  private Pair<PublicKeyVerifier, Validator> getVerifiedVerifier(LdProof proof) throws IOException, CertificateException {
     log.debug("getVerifiedVerifier.enter;");
     URI uri = proof.getVerificationMethod();
     String jwt = proof.getJws();
@@ -529,8 +523,6 @@ public class VerificationServiceImpl implements VerificationService {
     if (!uri.getScheme().equals("did")) {
       throw new VerificationException("Signatures error; Unknown Verification Method: " + uri);
     }
-
-    // TODO: resolve diDoc with Universal Resolver (https://github.com/decentralized-identity/universal-resolver)? 
     
     DIDDocument diDoc = readDIDfromURI(uri);
     log.debug("getVerifiedVerifier; methods: {}", diDoc.getVerificationMethods());
@@ -539,9 +531,7 @@ public class VerificationServiceImpl implements VerificationService {
     Map<String, Object> jwk_map_uncleaned = (Map<String, Object>) method.get("publicKeyJwk");
     Map<String, Object> jwk_map_cleaned = extractRelevantValues(jwk_map_uncleaned);
 
-    Instant deprecation = Instant.now(); 
-    // Skipped due to performance issues
-    // hasPEMTrustAnchorAndIsNotDeprecated((String) jwk_map_uncleaned.get("x5u"));
+    Instant deprecation = hasPEMTrustAnchorAndIsNotDeprecated((String) jwk_map_uncleaned.get("x5u"));
     log.debug("getVerifiedVerifier; key has valid trust anchor");
 
     // use from map and extract only relevant
@@ -556,7 +546,6 @@ public class VerificationServiceImpl implements VerificationService {
                 uri.toString(),
                 JsonLDObject.fromJsonObject(jwk_map_uncleaned).toString(),
                 deprecation);
-    //Does this help? https://www.baeldung.com/java-read-pem-file-keys#2-get-public-key-from-pem-string
 
     log.debug("getVerifiedVerifier.exit;");
     return Pair.of(pubKey, validator);
@@ -564,6 +553,7 @@ public class VerificationServiceImpl implements VerificationService {
   
   //This function becomes obsolete when a did resolver will be available
   //https://gitlab.com/gaia-x/lab/compliance/gx-compliance/-/issues/13
+  //Resolve DID-Doc with Universal Resolver (https://github.com/decentralized-identity/universal-resolver)?
   private static DIDDocument readDIDfromURI (URI uri) throws IOException {
     log.debug("readDIDFromURI.enter; got uri: {}", uri);
     String [] uri_parts = uri.getSchemeSpecificPart().split(":");
@@ -607,11 +597,6 @@ public class VerificationServiceImpl implements VerificationService {
     return new_map;
   }
 
-  private String getAlgorithmFromJWT(String s) throws ParseException {
-    JWT jwt = JWTParser.parse(s);
-    return jwt.getHeader().getAlgorithm().getName();
-  }
-
   private Instant hasPEMTrustAnchorAndIsNotDeprecated (String uri) throws IOException, CertificateException {
     StringBuilder result = new StringBuilder();
     URL url = new URL(uri);
@@ -643,8 +628,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     if (relevant == null) {
-        // ?!
-        return null;
+        throw new VerificationException("Signatures error; PEM file does not contain a public key");
     }
     
     //Second, extract required information
