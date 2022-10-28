@@ -129,7 +129,14 @@ public class SchemaStoreImpl implements SchemaStore {
     }
 
     log.debug("createCompositeSchema.exit; returning: {}", contentBuilder.length());
-    return new ContentAccessorDirect(contentBuilder.toString());
+    try {
+      final String compositeSchemaName = "CompositeSchema" + type.name();
+      fileStore.replaceFile(compositeSchemaName, new ContentAccessorDirect(contentBuilder.toString()));
+      return fileStore.readFile(compositeSchemaName);
+    } catch (IOException ex) {
+      log.error("Failed to store composite schema", ex);
+      return new ContentAccessorDirect(contentBuilder.toString());
+    }
   }
 
   @Override
