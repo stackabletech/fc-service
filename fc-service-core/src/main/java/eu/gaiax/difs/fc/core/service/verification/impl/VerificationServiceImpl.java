@@ -132,10 +132,10 @@ public class VerificationServiceImpl implements VerificationService {
     VerifiablePresentation vp = parseContent(payload);
     
     // semantic verification
-    VerifiableCredential vc; 
+    List<VerifiableCredential> vcs;
     if (verifySemantics) {
       try {
-        vc = verifyPresentation(vp);
+        vcs = verifyPresentation(vp);
       } catch (VerificationException ex) {
         throw ex;
       } catch (Exception ex) {
@@ -143,13 +143,15 @@ public class VerificationServiceImpl implements VerificationService {
         throw new VerificationException("Semantic error: " + ex.getMessage()); //, ex);
       }
     } else {
-      vc = getCredential(vp);
-      if (vc == null) {
-        throw new VerificationException("Semantic error: VerifiablePresentation must contain 'verifiableCredential' property");
-      }
+      vcs = getCredentials(vp);
     }
-    
-    Pair<Boolean, Boolean> type = getSDTypes(vc);
+
+    if (vcs.size() == 0) {
+      throw new VerificationException("Semantic Errors: VerifiablePresentation must contain 'verifiableCredential' property");
+    }
+
+    VerifiableCredential firstVC = vcs.get(0);
+    Pair<Boolean, Boolean> type = getSDTypes(firstVC);
     if (strict) {
       if (type.getLeft()) {
         //if (type.getRight()) { 
@@ -181,17 +183,38 @@ public class VerificationServiceImpl implements VerificationService {
       validators = null; //is it ok?  
     }
 
-    String id = getID(vc);
+    String id = getID(firstVC); //claims.get(0).getSubject();
     String issuer = null;
-    URI issuerUri = vc.getIssuer();
+    URI issuerUri = firstVC.getIssuer();
     if (issuerUri != null) {
-      issuer = vc.getIssuer().toString();
+      issuer = issuerUri.toString();
     }
-    Date issDate = vc.getIssuanceDate();
+    Date issDate = firstVC.getIssuanceDate();
     Instant issuedDate = issDate == null ? Instant.now() : issDate.toInstant(); 
 
     List<SdClaim> claims = extractClaims(payload);
-    
+    Set<String> ids = new HashSet<>();
+
+    if (claims != null && !claims.isEmpty()) {
+
+      for (SdClaim claim : claims) {
+        if (claim.getSubject().startsWith("_:")) {
+          continue; //Ignore blank nodes
+        }
+
+        ids.add(claim.getSubject());
+      }
+    }
+
+    if (ids.size() > 1) {
+      String sep = System.lineSeparator();
+      StringBuilder sb = new StringBuilder("Semantic Errors: There are different subjects ids in the credential subjects:").append(sep);
+      for (String s : ids) {
+        sb.append(s).append(sep);
+      }
+      throw new VerificationException(sb.toString());
+    }
+
     VerificationResult result;
     if (type.getLeft()) {
       LdProof proof = vp.getLdProof();
@@ -227,7 +250,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
   }
   
-  private VerifiableCredential verifyPresentation(VerifiablePresentation presentation) {
+  private List<VerifiableCredential> verifyPresentation(VerifiablePresentation presentation) {
     StringBuilder sb = new StringBuilder();
     String sep = System.getProperty("line.separator");  
     if (checkAbsence(presentation, "@context")) { 
@@ -239,39 +262,44 @@ public class VerificationServiceImpl implements VerificationService {
     if (checkAbsence(presentation, "verifiableCredential")) {
       sb.append(" - VerifiablePresentation must contain 'verifiableCredential' property").append(sep);
     }
-    VerifiableCredential credential = getCredential(presentation);
-    if (credential != null) {
-      if (checkAbsence(credential, "@context")) {
-        sb.append(" - VerifiableCredential must contain '@context' property").append(sep);
-      }
-      if (checkAbsence(credential, "type", "@type")) {
-        sb.append(" - VerifiableCredential must contain 'type' property").append(sep);
-      }
-      if (checkAbsence(credential, "credentialSubject")) {
-        sb.append(" - VerifiableCredential must contain 'credentialSubject' property").append(sep);
-      }
-      if (checkAbsence(credential, "issuer")) {
-        sb.append(" - VerifiableCredential must contain 'issuer' property").append(sep);
-      }
-      if (checkAbsence(credential, "issuanceDate")) {
-        sb.append(" - VerifiableCredential must contain 'issuanceDate' property").append(sep);
-      }
-    
-      Date today = Date.from(Instant.now());
-      Date issDate = credential.getIssuanceDate();
-      if (issDate != null && issDate.after(today)) { 
-        sb.append(" - 'issuanceDate' must be in the past").append(sep);
-      }
-      Date expDate = credential.getExpirationDate();
-      if (expDate != null && expDate.before(today)) {
-        sb.append(" - 'expirationDate' must be in the future").append(sep);
+    List<VerifiableCredential> credentials = getCredentials(presentation);
+    for(int i = 0; i < credentials.size(); i++) {
+      VerifiableCredential credential = credentials.get(i);
+      if (credential != null) {
+        if (checkAbsence(credential, "@context")) {
+          sb.append(" - VerifiableCredential [" + i + "] must contain '@context' property").append(sep);
+        }
+        if (checkAbsence(credential, "type", "@type")) {
+          sb.append(" - VerifiableCredential [" + i + "] must contain 'type' property").append(sep);
+        }
+        if (checkAbsence(credential, "credentialSubject")) {
+          sb.append(" - VerifiableCredential [" + i + "] must contain 'credentialSubject' property").append(sep);
+        }
+        if (checkAbsence(credential, "issuer")) {
+          sb.append(" - VerifiableCredential [" + i + "] must contain 'issuer' property").append(sep);
+        }
+        if (checkAbsence(credential, "issuanceDate")) {
+          sb.append(" - VerifiableCredential [" + i + "] must contain 'issuanceDate' property").append(sep);
+        }
+
+        Date today = Date.from(Instant.now());
+        Date issDate = credential.getIssuanceDate();
+        if (issDate != null && issDate.after(today)) {
+          sb.append(" - 'issuanceDate' of VerifiableCredential [" + i + "] must be in the past").append(sep);
+        }
+        Date expDate = credential.getExpirationDate();
+        if (expDate != null && expDate.before(today)) {
+          sb.append(" - 'expirationDate' of VerifiableCredential [" + i + "] must be in the future").append(sep);
+        }
       }
     }
+
     if (sb.length() > 0) {
-      sb.insert(0, "Semantic Errors:").insert(16,  sep);
-      throw new VerificationException(sb.toString());  
+      sb.insert(0, "Semantic Errors:").insert(16, sep);
+      throw new VerificationException(sb.toString());
     }
-    return credential;
+
+    return credentials;
   }
 
   private boolean checkAbsence(JsonLDObject container, String ... keys) {
@@ -287,9 +315,12 @@ public class VerificationServiceImpl implements VerificationService {
   private Pair<Boolean, Boolean> getSDTypes(VerifiableCredential credential) {
     Boolean result = getSDType(credential);
     if (result == null) {
-      CredentialSubject subject = getCredentialSubject(credential);
-      if (subject != null) {
+      List<CredentialSubject> subjects = getCredentialSubject(credential);
+      for (CredentialSubject subject : subjects) {
         result = getSDType(subject);
+        if(result != null) {
+          break;
+        }
       }
     }
     
@@ -333,10 +364,11 @@ public class VerificationServiceImpl implements VerificationService {
   /**
    * A method that returns a list of claims given a self-description's VerifiablePresentation
    *
-   * @param cs a self-description as Verifiable Presentation for claims extraction
+   * @param payload a self-description as Verifiable Presentation for claims extraction
    * @return a list of claims.
    */
    private List<SdClaim> extractClaims(ContentAccessor payload) {
+     //TODO does it work with an Array of VCs
      List<SdClaim> claims = null;  
      for (ClaimExtractor extra: extractors) {
        try {
@@ -351,41 +383,38 @@ public class VerificationServiceImpl implements VerificationService {
      return claims;
   }
 
-  private VerifiableCredential getCredential(VerifiablePresentation presentation) {
-    try {
-      VerifiableCredential credential = presentation.getVerifiableCredential();
-      log.debug("getCredential; vp.credential: {}", credential);
+  private List<CredentialSubject> getCredentialSubject(VerifiableCredential credential) {
+    Object obj = credential.getJsonObject().get("credentialSubject");
 
-      if (credential != null) {
-        return credential;
+    if (obj == null) {
+      return Collections.emptyList();
+    } else if (obj instanceof List) {
+      List<Map<String, Object>> l = (List<Map<String, Object>>) obj;
+      List<CredentialSubject> result = new ArrayList<>(l.size());
+
+      for (Map<String, Object> _cs : l){
+        CredentialSubject cs = CredentialSubject.fromMap(_cs);
+
+        result.add(cs);
       }
-    } catch (Exception e) {
-      log.debug("getCredential; error: {}", e.getMessage());
-    }
-    
-    Object _credential = presentation.getJsonObject().get("verifiableCredential");
-    log.debug("getCredential; all credentials: {}", _credential);
-    if (_credential instanceof List) {
-      List<Map<String, Object>> credentials = (List<Map<String, Object>>) _credential;
-      if (credentials.size() > 0) {
-        return VerifiableCredential.fromJsonObject(credentials.get(0));
-      }
-    }
 
-    return null;
-  }
+      return result;
+    } else if (obj instanceof Map) {
+      CredentialSubject vc = CredentialSubject.fromMap((Map<String, Object>) obj);
 
-  private CredentialSubject getCredentialSubject(VerifiableCredential credential) {
-    return credential.getCredentialSubject();
+      return List.of(vc);
+    } else {
+      return Collections.emptyList();
+    }
   }
 
   private String getID(VerifiableCredential credential) {
     String id = null;
-    CredentialSubject subject = getCredentialSubject(credential);
-    if (subject != null) {
-      id = getID(subject.getJsonObject());  
-    }
-    if (id == null) {
+    List<CredentialSubject> subjects = getCredentialSubject(credential);
+
+    if (subjects.size() > 0) {
+      id = getID(subjects.get(0).getJsonObject());
+    } else {
       id = getID(credential.getJsonObject());  
     }
     return id;
@@ -447,8 +476,10 @@ public class VerificationServiceImpl implements VerificationService {
     Set<Validator> validators = new HashSet<>();
     try {
       validators.add(checkSignature(presentation));
-      VerifiableCredential credential = getCredential(presentation);
-      validators.add(checkSignature(credential));
+      List<VerifiableCredential> credentials = getCredentials(presentation);
+      for (VerifiableCredential credential : credentials) {
+        validators.add(checkSignature(credential));
+      }
     } catch (VerificationException ex) {
       throw ex;
     } catch (Exception ex) {
@@ -674,5 +705,38 @@ public class VerificationServiceImpl implements VerificationService {
     // what if code is 2xx or 3xx?  
     log.debug("checkTrustAnchor.exit; status code: {}", response.getStatusLine().getStatusCode());
     return response.getStatusLine().getStatusCode() == 200;   
+  }
+
+  private List<VerifiableCredential> getCredentials (VerifiablePresentation vp) {
+    Object obj = vp.getJsonObject().get("verifiableCredential");
+
+    if (obj == null) {
+      return Collections.emptyList();
+    } else if (obj instanceof List) {
+      List<Map<String, Object>> l = (List<Map<String, Object>>) obj;
+      List<VerifiableCredential> result = new ArrayList<>(l.size());
+
+      for (Map<String, Object> _vc : l){
+        VerifiableCredential vc = VerifiableCredential.fromMap(_vc);
+
+        Pair<Boolean, Boolean> p = getSDTypes(vc);
+        if(p.getLeft() == p.getRight()) {
+          continue;
+        }
+
+        result.add(vc);
+      }
+
+      return result;
+    } else {
+      VerifiableCredential vc = VerifiableCredential.fromMap((Map<String, Object>) obj);
+
+      Pair<Boolean, Boolean> p = getSDTypes(vc);
+      if(p.getLeft() == p.getRight()) {
+        return Collections.emptyList();
+      }
+
+      return List.of(vc);
+    }
   }
 }
