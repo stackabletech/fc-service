@@ -475,6 +475,60 @@ public class Neo4jGraphStoreTest {
     }
 
     @Test
+    void testAssertionQuery() {
+        String credentialSubject1 = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
+        List<SdClaim> sdClaimList = Arrays.asList(
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                ),
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://ex.com/some_property>",
+                        "_:23"
+                ),
+                new SdClaim(
+                        "_:23",
+                        "<http://ex.com/some_other_property>",
+                        "<http:ex.com/some_service>"
+                ),
+                new SdClaim(
+                        "<http:ex.com/some_service>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                )
+        );
+
+        String credentialSubject2 = "http://ex.com/credentialSubject2";
+        List<SdClaim> sdClaimsWOtherCredSubject = Arrays.asList(
+                new SdClaim(
+                        "<http://ex.com/credentialSubject2>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                ),
+                new SdClaim(
+                        "<http://ex.com/credentialSubject2>",
+                        "<http://ex.com/some_property>",
+                        "<http://ex.com/resource23>"
+                )
+        );
+
+        graphGaia.addClaims(sdClaimList, credentialSubject1);
+        graphGaia.addClaims(sdClaimsWOtherCredSubject, credentialSubject2);
+        GraphQuery queryCypher = new GraphQuery("MATCH (n)-[:some_property]->(m) RETURN n",null);
+        List<Map<String, Object>> responseCypher = graphGaia.queryData(queryCypher).getResults();
+        List<Map<String, String>> resultListSomeProperty = new ArrayList<Map<String, String>>();
+        Map<String, String> mapES = new HashMap<String, String>();
+        mapES.put("n.uri", "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
+        resultListSomeProperty.add(mapES);
+        Map<String, String> mapCredentialSubject2 = new HashMap<String, String>();
+        mapCredentialSubject2.put("n.uri", "http://ex.com/credentialSubject2");
+        resultListSomeProperty.add(mapCredentialSubject2);
+        Assertions.assertEquals(resultListSomeProperty, responseCypher);
+    }
+
+    @Test
     void testQueryDataTimeout() {
         int acceptableDuration = (queryTimeoutInSeconds - 1) * 1000;
         int tooLongDuration = (queryTimeoutInSeconds + 2) * 1000;  // two seconds more than acceptable
