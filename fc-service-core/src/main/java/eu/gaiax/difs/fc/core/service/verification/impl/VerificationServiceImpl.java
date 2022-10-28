@@ -61,7 +61,7 @@ import java.util.*;
 @Slf4j
 @Component
 public class VerificationServiceImpl implements VerificationService {
-  private static final String sd_format = "JSONLD";
+  private static final String sd_format = "JSONLD11";
   private static final String shapes_format = "TURTLE";
   private static final String[] TYPE_KEYS = {"type", "types", "@type", "@types"};
   private static final String[] ID_KEYS = {"id", "@id"};
