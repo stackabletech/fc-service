@@ -5,6 +5,8 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -65,8 +67,14 @@ public class SchemaControllerTest {
     mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
   }
 
-  @AfterAll
+  @AfterEach
   public void storageSelfCleaning() throws IOException {
+    Map<SchemaStore.SchemaType, List<String>> schemaList = schemaStore.getSchemaList();
+    for (List<String> typeList : schemaList.values()) {
+      for (String schema : typeList) {
+        schemaStore.deleteSchema(schema);
+      }
+    }
     fileStore.clearStorage();
   }
   

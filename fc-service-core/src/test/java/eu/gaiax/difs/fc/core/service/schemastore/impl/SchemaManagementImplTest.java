@@ -20,6 +20,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -97,10 +98,9 @@ public class SchemaManagementImplTest {
     boolean actual = schemaStore.isSchemaType(contentGraph, ONTOLOGY);
     List<String> actualExtractedUrlsList = result.getExtractedUrls();
     Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
-   actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
+    actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
     assertTrue(actual);
-  assertTrue(actualExtractedUrlsSet.isEmpty());
-
+    assertTrue(actualExtractedUrlsSet.isEmpty());
   }
   @Test
   public void testGaxCoreShapeGraph() throws IOException {
