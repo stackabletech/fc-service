@@ -279,5 +279,23 @@ public class VerificationServiceImplTest {
             assertFalse(validationResult.isConforming());
         }
     }
+    @Test
+    void verifyInvalidSDValidation_Result_Against_CompositeSchema() throws IOException {
+        fileStore.clearStorage();
+        schemaStore.addSchema(getAccessor("Schema-Tests/FirstValidSchemaShape.ttl"));
+        schemaStore.addSchema(getAccessor("Schema-Tests/SecondValidSchemaShape.ttl"));
+        Exception ex = assertThrowsExactly(VerificationException.class, () -> verificationService.getSemanticValidationResults(getAccessor("Validation-Tests/DataCenterDataGraph.jsonld")));
+    assertTrue(ex.getMessage().contains("Schema error; Shacl shape schema violated"));
+    }
+    @Disabled("the current VerifiablePresentation is not valid, it has invalid terms cannot be parsed ")
+    @Test
+    void verifyValidVP_SDValidationCompositeSchema() throws IOException {
+        fileStore.clearStorage();
+        schemaStore.addSchema(getAccessor("Validation-Tests/legal-personShape.ttl"));
+        schemaStore.addSchema(getAccessor("Schema-Tests/FirstValidSchemaShape.ttl"));
+        SemanticValidationResult validationResult = verificationService.getSemanticValidationResults(
+                getAccessor("Validation-Tests/legalPerson_two_VC.jsonld"));
+        assertTrue(validationResult.isConforming());
+    }
 }
 

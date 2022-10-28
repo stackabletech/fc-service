@@ -8,7 +8,11 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
 import eu.gaiax.difs.fc.server.generated.controller.SchemasApiDelegate;
+
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -131,8 +135,13 @@ public class SchemasService implements SchemasApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<Void> deleteSchema(String schemaId) {
+  public ResponseEntity<Void> deleteSchema(String schemaId)  {
     log.debug("deleteSchema.enter; got schemaId: {}", schemaId);
+  try {
+    schemaId = URLDecoder.decode(schemaId, StandardCharsets.UTF_8.name());
+  } catch(UnsupportedEncodingException e) {
+    throw new RuntimeException(e);
+  }
     schemaStore.deleteSchema(schemaId);
     return ResponseEntity.ok(null);
   }
