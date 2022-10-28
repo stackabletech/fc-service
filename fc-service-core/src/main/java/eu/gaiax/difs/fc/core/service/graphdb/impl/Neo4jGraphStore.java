@@ -112,14 +112,19 @@ public class Neo4jGraphStore implements GraphStore {
             return session.readTransaction(
                     tx -> {
                         List<Map<String, Object>> resultList = new ArrayList<>();
-                        Result result = tx.run(sdQuery.getQuery(), sdQuery.getParams());
+                        String finalString = getDynamicallyAddedCountClauseQuery(sdQuery);
+                        Result result = tx.run(finalString, sdQuery.getParams());
                         log.debug("queryData; got result: {}", result.keys());
+                        Long totalCount = 0L;
                         while (result.hasNext()) {
                             org.neo4j.driver.Record record = result.next();
                             Map<String, Object> map = record.asMap();
                             log.debug("queryData; record: {}", map);
                             Map<String, Object> outputMap = new HashMap<>();
+                            totalCount = (Long) map.getOrDefault("totalCount", resultList.size());
                             for (var entry : map.entrySet()) {
+                                if(entry.getKey().equals("totalCount"))
+                                    continue;
                                 if (entry.getValue() == null) {
                                     outputMap.put(entry.getKey(), null);
                                 } else if (entry.getValue() instanceof InternalNode) {
@@ -132,7 +137,7 @@ public class Neo4jGraphStore implements GraphStore {
                             resultList.add(outputMap);
                         }
                         log.debug("queryData.exit; returning: {}", resultList);
-                        return new PaginatedResults<>((long) resultList.size(), resultList);
+                        return new PaginatedResults<>(totalCount, resultList);
                     },
                     transactionConfig
             );
@@ -151,6 +156,32 @@ public class Neo4jGraphStore implements GraphStore {
             throw new ServerException("error querying data " + e.getMessage());
         }
     }
+
+    private String getDynamicallyAddedCountClauseQuery(GraphQuery sdQuery) {
+        log.debug("getDynamicallyAddedCountClauseQuery.enter; actual query: {}", sdQuery.getQuery());
+        /*get string before statements and append count clause*/
+        String statement = "return";
+        int indexOf = sdQuery.getQuery().toLowerCase().lastIndexOf(statement);
+
+        if (indexOf != -1) {
+            /*add totalCount to query to get count*/
+            StringBuilder subStringOfCount = new StringBuilder(sdQuery.getQuery().substring(0, indexOf));
+            subStringOfCount.append("WITH count(*) as totalCount ");
+
+            /*append totalCount to return statements*/
+            StringBuilder actualQuery = new StringBuilder(sdQuery.getQuery());
+            int indexOfAfter = actualQuery.toString().toLowerCase().lastIndexOf(statement) + statement.length();
+            actualQuery.insert(indexOfAfter + 1, "totalCount, ");
+
+            /*finally combine both string */
+            String finalString = subStringOfCount.append(actualQuery).toString();
+            log.debug("getDynamicallyAddedCountClauseQuery.exit; count query appended : {}", finalString);
+            return finalString;
+        } else {
+            return sdQuery.getQuery();
+        }
+    }
+
 
 
 }
