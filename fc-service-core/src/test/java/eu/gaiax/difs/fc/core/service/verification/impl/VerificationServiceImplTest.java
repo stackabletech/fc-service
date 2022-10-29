@@ -41,10 +41,13 @@ import eu.gaiax.difs.fc.core.pojo.SemanticValidationResult;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
 import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterEach;
 
 @Slf4j
 @SpringBootTest
@@ -74,6 +77,17 @@ public class VerificationServiceImplTest {
     @Autowired
     @Qualifier("schemaFileStore")
     private FileStore fileStore;
+
+  @AfterEach
+  public void storageSelfCleaning() throws IOException {
+    Map<SchemaStore.SchemaType, List<String>> schemaList = schemaStore.getSchemaList();
+    for (List<String> typeList : schemaList.values()) {
+      for (String schema : typeList) {
+        schemaStore.deleteSchema(schema);
+      }
+    }
+    fileStore.clearStorage();
+  }
 
     @Test
     void invalidSyntax_MissingQuote() throws Exception {
@@ -146,7 +160,7 @@ public class VerificationServiceImplTest {
         //assertEquals("https://www.handelsregister.de/", vro.getIssuer());
         //assertEquals(LocalDate.of(2010, 1, 1), vro.getIssuedDate());
     }
-    
+
     @Test
     @Disabled("invalid LP generated")
     void validSyntax_ValidPerson() throws Exception {
@@ -161,7 +175,7 @@ public class VerificationServiceImplTest {
         //assertEquals("https://www.handelsregister.de/", vrp.getIssuer());
         //assertEquals(LocalDate.of(2010, 1, 1), vrp.getIssuedDate());
     }
-    
+
     @Test
     void invalidProof_InvalidSignatureType() throws Exception {
         String path = "VerificationService/syntax/input.vp.jsonld";
@@ -169,7 +183,7 @@ public class VerificationServiceImplTest {
                 verificationService.verifySelfDescription(getAccessor(path)));
         assertEquals("Signatures error; This proof type is not yet implemented: Ed25519Signature2018", ex.getMessage());
     }
-    
+
     @Test
     void invalidProof_MissingProofs() throws IOException {
         String path = "VerificationService/sign/hasNoSignature1.json";
@@ -224,16 +238,16 @@ public class VerificationServiceImplTest {
 
         Set<SdClaim> expectedClaims = new HashSet<>();
         expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#Provider>"));
-        expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b0")); 
-        expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#legalName>", "\"deltaDAO AG\"")); 
+        expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b0"));
+        expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#legalName>", "\"deltaDAO AG\""));
         expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#name>", "\"deltaDAO AG\""));
         expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#Address>"));
-        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#country>", "\"DE\"")); 
-        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#locality>", "\"Hamburg\"")); 
-        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#postal-code>", "\"22303\"")); 
+        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#country>", "\"DE\""));
+        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#locality>", "\"Hamburg\""));
+        expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#postal-code>", "\"22303\""));
         expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#street-address>", "\"Geibelstraße 46b\""));
         assertEquals(expectedClaims.size(), actualClaims.size());
-        assertEquals(expectedClaims, new HashSet<>(actualClaims)); 
+        assertEquals(expectedClaims, new HashSet<>(actualClaims));
     }
 
     @Test
@@ -263,9 +277,9 @@ public class VerificationServiceImplTest {
         expectedClaims.add(new SdClaim("_:b2", "<gx-participant:postal-code>", "\"22303\""));
         expectedClaims.add(new SdClaim("_:b2", "<gx-participant:street-address>", "\"Geibelstraße 46b\""));
         expectedClaims.add(new SdClaim("_:b3", "<gx-service-offering:hash>", "\"36ba819f30a3c4d4a7f16ee0a77259fc92f2e1ebf739713609f1c11eb41499e7aa2cd3a5d2011e073f9ba9c107493e3e8629cc15cd4fc07f67281d7ea9023db0\""));
-        expectedClaims.add(new SdClaim("_:b3", "<gx-service-offering:url>", "\"https://gaia-x.gitlab.io/policy-rules-committee/trust-framework/participant/#legal-person\""));        
+        expectedClaims.add(new SdClaim("_:b3", "<gx-service-offering:url>", "\"https://gaia-x.gitlab.io/policy-rules-committee/trust-framework/participant/#legal-person\""));
         assertEquals(expectedClaims.size(), actualClaims.size());
-        assertEquals(expectedClaims, new HashSet<>(actualClaims)); 
+        assertEquals(expectedClaims, new HashSet<>(actualClaims));
     }
 
     @Test
@@ -281,7 +295,6 @@ public class VerificationServiceImplTest {
     }
     @Test
     void verifyInvalidSDValidation_Result_Against_CompositeSchema() throws IOException {
-        fileStore.clearStorage();
         schemaStore.addSchema(getAccessor("Schema-Tests/FirstValidSchemaShape.ttl"));
         schemaStore.addSchema(getAccessor("Schema-Tests/SecondValidSchemaShape.ttl"));
         Exception ex = assertThrowsExactly(VerificationException.class, () -> verificationService.getSemanticValidationResults(getAccessor("Validation-Tests/DataCenterDataGraph.jsonld")));
@@ -289,7 +302,6 @@ public class VerificationServiceImplTest {
     }
     @Test
     void verifyValidVP_SDValidationCompositeSchema() throws IOException {
-        fileStore.clearStorage();
         schemaStore.addSchema(getAccessor("Validation-Tests/legal-personShape.ttl"));
         schemaStore.addSchema(getAccessor("Schema-Tests/FirstValidSchemaShape.ttl"));
         SemanticValidationResult validationResult = verificationService.getSemanticValidationResults(
