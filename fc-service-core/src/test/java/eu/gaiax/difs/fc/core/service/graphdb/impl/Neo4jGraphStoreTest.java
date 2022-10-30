@@ -129,6 +129,7 @@ public class Neo4jGraphStoreTest {
         graphGaia.addClaims(sdClaimList, "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
     }
 
+
     /**
      * Given set of credentials connect to graph and upload self description.
      * Instantiate list of claims with subject predicate and object in N-triples
@@ -386,14 +387,14 @@ public class Neo4jGraphStoreTest {
     }
 
     /**
-     * This test adds two sets of claims and after deleting the first set
-     * - there should be no nodes with their graphUri list containing the
-     *   credential subject of the first set
-     * - no added nodes referenced by their URI directly.
-     *
+     * This test adds two sets of claims and after deleting the first set -
+     * there should be no nodes with their graphUri list containing the
+     * credential subject of the first set - no added nodes referenced by their
+     * URI directly.
+     * <p>
      * But the nodes of the second set of claims should still be there, assuring
      * we do not delete more than the claims of the first set.
-     *
+     * <p>
      * TODO: Extend the test to check shared nodes which are in both sets
      */
     @Test
@@ -471,6 +472,60 @@ public class Neo4jGraphStoreTest {
 
         // clean up
         graphGaia.deleteClaims(credentialSubject2);
+    }
+
+    @Test
+    void testAssertionQuery() {
+        String credentialSubject1 = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
+        List<SdClaim> sdClaimList = Arrays.asList(
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                ),
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://ex.com/some_property>",
+                        "_:23"
+                ),
+                new SdClaim(
+                        "_:23",
+                        "<http://ex.com/some_other_property>",
+                        "<http:ex.com/some_service>"
+                ),
+                new SdClaim(
+                        "<http:ex.com/some_service>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                )
+        );
+
+        String credentialSubject2 = "http://ex.com/credentialSubject2";
+        List<SdClaim> sdClaimsWOtherCredSubject = Arrays.asList(
+                new SdClaim(
+                        "<http://ex.com/credentialSubject2>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                ),
+                new SdClaim(
+                        "<http://ex.com/credentialSubject2>",
+                        "<http://ex.com/some_property>",
+                        "<http://ex.com/resource23>"
+                )
+        );
+
+        graphGaia.addClaims(sdClaimList, credentialSubject1);
+        graphGaia.addClaims(sdClaimsWOtherCredSubject, credentialSubject2);
+        GraphQuery queryCypher = new GraphQuery("MATCH (n)-[:some_property]->(m) RETURN n",null);
+        List<Map<String, Object>> responseCypher = graphGaia.queryData(queryCypher).getResults();
+        List<Map<String, String>> resultListSomeProperty = new ArrayList<Map<String, String>>();
+        Map<String, String> mapES = new HashMap<String, String>();
+        mapES.put("n.uri", "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
+        resultListSomeProperty.add(mapES);
+        Map<String, String> mapCredentialSubject2 = new HashMap<String, String>();
+        mapCredentialSubject2.put("n.uri", "http://ex.com/credentialSubject2");
+        resultListSomeProperty.add(mapCredentialSubject2);
+        Assertions.assertEquals(resultListSomeProperty, responseCypher);
     }
 
     @Test

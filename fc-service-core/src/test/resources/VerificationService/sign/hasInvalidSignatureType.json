@@ -45,6 +45,7 @@
 			"type": [
 				"VerifiableCredential"
 			],
+			"@context": ["https://www.w3.org/2018/credentials/v1"],
 			"issuer": "https://example.edu/issuers/complianceService",
 			"issuanceDate": "2010-01-01T00:00:00Z",
 			"credentialSubject": {

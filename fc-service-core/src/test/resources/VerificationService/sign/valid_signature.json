@@ -6,13 +6,14 @@
   "type": [
     "VerifiablePresentation"
   ],
-  "verifiableCredential": {
+  "verifiableCredential": [{
     "@context": [
       "https://www.w3.org/2018/credentials/v1"
     ],
     "@id": "https://delta-dao.com/.well-known/participant.json",
     "@type": [
-      "VerifiableCredential"
+      "VerifiableCredential",
+      "ServiceOfferingExperimental"
     ],
     "issuer": "http://gaiax.de",
     "issuanceDate": "2022-10-19T18:48:09Z",
@@ -87,7 +88,7 @@
       "verificationMethod": "did:web:example",
       "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..ocvKUEAEWKHnfmkmkWlytdIuMUS0hyNlsQmfTIbU9htSRnMoY4fTETpj44kZu6L8mda-Kvu7l_nf2opuEQ-_T75-rwjs-d1nSWJc7XVD0tLZPdALGH1Lrijt7EKYXp8lXjeriLhKEiqZLvGdTuQnvAVNnGrG_GpDOVlgaNGmPPX2t0I9f5UHI83cyXkHMFy5mdzIiw4wlWKLplbqRss8PLbg4RjkCkah0TBLENjev45jufB0GyzmpQ4arX7Os5YA8KH1RhkkCBYIC7RG_xWa4cQi7YoOH4vF7-h4zteE38yWnmyAs884Jn0xO8-oliiGY4IJrr82y-IEF9uGBtGYQNFOYXHuQOi3QDIOfKOeZQZwIOzwiE2MtxVjroD04GXaT3KI9EeSEOUKytbLXCJQN7KU08qVXf1MkiqbBNBO8H4PNE0FwzY96I391-DkJ7s2sXyP3m4lXt2UodE9hr6pKDI-UCm-TRKdbfdeAqJtZwHG2gxqplpHlos-ri9KkQKYWXU88rkDnsnFhIcZ6o2if4NZEJoAMJjk_SzyPRjYmspbX7BMh15JH9a1CQ4bxiFSXg8tg0T5hWaPkWcwT0VQYCJnGScpvgRJknvad0cpyF5rFGHI7JgXSL__fKkrb6lK3WfTfJE4il6XRtx_WGJW35mh0rw693zVytbpKviNhxA"
     }
-  },
+  }],
   "proof": {
     "type": "JsonWebSignature2020",
     "created": "2022-10-25T13:25:17Z",
@@ -96,3 +97,4 @@
     "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..yhz1tZ70fOoEki3TjFI1OAwgdvWOXCc1XfremHS9p1ZKkH24xgXllxYZW1PXpgBdTWyn6kiZ3z_cOrLPKar622-hvwH5X0s5FTOnrYvw6CjsH89P_819w91mSmYrueRFUzWwPHfKzfA_IEXf449vNCHny4C1CBmZCC9hJy0Lkrsuk-mbWXRoL17-ejYX5JI-HOlcbdJbPDQCBUGgjCbFvMrmroXlQ88gHjfMNTXFAkB2zl7zB-YWVL9_gahlTCqjpxXCWBZDnY9qNVa-C5zGN7L3wrjAUVeeimFhGB-ZmQktugc-hZmKHnDVA6SY-Ecc_2GFX0z8uZiV56-4tAy2ZXwufLgdyF-aup-FWCvdAEnKCVUwPQTQZnZMDSPwScA3Is1BdjT1wBr0r9MbRZBaVGmYEmqsT2YH_KbBsVEzlW9IerXwmpP3_Nl0f2inhu-IqNJ6lwuLleASAVWWpgvuyn1wW9Gmqi3oWD21UKmqFGSeJfI_euQLUPSXFmPgkjSSgKPV877dxRyv7XiCfltGRdcLGtKb_UScJGBrSeWvazQBpxbypmNhcjfZ4sLBykoEVNxS6bL8E7vNs3ULtLCbJq9B1FxPr_DrMGnpsgtVn7NhhLDKK1qAtd5QHPujdLB52dLv3L_VnY2bzvETSUoy1y--y4tZT1oWNKDTXBy2CNM"
   }
 }
+

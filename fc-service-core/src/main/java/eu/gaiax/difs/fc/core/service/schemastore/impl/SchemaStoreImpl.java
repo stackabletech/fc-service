@@ -62,6 +62,7 @@ public class SchemaStoreImpl implements SchemaStore {
   private SessionFactory sessionFactory;
 
   private static final Map<SchemaType, ContentAccessor> COMPOSITE_SCHEMAS = new ConcurrentHashMap<>();
+
   @Override
   public void initializeDefaultSchemas() {
     Session currentSession = sessionFactory.getCurrentSession();
@@ -98,10 +99,10 @@ public class SchemaStoreImpl implements SchemaStore {
     Set<String> extractedUrlsSet = new HashSet<>();
     Model model = ModelFactory.createDefaultModel();
 
-    List<String> schemaType = Arrays.asList("JSON-LD","RDF/XML","TTL");
-    for (String type :schemaType){
+    List<String> schemaType = Arrays.asList("JSON-LD", "RDF/XML", "TTL");
+    for (String type : schemaType) {
       try {
-        model.read(schema.getContentAsStream(),null,type);
+        model.read(schema.getContentAsStream(), null, type);
         result.setValid(true);
         break;
       } catch (Exception exc) {
@@ -109,77 +110,78 @@ public class SchemaStoreImpl implements SchemaStore {
         result.setErrorMessage(exc.getMessage());
       }
     }
-   if ( model.contains(null, RDF.type , SHACLM.NodeShape) ||
-           model.contains(null, RDF.type, SHACLM.PropertyShape) ) {
-     result.setSchemaType(SchemaType.SHAPE);
-     result.setExtractedId(null);
-   } else {
-     ResIterator resIteratorProperty =  model.listResourcesWithProperty(RDF.type,OWL.Ontology);
-     if(resIteratorProperty.hasNext()){
-       Resource resource = resIteratorProperty.nextResource();
-       result.setSchemaType(SchemaType.ONTOLOGY);
-       result.setExtractedId(resource.getURI());
-       if(resIteratorProperty.hasNext()){
-         result.setErrorMessage("Ontology Schema has multiple Ontology IRIs");
-         result.setExtractedId(null);
-         result.setValid(false);
-       }
-     } else {
-       resIteratorProperty =  model.listResourcesWithProperty(RDF.type, SKOS.ConceptScheme);
-       if(resIteratorProperty.hasNext()) {
-         Resource resource = resIteratorProperty.nextResource();
-         result.setSchemaType(SchemaType.VOCABULARY);
-         result.setExtractedId(resource.getURI());
-         if(resIteratorProperty.hasNext()){
-           result.setErrorMessage("Vocabulary contains multiple concept schemes");
-           result.setExtractedId(null);
-           result.setValid(false);
-         }
-       } else {
-         result.setValid(false);
-         result.setErrorMessage("Schema is not supported");
-       }
-     }
-   }
-   if (result.isValid()) {
-     switch (result.getSchemaType()) {
-       case SHAPE:
-         addExtractedUrls(model, SHACLM.NodeShape, extractedUrlsSet);
-         addExtractedUrls(model,  SHACLM.PropertyShape, extractedUrlsSet);
-         break;
+    if (model.contains(null, RDF.type, SHACLM.NodeShape)
+        || model.contains(null, RDF.type, SHACLM.PropertyShape)) {
+      result.setSchemaType(SchemaType.SHAPE);
+      result.setExtractedId(null);
+    } else {
+      ResIterator resIteratorProperty = model.listResourcesWithProperty(RDF.type, OWL.Ontology);
+      if (resIteratorProperty.hasNext()) {
+        Resource resource = resIteratorProperty.nextResource();
+        result.setSchemaType(SchemaType.ONTOLOGY);
+        result.setExtractedId(resource.getURI());
+        if (resIteratorProperty.hasNext()) {
+          result.setErrorMessage("Ontology Schema has multiple Ontology IRIs");
+          result.setExtractedId(null);
+          result.setValid(false);
+        }
+      } else {
+        resIteratorProperty = model.listResourcesWithProperty(RDF.type, SKOS.ConceptScheme);
+        if (resIteratorProperty.hasNext()) {
+          Resource resource = resIteratorProperty.nextResource();
+          result.setSchemaType(SchemaType.VOCABULARY);
+          result.setExtractedId(resource.getURI());
+          if (resIteratorProperty.hasNext()) {
+            result.setErrorMessage("Vocabulary contains multiple concept schemes");
+            result.setExtractedId(null);
+            result.setValid(false);
+          }
+        } else {
+          result.setValid(false);
+          result.setErrorMessage("Schema is not supported");
+        }
+      }
+    }
+    if (result.isValid()) {
+      switch (result.getSchemaType()) {
+        case SHAPE:
+          addExtractedUrls(model, SHACLM.NodeShape, extractedUrlsSet);
+          addExtractedUrls(model, SHACLM.PropertyShape, extractedUrlsSet);
+          break;
 
-       case ONTOLOGY:
-         addExtractedUrls(model, OWL2.NamedIndividual, extractedUrlsSet);
-         addExtractedUrls(model, RDF.Property, extractedUrlsSet);
-         addExtractedUrls(model,  OWL2.DatatypeProperty, extractedUrlsSet);
-         addExtractedUrls(model,  OWL2.ObjectProperty, extractedUrlsSet);
-         addExtractedUrls(model,  RDFS.Class, extractedUrlsSet);
-         addExtractedUrls(model,  OWL2.Class, extractedUrlsSet);
+        case ONTOLOGY:
+          addExtractedUrls(model, OWL2.NamedIndividual, extractedUrlsSet);
+          addExtractedUrls(model, RDF.Property, extractedUrlsSet);
+          addExtractedUrls(model, OWL2.DatatypeProperty, extractedUrlsSet);
+          addExtractedUrls(model, OWL2.ObjectProperty, extractedUrlsSet);
+          addExtractedUrls(model, RDFS.Class, extractedUrlsSet);
+          addExtractedUrls(model, OWL2.Class, extractedUrlsSet);
 
-         break;
+          break;
 
-       case VOCABULARY:
-         addExtractedUrls(model,  SKOS.Concept, extractedUrlsSet);
-         break;
-       default:
-         // this will not happen
-     }
-   }
+        case VOCABULARY:
+          addExtractedUrls(model, SKOS.Concept, extractedUrlsSet);
+          break;
+        default:
+        // this will not happen
+      }
+    }
     List<String> extractedUrls = new ArrayList<>(extractedUrlsSet);
     result.setExtractedUrls(extractedUrls);
     return result;
   }
-public void addExtractedUrls(Model model, RDFNode node, Set<String> extractedSet) {
-  ResIterator resIteratorNode = model.listResourcesWithProperty(RDF.type, node);
-  while (resIteratorNode.hasNext()) {
-    Resource rs = resIteratorNode.nextResource();
-    extractedSet.add(rs.getURI());
-  }
-}
 
-  public boolean isSchemaType(ContentAccessor schema,SchemaType type) {
+  public void addExtractedUrls(Model model, RDFNode node, Set<String> extractedSet) {
+    ResIterator resIteratorNode = model.listResourcesWithProperty(RDF.type, node);
+    while (resIteratorNode.hasNext()) {
+      Resource rs = resIteratorNode.nextResource();
+      extractedSet.add(rs.getURI());
+    }
+  }
+
+  public boolean isSchemaType(ContentAccessor schema, SchemaType type) {
     SchemaAnalysisResult result = analyseSchema(schema);
-    if(result.getSchemaType().equals(type)) {
+    if (result.getSchemaType().equals(type)) {
       return true;
     } else {
       return false;
@@ -206,8 +208,17 @@ public void addExtractedUrls(Model model, RDFNode node, Set<String> extractedSet
       unionModel.add(model);
     }
     RDFDataMgr.write(out, unionModel, Lang.TURTLE);
-    log.debug("createCompositeSchema.exit;");
-    return new ContentAccessorDirect(out.toString());
+    ContentAccessorDirect content = new ContentAccessorDirect(out.toString());
+
+    log.debug("createCompositeSchema.exit; returning: {}", content.getContentAsString().length());
+    try {
+      final String compositeSchemaName = "CompositeSchema" + type.name();
+      fileStore.replaceFile(compositeSchemaName, content);
+      return fileStore.readFile(compositeSchemaName);
+    } catch (IOException ex) {
+      log.error("Failed to store composite schema", ex);
+      return content;
+    }
   }
 
   @Override
@@ -215,7 +226,6 @@ public void addExtractedUrls(Model model, RDFNode node, Set<String> extractedSet
     SchemaAnalysisResult result = analyseSchema(schema);
     return result.isValid();
   }
-
 
   @Override
   public String addSchema(ContentAccessor schema) {
