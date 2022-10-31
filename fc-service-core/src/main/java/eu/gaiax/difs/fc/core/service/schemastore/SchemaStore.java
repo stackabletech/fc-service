@@ -1,6 +1,9 @@
 package eu.gaiax.difs.fc.core.service.schemastore;
 
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
+
+import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 

@@ -9,6 +9,8 @@ import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
 import eu.gaiax.difs.fc.server.generated.controller.SchemasApiDelegate;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -41,10 +43,11 @@ public class SchemasService implements SchemasApiDelegate {
    */
   @Override
   public ResponseEntity<String> getSchema(String id) {
-    log.debug("getSchema.enter; got schemaId: {},", id);
-    ContentAccessor accessor = schemaStore.getSchema(id);
+    String schemaId = URLDecoder.decode(id, Charset.defaultCharset());
+    log.debug("getSchema.enter; got schemaId: {}; decode: {}", id, schemaId);
+    ContentAccessor accessor = schemaStore.getSchema(schemaId);
     if (accessor == null) {
-      throw new NotFoundException("There is no Schema with id " + id);
+      throw new NotFoundException("There is no Schema with id " + schemaId);
     }
     String schema = accessor.getContentAsString();
     log.debug("getSchema.exit; returning schema by schemaId: {}", schema);
@@ -131,8 +134,9 @@ public class SchemasService implements SchemasApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<Void> deleteSchema(String schemaId) {
-    log.debug("deleteSchema.enter; got schemaId: {}", schemaId);
+  public ResponseEntity<Void> deleteSchema(String id)  {
+    String schemaId = URLDecoder.decode(id, Charset.defaultCharset());
+    log.debug("deleteSchema.enter; got id: {}, schemaId: {}", id, schemaId);
     schemaStore.deleteSchema(schemaId);
     return ResponseEntity.ok(null);
   }
@@ -151,8 +155,9 @@ public class SchemasService implements SchemasApiDelegate {
    *         Must not outline any information about the internal structure of the server. (status code 500)
    */
   @Override
-  public ResponseEntity<Void> updateSchema(String schemaId, String schema) {
-    log.debug("updateSchema.enter; got schemaId: {}, schema: {}", schemaId, schema);
+  public ResponseEntity<Void> updateSchema(String id, String schema) {
+    String schemaId = URLDecoder.decode(id, Charset.defaultCharset());
+    log.debug("updateSchema.enter; got id: {}, schemaId: {}, schema: {}", id, schemaId, schema);
     schemaStore.updateSchema(schemaId, new ContentAccessorDirect(schema));
     return ResponseEntity.ok(null);
   }

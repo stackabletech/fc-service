@@ -31,5 +31,9 @@ public class SchemaAnalysisResult {
    * The URLs of the entities that are defined in this schema.
    */
   private List<String> extractedUrls;
+  /**
+   * The error message if validation failed.
+   */
+  private String errorMessage;
 
 }

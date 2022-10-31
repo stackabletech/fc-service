@@ -1,26 +1,38 @@
-@prefix cc: <http://creativecommons.org/ns#>.
-@prefix schema:	<http://schema.org/>.
-@prefix gax-service: <http://w3id.org/gaia-x/service#>.
-@prefix void: <http://rdfs.org/ns/void#>.
+@prefix cc: <http://creativecommons.org/ns>.
+@prefix schema:	<http://schema.org>.
+@prefix gax-service: <http://w3id.org/gaia-x/service>.
+@prefix void: <http://rdfs.org/ns/void>.
 @prefix owl: <http://www.w3.org/2002/07/owl#>.
-@prefix  xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix  xsd: <http://www.w3.org/2001/XMLSchema>.
 @prefix skos: <http://www.w3.org/2004/02/skos/core#>.
-@prefix voaf: <http://purl.org/vocommons/voaf#>.
+@prefix voaf: <http://purl.org/vocommons/voaf>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
-@prefix vcard: <http://www.w3.org/2006/vcard/ns#>.
-@prefix gax-core: <http://w3id.org/gaia-x/core#>.
-@prefix gax-participant: <http://w3id.org/gaia-x/participant#>.
-@prefix dct: <http://purl.org/dc/terms/>.
+@prefix vcard: <http://www.w3.org/2006/vcard/ns>.
+@prefix gax-core: <http://w3id.org/gaia-x/core>.
+@prefix gax-participant: <http://w3id.org/gaia-x/participant>.
+@prefix dct: <http://purl.org/dc/terms>.
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
-@prefix ids: <https://w3id.org/idsa/core/>.
-@prefix gax-node: <http://w3id.org/gaia-x/node#>.
-@prefix dcat: <http://www.w3.org/ns/dcat#> .
-@prefix vann: <http://purl.org/vocab/vann/>.
-@prefix gax-resource: <http://w3id.org/gaia-x/resource#>.
-@prefix foaf: <http://xmlns.com/foaf/0.1/#>.
+@prefix xml: <http://www.w3.org/XML/1998/namespace>.
+@prefix ids: <https://w3id.org/idsa/core>.
+@prefix gax-node: <http://w3id.org/gaia-x/node>.
+@prefix dcat: <http://www.w3.org/ns/dcat>.
+@prefix vann: <http://purl.org/vocab/vann>.
+@prefix gax-resource: <http://w3id.org/gaia-x/resource>.
+@prefix foaf: <http://xmlns.com/foaf/0.1>.
 @prefix gax: <http://w3id.org/gaia-x/core#>.
 
 gax: a voaf:Vocabulary, owl:Ontology ;
+    rdfs:label "Gaia-X Ontology"@en ;
+    cc:license <http://www.apache.org/licenses/LICENSE-2.0> ;
+    dct:creator "Gaia-X Open Work Package 'Self-Description'" ;
+    dct:created "2020-07-06T12:00:00+01:00"^^xsd:dateTimeStamp ;
+    dct:modified "2020-04-13T12:00:00+01:00"^^xsd:dateTimeStamp ;
+    owl:versionInfo "0.1" ;
+    vann:preferredNamespaceUri "http://w3id.org/gaia-x/core#" ;
+    vann:preferredNamespacePrefix "gax" ;
+    void:vocabulary vann:, void:, voaf:, dct:, foaf: .
+
+gax:SecondOntology a voaf:Vocabulary, owl:Ontology ;
     rdfs:label "Gaia-X Ontology"@en ;
     cc:license <http://www.apache.org/licenses/LICENSE-2.0> ;
     dct:creator "Gaia-X Open Work Package 'Self-Description'" ;
@@ -81,7 +93,7 @@ gax:Federator
         ] ;
 .
 gax:Consumer
-    a owl:Class ;
+    a rdfs:Class ;
     rdfs:subClassOf gax:Participant ;
     rdfs:label "Consumer"@en ;
     rdfs:comment "A Participant who consumes and leverages Service Instance in the Gaia-X ecosystem to enable digital offerings for End Users."@en ;
