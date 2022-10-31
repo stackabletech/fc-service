@@ -98,10 +98,11 @@ public class RevalidationImplTest {
         schemaStore.deleteSchema(schema);
       }
     }
-    final Session session = sessionFactory.openSession();
-    Transaction t = session.beginTransaction();
-    session.createNativeQuery("delete from sdfiles").executeUpdate();
-    t.commit();
+    try (Session session = sessionFactory.openSession()) {
+      Transaction t = session.beginTransaction();
+      session.createNativeQuery("delete from sdfiles").executeUpdate();
+      t.commit();
+    }
     fileStore.clearStorage();
   }
 
@@ -183,18 +184,22 @@ public class RevalidationImplTest {
   }
 
   private boolean allChunksAfter(Instant treshold) {
-    Session session = sessionFactory.openSession();
-    Object count = session.createNativeQuery("select count(chunkid) from revalidatorchunks where lastcheck < :treshold")
-        .setParameter("treshold", treshold)
-        .getSingleResult();
+    Object count;
+    try (Session session = sessionFactory.openSession()) {
+      count = session.createNativeQuery("select count(chunkid) from revalidatorchunks where lastcheck < :treshold")
+          .setParameter("treshold", treshold)
+          .getSingleResult();
+    }
     log.debug("Open Chunk Count: {}", count);
     return ((Number) count).intValue() == 0;
   }
 
   private int countChunks() {
-    Session session = sessionFactory.openSession();
-    Object count = session.createNativeQuery("select count(chunkid) from revalidatorchunks")
-        .getSingleResult();
+    Object count;
+    try (Session session = sessionFactory.openSession()) {
+      count = session.createNativeQuery("select count(chunkid) from revalidatorchunks")
+          .getSingleResult();
+    }
     log.debug("Chunk Count: {}", count);
     return ((Number) count).intValue();
   }

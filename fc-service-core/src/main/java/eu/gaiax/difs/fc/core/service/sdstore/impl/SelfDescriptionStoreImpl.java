@@ -398,10 +398,10 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     final Session currentSession = sessionFactory.getCurrentSession();
     final Query<String> query;
     if (afterHash == null) {
-      String select = "select sdhash from sdfiles where status = :status and hashtext(sdhash) % :chunks = :chunkid order by sdhash asc limit :limit";
+      String select = "select sdhash from sdfiles where status = :status and abs(hashtext(sdhash) % :chunks) = :chunkid order by sdhash asc limit :limit";
       query = currentSession.createNativeQuery(select);
     } else {
-      String select = "select sdhash from sdfiles where sdhash > :lastSdHash and status = :status and hashtext(sdhash) % :chunks = :chunkid order by sdhash asc limit :limit";
+      String select = "select sdhash from sdfiles where sdhash > :lastSdHash and status = :status and abs(hashtext(sdhash) % :chunks) = :chunkid order by sdhash asc limit :limit";
       query = currentSession.createNativeQuery(select);
       query.setParameter("lastSdHash", afterHash);
     }
