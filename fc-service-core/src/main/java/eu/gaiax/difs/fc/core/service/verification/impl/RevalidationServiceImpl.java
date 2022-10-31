@@ -131,6 +131,7 @@ public class RevalidationServiceImpl implements RevalidationService {
           if (activeSdHashes.isEmpty()) {
             log.info("Finished revalidating.");
             workingOnChunk = -1;
+            lastHash = null;
           } else {
             taskQueue.addAll(activeSdHashes);
             lastHash = activeSdHashes.get(activeSdHashes.size() - 1);
@@ -219,17 +220,15 @@ public class RevalidationServiceImpl implements RevalidationService {
 
   private int findChunkForWork() {
     log.debug("Searching for chunk to work on...");
-    Session currentSession = sessionFactory.openSession();
-    Transaction transaction = currentSession.beginTransaction();
     int chunkId = -1;
-    try {
-
+    try (Session session = sessionFactory.openSession()) {
+      Transaction transaction = session.beginTransaction();
       final String query = "update revalidatorchunks set lastcheck=now() where chunkid="
           + "(select chunkid from revalidatorchunks where lastcheck < ("
           + "select updatetime from schemafiles where type=:schematype order by updatetime desc limit 1"
           + ") order by chunkid limit 1)"
           + " returning chunkid";
-      List<Integer> result = currentSession.createNativeQuery(query)
+      List<Integer> result = session.createNativeQuery(query)
           .setParameter("schematype", SchemaStore.SchemaType.SHAPE.ordinal())
           .getResultList();
       if (result.isEmpty()) {
@@ -237,65 +236,51 @@ public class RevalidationServiceImpl implements RevalidationService {
       } else {
         chunkId = result.get(0);
         log.debug("Found chunk {}.", chunkId);
-        transaction.commit();
       }
+      transaction.commit();
     } catch (Exception exc) {
       log.warn("Exception while searching for work.", exc);
       chunkId = -1;
-    } finally {
-      if (transaction.isActive()) {
-        transaction.rollback();
-      }
     }
     return chunkId;
   }
 
   private void checkChunkTable() {
     log.debug("Checking chunk table...");
-    Session currentSession = sessionFactory.openSession();
-    Transaction transaction = currentSession.beginTransaction();
-    try {
-      currentSession.createNativeQuery("lock table revalidatorchunks").executeUpdate();
-      Object maxChunkObject = currentSession.createNativeQuery("select max(chunkid) from revalidatorchunks").getSingleResult();
+    try (Session session = sessionFactory.openSession()) {
+      Transaction transaction = session.beginTransaction();
+      session.createNativeQuery("lock table revalidatorchunks").executeUpdate();
+      Object maxChunkObject = session.createNativeQuery("select max(chunkid) from revalidatorchunks").getSingleResult();
       int maxChunk = maxChunkObject == null ? -1 : (Integer) maxChunkObject;
       if (maxChunk + 1 < instanceCount) {
         int firstChunkId = maxChunk + 1;
         int lastChunkId = instanceCount - 1;
         log.debug("Adding chunks {} to {} to chunk table", firstChunkId, lastChunkId);
-        currentSession.createNativeQuery("insert into revalidatorchunks (chunkid) select generate_series(:firstchunkid, :lastchunkid)")
+        session.createNativeQuery("insert into revalidatorchunks (chunkid) select generate_series(:firstchunkid, :lastchunkid)")
             .setParameter("firstchunkid", firstChunkId)
             .setParameter("lastchunkid", lastChunkId)
             .executeUpdate();
       }
       if (maxChunk >= instanceCount) {
         log.debug("Removing chunks >= {} from chunk table", instanceCount);
-        currentSession.createNativeQuery("delete from revalidatorchunks where chunkid >= :instancecount")
+        session.createNativeQuery("delete from revalidatorchunks where chunkid >= :instancecount")
             .setParameter("instancecount", instanceCount)
             .executeUpdate();
       }
       transaction.commit();
-    } finally {
-      if (transaction.isActive()) {
-        transaction.rollback();
-      }
     }
     log.debug("Checking chunk table done.");
   }
 
   private void resetChunkTableTimes() {
     log.debug("Resetting chunk table times...");
-    Session currentSession = sessionFactory.openSession();
-    Transaction transaction = currentSession.beginTransaction();
-    try {
-      currentSession.createNativeQuery("lock table revalidatorchunks").executeUpdate();
-      currentSession.createNativeQuery("update revalidatorchunks set lastcheck=:lastcheck")
+    try (Session session = sessionFactory.openSession()) {
+      Transaction transaction = session.beginTransaction();
+      session.createNativeQuery("lock table revalidatorchunks").executeUpdate();
+      session.createNativeQuery("update revalidatorchunks set lastcheck=:lastcheck")
           .setParameter("lastcheck", Instant.parse("2000-01-01T00:00:00Z"))
           .executeUpdate();
       transaction.commit();
-    } finally {
-      if (transaction.isActive()) {
-        transaction.rollback();
-      }
     }
     log.debug("Resetting chunk table times done.");
   }
