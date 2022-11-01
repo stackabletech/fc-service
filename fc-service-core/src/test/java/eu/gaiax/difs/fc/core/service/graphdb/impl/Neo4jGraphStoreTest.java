@@ -499,4 +499,49 @@ public class Neo4jGraphStoreTest {
                 )
         );
     }
+
+    @Test
+    void testOrderByDetection() {
+        String query = "";
+        Assertions.assertFalse(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should not match on empty input"
+        );
+
+        query = "MATCH (n) RETURN n";
+        Assertions.assertFalse(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should not match on a simple query not containing 'ORDER BY' at all"
+        );
+
+        query = "MATCH (n {name: 'ORDER BY'}) RETURN n";
+        Assertions.assertFalse(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should ignore appearances of 'ORDER BY' in quotes"
+        );
+
+        query = "MATCH (n) WHERE n.name = 'ORDER BY' RETURN n";
+        Assertions.assertFalse(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should ignore appearances of 'ORDER BY' in quotes"
+        );
+
+        query = "MATCH (n {name: 'Foo ORDER BY bar'}) RETURN n";
+        Assertions.assertFalse(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should ignore appearances of 'ORDER BY' in quotes"
+        );
+
+        query = "MATCH (n) WHERE n.name = 'Foo ORDER BY bar' RETURN n";
+        Assertions.assertFalse(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should ignore appearances of 'ORDER BY' in quotes"
+        );
+
+        query = "MATCH (n) RETURN n ORDER BY n.name";
+        Assertions.assertTrue(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should find ORDER BYs after the RETURN part of the query"
+        );
+    }
 }

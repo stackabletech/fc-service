@@ -24,6 +24,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Configuration
@@ -33,6 +35,11 @@ public class Neo4jGraphStore implements GraphStore {
     @Autowired
     private Driver driver;
     private final ClaimValidator claimValidator;
+
+    /* Any appearances of ORDER BY (each word surrounded by any whitespace)
+     * which is not enclosed by quotes
+     */
+    protected final Pattern orderByRegex = Pattern.compile("ORDER\\sBY(?=(?:[^'\"`]*(['\"`])[^'\"`]*\1)*[^'\"`]*$)", Pattern.CASE_INSENSITIVE);
 
     public Neo4jGraphStore() {
         super();
@@ -137,11 +144,18 @@ public class Neo4jGraphStore implements GraphStore {
                         }
                         log.debug("queryData.exit; returning: {}", resultList);
 
-                        // shuffle list to guarantee results won't appear in
+                        // Shuffle list to guarantee results won't appear in
                         // a deterministic order thus giving certain results
                         // an advantage over others as they would always be
                         // in the top n result entries.
-                        Collections.shuffle(resultList);
+                        // However, the shuffling should only be performed
+                        // if the query does not, by itself, return an ordered
+                        // result.
+                        Matcher matcher = orderByRegex.matcher(sdQuery.getQuery());
+                        boolean queryProvidesOrderedResult = matcher.find();
+
+                        if (!queryProvidesOrderedResult)
+                            Collections.shuffle(resultList);
 
                         return new PaginatedResults<>(totalCount, resultList);
                     },
