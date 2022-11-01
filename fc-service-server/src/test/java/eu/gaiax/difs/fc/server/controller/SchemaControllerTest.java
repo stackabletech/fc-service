@@ -1,12 +1,14 @@
 package eu.gaiax.difs.fc.server.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -30,6 +32,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
+import lombok.extern.slf4j.Slf4j;
 
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
@@ -38,6 +41,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -65,8 +69,14 @@ public class SchemaControllerTest {
     mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
   }
 
-  @AfterAll
+  @AfterEach
   public void storageSelfCleaning() throws IOException {
+    Map<SchemaStore.SchemaType, List<String>> schemaList = schemaStore.getSchemaList();
+    for (List<String> typeList : schemaList.values()) {
+      for (String schema : typeList) {
+        schemaStore.deleteSchema(schema);
+      }
+    }
     fileStore.clearStorage();
   }
   
@@ -74,7 +84,8 @@ public class SchemaControllerTest {
   @WithMockUser(roles = {CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE})
   public void getSchemaByIdShouldReturnSuccessResponse() throws Exception {
     String id = schemaStore.addSchema(new ContentAccessorDirect(getMockFileDataAsString("test-schema.ttl")));
-    mockMvc.perform(MockMvcRequestBuilders.get("/schemas/" + id)
+    String schemaId = URLEncoder.encode(id, Charset.defaultCharset());
+    mockMvc.perform(MockMvcRequestBuilders.get("/schemas/{schemaId}", schemaId)
             .with(csrf())
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk());
@@ -213,7 +224,8 @@ public class SchemaControllerTest {
   @WithMockUser(roles = {CATALOGUE_ADMIN_ROLE})
   public void deleteSchemasReturnSuccessResponse() throws Exception {
     String id = schemaStore.addSchema(new ContentAccessorDirect(getMockFileDataAsString("test-schema.ttl")));
-    mockMvc.perform(MockMvcRequestBuilders.delete("/schemas/{schemaId}", id)
+    String schemaId = URLEncoder.encode(id, Charset.defaultCharset());
+    mockMvc.perform(MockMvcRequestBuilders.delete("/schemas/{schemaId}", schemaId)
             .with(csrf())
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk());

@@ -13,6 +13,7 @@ import javax.persistence.Table;
 @lombok.AllArgsConstructor
 @lombok.Getter
 @lombok.Setter
+@lombok.ToString
 public class SchemaTerm implements Serializable {
 
   @Id

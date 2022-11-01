@@ -58,7 +58,6 @@
         <embedded.postgres.version>2.0.1</embedded.postgres.version>
         <embedded.postgres.test.version>2.1.2</embedded.postgres.test.version>
         <commons-lang3.version>3.9</commons-lang3.version>
-        <commons.validator.version>1.4.1</commons.validator.version>
         <jsonld.version>0.13.4</jsonld.version>
         <jena.version>4.4.0</jena.version>
         <topbraid.version>1.4.2</topbraid.version>

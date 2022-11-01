@@ -13,20 +13,25 @@ import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import javax.persistence.EntityExistsException;
 import javax.persistence.LockModeType;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -34,13 +39,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.apache.jena.vocabulary.RDF;
+import org.apache.jena.vocabulary.RDFS;
+import org.apache.jena.vocabulary.SKOS;
+import org.apache.jena.vocabulary.OWL;
+import org.apache.jena.shacl.vocabulary.SHACLM;
+import org.apache.jena.vocabulary.OWL2;
 
 /**
  *
  */
-@Slf4j
 @Component
 @Transactional
+@Slf4j
 public class SchemaStoreImpl implements SchemaStore {
 
   @Autowired
@@ -72,6 +83,7 @@ public class SchemaStoreImpl implements SchemaStore {
     String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8);
     File ontologyDir = new File(str);
     for (File ontology : ontologyDir.listFiles()) {
+      log.debug("Adding schema: {}", ontology);
       addSchema(new ContentAccessorFile(ontology));
     }
   }
@@ -82,54 +94,131 @@ public class SchemaStoreImpl implements SchemaStore {
    * @param schema The schema to analyse.
    * @return The analysis results.
    */
-  private SchemaAnalysisResult analyseSchema(ContentAccessor schema) {
+  public SchemaAnalysisResult analyseSchema(ContentAccessor schema) {
     SchemaAnalysisResult result = new SchemaAnalysisResult();
-    List<String> extractedUrls = new ArrayList<>();
-    /**
-     * TODO FIT: add code that
-     *
-     * - Analyses the type of the schema
-     *
-     * - Checks if the schema is valid
-     *
-     * - Extracts the Identifier from the schema if possible
-     *
-     * - Extracts the URLs of all entities defined in the schema.
-     */
-    result.setSchemaType(SchemaType.SHAPE);
-    result.setValid(true);
+    Set<String> extractedUrlsSet = new HashSet<>();
+    Model model = ModelFactory.createDefaultModel();
+
+    List<String> schemaType = Arrays.asList("JSON-LD", "RDF/XML", "TTL");
+    for (String type : schemaType) {
+      try {
+        model.read(schema.getContentAsStream(), null, type);
+        result.setValid(true);
+        break;
+      } catch (Exception exc) {
+        result.setValid(false);
+        result.setErrorMessage(exc.getMessage());
+      }
+    }
+    if (model.contains(null, RDF.type, SHACLM.NodeShape)
+        || model.contains(null, RDF.type, SHACLM.PropertyShape)) {
+      result.setSchemaType(SchemaType.SHAPE);
+      result.setExtractedId(null);
+    } else {
+      ResIterator resIteratorProperty = model.listResourcesWithProperty(RDF.type, OWL.Ontology);
+      if (resIteratorProperty.hasNext()) {
+        Resource resource = resIteratorProperty.nextResource();
+        result.setSchemaType(SchemaType.ONTOLOGY);
+        result.setExtractedId(resource.getURI());
+        if (resIteratorProperty.hasNext()) {
+          result.setErrorMessage("Ontology Schema has multiple Ontology IRIs");
+          result.setExtractedId(null);
+          result.setValid(false);
+        }
+      } else {
+        resIteratorProperty = model.listResourcesWithProperty(RDF.type, SKOS.ConceptScheme);
+        if (resIteratorProperty.hasNext()) {
+          Resource resource = resIteratorProperty.nextResource();
+          result.setSchemaType(SchemaType.VOCABULARY);
+          result.setExtractedId(resource.getURI());
+          if (resIteratorProperty.hasNext()) {
+            result.setErrorMessage("Vocabulary contains multiple concept schemes");
+            result.setExtractedId(null);
+            result.setValid(false);
+          }
+        } else {
+          result.setValid(false);
+          result.setErrorMessage("Schema is not supported");
+        }
+      }
+    }
+    if (result.isValid()) {
+      switch (result.getSchemaType()) {
+        case SHAPE:
+          addExtractedUrls(model, SHACLM.NodeShape, extractedUrlsSet);
+          addExtractedUrls(model, SHACLM.PropertyShape, extractedUrlsSet);
+          break;
+
+        case ONTOLOGY:
+          addExtractedUrls(model, OWL2.NamedIndividual, extractedUrlsSet);
+          addExtractedUrls(model, RDF.Property, extractedUrlsSet);
+          addExtractedUrls(model, OWL2.DatatypeProperty, extractedUrlsSet);
+          addExtractedUrls(model, OWL2.ObjectProperty, extractedUrlsSet);
+          addExtractedUrls(model, RDFS.Class, extractedUrlsSet);
+          addExtractedUrls(model, OWL2.Class, extractedUrlsSet);
+
+          break;
+
+        case VOCABULARY:
+          addExtractedUrls(model, SKOS.Concept, extractedUrlsSet);
+          break;
+        default:
+        // this will not happen
+      }
+    }
+    List<String> extractedUrls = new ArrayList<>(extractedUrlsSet);
     result.setExtractedUrls(extractedUrls);
-    result.setExtractedId(null);
     return result;
+  }
+
+  public void addExtractedUrls(Model model, RDFNode node, Set<String> extractedSet) {
+    ResIterator resIteratorNode = model.listResourcesWithProperty(RDF.type, node);
+    while (resIteratorNode.hasNext()) {
+      Resource rs = resIteratorNode.nextResource();
+      extractedSet.add(rs.getURI());
+    }
+  }
+
+  public boolean isSchemaType(ContentAccessor schema, SchemaType type) {
+    SchemaAnalysisResult result = analyseSchema(schema);
+    if (result.getSchemaType().equals(type)) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   private ContentAccessor createCompositeSchema(SchemaType type) {
     log.debug("createCompositeSchema.enter; got type: {}", type);
-    StringBuilder contentBuilder = new StringBuilder();
 
-    /**
-     * TODO FIT: Add code that
-     *
-     * - Fetches the existing schema IDs using getSchemaList
-     *
-     * - Iterates over these schemas and adds each schema to the composite
-     * schema.
-     *
-     * Example structure listed below.
-     */
+    StringWriter out = new StringWriter();
     Map<SchemaType, List<String>> schemaList = getSchemaList();
     log.debug("createCompositeSchema; got schemaList: {}", schemaList);
 
-    List<String> schemas = schemaList.get(type);
-    if (schemas != null) {
-      for (String schemaId : schemas) {
-        ContentAccessor schemaContent = getSchema(schemaId);
-        // Add schema to union schema...
-      }
+    Model model = ModelFactory.createDefaultModel();
+    Model unionModel = ModelFactory.createDefaultModel();
+    List<String> schemaListForType = schemaList.get(type);
+    if (schemaListForType == null) {
+      return new ContentAccessorDirect("");
     }
+    for (String schemaId : schemaListForType) {
+      ContentAccessor schemaContent = getSchema(schemaId);
+      StringReader schemaContentReader = new StringReader(schemaContent.getContentAsString());
+      model.read(schemaContentReader, "", "TURTLE");
+      unionModel.add(model);
+    }
+    RDFDataMgr.write(out, unionModel, Lang.TURTLE);
+    ContentAccessorDirect content = new ContentAccessorDirect(out.toString());
 
-    log.debug("createCompositeSchema.exit; returning: {}", contentBuilder.length());
-    return new ContentAccessorDirect(contentBuilder.toString());
+    log.debug("createCompositeSchema.exit; returning: {}", content.getContentAsString().length());
+    try {
+      final String compositeSchemaName = "CompositeSchema" + type.name();
+      fileStore.replaceFile(compositeSchemaName, content);
+      return fileStore.readFile(compositeSchemaName);
+    } catch (IOException ex) {
+      log.error("Failed to store composite schema", ex);
+      return content;
+    }
   }
 
   @Override
@@ -142,7 +231,7 @@ public class SchemaStoreImpl implements SchemaStore {
   public String addSchema(ContentAccessor schema) {
     SchemaAnalysisResult result = analyseSchema(schema);
     if (!result.isValid()) {
-      throw new VerificationException("Schema is not valid.");
+      throw new VerificationException("Schema is not valid: " + result.getErrorMessage());
     }
     String schemaId = result.getExtractedId();
     String nameHash;
@@ -159,11 +248,15 @@ public class SchemaStoreImpl implements SchemaStore {
     // Check duplicate terms
     List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)
         .multiLoad(result.getExtractedUrls());
+    redefines = redefines.stream()
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
     if (!redefines.isEmpty()) {
       throw new VerificationException("Schema redefines " + redefines.size() + " terms. First: " + redefines.get(0));
     }
 
-    SchemaRecord newRecord = new SchemaRecord(schemaId, nameHash, result.getSchemaType(), schema.getContentAsString(), result.getExtractedUrls());
+    SchemaRecord newRecord = new SchemaRecord(schemaId, nameHash, result.getSchemaType(), schema.getContentAsString(),
+        result.getExtractedUrls());
     try {
       currentSession.persist(newRecord);
     } catch (EntityExistsException ex) {
@@ -212,6 +305,9 @@ public class SchemaStoreImpl implements SchemaStore {
     // Check duplicate terms
     List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)
         .multiLoad(result.getExtractedUrls());
+    redefines = redefines.stream()
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
     if (!redefines.isEmpty()) {
       currentSession.clear();
       throw new ConflictException("Schema redefines " + redefines.size() + " terms. First: " + redefines.get(0));
@@ -264,6 +360,8 @@ public class SchemaStoreImpl implements SchemaStore {
     Map<SchemaType, List<String>> result = new HashMap<>();
     currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaTypeIdPair(s.type, s.schemaId) from SchemaRecord s", SchemaTypeIdPair.class)
         .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
+    // TORemove
+    log.debug("getSchemaList; got schemaList: {}", result);
     return result;
   }
 
@@ -295,7 +393,16 @@ public class SchemaStoreImpl implements SchemaStore {
 
   @Override
   public ContentAccessor getCompositeSchema(SchemaType type) {
-    return COMPOSITE_SCHEMAS.computeIfAbsent(type, t -> createCompositeSchema(t));
+    // TODO IOSB add caching
+    return createCompositeSchema(type);
+  }
+
+  private static ContentAccessorFile getAccessor(String path) throws UnsupportedEncodingException {
+    URL url = SchemaStoreImpl.class.getClassLoader().getResource(path);
+    String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8.name());
+    File file = new File(str);
+    ContentAccessorFile accessor = new ContentAccessorFile(file);
+    return accessor;
   }
 
 }

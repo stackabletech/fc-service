@@ -150,7 +150,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
     private String buildCountQuery() {
       final StringBuilder hqlQuery = new StringBuilder("select count(*) from sdfiles where 1=1");
-      for (Clause cls: clauses) {
+      for (Clause cls : clauses) {
         hqlQuery.append(" and (");
         hqlQuery.append(cls.templateInstance);
         hqlQuery.append(")");
@@ -163,7 +163,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       final StringBuilder hqlQuery = new StringBuilder("select expirationtime, sdhash, subjectid, status, issuer, uploadtime,");
       hqlQuery.append(" statustime, content, validators from sdfiles");
       hqlQuery.append(" where 1=1");
-      for (Clause cls: clauses) {
+      for (Clause cls : clauses) {
         hqlQuery.append(" and (");
         hqlQuery.append(cls.templateInstance);
         hqlQuery.append(")");
@@ -172,7 +172,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       log.debug("buildHqlQuery; Query: {}", hqlQuery.toString());
       return hqlQuery.toString();
     }
-    
+
     private Query<SdMetaRecord> createQuery() {
       final String hqlQuery = buildHqlQuery();
       final Session currentSession = sessionFactory.getCurrentSession();
@@ -195,7 +195,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       }
       return query;
     }
-  
+
     private Query<?> createCountQuery() {
       final String hqlQuery = buildCountQuery();
       final Session currentSession = sessionFactory.getCurrentSession();
@@ -230,13 +230,13 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
     final List<String> validators = filter.getValidators();
     if (validators != null) {
-      queryBuilder.addClause("validators && cast(? as varchar[])", "validators", 
-              new TypedParameterValue(StringArrayType.INSTANCE, validators)); 
+      queryBuilder.addClause("validators && cast(? as varchar[])", "validators",
+          new TypedParameterValue(StringArrayType.INSTANCE, validators));
     }
 
     final List<SelfDescriptionStatus> statuses = filter.getStatuses();
     if (statuses != null) {
-      List<Integer> ords = statuses.stream().map(s -> s.ordinal()).collect(Collectors.toList());  
+      List<Integer> ords = statuses.stream().map(s -> s.ordinal()).collect(Collectors.toList());
       queryBuilder.addClause("status in (?)", "statuses", ords);
     }
 
@@ -293,7 +293,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
     if (existingSd != null) {
       existingSd.setStatus(SelfDescriptionStatus.DEPRECATED);
-      existingSd.setStatusDatetime(Instant.now()); 
+      existingSd.setStatusDatetime(Instant.now());
       currentSession.update(existingSd);
       currentSession.flush();
       graphDb.deleteClaims(existingSd.getSubjectId());
@@ -392,4 +392,25 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     });
     return count.intValue();
   }
+
+  @Override
+  public List<String> getActiveSdHashes(String afterHash, int count, int chunks, int chunkId) {
+    final Session currentSession = sessionFactory.getCurrentSession();
+    final Query<String> query;
+    if (afterHash == null) {
+      String select = "select sdhash from sdfiles where status = :status and abs(hashtext(sdhash) % :chunks) = :chunkid order by sdhash asc limit :limit";
+      query = currentSession.createNativeQuery(select);
+    } else {
+      String select = "select sdhash from sdfiles where sdhash > :lastSdHash and status = :status and abs(hashtext(sdhash) % :chunks) = :chunkid order by sdhash asc limit :limit";
+      query = currentSession.createNativeQuery(select);
+      query.setParameter("lastSdHash", afterHash);
+    }
+    query.setParameter("status", SelfDescriptionStatus.ACTIVE.ordinal());
+    query.setParameter("chunks", chunks);
+    query.setParameter("chunkid", chunkId);
+    query.setParameter("limit", count);
+    final List<String> resultList = query.getResultList();
+    return resultList;
+  }
+
 }

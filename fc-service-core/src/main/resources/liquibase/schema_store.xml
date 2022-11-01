@@ -29,7 +29,6 @@
             <column name="content" type="java.sql.Types.CLOB">
                 <constraints nullable="false" />
             </column>
-
         </createTable>
         
         <createTable tableName="schematerms">
@@ -45,6 +44,25 @@
             baseTableName="schematerms" baseColumnNames="schemaid"
             referencedTableName="schemafiles" referencedColumnNames="schemaid"
             onDelete="CASCADE" onUpdate="CASCADE"/>
+            <createIndex tableName="schemafiles" indexName="schemafiles_updatetime">
+                <column name="updatetime" />
+            </createIndex>
+    </changeSet>
+
+    <changeSet author="fhg" id="2022-10-28-revalidatorchunks">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="revalidatorchunks" />
+            </not>
+        </preConditions>
+        <createTable tableName="revalidatorchunks">
+            <column name="chunkid" type="java.sql.Types.INTEGER">
+                <constraints primaryKey="true" primaryKeyName="revalidatorchunks_pkey" nullable="false"/>
+            </column>
+            <column name="lastcheck" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
     </changeSet>
 
 </databaseChangeLog>

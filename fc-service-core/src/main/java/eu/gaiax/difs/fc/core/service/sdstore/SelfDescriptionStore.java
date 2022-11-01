@@ -70,4 +70,19 @@ public interface SelfDescriptionStore {
    * @return Number of expired Self-descriptions found.
    */
   int invalidateSelfDescriptions();
+
+  /**
+   * Get "count" hashes of active self-descriptions, ordered by sdhash, after
+   * the given hash. Chunking is done using:
+   * <pre>hashtext(sdhash) % chunks = chunkId</pre>
+   *
+   * @param afterHash The last hash of the previous batch.
+   * @param count the number of hashes to retrieve.
+   * @param chunks the number of chunks to subdivide hashes into.
+   * @param chunkId the 0-based id of the chunk to get.
+   * @return the list of hashes coming after the hash "afterHash", odered by
+   * hash.
+   */
+  List<String> getActiveSdHashes(String afterHash, int count, int chunks, int chunkId);
+
 }

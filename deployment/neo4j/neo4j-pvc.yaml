@@ -1,0 +1,63 @@
+kind: "PersistentVolume"
+apiVersion: "v1"
+metadata:
+  name: fc-neo4j-data-storage
+  labels:
+    type: local
+    app: fc-neo4j-db
+  namespace: federated-catalogue
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: fast
+  gcePersistentDisk:
+    pdName: pd-ssd-disk-1
+---
+kind: "PersistentVolume"
+apiVersion: "v1"
+metadata:
+  name: fc-neo4j-plugin-storage
+  namespace: federated-catalogue
+  labels:
+    type: local
+    app: fc-neo4j-db
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: fast
+  gcePersistentDisk:
+    pdName: pd-ssd-disk-1
+---
+kind: "PersistentVolumeClaim"
+apiVersion: "v1"
+metadata:
+  namespace: federated-catalogue
+  name: fc-neo4j-data-claim
+  labels:
+    app: fc-neo4j-db
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+kind: "PersistentVolumeClaim"
+apiVersion: "v1"
+metadata:
+  namespace: federated-catalogue
+  name: fc-neo4j-plugin-claim
+  labels:
+    app: fc-neo4j-db
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
