@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
 
+import java.util.Optional;
 import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -29,7 +30,7 @@ public class KeycloakUtils {
       InputStream is = (InputStream) response.getEntity();
       message = CharStreams.toString(new InputStreamReader(is, Charsets.UTF_8));
       Map<String, Object> error = jsonMapper.readValue(message, MAP_TYPE_REF);
-      message = (String) error.get("errorMessage");
+      message = (String) Optional.ofNullable(error.get("errorMessage")).orElse(error.get("error"));
     } catch (IOException ex) {
       message = ex.getMessage();
     }
