@@ -2,7 +2,9 @@ package eu.gaiax.difs.fc.core.dao.impl;
 
 import static eu.gaiax.difs.fc.core.util.KeycloakUtils.getErrorMessage;
 
+import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,6 +20,7 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.neo4j.driver.exceptions.ClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -55,10 +58,14 @@ public class UserDaoImpl implements UserDao {
     UserRepresentation userRepo = toUserRepo(user);
     UsersResource instance = keycloak.realm(realm).users();
     Response response = instance.create(userRepo);
-    if (response.getStatus() != HttpStatus.SC_CREATED) {
+    if (response.getStatus() == HttpStatus.SC_CONFLICT) {
       String message = getErrorMessage(response);
       log.info("create.error; status {}:{}, {}", response.getStatus(), response.getStatusInfo(), message);
       throw new ConflictException(message);
+    } else if (response.getStatus() != HttpStatus.SC_CREATED){
+      String message = "Invalid used data";
+      log.info("create.error; status {}:{}, {}", response.getStatus(), response.getStatusInfo(), message);
+      throw new ClientException(message);
     }
     userRepo = instance.search(userRepo.getUsername()).get(0);
     return toUserProfile(userRepo, assignRoleToUser(instance.get(userRepo.getId()), user.getRoleIds()));
