@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
-@ContextConfiguration(classes = {SelfDescriptionStoreCompositeTest.TestApplication.class, FileStoreConfig.class, VerificationServiceImpl.class, 
+@ContextConfiguration(classes = {SelfDescriptionStoreCompositeTest.TestApplication.class, FileStoreConfig.class, VerificationServiceImpl.class,
   SelfDescriptionStoreImpl.class, SelfDescriptionStoreCompositeTest.class, SchemaStoreImpl.class, DatabaseConfig.class, Neo4jGraphStore.class, ValidatorCacheImpl.class})
 @DirtiesContext
 @Transactional
@@ -131,10 +131,11 @@ public class SelfDescriptionStoreCompositeTest {
   void test01StoreSelfDescription() throws Exception {
     log.info("test01StoreSelfDescription");
     ContentAccessor content = getAccessor("Claims-Extraction-Tests/participantSD.jsonld");
-    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, true, false);
+    // Only verify semantics, not schema or signatures
+    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
     sdStore.storeSelfDescription(sdMeta, result);
-    
+
     assertStoredSdFiles(1);
     String hash = sdMeta.getSdHash();
 
@@ -148,7 +149,7 @@ public class SelfDescriptionStoreCompositeTest {
     List<Map<String, Object>> nodes = graphStore.queryData(
             new GraphQuery("MATCH (n) RETURN labels(n)", Map.of())).getResults();
     log.debug("test01StoreSelfDescription; got nodes: {}", nodes);
-    
+
     //final ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
     //assertEquals(sdfileByHash, sdMeta.getSelfDescription(),
     //    "Getting the SD file by hash is equal to the stored SD file");

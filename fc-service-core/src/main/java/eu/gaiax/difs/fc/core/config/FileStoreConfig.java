@@ -20,12 +20,17 @@ public class FileStoreConfig {
   @Value("${federated-catalogue.file-store.schema.location}")
   private String schemaFilesLocation;
 
-  private final String TEMPORARY_FOLDER_PATH = Files.temporaryFolderPath() + "federated-catalogue" + File.separator + "test";
+  @Value("${federated-catalogue.file-store.context-cache.location}")
+  private String contextCacheFilesLocation;
+
+  private final String TEMPORARY_FOLDER_PATH_SD = Files.temporaryFolderPath() + "federated-catalogue" + File.separator + "testSdFiles";
+  private final String TEMPORARY_FOLDER_PATH_SCHEMA = Files.temporaryFolderPath() + "federated-catalogue" + File.separator + "testSchemaFiles";
+  private final String TEMPORARY_FOLDER_PATH_CC = Files.temporaryFolderPath() + "federated-catalogue" + File.separator + "testContextCache";
 
   @Bean
   public FileStore sdFileStore() {
     if (scope.equals("test")) {
-      return new FileStoreImpl(TEMPORARY_FOLDER_PATH);
+      return new FileStoreImpl(TEMPORARY_FOLDER_PATH_SD);
     }
     return new FileStoreImpl(sdFilesLocation);
   }
@@ -33,8 +38,16 @@ public class FileStoreConfig {
   @Bean
   public FileStore schemaFileStore() {
     if (scope.equals("test")) {
-      return new FileStoreImpl(TEMPORARY_FOLDER_PATH);
+      return new FileStoreImpl(TEMPORARY_FOLDER_PATH_SCHEMA);
     }
     return new FileStoreImpl(schemaFilesLocation);
+  }
+
+  @Bean
+  public FileStore contextCacheFileStore() {
+    if (scope.equals("test")) {
+      return new FileStoreImpl(TEMPORARY_FOLDER_PATH_CC);
+    }
+    return new FileStoreImpl(contextCacheFilesLocation);
   }
 }

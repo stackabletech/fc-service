@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -21,6 +20,7 @@ import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
@@ -33,7 +33,16 @@ import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import java.io.File;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -85,6 +94,9 @@ public class RevalidationImplTest {
   @Autowired
   private Neo4j embeddedDatabaseServer;
 
+  private final AtomicInteger sdGood = new AtomicInteger();
+  private final AtomicInteger sdBad = new AtomicInteger();
+
   @AfterAll
   void closeNeo4j() {
     embeddedDatabaseServer.close();
@@ -92,18 +104,22 @@ public class RevalidationImplTest {
 
   @AfterEach
   public void storageSelfCleaning() throws IOException {
+    revalidator.cleanup();
     Map<SchemaStore.SchemaType, List<String>> schemaList = schemaStore.getSchemaList();
     for (List<String> typeList : schemaList.values()) {
       for (String schema : typeList) {
         schemaStore.deleteSchema(schema);
       }
     }
-    try (Session session = sessionFactory.openSession()) {
+    try ( Session session = sessionFactory.openSession()) {
       Transaction t = session.beginTransaction();
       session.createNativeQuery("delete from sdfiles").executeUpdate();
+      session.createNativeQuery("delete from revalidatorchunks").executeUpdate();
       t.commit();
     }
     fileStore.clearStorage();
+    sdGood.set(0);
+    sdBad.set(0);
   }
 
   @Test
@@ -143,10 +159,9 @@ public class RevalidationImplTest {
     schemaStore.initializeDefaultSchemas();
     revalidator.setup();
     Instant treshold = Instant.now();
-    List<String> hashes = new ArrayList<>();
-    hashes.add(addSelfDescription("VerificationService/syntax/input.vp.jsonld"));
-    hashes.add(addSelfDescription("Query-Tests/serviceOfferingSD.jsonld"));
-
+    addSelfDescription("VerificationService/syntax/input.vp.jsonld");
+    addSelfDescription("Claims-Extraction-Tests/providerTest.jsonld");
+    log.info("Added {} selfdescriptions, {} were bad.", sdGood.get(), sdBad.get());
     revalidator.startValidating();
     int count = 0;
     while ((revalidator.isWorking() || !allChunksAfter(treshold)) && count < 10) {
@@ -155,37 +170,55 @@ public class RevalidationImplTest {
       count++;
     }
     revalidator.cleanup();
-    for (String hash : hashes) {
-      sdStore.deleteSelfDescription(hash);
-    }
     assertTrue(allChunksAfter(treshold), "All chunks should have been revalidated.");
   }
 
   @Test
-  void testRevalidatorAutostart() throws Exception {
+  public void testRevalidatorAutostart() throws Exception {
     log.info("testRevalidatorAutostart");
+    revalidator.setInstanceCount(1);
+    revalidator.setBatchSize(500);
+    revalidator.setWorkerCount(Runtime.getRuntime().availableProcessors());
     revalidator.setup();
-    List<String> hashes = new ArrayList<>();
-    hashes.add(addSelfDescription("VerificationService/syntax/input.vp.jsonld"));
-    hashes.add(addSelfDescription("Query-Tests/serviceOfferingSD.jsonld"));
+    addSelfDescription("VerificationService/syntax/input.vp.jsonld");
+    addSelfDescription("Claims-Extraction-Tests/providerTest.jsonld");
+    //addSdsFromDirectory("GeneratedSds");
     Instant treshold = Instant.now();
     schemaStore.initializeDefaultSchemas();
     int count = 0;
-    while ((revalidator.isWorking() || !allChunksAfter(treshold)) && count < 10) {
+    while ((revalidator.isWorking() || !allChunksAfter(treshold)) && count < 60) {
       log.debug("Revalidator working...");
       Thread.sleep(1000);
       count++;
     }
     revalidator.cleanup();
-    for (String hash : hashes) {
-      sdStore.deleteSelfDescription(hash);
-    }
     assertTrue(allChunksAfter(treshold), "All chunks should have been revalidated.");
+  }
+
+  private void addSdsFromDirectory(final String path) {
+    long start = System.currentTimeMillis();
+    URL url = getClass().getClassLoader().getResource(path);
+    String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8);
+    File sdDir = new File(str);
+    File[] files = sdDir.listFiles();
+    Arrays.sort(files, (var o1, var o2) -> o1.getName().compareTo(o1.getName()));
+    ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    for (File sd : sdDir.listFiles()) {
+      service.submit(() -> addSelfDescription(new ContentAccessorFile(sd)));
+    }
+    service.shutdown();
+    try {
+      service.awaitTermination(2, TimeUnit.MINUTES);
+    } catch (InterruptedException ex) {
+      log.warn("Interrupted while waiting for SDs to be added.");
+    }
+    long time = System.currentTimeMillis() - start;
+    log.debug("added {}, failed {} Self-Descriptions from {} in {}ms", sdGood.get(), sdBad.get(), path, time);
   }
 
   private boolean allChunksAfter(Instant treshold) {
     Object count;
-    try (Session session = sessionFactory.openSession()) {
+    try ( Session session = sessionFactory.openSession()) {
       count = session.createNativeQuery("select count(chunkid) from revalidatorchunks where lastcheck < :treshold")
           .setParameter("treshold", treshold)
           .getSingleResult();
@@ -196,7 +229,7 @@ public class RevalidationImplTest {
 
   private int countChunks() {
     Object count;
-    try (Session session = sessionFactory.openSession()) {
+    try ( Session session = sessionFactory.openSession()) {
       count = session.createNativeQuery("select count(chunkid) from revalidatorchunks")
           .getSingleResult();
     }
@@ -205,11 +238,23 @@ public class RevalidationImplTest {
   }
 
   private String addSelfDescription(String path) throws VerificationException, UnsupportedEncodingException, InterruptedException {
+    log.debug("Adding SD from {}", path);
     final ContentAccessor content = getAccessor(path);
-    final VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
-    final SelfDescriptionMetadata sd = new SelfDescriptionMetadata(content, vr);
-    sdStore.storeSelfDescription(sd, vr);
-    return sd.getSdHash();
+    return addSelfDescription(content);
+  }
+
+  public String addSelfDescription(final ContentAccessor content) throws VerificationException {
+    try {
+      final VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+      final SelfDescriptionMetadata sd = new SelfDescriptionMetadata(content, vr);
+      sdStore.storeSelfDescription(sd, vr);
+      sdGood.incrementAndGet();
+      return sd.getSdHash();
+    } catch (VerificationException exc) {
+      log.debug("Failed to add: {}", exc.getMessage());
+      sdBad.incrementAndGet();
+      return null;
+    }
   }
 
 }
