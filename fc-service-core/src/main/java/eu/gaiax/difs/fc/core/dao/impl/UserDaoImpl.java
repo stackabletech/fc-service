@@ -2,7 +2,6 @@ package eu.gaiax.difs.fc.core.dao.impl;
 
 import static eu.gaiax.difs.fc.core.util.KeycloakUtils.getErrorMessage;
 
-import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import java.util.Collections;
 import java.util.List;
@@ -210,12 +209,17 @@ public class UserDaoImpl implements UserDao {
 
   private List<RoleRepresentation> assignRoleToUser(UserResource userResource, List<String> roles) {
     List<RoleRepresentation> existedRoles = keycloak.realm(realm).roles().list();
-    userResource.roles().realmLevel().remove(existedRoles);
 
     List<RoleRepresentation> roleRepresentations = existedRoles.stream()
         .filter(role -> roles.contains(role.getName()))
         .collect(Collectors.toList());
-    userResource.roles().realmLevel().add(roleRepresentations);
+    //if added role is valid role then  delete old roles and update new one
+    if ((!roleRepresentations.isEmpty() && roles.size()==roleRepresentations.size()) || roles.isEmpty()) {
+      userResource.roles().realmLevel().remove(existedRoles);
+      userResource.roles().realmLevel().add(roleRepresentations);
+    } else {
+      throw new ClientException("Please check that the sent roles are valid.");
+    }
     return roleRepresentations;
   }
 
