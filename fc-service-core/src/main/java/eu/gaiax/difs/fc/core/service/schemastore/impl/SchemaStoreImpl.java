@@ -29,6 +29,7 @@ import javax.persistence.LockModeType;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileExistsException;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
@@ -265,8 +266,13 @@ public class SchemaStoreImpl implements SchemaStore {
 
     try {
       fileStore.storeFile(nameHash, schema);
-    } catch (IOException ex) {
-      throw new RuntimeException("Failed to store schema file", ex);
+    } catch (FileExistsException e) {
+      throw new ConflictException("The schema with the hash " + nameHash + " already exists in the file storage.", e);
+    } catch (final IOException exc) {
+      throw new ServerException("Error while adding schema to file storage: " + exc.getMessage());
+    } catch (Exception ex) {
+      log.error("Failed to store a new schema file: ", ex);
+      throw ex;
     }
 
     currentSession.flush();
