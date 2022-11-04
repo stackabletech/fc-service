@@ -12,6 +12,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.*;
 
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
 import eu.gaiax.difs.fc.core.util.TestUtil;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
@@ -20,11 +21,9 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Statement;
@@ -35,7 +34,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.neo4j.cypher.internal.expressions.True;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
@@ -326,6 +324,13 @@ public class SchemaManagementImplTest {
       count++;
     }
     assertEquals(5, count, "Expected a different number of files in the store.");
+    Map<SchemaType, List<String>> schemaList = schemaStore.getSchemaList();
+    assertEquals(4, schemaList.get(SchemaType.ONTOLOGY).size());
+    assertEquals(1, schemaList.get(SchemaType.SHAPE).size());
+    assertTrue("Ontology identifier not found in schema list.", schemaList.get(SchemaType.ONTOLOGY).contains("http://w3id.org/gaia-x/resource#"));
+    assertTrue("Ontology identifier not found in schema list.", schemaList.get(SchemaType.ONTOLOGY).contains("http://w3id.org/gaia-x/participant#"));
+    assertTrue("Ontology identifier not found in schema list.", schemaList.get(SchemaType.ONTOLOGY).contains("http://w3id.org/gaia-x/core#"));
+    assertTrue("Ontology identifier not found in schema list.", schemaList.get(SchemaType.ONTOLOGY).contains("http://w3id.org/gaia-x/service#"));
   }
 
   /**
