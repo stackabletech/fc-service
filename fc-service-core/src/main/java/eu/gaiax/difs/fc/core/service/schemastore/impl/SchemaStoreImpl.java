@@ -393,8 +393,7 @@ public class SchemaStoreImpl implements SchemaStore {
 
   @Override
   public ContentAccessor getCompositeSchema(SchemaType type) {
-    // TODO IOSB add caching
-    return createCompositeSchema(type);
+    return COMPOSITE_SCHEMAS.computeIfAbsent(type, t -> createCompositeSchema(t));
   }
 
   private static ContentAccessorFile getAccessor(String path) throws UnsupportedEncodingException {

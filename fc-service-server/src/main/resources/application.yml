@@ -85,3 +85,5 @@ federated-catalogue:
       location: sdFiles
     schema:
       location: schemaFiles
+    context-cache:
+      location: contextCacheFiles

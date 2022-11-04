@@ -1,5 +1,7 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
+import com.apicatalog.jsonld.loader.DocumentLoader;
+import com.apicatalog.jsonld.loader.SchemeRouter;
 import com.danubetech.keyformats.JWK_to_PublicKey;
 import com.danubetech.keyformats.crypto.PublicKeyVerifier;
 import com.danubetech.keyformats.crypto.PublicKeyVerifierFactory;
@@ -12,6 +14,7 @@ import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.*;
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.verification.ClaimExtractor;
 import eu.gaiax.difs.fc.core.service.validatorcache.ValidatorCache;
@@ -54,6 +57,10 @@ import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.*;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFParser;
+import org.apache.jena.riot.system.stream.StreamManager;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
  * Implementation of the {@link VerificationService} interface.
@@ -62,10 +69,11 @@ import java.util.*;
 @Component
 public class VerificationServiceImpl implements VerificationService {
 
-  private static final String sd_format = "JSONLD11";
-  private static final String shapes_format = "TURTLE";
+  private static final Lang SD_LANG = Lang.JSONLD11;
+  private static final Lang SHAPES_LANG = Lang.TURTLE;
   private static final String[] TYPE_KEYS = {"type", "types", "@type", "@types"};
   private static final String[] ID_KEYS = {"id", "@id"};
+  // This sniffing is extremely unreliable, since namespace-names are not fixed.
   private static final Set<String> PARTICIPANT_TYPES = Set.of("LegalPerson", "http://w3id.org/gaia-x/participant#LegalPerson", "gax-participant:LegalPerson");
   private static final Set<String> SERVICE_OFFERING_TYPES = Set.of("ServiceOfferingExperimental", "http://w3id.org/gaia-x/service#ServiceOffering", "gax-service:ServiceOffering");
   private static final Set<String> SIGNATURES = Set.of("JsonWebSignature2020"); //, "Ed25519Signature2018");
@@ -81,6 +89,13 @@ public class VerificationServiceImpl implements VerificationService {
 
   @Autowired
   private ValidatorCache validatorCache;
+
+  @Autowired
+  @Qualifier("contextCacheFileStore")
+  private FileStore fileStore;
+
+  private boolean loadersInitialised;
+  private StreamManager streamManager;
 
   public VerificationServiceImpl() {
     Security.addProvider(new BouncyCastleProvider());
@@ -172,8 +187,11 @@ public class VerificationServiceImpl implements VerificationService {
 
     // schema verification
     if (verifySchema) {
-      // TODO: make it workable
-      //validatePayloadAgainstSchema(payload);
+      SemanticValidationResult result = verifySelfDescriptionAgainstCompositeSchema(payload);
+      if (result == null || !result.isConforming()) {
+        throw new VerificationException("Schema error: " + (result == null ? "unknown" : result.getValidationReport()));
+      }
+
     }
 
     List<Validator> validators;
@@ -348,6 +366,7 @@ public class VerificationServiceImpl implements VerificationService {
         }
 
         for (String type : types) {
+          // This should properly expand the namespace before matching.
           if (PARTICIPANT_TYPES.contains(type)) {
             return Boolean.TRUE;
           }
@@ -371,6 +390,8 @@ public class VerificationServiceImpl implements VerificationService {
    * @return a list of claims.
    */
   private List<SdClaim> extractClaims(ContentAccessor payload) {
+    // Make sure our interceptors are in place.
+    initLoaders();
     //TODO does it work with an Array of VCs
     List<SdClaim> claims = null;
     for (ClaimExtractor extra : extractors) {
@@ -380,7 +401,7 @@ public class VerificationServiceImpl implements VerificationService {
           break;
         }
       } catch (Exception ex) {
-        log.error("extractClaims.error: ", ex);
+        log.error("extractClaims.error using {}: {}", extra.getClass().getName(), ex.getMessage());
       }
     }
     return claims;
@@ -439,6 +460,31 @@ public class VerificationServiceImpl implements VerificationService {
     return null;
   }
 
+  private void initLoaders() {
+    if (!loadersInitialised) {
+      log.debug("Setting up Caching com.apicatalog.jsonld DocumentLoader");
+      DocumentLoader cachingLoader = new CachingHttpLoader(fileStore);
+      SchemeRouter loader = (SchemeRouter) SchemeRouter.defaultInstance();
+      loader.set("http", cachingLoader);
+      loader.set("https", cachingLoader);
+      loadersInitialised = true;
+    }
+  }
+
+  public StreamManager getStreamManager() {
+    if (streamManager == null) {
+      // Make sure Caching com.​apicatalog.​jsonld DocumentLoader is set up.
+      initLoaders();
+      log.debug("Setting up Jena caching Locator");
+      StreamManager clone = StreamManager.get().clone();
+      clone.clearLocators();
+      clone.addLocator(new LocatorCaching(fileStore));
+      streamManager = clone;
+    }
+    return streamManager;
+  }
+
+
   /* SD validation against SHACL Schemas */
   /**
    * Method that validates a dataGraph against shaclShape
@@ -448,13 +494,25 @@ public class VerificationServiceImpl implements VerificationService {
    * @return SemanticValidationResult object
    */
   SemanticValidationResult validatePayloadAgainstSchema(ContentAccessor payload, ContentAccessor shaclShape) {
-    Reader dataGraphReader = new StringReader(payload.getContentAsString());
-    Reader shaclShapeReader = new StringReader(shaclShape.getContentAsString());
     Model data = ModelFactory.createDefaultModel();
-    data.read(dataGraphReader, null, sd_format);
+    RDFParser.create()
+        .streamManager(getStreamManager())
+        .source(payload.getContentAsStream())
+        .lang(SD_LANG)
+        .parse(data);
+
     Model shape = ModelFactory.createDefaultModel();
-    shape.read(shaclShapeReader, null, shapes_format);
+    RDFParser.create()
+        .streamManager(getStreamManager())
+        .source(shaclShape.getContentAsStream())
+        .lang(SHAPES_LANG)
+        .parse(shape);
+
     Resource reportResource = ValidationUtil.validateModel(data, shape, true);
+
+    data.close();
+    shape.close();
+
     boolean conforms = reportResource.getProperty(SH.conforms).getBoolean();
     String report = null;
     if (!conforms) {
@@ -463,18 +521,21 @@ public class VerificationServiceImpl implements VerificationService {
     return new SemanticValidationResult(conforms, report);
   }
 
-  private SemanticValidationResult validatePayloadAgainstCompositeSchema(ContentAccessor payload) {
-    ContentAccessor shaclShape = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
-    SemanticValidationResult result = validatePayloadAgainstSchema(payload, shaclShape);
-    log.debug("validationAgainstShacl.exit; conforms: {}; model: {}", result.isConforming(), result.getValidationReport());
-    if (!result.isConforming()) {
-      throw new VerificationException("Schema error; Shacl shape schema violated");
+  @Override
+  public SemanticValidationResult verifySelfDescriptionAgainstCompositeSchema(ContentAccessor payload) {
+    SemanticValidationResult result = null;
+    try {
+      ContentAccessor shaclShape = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
+      result = validatePayloadAgainstSchema(payload, shaclShape);
+      log.debug("validationAgainstShacl.exit; conforms: {}; model: {}", result.isConforming(), result.getValidationReport());
+    } catch (Exception exc) {
+      log.debug("Failed: ", exc);
     }
     return result;
   }
 
   public SemanticValidationResult getSemanticValidationResults(ContentAccessor payload) {
-    return validatePayloadAgainstCompositeSchema(payload);
+    return verifySelfDescriptionAgainstCompositeSchema(payload);
   }
 
   /* SD signatures verification */
