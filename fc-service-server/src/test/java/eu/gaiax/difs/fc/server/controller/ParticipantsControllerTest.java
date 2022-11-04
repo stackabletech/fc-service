@@ -2,8 +2,7 @@ package eu.gaiax.difs.fc.server.controller;
 
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static eu.gaiax.difs.fc.server.helper.UserServiceHelper.getAllRoles;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.*;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.SD_ADMIN_ROLE_WITH_PREFIX;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -691,6 +690,6 @@ public class ParticipantsControllerTest {
     }
 
     public User getUserOfParticipant(String partId){
-        return new  User(partId,"testUserName","testLastName","test@gmail",List.of());
+        return new  User(partId,"testUserName","testLastName","test@gmail",List.of(PARTICIPANT_USER_ADMIN_ROLE));
     }
 }
