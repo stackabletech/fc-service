@@ -236,14 +236,16 @@ public class VerificationServiceImplTest {
   void validSD() throws UnsupportedEncodingException {
     log.debug("validSD");
     String path = "VerificationService/sign/valid_signature.json";
-    verificationService.verifySelfDescription(getAccessor(path));
+    VerificationResult result = verificationService.verifySelfDescription(getAccessor(path));
+    assertEquals(1, result.getValidators().size(), "Incorrect number of validators found");
   }
 
   @Test
   void validComplexSD() throws UnsupportedEncodingException {
     log.debug("validComplexSD");
     String path = "VerificationService/sign/valid_complex_signature.json";
-    verificationService.verifySelfDescription(getAccessor(path));
+    VerificationResult result = verificationService.verifySelfDescription(getAccessor(path));
+    assertEquals(1, result.getValidators().size(), "Incorrect number of validators found");
   }
 
   @Test
