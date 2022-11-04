@@ -24,7 +24,7 @@ services:
     container_name: "neo4j"
     image: neo4j:4.4.12
     environment:
-      NEO4J_AUTH: "${GRAPHSTORE_USER}/${GRAPHSTORE_PASSWORD}"
+      NEO4J_AUTH: "${GRAPH_STORE_USER}/${GRAPH_STORE_PASSWORD}"
       NEO4J_dbms_connector_http_listen__address: :7474
       NEO4J_dbms_connector_bolt_listen__address: :7687
       NEO4JLABS_PLUGINS: '["apoc", "graph-data-science", "n10s"]'
