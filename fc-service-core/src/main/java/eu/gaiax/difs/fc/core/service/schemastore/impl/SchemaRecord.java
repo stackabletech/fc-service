@@ -12,6 +12,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
+import javax.persistence.CascadeType;
 
 /**
  *
@@ -67,7 +68,7 @@ public class SchemaRecord implements Serializable {
   /**
    * The terms defined in this schema.
    */
-  @OneToMany(mappedBy = "schemaId", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "schemaId", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
   private List<SchemaTerm> terms;
 
   public SchemaRecord(String schemaId, String nameHash, SchemaType type,String content, List<String> terms) {

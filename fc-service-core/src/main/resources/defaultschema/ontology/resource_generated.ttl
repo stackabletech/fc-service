@@ -566,20 +566,12 @@ gax-resource:policies
 	rdfs:comment		 "a list of policy expressed using a DSL used by the data connector policy engine leveraging Gaia-X Self-descriptions as both data inputs and policy inputs" ;
 . 
 
-gax-service:type
+gax-resource:type
 	a		 owl:DatatypeProperty ;
 	rdfs:label		 "type"@en ;
 	rdfs:domain		 gax-resource:DataConnector ;
 	rdfs:range		 xsd:string ;
 	rdfs:comment		 "Type of the data asset, which helps discovery.  Preferably a controlled vocabulary entry referenced by URI" ;
-. 
-
-gax-service:creationTime
-	a		 owl:DatatypeProperty ;
-	rdfs:label		 "creation time"@en ;
-	rdfs:domain		 gax-resource:DataConnector ;
-	rdfs:range		 xsd:dateTimeStamp ;
-	rdfs:comment		 "Timestamp the service has been created." ;
 . 
 
 gax-service:standardConformity
