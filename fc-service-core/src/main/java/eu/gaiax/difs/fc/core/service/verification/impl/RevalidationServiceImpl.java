@@ -16,9 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import javax.persistence.LockModeType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.hibernate.Session;
@@ -74,13 +72,11 @@ public class RevalidationServiceImpl implements RevalidationService {
   private Thread managementThread;
 
   /**
-   * Set to true by requesters, set to false by the manager when done
-   * processing.
+   * Set to true by requesters, set to false by the manager when done processing.
    */
   private int workingOnChunk = -1;
   /**
-   * Set to true by requesters, set to false by the manager when the precessing
-   * is restarted.
+   * Set to true by requesters, set to false by the manager when the precessing is restarted.
    */
   private AtomicBoolean restart = new AtomicBoolean(false);
   /**
@@ -96,15 +92,24 @@ public class RevalidationServiceImpl implements RevalidationService {
     this.instanceCount = instanceCount;
   }
 
+  public void setWorkerCount(int workerCount) {
+    this.workerCount = workerCount;
+  }
+
+  public void setBatchSize(int batchSize) {
+    this.batchSize = batchSize;
+  }
+
   private void handleTask(final String sdhash) {
     ContentAccessor content = sdStore.getSDFileByHash(sdhash);
     try {
-      verificationService.verifySelfDescription(content, false, true, false);
+      verificationService.verifySelfDescriptionAgainstCompositeSchema(content);
     } catch (VerificationException ex) {
       log.info("SD {} is no longer valid", sdhash);
       sdStore.changeLifeCycleStatus(sdhash, SelfDescriptionStatus.REVOKED);
     }
-    if (taskQueue.size() < 0.5 * batchSize) {
+    final var finalTaskQueue = taskQueue;
+    if (finalTaskQueue != null && finalTaskQueue.size() < 0.5 * batchSize) {
       notifyManager();
     }
   }
@@ -152,9 +157,8 @@ public class RevalidationServiceImpl implements RevalidationService {
   }
 
   /**
-   * Starts the revalidation process when it is not started yet, restarts the
-   * process when it is already running. It does this by resetting the times on
-   * the chunk table to 2000-01-01T00:00:00Z
+   * Starts the revalidation process when it is not started yet, restarts the process when it is already running. It
+   * does this by resetting the times on the chunk table to 2000-01-01T00:00:00Z
    */
   @Override
   public void startValidating() {
@@ -173,14 +177,17 @@ public class RevalidationServiceImpl implements RevalidationService {
   }
 
   private void notifyManager() {
-    synchronized (managementThread) {
+    final Thread localManagementThread = managementThread;
+    if (localManagementThread == null) {
+      return;
+    }
+    synchronized (localManagementThread) {
       managementThread.notify();
     }
   }
 
   /**
-   * Sets up the RevalidationService so it is ready for work. This does not
-   * actually start the revalidation process yet.
+   * Sets up the RevalidationService so it is ready for work. This does not actually start the revalidation process yet.
    */
   @Override
   public synchronized void setup() {
@@ -196,12 +203,14 @@ public class RevalidationServiceImpl implements RevalidationService {
   }
 
   /**
-   * Clean up the revalidationService. If there are running tasks they will
-   * complete, but any queued tasks will not.
+   * Clean up the revalidationService. If there are running tasks they will complete, but any queued tasks will not.
    */
   @Override
   public synchronized void cleanup() {
     shutdown.set(true);
+    if (managementThread == null) {
+      return;
+    }
     notifyManager();
     executorService.shutdown();
     try {
@@ -221,7 +230,7 @@ public class RevalidationServiceImpl implements RevalidationService {
   private int findChunkForWork() {
     log.debug("Searching for chunk to work on...");
     int chunkId = -1;
-    try (Session session = sessionFactory.openSession()) {
+    try ( Session session = sessionFactory.openSession()) {
       Transaction transaction = session.beginTransaction();
       final String query = "update revalidatorchunks set lastcheck=now() where chunkid="
           + "(select chunkid from revalidatorchunks where lastcheck < ("
@@ -247,7 +256,7 @@ public class RevalidationServiceImpl implements RevalidationService {
 
   private void checkChunkTable() {
     log.debug("Checking chunk table...");
-    try (Session session = sessionFactory.openSession()) {
+    try ( Session session = sessionFactory.openSession()) {
       Transaction transaction = session.beginTransaction();
       session.createNativeQuery("lock table revalidatorchunks").executeUpdate();
       Object maxChunkObject = session.createNativeQuery("select max(chunkid) from revalidatorchunks").getSingleResult();
@@ -274,7 +283,7 @@ public class RevalidationServiceImpl implements RevalidationService {
 
   private void resetChunkTableTimes() {
     log.debug("Resetting chunk table times...");
-    try (Session session = sessionFactory.openSession()) {
+    try ( Session session = sessionFactory.openSession()) {
       Transaction transaction = session.beginTransaction();
       session.createNativeQuery("lock table revalidatorchunks").executeUpdate();
       session.createNativeQuery("update revalidatorchunks set lastcheck=:lastcheck")
@@ -311,8 +320,7 @@ public class RevalidationServiceImpl implements RevalidationService {
   }
 
   /**
-   * A processor thread that blocks on queue.take, waiting for tasks to process.
-   * Stops working when it is interrupted.
+   * A processor thread that blocks on queue.take, waiting for tasks to process. Stops working when it is interrupted.
    *
    * @param <T> The type of the tasks the processor processes.
    */
