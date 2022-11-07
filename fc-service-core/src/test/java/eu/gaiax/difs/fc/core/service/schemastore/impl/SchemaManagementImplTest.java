@@ -224,6 +224,36 @@ public class SchemaManagementImplTest {
     assertFalse(result.isValid());
     assertEquals(expected,actual);
   }
+  @Test
+  public void testValidJSONlD() throws UnsupportedEncodingException {
+    Set<String> expectedExtractedUrlsSet = new HashSet<>();
+    expectedExtractedUrlsSet.add("http://w3id.org/gaia-x/validation#PhysicalResourceShape");
+    String path = "Schema-Tests/validShacl.jsonld";
+    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
+    SchemaAnalysisResult result = schemaStore.analyseSchema(content);
+    List<String> actualExtractedUrlsList = result.getExtractedUrls();
+    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
+    assertNull(result.getExtractedId());
+    assertTrue(schemaStore.verifySchema(content));
+    assertTrue(schemaStore.isSchemaType(content, SHAPE));
+    assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
+    assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
+  }
+  @Test
+  public void testValidXMLRDf() throws UnsupportedEncodingException {
+    Set<String> expectedExtractedUrlsSet = new HashSet<>();
+    expectedExtractedUrlsSet.add("http://w3id.org/gaia-x/validation#PhysicalResourceShape");
+    String path = "Schema-Tests/validShacl.rdfxml";
+    ContentAccessor content = TestUtil.getAccessor(getClass(), path);
+    SchemaAnalysisResult result = schemaStore.analyseSchema(content);
+    List<String> actualExtractedUrlsList = result.getExtractedUrls();
+    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
+    assertNull(result.getExtractedId());
+    assertTrue(schemaStore.verifySchema(content));
+    assertTrue(schemaStore.isSchemaType(content, SHAPE));
+    assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
+    assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
+  }
 
 
   /**
