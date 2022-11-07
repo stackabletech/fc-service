@@ -238,7 +238,9 @@ public class VerificationServiceImpl implements VerificationService {
     if (type.getLeft()) {
       LdProof proof = vp.getLdProof();
       URI method = proof == null ? null : proof.getVerificationMethod();
-      String key = method == null ? null : method.toString();
+      Validator validator = method == null ? null : validatorCache.getFromCache(method.toString());
+      String key = validator == null ? null : validator.getPublicKey();
+
       if (issuer == null) {
         issuer = id;
       }
