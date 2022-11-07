@@ -114,6 +114,58 @@ public class Neo4jGraphStoreTest {
         Assertions.assertEquals(resultListDelta, responseDelta);
     }
 
+
+    /**
+     * Given set of credentials connect to graph and upload self description.
+     * Instantiate list of claims with subject predicate and object in N-triples
+     * form along with literals and upload to graph. Verify if the claim has
+     * been uploaded using query service by asking for its signature
+     */
+
+    @Test
+    void testCypherSignatureQuery() throws Exception {
+
+        String credentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
+        List<SdClaim> sdClaimList = Arrays.asList(
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                ),
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://w3id.org/gaia-x/service#name>",
+                        "\"Elastic Search DB\""
+                ),
+                new SdClaim(
+                        "<http:ex.com/some_service>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                ),
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://ex.com/some_property>",
+                        "_:23"
+                ),
+                new SdClaim(
+                        "_:23",
+                        "<http://ex.com/some_other_property>",
+                        "<http:ex.com/some_service>"
+                )
+        );
+        graphGaia.addClaims(sdClaimList, credentialSubject);
+        List<Map<String, String>> resultListDelta = new ArrayList<Map<String, String>>();
+        Map<String, String> mapDelta = new HashMap<String, String>();
+        mapDelta.put("n.uri", "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
+        resultListDelta.add(mapDelta);
+        GraphQuery queryDelta = new GraphQuery(
+                "MATCH (n:ServiceOffering) WHERE n.name = $name RETURN n.uri LIMIT $limit", Map.of("name", "Elastic Search DB", "limit", 25));
+        List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
+        Assertions.assertEquals(resultListDelta, responseDelta);
+        //cleanup
+        graphGaia.deleteClaims(credentialSubject);
+    }
+
     /**
      * Given set of credentials connect to graph and upload self description.
      * Instantiate list of claims with subject predicate and object in N-triples
@@ -334,6 +386,8 @@ public class Neo4jGraphStoreTest {
                 "A DID should be accepted on a triple's object " +
                         "position but was rejected by the claim validation"
         );
+        //cleanup
+        graphGaia.deleteClaims(credentialSubject);
     }
 
     private List<SdClaim> loadTestClaims(String path) throws Exception {
@@ -471,9 +525,14 @@ public class Neo4jGraphStoreTest {
         Assertions.assertEquals(2, responseDelta.size());
 
         // clean up
+        graphGaia.deleteClaims(credentialSubject1);
         graphGaia.deleteClaims(credentialSubject2);
     }
 
+    /**
+     * This test checks for a property for a given credential subject and
+     * returns uri of the subject if it exists
+     */
     @Test
     void testAssertionQuery() {
         String credentialSubject1 = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
@@ -516,7 +575,7 @@ public class Neo4jGraphStoreTest {
 
         graphGaia.addClaims(sdClaimList, credentialSubject1);
         graphGaia.addClaims(sdClaimsWOtherCredSubject, credentialSubject2);
-        GraphQuery queryCypher = new GraphQuery("MATCH (n)-[:some_property]->(m) RETURN n",null);
+        GraphQuery queryCypher = new GraphQuery("MATCH (n)-[:some_property]->(m) RETURN n", null);
         List<Map<String, Object>> responseCypher = graphGaia.queryData(queryCypher).getResults();
         List<Map<String, String>> resultListSomeProperty = new ArrayList<Map<String, String>>();
         Map<String, String> mapES = new HashMap<String, String>();
@@ -526,6 +585,78 @@ public class Neo4jGraphStoreTest {
         mapCredentialSubject2.put("n.uri", "http://ex.com/credentialSubject2");
         resultListSomeProperty.add(mapCredentialSubject2);
         Assertions.assertEquals(resultListSomeProperty, responseCypher);
+        //cleanup
+        graphGaia.deleteClaims(credentialSubject1);
+        graphGaia.deleteClaims(credentialSubject2);
+    }
+
+    /**
+     * This test checks for a pattern if subject of type service offering has the given two properties
+     * and matches label against one to return uri of the subject if true
+     */
+    @Test
+    void testAssertionComplexQuery() {
+        String credentialSubject1 = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
+        List<SdClaim> sdClaimList = Arrays.asList(
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                ),
+                new SdClaim(
+                        "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
+                        "<http://ex.com/some_property>",
+                        "_:23"
+                ),
+                new SdClaim(
+                        "_:23",
+                        "<http://ex.com/some_other_property>",
+                        "<http:ex.com/some_service>"
+                ),
+                new SdClaim(
+                        "<http:ex.com/some_service>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                )
+        );
+
+        String credentialSubject2 = "http://ex.com/credentialSubject2";
+        List<SdClaim> sdClaimsWOtherCredSubject = Arrays.asList(
+                new SdClaim(
+                        "<http://ex.com/credentialSubject2>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/service#ServiceOffering>"
+                ),
+                new SdClaim(
+                        "<http://ex.com/credentialSubject2>",
+                        "<http://ex.com/some_property>",
+                        "<http://ex.com/resource23>"
+                ),
+                new SdClaim(
+                        "<http://ex.com/credentialSubject2>",
+                        "<http://ex.com/some_other_property>",
+                        "<http://ex.com/resource24>"
+                ),
+                new SdClaim(
+                        "<http://ex.com/resource24>",
+                        "<http://www.w3.org/2000/01/rdf-schema#label>",
+                        "\"resource24\""
+                )
+        );
+
+        graphGaia.addClaims(sdClaimList, credentialSubject1);
+        graphGaia.addClaims(sdClaimsWOtherCredSubject, credentialSubject2);
+        GraphQuery queryCypher = new GraphQuery("MATCH (o)<-[:some_other_property]-(n:ServiceOffering)-[:some_property]->(m) WHERE o.label= $some_other_property RETURN n.uri", Map.of("some_other_property", "resource24"));
+        List<Map<String, Object>> responseCypher = graphGaia.queryData(queryCypher).getResults();
+        List<Map<String, String>> resultListSomeProperty = new ArrayList<Map<String, String>>();
+        Map<String, String> mapES = new HashMap<String, String>();
+        Map<String, String> mapCredentialSubject2 = new HashMap<String, String>();
+        mapCredentialSubject2.put("n.uri", "http://ex.com/credentialSubject2");
+        resultListSomeProperty.add(mapCredentialSubject2);
+        Assertions.assertEquals(resultListSomeProperty, responseCypher);
+        //cleanup
+        graphGaia.deleteClaims(credentialSubject1);
+        graphGaia.deleteClaims(credentialSubject2);
     }
 
     @Test
