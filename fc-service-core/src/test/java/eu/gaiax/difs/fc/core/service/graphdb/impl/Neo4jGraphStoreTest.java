@@ -168,7 +168,10 @@ public class Neo4jGraphStoreTest {
         GraphQuery queryDelta = new GraphQuery(
                 "MATCH (n:ServiceOffering) WHERE n.name = $name RETURN n.uri LIMIT $limit", Map.of("name", "Elastic Search DB", "limit", 25));
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
-        Assertions.assertEquals(resultListDelta, responseDelta);
+        Assertions.assertTrue(
+                CollectionUtils.isEqualCollection(resultListDelta, responseDelta),
+                resultListDelta + " != " + responseDelta);
+
         //cleanup
         graphGaia.deleteClaims(credentialSubject);
     }
@@ -589,7 +592,10 @@ public class Neo4jGraphStoreTest {
         Map<String, String> mapCredentialSubject2 = new HashMap<String, String>();
         mapCredentialSubject2.put("n.uri", "http://ex.com/credentialSubject2");
         resultListSomeProperty.add(mapCredentialSubject2);
-        Assertions.assertEquals(resultListSomeProperty, responseCypher);
+        Assertions.assertTrue(
+                CollectionUtils.isEqualCollection(resultListSomeProperty, responseCypher),
+                resultListSomeProperty + " != " + responseCypher);
+
         //cleanup
         graphGaia.deleteClaims(credentialSubject1);
         graphGaia.deleteClaims(credentialSubject2);
@@ -658,7 +664,10 @@ public class Neo4jGraphStoreTest {
         Map<String, String> mapCredentialSubject2 = new HashMap<String, String>();
         mapCredentialSubject2.put("n.uri", "http://ex.com/credentialSubject2");
         resultListSomeProperty.add(mapCredentialSubject2);
-        Assertions.assertEquals(resultListSomeProperty, responseCypher);
+        Assertions.assertTrue(
+                CollectionUtils.isEqualCollection(resultListSomeProperty, responseCypher),
+                resultListSomeProperty + " != " + responseCypher);
+
         //cleanup
         graphGaia.deleteClaims(credentialSubject1);
         graphGaia.deleteClaims(credentialSubject2);
