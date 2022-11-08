@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import eu.gaiax.difs.fc.core.exception.QueryException;
 import org.apache.commons.collections.CollectionUtils;
@@ -598,5 +599,53 @@ public class Neo4jGraphStoreTest {
                 graphGaia.orderByRegex.matcher(query).find(),
                 "The ORDER BY regex should find ORDER BYs after the RETURN part of the query"
         );
+    }
+
+    @Test
+    void testQueryShuffling() {
+        String credentialSubject = "<http://ex.com/some_resource>";
+        String resource_a = "http://ex.com/resource_a";
+        String resource_b = "http://ex.com/resource_b";
+        String resource_c = "http://ex.com/resource_c";
+        String resource_d = "http://ex.com/resource_d";
+
+        graphGaia.addClaims(
+                Arrays.asList(
+                        new SdClaim(
+                                credentialSubject,
+                                "<http://ex.com/object_property1>",
+                                "<" + resource_a + ">"
+                        ),
+                        new SdClaim(
+                                credentialSubject,
+                                "<http://ex.com/object_property1>",
+                                "<" + resource_b + ">"
+                        ),
+                        new SdClaim(
+                                credentialSubject,
+                                "<http://ex.com/object_property1>",
+                                "<" + resource_c + ">"
+                        ),
+                        new SdClaim(
+                                credentialSubject,
+                                "<http://ex.com/object_property1>",
+                                "<" + resource_d + ">"
+                        )
+                ),
+                credentialSubject
+        );
+
+        String queryWOrderBy = "MATCH (n)-[:object_property1]->(m) RETURN m.uri ORDER BY m.uri";
+        // [
+        //   {m.uri=http://ex.com/resource_a},
+        //   {m.uri=http://ex.com/resource_b},
+        //   {m.uri=http://ex.com/resource_c},
+        //   {m.uri=http://ex.com/resource_d}
+        // ]
+        List<Map<String, Object>> res = graphGaia.queryData(new GraphQuery(queryWOrderBy, null)).getResults();
+        List<String> values = res.stream().map(e -> (String) e.get("m.uri")).collect(Collectors.toList());
+        Assertions.assertEquals(Arrays.asList(resource_a, resource_b, resource_c, resource_d), values);
+
+        graphGaia.deleteClaims(credentialSubject);
     }
 }
