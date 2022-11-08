@@ -2,8 +2,7 @@ package eu.gaiax.difs.fc.server.controller;
 
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static eu.gaiax.difs.fc.server.helper.UserServiceHelper.getAllRoles;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.*;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.SD_ADMIN_ROLE_WITH_PREFIX;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -139,6 +138,8 @@ public class ParticipantsControllerTest {
 
     private final String userId = "ae366624-8371-401d-b2c4-518d2f308a15";
     private final String DEFAULT_PARTICIPANT_FILE = "default_participant.json";
+
+    private final String PUBLIC_KEY_AS_JWK = "{\"kty\":\"RSA\",\"e\":\"AQAB\",\"alg\":\"PS256\",\"n\":\"0nYZU6EuuzHKBCzkcBZqsMkVZXngYO7VujfLU_4ys7onF4HxTJPP3OGKEjbjbMgmpa7vKaWRomt_XXTjemA3r3f5t8bj0IoqFfvbTIq65GUIIh4y2mVbomdcQLRK2Auf79vDiqiONknTSstoPjAiCg6t6z_KruGFZbDOhYkZwqrjGnmB_LfFSlpeLwkQQ-5dVLhhXkImmWhnACoAo8ECny24Ap7wLbN9i9o1fNSz2uszACj0zxFhl3NGunHFUm3YkGd0URvoToXpK9a4zfihSUxHjeT0_7a9puVF4E3w1AAjSh4nV3pLE0cJyDITVb2M4d3m9tjjz_3XwjYiAAJ1MKVBSKDM27pexRFCJj_Dvb-dr-AImhqBhPDHn_gjdaRZIVoADC4zwBULkpvUaUIKmNFyYOjDYWWTBzTf4Gs9QL5adlVfVyK14MZPBOyq-cqIIymgp6A5_R3hKnCCBP8C_S0-VDidhI6Pr5VJPx9DydI0eB2DiOyOZvbfg7sKVkJXFUEJRiBTMhujyjYqeTtCHjCFHctZVQ8hU279eyk7mpmpDrktfCFJFi-00ZzQWTgtzBoGhke5hj0hjtG1n4jN6BfypdT5oB-DeXl2P1hp_hNC9I5gveWUYHAqN4VKve_52A3ub8vBlISQhEUeZoFUterTiDA3NyK7wsj_V7-KM6U\"}";
     
     @BeforeAll //TestClass
     public void setup() {
@@ -185,7 +186,7 @@ public class ParticipantsControllerTest {
         assertNotNull(part);
         assertEquals("did:example:issuer", partResult.getId());
         assertEquals("did:example:holder", partResult.getName());
-        assertEquals("did:web:compliance.lab.gaia-x.eu", partResult.getPublicKey());
+        assertEquals(PUBLIC_KEY_AS_JWK, partResult.getPublicKey());
         assertEquals(part.getSelfDescription(), partResult.getSelfDescription());
 
         assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
@@ -405,7 +406,7 @@ public class ParticipantsControllerTest {
         assertNotNull(part);
         assertEquals("did:example:issuer", partResult.getId());
         assertEquals("did:example:holder", partResult.getName());
-        assertEquals("did:web:compliance.lab.gaia-x.eu", partResult.getPublicKey());
+        assertEquals(PUBLIC_KEY_AS_JWK, partResult.getPublicKey());
 
         assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
         assertDoesNotThrow(() -> selfDescriptionStore.getByHash(part.getSdHash()));
@@ -691,6 +692,6 @@ public class ParticipantsControllerTest {
     }
 
     public User getUserOfParticipant(String partId){
-        return new  User(partId,"testUserName","testLastName","test@gmail",List.of());
+        return new  User(partId,"testUserName","testLastName","test@gmail",List.of(PARTICIPANT_USER_ADMIN_ROLE));
     }
 }
