@@ -3,6 +3,7 @@ package eu.gaiax.difs.fc.core.service.schemastore.impl;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -69,19 +70,19 @@ public class SchemaRecord implements Serializable {
    * The terms defined in this schema.
    */
   @OneToMany(mappedBy = "schemaId", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-  private List<SchemaTerm> terms;
+  private Set<SchemaTerm> terms;
 
-  public SchemaRecord(String schemaId, String nameHash, SchemaType type,String content, List<String> terms) {
+  public SchemaRecord(String schemaId, String nameHash, SchemaType type,String content, Set<String> terms) {
     this.schemaId = schemaId;
     this.nameHash = nameHash;
     this.type = type;
     this.content = content;
-    this.terms = terms.stream().map(t -> new SchemaTerm(t, schemaId)).collect(Collectors.toList());
+    this.terms = terms.stream().map(t -> new SchemaTerm(t, schemaId)).collect(Collectors.toSet());
     uploadTime = Instant.now();
     updateTime = Instant.now();
   }
 
   public void replaceTerms(List<String> terms) {
-    this.terms = terms.stream().map(t -> new SchemaTerm(t, schemaId)).collect(Collectors.toList());
+    this.terms = terms.stream().map(t -> new SchemaTerm(t, schemaId)).collect(Collectors.toSet());
   }
 }

@@ -99,8 +99,7 @@ public class SchemaManagementImplTest {
     Set<String> expectedExtractedUrlsSet = getExtractedTermsSet(contentTerms);
     SchemaAnalysisResult result = schemaStore.analyseSchema(contentGraph);
     boolean actual = schemaStore.isSchemaType(contentGraph, ONTOLOGY);
-    List<String> actualExtractedUrlsList = result.getExtractedUrls();
-    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
+    Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
     assertTrue(actual);
     assertTrue(actualExtractedUrlsSet.isEmpty());
@@ -115,8 +114,7 @@ public class SchemaManagementImplTest {
     Set<String> expectedExtractedUrlsSet = getExtractedTermsSet(contentTerms);
     SchemaAnalysisResult result = schemaStore.analyseSchema(contentGraph);
     boolean actual = schemaStore.isSchemaType(contentGraph, SHAPE);
-    List<String> actualExtractedUrlsList = result.getExtractedUrls();
-    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
+    Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     assertTrue(actual);
     assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
     assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
@@ -132,10 +130,9 @@ public class SchemaManagementImplTest {
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult result = schemaStore.analyseSchema(content);
     boolean actual = schemaStore.isSchemaType(content, SHAPE);
-    List<String> actualExtractedUrlsList = result.getExtractedUrls();
-    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
-    actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
-    assertTrue(actualExtractedUrlsSet.isEmpty());
+    Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
+    assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
+    assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
     assertNull(result.getExtractedId());
     assertTrue(actual);
     assertTrue(schemaStore.verifySchema(content));
@@ -149,12 +146,11 @@ public class SchemaManagementImplTest {
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult result = schemaStore.analyseSchema(content);
     boolean actual = schemaStore.isSchemaType(content, VOCABULARY);
-    List<String> actualExtractedUrlsList = result.getExtractedUrls();
-    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
-    actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
+    Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     String extractedIdActual = result.getExtractedId();
     String extractedIdExpected = "http://www.example.com/animals";
-    assertTrue(actualExtractedUrlsSet.isEmpty());
+    assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
+    assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
     assertEquals(extractedIdExpected, extractedIdActual);
     assertTrue(actual);
     assertTrue(schemaStore.verifySchema(content));
@@ -174,13 +170,12 @@ public class SchemaManagementImplTest {
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult result = schemaStore.analyseSchema(content);
     boolean actual = schemaStore.isSchemaType(content, ONTOLOGY);
-    List<String> actualExtractedUrlsList = result.getExtractedUrls();
-    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
-    actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
+    Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     String extractedIdActual = result.getExtractedId();
     String extractedIdExpected = "http://w3id.org/gaia-x/core#";
     assertEquals(extractedIdExpected, extractedIdActual);
-    assertTrue(actualExtractedUrlsSet.isEmpty());
+    assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
+    assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
     assertTrue(actual);
     assertTrue(schemaStore.verifySchema(content));
   }
@@ -242,8 +237,7 @@ public class SchemaManagementImplTest {
     String path = "Schema-Tests/validShacl.jsonld";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult result = schemaStore.analyseSchema(content);
-    List<String> actualExtractedUrlsList = result.getExtractedUrls();
-    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
+    Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     assertNull(result.getExtractedId());
     assertTrue(schemaStore.verifySchema(content));
     assertTrue(schemaStore.isSchemaType(content, SHAPE));
@@ -257,8 +251,7 @@ public class SchemaManagementImplTest {
     String path = "Schema-Tests/validShacl.rdfxml";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult result = schemaStore.analyseSchema(content);
-    List<String> actualExtractedUrlsList = result.getExtractedUrls();
-    Set<String> actualExtractedUrlsSet = new HashSet<>(actualExtractedUrlsList);
+    Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     assertNull(result.getExtractedId());
     assertTrue(schemaStore.verifySchema(content));
     assertTrue(schemaStore.isSchemaType(content, SHAPE));
