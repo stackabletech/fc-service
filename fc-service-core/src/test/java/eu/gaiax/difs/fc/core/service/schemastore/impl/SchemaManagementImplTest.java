@@ -439,20 +439,22 @@ public class SchemaManagementImplTest {
   @Test
   public void testGetCompositeSchema() throws IOException {
     Model modelActual = ModelFactory.createDefaultModel();
-    String sub = "http://w3id.org/gaia-x/validation#EndpointShape";
-    String pre = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
-    String obj = "http://www.w3.org/ns/shacl#NodeShape";
+    String sub01 = "http://w3id.org/gaia-x/validation#PhysicalResourceShape";
+    String pre01 = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
+    String obj01 = "http://www.w3.org/ns/shacl#NodeShape";
+
+    String sub02 = "http://w3id.org/gaia-x/validation#DataConnectorShape";
+    String pre02 = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
+    String obj02 = "http://www.w3.org/ns/shacl#NodeShape";
 
     String schemaPath1 = "Schema-Tests/FirstValidSchemaShape.ttl";
     String schemaPath2 = "Schema-Tests/SecondValidSchemaShape.ttl";
 
     ContentAccessor schema01Content = TestUtil.getAccessor(getClass(), schemaPath1);
-    ContentAccessor schema02Content = TestUtil.getAccessor(getClass(), schemaPath2);
 
     storageSelfCleaning();
 
     schemaStore.addSchema(TestUtil.getAccessor(getClass(), schemaPath1));
-    schemaStore.addSchema(TestUtil.getAccessor(getClass(), schemaPath2));
 
     SchemaAnalysisResult schemaResult = schemaStore.analyseSchema(schema01Content);
 
@@ -464,7 +466,23 @@ public class SchemaManagementImplTest {
 
     modelActual.read(schemaContentReaderComposite, "", "TURTLE");
 
-    assertTrue(isExistTriple(modelActual, sub, pre, obj));
+    assertTrue(isExistTriple(modelActual, sub01, pre01, obj01));
+
+    ContentAccessor schema02Content = TestUtil.getAccessor(getClass(), schemaPath2);
+
+    schemaStore.addSchema(TestUtil.getAccessor(getClass(), schemaPath2));
+
+    schemaResult = schemaStore.analyseSchema(schema02Content);
+
+    compositeSchemaActual = schemaStore.getCompositeSchema(SHAPE);
+
+    log.info(compositeSchemaActual.getContentAsString());
+
+    schemaContentReaderComposite = new StringReader(compositeSchemaActual.getContentAsString());
+
+    modelActual.read(schemaContentReaderComposite, "", "TURTLE");
+
+    assertTrue(isExistTriple(modelActual, sub02, pre02, obj02));
   }
 
   private static boolean isExistTriple(Model model, String sub, String pre, String obj) {
