@@ -2,8 +2,9 @@ package eu.gaiax.difs.fc.core.dao.impl;
 
 import static eu.gaiax.difs.fc.core.util.KeycloakUtils.getErrorMessage;
 
+import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,7 +20,6 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.neo4j.driver.exceptions.ClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -210,11 +210,12 @@ public class UserDaoImpl implements UserDao {
   private List<RoleRepresentation> assignRoleToUser(UserResource userResource, List<String> roles) {
     List<RoleRepresentation> existedRoles = keycloak.realm(realm).roles().list();
 
-    List<RoleRepresentation> roleRepresentations = existedRoles.stream()
-        .filter(role -> roles.contains(role.getName()))
-        .collect(Collectors.toList());
+    List<RoleRepresentation> roleRepresentations = new ArrayList<>();
+    if (roles != null) {
+      roleRepresentations = existedRoles.stream().filter(role -> roles.contains(role.getName())).collect(Collectors.toList());
+    }
     //if added role is valid role then  delete old roles and update new one
-    if ((!roleRepresentations.isEmpty() && roles.size()==roleRepresentations.size()) || roles.isEmpty()) {
+    if ((!roleRepresentations.isEmpty() && roles.size() == roleRepresentations.size()) || roles == null || roles.isEmpty()) {
       userResource.roles().realmLevel().remove(existedRoles);
       userResource.roles().realmLevel().add(roleRepresentations);
     } else {
