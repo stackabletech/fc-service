@@ -15,6 +15,7 @@ import eu.gaiax.difs.fc.server.generated.controller.UsersApiDelegate;
 import java.net.URI;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -45,7 +46,9 @@ public class UsersService implements UsersApiDelegate {
   @Override
   public ResponseEntity<UserProfile> addUser(User user) {
     log.debug("addUser.enter; got user: {}", user);
-    if(ObjectUtils.isEmpty(user)) throw new ClientException("User cannot be null!");
+    if (ObjectUtils.isEmpty(user) || hasEmptyRequiredFields(user)) {
+      throw new ClientException("User cannot be empty or have empty field values, except for the role!");
+    }
     checkParticipantAccess(user.getParticipantId());
     UserProfile profile = userDao.create(user);
     log.debug("addUser.exit; returning: {}", profile);
@@ -67,6 +70,9 @@ public class UsersService implements UsersApiDelegate {
   @Override
   public ResponseEntity<UserProfile> updateUser(String userId, User user) {
     log.debug("updateUser.enter; got userId: {}", userId);
+    if (ObjectUtils.isEmpty(user) || hasEmptyRequiredFields(user)) {
+      throw new ClientException("User cannot be empty or have empty field values, except for the role!");
+    }
     UserProfile profile = userDao.select(userId);
     checkParticipantAccess(profile.getParticipantId());
     profile = userDao.update(userId, user);
@@ -178,5 +184,10 @@ public class UsersService implements UsersApiDelegate {
     profile = userDao.updateRoles(userId, roles);
     log.debug("updateUserRoles.exit; returning: {}", profile);
     return ResponseEntity.ok(profile);
+  }
+
+  private boolean hasEmptyRequiredFields(User user) {
+    return StringUtils.isBlank(user.getParticipantId()) || StringUtils.isBlank(user.getEmail())
+        || StringUtils.isBlank(user.getFirstName()) || StringUtils.isBlank(user.getLastName());
   }
 }

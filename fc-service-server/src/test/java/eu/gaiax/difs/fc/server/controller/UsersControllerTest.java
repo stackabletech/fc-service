@@ -17,6 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.OAuth2Constants.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -51,6 +53,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
@@ -58,6 +61,7 @@ import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -125,6 +129,8 @@ public class UsersControllerTest {
     private UsersResource usersResource;
     @MockBean
     private RolesResource rolesResource;
+    @MockBean
+    private GroupsResource groupsResource;
     @MockBean
     private RoleMappingResource roleMappingResource;
     @MockBean
@@ -476,6 +482,7 @@ public class UsersControllerTest {
         when(keycloak.realm("gaia-x")).thenReturn(realmResource);
         when(realmResource.users()).thenReturn(usersResource);
         when(realmResource.roles()).thenReturn(rolesResource);
+        when(realmResource.groups()).thenReturn(groupsResource);
         if (user == null) {
             when(usersResource.create(any())).thenReturn(Response.status(status).build());
             when(usersResource.delete(any())).thenThrow(new NotFoundException("User with id " + id + " not found"));
@@ -497,6 +504,11 @@ public class UsersControllerTest {
             List<RoleRepresentation> roleRepresentations =  new ArrayList<>();
             user.getRoleIds().forEach(roleId-> roleRepresentations.add(new RoleRepresentation(roleId, roleId, false)));
             when(roleScopeResource.listAll()).thenReturn(roleRepresentations);
+            GroupRepresentation group = new GroupRepresentation();
+            group.setId(UUID.randomUUID().toString());
+            group.setName(user.getParticipantId());
+            when(groupsResource.groups(eq(user.getParticipantId()), any(), any(), anyBoolean())).thenReturn(List.of(group));
+            when(userResource.groups()).thenReturn(List.of(group));
         }
     }
 

@@ -14,10 +14,12 @@ import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -146,6 +148,8 @@ public class UserDaoImpl implements UserDao {
 
     userResource.update(userRepo);
     assignRoleToUser(userResource, user.getRoleIds());
+    changeUserGroup(userResource, user.getParticipantId());
+
     // no Response ?
 
     userResource = instance.get(userId);
@@ -205,6 +209,23 @@ public class UserDaoImpl implements UserDao {
     userRepo.setGroups(List.of(user.getParticipantId()));
     userRepo.setRequiredActions(List.of(ACT_UPDATE_PASSWORD, ACT_VERIFY_EMAIL));
     return userRepo;
+  }
+
+  private void changeUserGroup(UserResource userResource, String newParticipantId) {
+    GroupsResource groupsResource = keycloak.realm(realm).groups();
+    List<GroupRepresentation> userGroups = userResource.groups();
+
+    List<GroupRepresentation> groups = groupsResource.groups(newParticipantId, 0, 1, true);
+    if (groups.isEmpty()) {
+      throw new eu.gaiax.difs.fc.core.exception.NotFoundException(
+          "The group with name " + newParticipantId + " not found");
+    } else {
+      // User must be only a member of 1 group or none + Groups with the same name are not duplicated
+      if (!userGroups.isEmpty()) {
+        userResource.leaveGroup(userGroups.get(0).getId());
+      }
+      userResource.joinGroup(groups.get(0).getId());
+    }
   }
 
   private List<RoleRepresentation> assignRoleToUser(UserResource userResource, List<String> roles) {
