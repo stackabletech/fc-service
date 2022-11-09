@@ -3,10 +3,7 @@ package eu.gaiax.difs.fc.server.controller;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.toUserRepo;
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.SD_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.*;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.SD_ADMIN_ROLE_WITH_PREFIX;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.DEFAULT_PARTICIPANT_ID;
 import static eu.gaiax.difs.fc.server.helper.UserServiceHelper.getAllRoles;
@@ -17,6 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.OAuth2Constants.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -51,6 +50,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
@@ -58,6 +58,7 @@ import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -125,6 +126,8 @@ public class UsersControllerTest {
     private UsersResource usersResource;
     @MockBean
     private RolesResource rolesResource;
+    @MockBean
+    private GroupsResource groupsResource;
     @MockBean
     private RoleMappingResource roleMappingResource;
     @MockBean
@@ -383,6 +386,38 @@ public class UsersControllerTest {
         assertTrue(profile.getRoleIds().containsAll(List.of(PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE)));
     }
 
+
+
+    //Role Assignment can be done on this criteria
+    //    role :-> can given by
+    //    Ro-MU-CA :-> Ro-MU-CA
+    //    Ro-MU-A :-> Ro-MU-CA, Ro-MU-A
+    //    Ro-SD-A :-> Ro-MU-CA, Ro-MU-A, Ro-Pa-A (if not self)
+    //    Ro-Pa-A :-> Ro-MU-CA, Ro-MU-A, Ro-Pa-A
+
+    //Please see above criteria for detailed role assignment rule.
+    @Test
+    @WithMockUser(authorities = {PARTICIPANT_USER_ADMIN_ROLE_WITH_PREFIX})
+    public void updateUserRolesShouldReturnErrorResponse() throws Exception {
+        User user = getTestUser("name7", "surname7");
+        String userId = UUID.randomUUID().toString();
+        setupKeycloak(HttpStatus.SC_OK, user, userId);
+        UserProfile existed = userDao.create(user);
+
+        when(roleScopeResource.listAll())
+            .thenReturn(List.of(new RoleRepresentation(PARTICIPANT_USER_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE, false)));
+
+        String response = mockMvc
+            .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE))))
+            .andExpect(status().isForbidden())
+            .andReturn().getResponse().getContentAsString();
+
+        Error error = objectMapper.readValue(response, Error.class);
+        assertNotNull(error);
+        assertEquals("User does not have permission to execute this request.", error.getMessage());
+    }
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void updateNonexistentUserRolesShouldReturnNotFoundResponse() throws Exception {
@@ -476,6 +511,7 @@ public class UsersControllerTest {
         when(keycloak.realm("gaia-x")).thenReturn(realmResource);
         when(realmResource.users()).thenReturn(usersResource);
         when(realmResource.roles()).thenReturn(rolesResource);
+        when(realmResource.groups()).thenReturn(groupsResource);
         if (user == null) {
             when(usersResource.create(any())).thenReturn(Response.status(status).build());
             when(usersResource.delete(any())).thenThrow(new NotFoundException("User with id " + id + " not found"));
@@ -497,6 +533,11 @@ public class UsersControllerTest {
             List<RoleRepresentation> roleRepresentations =  new ArrayList<>();
             user.getRoleIds().forEach(roleId-> roleRepresentations.add(new RoleRepresentation(roleId, roleId, false)));
             when(roleScopeResource.listAll()).thenReturn(roleRepresentations);
+            GroupRepresentation group = new GroupRepresentation();
+            group.setId(UUID.randomUUID().toString());
+            group.setName(user.getParticipantId());
+            when(groupsResource.groups(eq(user.getParticipantId()), any(), any(), anyBoolean())).thenReturn(List.of(group));
+            when(userResource.groups()).thenReturn(List.of(group));
         }
     }
 

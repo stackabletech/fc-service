@@ -2,8 +2,9 @@ package eu.gaiax.difs.fc.core.dao.impl;
 
 import static eu.gaiax.difs.fc.core.util.KeycloakUtils.getErrorMessage;
 
+import eu.gaiax.difs.fc.core.exception.ClientException;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,13 +14,14 @@ import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.neo4j.driver.exceptions.ClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -146,6 +148,8 @@ public class UserDaoImpl implements UserDao {
 
     userResource.update(userRepo);
     assignRoleToUser(userResource, user.getRoleIds());
+    changeUserGroup(userResource, user.getParticipantId());
+
     // no Response ?
 
     userResource = instance.get(userId);
@@ -207,14 +211,32 @@ public class UserDaoImpl implements UserDao {
     return userRepo;
   }
 
+  private void changeUserGroup(UserResource userResource, String newParticipantId) {
+    GroupsResource groupsResource = keycloak.realm(realm).groups();
+    List<GroupRepresentation> userGroups = userResource.groups();
+
+    List<GroupRepresentation> groups = groupsResource.groups(newParticipantId, 0, 1, true);
+    if (groups.isEmpty()) {
+      throw new eu.gaiax.difs.fc.core.exception.NotFoundException(
+          "The group with name " + newParticipantId + " not found");
+    } else {
+      // User must be only a member of 1 group or none + Groups with the same name are not duplicated
+      if (!userGroups.isEmpty()) {
+        userResource.leaveGroup(userGroups.get(0).getId());
+      }
+      userResource.joinGroup(groups.get(0).getId());
+    }
+  }
+
   private List<RoleRepresentation> assignRoleToUser(UserResource userResource, List<String> roles) {
     List<RoleRepresentation> existedRoles = keycloak.realm(realm).roles().list();
 
-    List<RoleRepresentation> roleRepresentations = existedRoles.stream()
-        .filter(role -> roles.contains(role.getName()))
-        .collect(Collectors.toList());
+    List<RoleRepresentation> roleRepresentations = new ArrayList<>();
+    if (roles != null) {
+      roleRepresentations = existedRoles.stream().filter(role -> roles.contains(role.getName())).collect(Collectors.toList());
+    }
     //if added role is valid role then  delete old roles and update new one
-    if ((!roleRepresentations.isEmpty() && roles.size()==roleRepresentations.size()) || roles.isEmpty()) {
+    if ((!roleRepresentations.isEmpty() && roles.size() == roleRepresentations.size()) || roles == null || roles.isEmpty()) {
       userResource.roles().realmLevel().remove(existedRoles);
       userResource.roles().realmLevel().add(roleRepresentations);
     } else {
