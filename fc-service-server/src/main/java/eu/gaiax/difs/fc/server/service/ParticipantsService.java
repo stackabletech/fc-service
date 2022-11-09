@@ -140,9 +140,9 @@ public class ParticipantsService implements ParticipantsApiDelegate {
    */
   @Override
   public ResponseEntity<UserProfiles> getParticipantUsers(String participantId, Integer offset, Integer limit) {
-    log.debug("getParticipantUsers.enter; got participantId: {}", participantId);
+    log.debug("getParticipantUsers.enter; got participantId: {}, offset :{}, limit:{}", participantId, offset, limit);
     checkParticipantAccess(participantId);
-    PaginatedResults<UserProfile> profiles = partDao.selectUsers(participantId)
+    PaginatedResults<UserProfile> profiles = partDao.selectUsers(participantId, offset, limit)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
     log.debug("getParticipantUsers.exit; returning: {}", profiles.getTotalCount());
     return ResponseEntity.ok(new UserProfiles((int) profiles.getTotalCount(), profiles.getResults()));

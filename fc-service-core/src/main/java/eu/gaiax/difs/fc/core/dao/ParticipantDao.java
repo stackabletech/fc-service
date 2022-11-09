@@ -31,7 +31,7 @@ public interface ParticipantDao {
    * @param participantId Participant id.
    * @return Optional list of users.
    */
-  Optional<PaginatedResults<UserProfile>> selectUsers(String participantId);
+  Optional<PaginatedResults<UserProfile>> selectUsers(String participantId, Integer offset, Integer limit);
 
   /**
    * Remove the Participant with the given id.

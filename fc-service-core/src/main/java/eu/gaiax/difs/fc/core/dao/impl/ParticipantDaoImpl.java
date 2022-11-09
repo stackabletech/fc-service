@@ -86,7 +86,7 @@ public class ParticipantDaoImpl implements ParticipantDao {
    * @return Optional list of users.
    */
   @Override
-  public Optional<PaginatedResults<UserProfile>> selectUsers(String participantId) {
+  public Optional<PaginatedResults<UserProfile>> selectUsers(String participantId, Integer offset, Integer limit) {
 
     GroupsResource instance = keycloak.realm(realm).groups();
     List<GroupRepresentation> groups = instance.groups(participantId, 0, 1, false);
@@ -97,15 +97,12 @@ public class ParticipantDaoImpl implements ParticipantDao {
 
     List<UserRepresentation> users;
     List<UserProfile> profiles = new ArrayList<>();
-    int offset = 0, limit = 100;
+
     GroupResource group = instance.group(groupRepo.getId());
     UsersResource usersResource = keycloak.realm(realm).users();
-    do {
       users = group.members(offset, limit, false);
       users.stream().map(user->
           toUserProfile(user, usersResource.get(user.getId()).roles().realmLevel().listAll())).forEach(profiles::add);
-      offset += limit;
-    } while (users.size() > 0);
 
     return Optional.of(new PaginatedResults<>(profiles));
   }

@@ -3,7 +3,9 @@ package eu.gaiax.difs.fc.server.util;
 import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.GrantedAuthority;
@@ -57,6 +59,18 @@ public class SessionUtils {
     return authorities.stream().anyMatch(authority -> authority.getAuthority().equals(role));
   }
 
+
+  /**
+   * Public static method to session user all roles .
+   *
+   * @return List<String> roles.
+   */
+  public static List<String> getSessionUserRoles() {
+    List<String> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                                .stream()
+                                .map(authority -> authority.getAuthority()).collect( Collectors.toList());
+    return authorities;
+  }
   /**
    * Internal service method for checking user access to a particular Participant.
    *

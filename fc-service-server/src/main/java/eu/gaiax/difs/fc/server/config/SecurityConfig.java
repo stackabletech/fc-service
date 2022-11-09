@@ -81,12 +81,12 @@ public class SecurityConfig {
           .antMatchers(HttpMethod.PUT, "/participants/*").hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
           .antMatchers(HttpMethod.DELETE, "/participants/*").hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
           .antMatchers(HttpMethod.GET, "/participants/*")
-            .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
+            .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE, SD_ADMIN_ROLE)
           .antMatchers(HttpMethod.GET, "/participants/*/users")
             .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
 
           // User APIs
-          .antMatchers(HttpMethod.GET, "/users").hasAnyRole(CATALOGUE_ADMIN_ROLE)
+         // .antMatchers(HttpMethod.GET, "/users").hasAnyRole(CATALOGUE_ADMIN_ROLE)
           .antMatchers("/users", "/users/**")
               .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
 
