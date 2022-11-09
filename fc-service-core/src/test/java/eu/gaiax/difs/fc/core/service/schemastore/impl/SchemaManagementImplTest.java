@@ -245,7 +245,7 @@ public class SchemaManagementImplTest {
     assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
   }
   @Test
-  public void testValidXMLRDf() throws UnsupportedEncodingException {
+  public void testValidRDFXML() throws UnsupportedEncodingException {
     Set<String> expectedExtractedUrlsSet = new HashSet<>();
     expectedExtractedUrlsSet.add("http://w3id.org/gaia-x/validation#PhysicalResourceShape");
     String path = "Schema-Tests/validShacl.rdfxml";
