@@ -3,10 +3,7 @@ package eu.gaiax.difs.fc.server.controller;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl.toUserRepo;
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.SD_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.*;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.SD_ADMIN_ROLE_WITH_PREFIX;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.DEFAULT_PARTICIPANT_ID;
 import static eu.gaiax.difs.fc.server.helper.UserServiceHelper.getAllRoles;
@@ -389,6 +386,38 @@ public class UsersControllerTest {
         assertTrue(profile.getRoleIds().containsAll(List.of(PARTICIPANT_ADMIN_ROLE, SD_ADMIN_ROLE)));
     }
 
+
+
+    //Role Assignment can be done on this criteria
+    //    role :-> can given by
+    //    Ro-MU-CA :-> Ro-MU-CA
+    //    Ro-MU-A :-> Ro-MU-CA, Ro-MU-A
+    //    Ro-SD-A :-> Ro-MU-CA, Ro-MU-A, Ro-Pa-A (if not self)
+    //    Ro-Pa-A :-> Ro-MU-CA, Ro-MU-A, Ro-Pa-A
+
+    //Please see above criteria for detailed role assignment rule.
+    @Test
+    @WithMockUser(authorities = {PARTICIPANT_USER_ADMIN_ROLE_WITH_PREFIX})
+    public void updateUserRolesShouldReturnErrorResponse() throws Exception {
+        User user = getTestUser("name7", "surname7");
+        String userId = UUID.randomUUID().toString();
+        setupKeycloak(HttpStatus.SC_OK, user, userId);
+        UserProfile existed = userDao.create(user);
+
+        when(roleScopeResource.listAll())
+            .thenReturn(List.of(new RoleRepresentation(PARTICIPANT_USER_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE, false)));
+
+        String response = mockMvc
+            .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE))))
+            .andExpect(status().isForbidden())
+            .andReturn().getResponse().getContentAsString();
+
+        Error error = objectMapper.readValue(response, Error.class);
+        assertNotNull(error);
+        assertEquals("User does not have permission to execute this request.", error.getMessage());
+    }
     @Test
     @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
     public void updateNonexistentUserRolesShouldReturnNotFoundResponse() throws Exception {
