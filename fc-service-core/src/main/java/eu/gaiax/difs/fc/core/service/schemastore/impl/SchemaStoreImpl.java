@@ -167,8 +167,7 @@ public class SchemaStoreImpl implements SchemaStore {
         // this will not happen
       }
     }
-    List<String> extractedUrls = new ArrayList<>(extractedUrlsSet);
-    result.setExtractedUrls(extractedUrls);
+    result.setExtractedUrls(extractedUrlsSet);
     return result;
   }
 
@@ -248,7 +247,7 @@ public class SchemaStoreImpl implements SchemaStore {
 
     // Check duplicate terms
     List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)
-        .multiLoad(result.getExtractedUrls());
+        .multiLoad(new ArrayList<>(result.getExtractedUrls()));
     redefines = redefines.stream()
         .filter(Objects::nonNull)
         .collect(Collectors.toList());
@@ -311,7 +310,7 @@ public class SchemaStoreImpl implements SchemaStore {
 
     // Check duplicate terms
     List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)
-        .multiLoad(result.getExtractedUrls());
+        .multiLoad(new ArrayList<>(result.getExtractedUrls()));
     redefines = redefines.stream()
         .filter(Objects::nonNull)
         .collect(Collectors.toList());
@@ -321,7 +320,7 @@ public class SchemaStoreImpl implements SchemaStore {
     }
 
     existing.setUpdateTime(Instant.now());
-    existing.replaceTerms(result.getExtractedUrls());
+    existing.replaceTerms(new ArrayList<>(result.getExtractedUrls()));
     existing.setContent(schema.getContentAsString());
     try {
       currentSession.update(existing);

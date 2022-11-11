@@ -1,6 +1,7 @@
 package eu.gaiax.difs.fc.core.service.schemastore.impl;
 
 import java.util.List;
+import java.util.Set;
 
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
 
@@ -30,7 +31,7 @@ public class SchemaAnalysisResult {
   /**
    * The URLs of the entities that are defined in this schema.
    */
-  private List<String> extractedUrls;
+  private Set<String> extractedUrls;
   /**
    * The error message if validation failed.
    */
