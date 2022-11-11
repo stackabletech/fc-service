@@ -10,8 +10,10 @@ import java.io.InputStreamReader;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import eu.gaiax.difs.fc.core.exception.QueryException;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -84,7 +86,9 @@ public class Neo4jGraphStoreTest {
         GraphQuery queryFull = new GraphQuery(
                 "MATCH (n:ServiceOffering) RETURN n LIMIT 25", Map.of());
         List<Map<String, Object>> responseFull = graphGaia.queryData(queryFull).getResults();
-        Assertions.assertEquals(resultListFull, responseFull);
+        Assertions.assertTrue(
+                CollectionUtils.isEqualCollection(resultListFull, responseFull),
+                resultListFull + " != " + responseFull);
     }
 
     /**
@@ -111,7 +115,10 @@ public class Neo4jGraphStoreTest {
         GraphQuery queryDelta = new GraphQuery(
                 "MATCH (n:LegalPerson) WHERE n.name = $name RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
-        Assertions.assertEquals(resultListDelta, responseDelta);
+        Assertions.assertTrue(
+                CollectionUtils.isEqualCollection(resultListDelta, responseDelta),
+                resultListDelta + " != " + responseDelta
+        );
     }
 
 
@@ -161,7 +168,10 @@ public class Neo4jGraphStoreTest {
         GraphQuery queryDelta = new GraphQuery(
                 "MATCH (n:ServiceOffering) WHERE n.name = $name RETURN n.uri LIMIT $limit", Map.of("name", "Elastic Search DB", "limit", 25));
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
-        Assertions.assertEquals(resultListDelta, responseDelta);
+        Assertions.assertTrue(
+                CollectionUtils.isEqualCollection(resultListDelta, responseDelta),
+                resultListDelta + " != " + responseDelta);
+
         //cleanup
         graphGaia.deleteClaims(credentialSubject);
     }
@@ -190,8 +200,6 @@ public class Neo4jGraphStoreTest {
     @Test
     void testAddClaimsException() throws Exception {
         String credentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
-        String wrongCredentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch";
-
 
         SdClaim syntacticallyCorrectClaim = new SdClaim(
                 "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
@@ -584,7 +592,10 @@ public class Neo4jGraphStoreTest {
         Map<String, String> mapCredentialSubject2 = new HashMap<String, String>();
         mapCredentialSubject2.put("n.uri", "http://ex.com/credentialSubject2");
         resultListSomeProperty.add(mapCredentialSubject2);
-        Assertions.assertEquals(resultListSomeProperty, responseCypher);
+        Assertions.assertTrue(
+                CollectionUtils.isEqualCollection(resultListSomeProperty, responseCypher),
+                resultListSomeProperty + " != " + responseCypher);
+
         //cleanup
         graphGaia.deleteClaims(credentialSubject1);
         graphGaia.deleteClaims(credentialSubject2);
@@ -653,7 +664,10 @@ public class Neo4jGraphStoreTest {
         Map<String, String> mapCredentialSubject2 = new HashMap<String, String>();
         mapCredentialSubject2.put("n.uri", "http://ex.com/credentialSubject2");
         resultListSomeProperty.add(mapCredentialSubject2);
-        Assertions.assertEquals(resultListSomeProperty, responseCypher);
+        Assertions.assertTrue(
+                CollectionUtils.isEqualCollection(resultListSomeProperty, responseCypher),
+                resultListSomeProperty + " != " + responseCypher);
+
         //cleanup
         graphGaia.deleteClaims(credentialSubject1);
         graphGaia.deleteClaims(credentialSubject2);
@@ -680,5 +694,98 @@ public class Neo4jGraphStoreTest {
                         )
                 )
         );
+    }
+
+    @Test
+    void testOrderByDetection() {
+        String query = "";
+        Assertions.assertFalse(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should not match on empty input"
+        );
+
+        query = "MATCH (n) RETURN n";
+        Assertions.assertFalse(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should not match on a simple query not containing 'ORDER BY' at all"
+        );
+
+        query = "MATCH (n {name: 'ORDER BY'}) RETURN n";
+        Assertions.assertFalse(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should ignore appearances of 'ORDER BY' in quotes"
+        );
+
+        query = "MATCH (n) WHERE n.name = 'ORDER BY' RETURN n";
+        Assertions.assertFalse(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should ignore appearances of 'ORDER BY' in quotes"
+        );
+
+        query = "MATCH (n {name: 'Foo ORDER BY bar'}) RETURN n";
+        Assertions.assertFalse(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should ignore appearances of 'ORDER BY' in quotes"
+        );
+
+        query = "MATCH (n) WHERE n.name = 'Foo ORDER BY bar' RETURN n";
+        Assertions.assertFalse(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should ignore appearances of 'ORDER BY' in quotes"
+        );
+
+        query = "MATCH (n) RETURN n ORDER BY n.name";
+        Assertions.assertTrue(
+                graphGaia.orderByRegex.matcher(query).find(),
+                "The ORDER BY regex should find ORDER BYs after the RETURN part of the query"
+        );
+    }
+
+    @Test
+    void testQueryShuffling() {
+        String credentialSubject = "<http://ex.com/some_resource>";
+        String resource_a = "http://ex.com/resource_a";
+        String resource_b = "http://ex.com/resource_b";
+        String resource_c = "http://ex.com/resource_c";
+        String resource_d = "http://ex.com/resource_d";
+
+        graphGaia.addClaims(
+                Arrays.asList(
+                        new SdClaim(
+                                credentialSubject,
+                                "<http://ex.com/object_property1>",
+                                "<" + resource_a + ">"
+                        ),
+                        new SdClaim(
+                                credentialSubject,
+                                "<http://ex.com/object_property1>",
+                                "<" + resource_b + ">"
+                        ),
+                        new SdClaim(
+                                credentialSubject,
+                                "<http://ex.com/object_property1>",
+                                "<" + resource_c + ">"
+                        ),
+                        new SdClaim(
+                                credentialSubject,
+                                "<http://ex.com/object_property1>",
+                                "<" + resource_d + ">"
+                        )
+                ),
+                credentialSubject
+        );
+
+        String queryWOrderBy = "MATCH (n)-[:object_property1]->(m) RETURN m.uri ORDER BY m.uri";
+        // [
+        //   {m.uri=http://ex.com/resource_a},
+        //   {m.uri=http://ex.com/resource_b},
+        //   {m.uri=http://ex.com/resource_c},
+        //   {m.uri=http://ex.com/resource_d}
+        // ]
+        List<Map<String, Object>> res = graphGaia.queryData(new GraphQuery(queryWOrderBy, null)).getResults();
+        List<String> values = res.stream().map(e -> (String) e.get("m.uri")).collect(Collectors.toList());
+        Assertions.assertEquals(Arrays.asList(resource_a, resource_b, resource_c, resource_d), values);
+
+        graphGaia.deleteClaims(credentialSubject);
     }
 }
