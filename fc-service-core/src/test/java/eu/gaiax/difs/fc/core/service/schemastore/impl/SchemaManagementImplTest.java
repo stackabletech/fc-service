@@ -101,7 +101,6 @@ public class SchemaManagementImplTest {
     boolean actual = schemaStore.isSchemaType(contentGraph, ONTOLOGY);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
-    assertTrue(result.isValid());
     assertTrue(actual);
     assertTrue(actualExtractedUrlsSet.isEmpty());
   }
