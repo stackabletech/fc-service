@@ -101,6 +101,7 @@ public class SchemaManagementImplTest {
     boolean actual = schemaStore.isSchemaType(contentGraph, ONTOLOGY);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
+    assertTrue(result.isValid());
     assertTrue(actual);
     assertTrue(actualExtractedUrlsSet.isEmpty());
   }
@@ -115,6 +116,7 @@ public class SchemaManagementImplTest {
     SchemaAnalysisResult result = schemaStore.analyseSchema(contentGraph);
     boolean actual = schemaStore.isSchemaType(contentGraph, SHAPE);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
+    assertTrue(result.isValid());
     assertTrue(actual);
     assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
     assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
@@ -131,6 +133,7 @@ public class SchemaManagementImplTest {
     SchemaAnalysisResult result = schemaStore.analyseSchema(content);
     boolean actual = schemaStore.isSchemaType(content, SHAPE);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
+    assertTrue(result.isValid());
     assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
     assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
     assertNull(result.getExtractedId());
@@ -149,6 +152,7 @@ public class SchemaManagementImplTest {
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     String extractedIdActual = result.getExtractedId();
     String extractedIdExpected = "http://www.example.com/animals";
+    assertTrue(result.isValid());
     assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
     assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
     assertEquals(extractedIdExpected, extractedIdActual);
@@ -173,6 +177,7 @@ public class SchemaManagementImplTest {
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     String extractedIdActual = result.getExtractedId();
     String extractedIdExpected = "http://w3id.org/gaia-x/core#";
+    assertTrue(result.isValid());
     assertEquals(extractedIdExpected, extractedIdActual);
     assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
     assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
@@ -187,6 +192,7 @@ public class SchemaManagementImplTest {
     SchemaAnalysisResult result = schemaStore.analyseSchema(content);
     String actual = result.getErrorMessage();
     String expected = "Schema is not supported";
+    assertFalse(result.isValid());
     assertEquals(expected, actual);
     assertTrue(result.getExtractedUrls().isEmpty());
     assertNull(result.getExtractedId());
@@ -238,6 +244,7 @@ public class SchemaManagementImplTest {
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult result = schemaStore.analyseSchema(content);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
+    assertTrue(result.isValid());
     assertNull(result.getExtractedId());
     assertTrue(schemaStore.verifySchema(content));
     assertTrue(schemaStore.isSchemaType(content, SHAPE));
@@ -252,6 +259,7 @@ public class SchemaManagementImplTest {
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult result = schemaStore.analyseSchema(content);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
+    assertTrue(result.isValid());
     assertNull(result.getExtractedId());
     assertTrue(schemaStore.verifySchema(content));
     assertTrue(schemaStore.isSchemaType(content, SHAPE));
