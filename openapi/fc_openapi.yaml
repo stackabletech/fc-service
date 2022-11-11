@@ -729,6 +729,14 @@ paths:
             schema:
               type: string
               description: 'OWL file describing the ontology of the schema or SKOS file describing the controlled vocabulary.'
+          application/ld+json:
+            schema:
+              type: string
+              description: 'OWL or SHACL file describing the ontology.'
+          application/json:
+              schema:
+                type: string
+                description: 'OWL or SHACL file describing the ontology.'
           text/turtle:
             schema:
               type: string
@@ -802,6 +810,18 @@ paths:
             schema:
               type: string
               description: 'OWL file describing the ontology.'
+          application/ld+json:
+            schema:
+              type: string
+              description: 'OWL or SHACL file describing the ontology.'
+          application/json:
+            schema:
+              type: string
+              description: 'OWL or SHACL file describing the ontology.'
+          text/turtle:
+            schema:
+              type: string
+              description: 'SHACL file describing the ontology of the schema.'
         required: true
       responses:
         '200':

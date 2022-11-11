@@ -91,11 +91,11 @@ public class SchemasService implements SchemasApiDelegate {
   @Override
   public ResponseEntity<String> getLatestSchema(String type, String term) {
     log.debug("getLatestSchemas.enter; got type: {}, term: {}", type, term);
-    if (type == null || Arrays.stream(SchemaType.values()).noneMatch(x -> x.name().equals(type))) {
+    if (type == null || Arrays.stream(SchemaType.values()).noneMatch(x -> x.name().equalsIgnoreCase(type))) {
       throw new ClientException("Please check the value of the type query parameter!");
     }
     // TODO: 31.08.2022 Why is the term parameter used here (not passed anywhere, not specified in the doс)?
-    String schema = schemaStore.getCompositeSchema(SchemaType.valueOf(type)).getContentAsString();
+    String schema = schemaStore.getCompositeSchema(SchemaType.valueOf(type.toUpperCase())).getContentAsString();
     log.debug("getLatestSchemas.exit; returning schema by type: {}", schema);
     return ResponseEntity.ok(schema);
   }

@@ -41,9 +41,9 @@ spec:
           ports:
             - containerPort: 5432
           volumeMounts:
-            - mountPath: /var/lib/postgresql/data
+            - mountPath: /var/lib/postgres/data
               name: fc-postgres
       volumes:
         - name: fc-postgres
           persistentVolumeClaim:
-            claimName: fc-postgres-pv-claim
+            claimName: fc-service-pvc

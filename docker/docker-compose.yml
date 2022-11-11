@@ -71,7 +71,7 @@ services:
 
   server:
     container_name: "fc-server"
-#    image: "${CI_REGISTRY}/fc-service-server:0.0.1-SNAPSHOT"
+#    image: "${CI_REGISTRY}/fc-service-server:latest"
     build:
       context: ../fc-service-server
       dockerfile: Dockerfile
