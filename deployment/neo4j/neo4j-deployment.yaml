@@ -20,7 +20,7 @@ spec:
           image: "appropriate/curl:latest"
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
-            - name: neo4j-plugins
+            - name: fc-neo4j-plugins
               mountPath: /plugins
           command:
             - "/bin/sh"
@@ -54,14 +54,14 @@ spec:
             - containerPort: 7473
               name: https
           volumeMounts:
-            - name: neo4j-plugins
+            - name: fc-neo4j-plugins
               mountPath: "/var/lib/neo4j/plugins"
-            - name: neo4j-data
+            - name: fc-neo4j-data
               mountPath: "/var/lib/neo4j/data"
       volumes:
-        - name: neo4j-data
+        - name: fc-neo4j-data
           persistentVolumeClaim:
-            claimName: fc-neo4j-data-claim
-        - name: neo4j-plugins
+            claimName: fc-service-pvc
+        - name: fc-neo4j-plugins
           persistentVolumeClaim:
-            claimName: fc-neo4j-plugin-claim
+            claimName: fc-neo4j-plugin-pvc

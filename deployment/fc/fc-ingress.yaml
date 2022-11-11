@@ -12,19 +12,19 @@ metadata:
   namespace: federated-catalogue
 spec:
   tls:
-  - hosts:
-#    - 10.104.3.140
-    - fc-server.gxfs.dev
-    secretName: wildcard-gxfs-dev
+    - hosts:
+        #    - 10.104.3.140
+        - fc-server.gxfs.dev
+      secretName: wildcard-gxfs-dev
   rules:
-#  - host: 10.104.3.140
-  - host: fc-server.gxfs.dev
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: fc-service
-            port:
-              number: 8081
+    #  - host: 10.104.3.140
+    - host: fc-server.gxfs.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fc-service
+                port:
+                  number: 8081
