@@ -2,10 +2,10 @@ package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
 import com.vladmihalcea.hibernate.type.array.StringArrayType;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -71,8 +71,7 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
   }
 
   /**
-   * credentialSubject (subjectId) of the participant owning this
-   * self-description.
+   * credentialSubject (subjectId) of the participant owning this self-description.
    */
   @Column(name = "issuer", nullable = false)
   @Override
@@ -87,7 +86,7 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
    */
   @Column(name = "uploadtime", nullable = false)
   public Instant getUploadDatetime() {
-    return super.getUploadDatetime(); 
+    return super.getUploadDatetime();
   }
 
   /**
@@ -97,16 +96,24 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
    */
   @Column(name = "statustime", nullable = false)
   public Instant getStatusDatetime() {
-    return super.getStatusDatetime(); 
+    return super.getStatusDatetime();
   }
 
   @Column(columnDefinition = "TEXT", name = "content", nullable = false)
   public String getContent() {
-    return super.getSelfDescription().getContentAsString();
+    final ContentAccessor selfDescription = super.getSelfDescription();
+    if (selfDescription == null) {
+      return null;
+    }
+    return selfDescription.getContentAsString();
   }
 
   public void setContent(String content) {
-    super.setSelfDescription(new ContentAccessorDirect(content));
+    if (content == null) {
+      super.setSelfDescription(null);
+    } else {
+      super.setSelfDescription(new ContentAccessorDirect(content));
+    }
   }
 
   /**
@@ -117,7 +124,7 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
       name = "validators",
       columnDefinition = "text[]"
   )
-  public String[] getValidators() { 
+  public String[] getValidators() {
     final List<String> validatorDids = getValidatorDids();
     if (validatorDids == null) {
       return null;

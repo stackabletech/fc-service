@@ -168,7 +168,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     filter.setLimit(results.getResults().size());
     filter.setOffset(0);
     filter.setHashes(results.getResults().stream().map(ParticipantMetaData::getSdHash).collect(Collectors.toList()));
-    Map<String, ContentAccessor> sdsMap = selfDescriptionStore.getByFilter(filter).getResults().stream()
+    Map<String, ContentAccessor> sdsMap = selfDescriptionStore.getByFilter(filter, true, true).getResults().stream()
         .collect(Collectors.toMap(SelfDescriptionMetadata::getSdHash, SelfDescriptionMetadata::getSelfDescription));
     results.getResults().forEach(part -> part.setSelfDescription(sdsMap.get(part.getSdHash()).getContentAsString()));
     log.debug("getParticipants.exit; returning results: {}", results);

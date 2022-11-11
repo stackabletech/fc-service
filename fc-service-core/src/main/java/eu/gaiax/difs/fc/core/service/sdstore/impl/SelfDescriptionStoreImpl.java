@@ -87,8 +87,10 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
   @Override
   public SelfDescriptionMetadata getByHash(final String hash) {
-    final SdMetaRecord sdmRecord = sessionFactory.getCurrentSession().byId(SdMetaRecord.class).load(hash);
+    final Session currentSession = sessionFactory.getCurrentSession();
+    final SdMetaRecord sdmRecord = currentSession.byId(SdMetaRecord.class).load(hash);
     checkNonNull(sdmRecord, hash);
+    currentSession.detach(sdmRecord);
     // FIXME: Inconsistent exception handling: IOException will be caught and null
     //  returned; but NotFoundException will be propagated to caller.
     final ContentAccessor sdFile = getSDFileByHash(hash);
@@ -101,8 +103,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
   private static class FilterQueryBuilder {
 
-    private final SessionFactory sessionFactory;
+    private final Session currentSession;
     private final List<Clause> clauses;
+    private final boolean fullMeta;
     private int firstResult;
     private int maxResults;
 
@@ -130,8 +133,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       }
     }
 
-    private FilterQueryBuilder(final SessionFactory sessionFactory) {
-      this.sessionFactory = sessionFactory;
+    private FilterQueryBuilder(final Session currentSession, final boolean fullMeta) {
+      this.currentSession = currentSession;
+      this.fullMeta = fullMeta;
       clauses = new ArrayList<>();
     }
 
@@ -160,8 +164,13 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     }
 
     private String buildHqlQuery() {
-      final StringBuilder hqlQuery = new StringBuilder("select expirationtime, sdhash, subjectid, status, issuer, uploadtime,");
-      hqlQuery.append(" statustime, content, validators from sdfiles");
+      final StringBuilder hqlQuery;
+      if (fullMeta) {
+        hqlQuery = new StringBuilder("select sdhash, subjectid, status, issuer, uploadtime, statustime, expirationtime, validators, null as content");
+      } else {
+        hqlQuery = new StringBuilder("select sdhash, null as subjectid, null as status, null as issuer, null as uploadtime, null as statustime, null as expirationtime, null as validators, null as content");
+      }
+      hqlQuery.append(" from sdfiles");
       hqlQuery.append(" where 1=1");
       for (Clause cls : clauses) {
         hqlQuery.append(" and (");
@@ -175,8 +184,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
     private Query<SdMetaRecord> createQuery() {
       final String hqlQuery = buildHqlQuery();
-      final Session currentSession = sessionFactory.getCurrentSession();
-      final Query<SdMetaRecord> query = currentSession.createNativeQuery(hqlQuery, SdMetaRecord.class);
+      Query<SdMetaRecord> query = currentSession.createNativeQuery(hqlQuery, SdMetaRecord.class);
       clauses.stream().forEach(clause -> query.setParameter(clause.formalParameterName, clause.actualParameter));
       query.setFirstResult(firstResult);
       if (maxResults != 0) {
@@ -198,7 +206,6 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
     private Query<?> createCountQuery() {
       final String hqlQuery = buildCountQuery();
-      final Session currentSession = sessionFactory.getCurrentSession();
       final Query<?> query = currentSession.createNativeQuery(hqlQuery);
       clauses.stream().forEach(clause -> query.setParameter(clause.formalParameterName, clause.actualParameter));
       return query;
@@ -206,8 +213,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
   }
 
   @Override
-  public PaginatedResults<SelfDescriptionMetadata> getByFilter(final SdFilter filter) {
-    final FilterQueryBuilder queryBuilder = new FilterQueryBuilder(sessionFactory);
+  public PaginatedResults<SelfDescriptionMetadata> getByFilter(final SdFilter filter, final boolean withMeta, final boolean withContent) {
+    final Session currentSession = sessionFactory.getCurrentSession();
+    final FilterQueryBuilder queryBuilder = new FilterQueryBuilder(currentSession, withMeta);
 
     final Instant uploadTimeStart = filter.getUploadTimeStart();
     if (uploadTimeStart != null) {
@@ -254,13 +262,17 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
     queryBuilder.setFirstResult(filter.getOffset());
     queryBuilder.setMaxResults(filter.getLimit());
-
-    return new PaginatedResults<>(totalCount.longValue(), queryBuilder.createQuery().stream().collect(Collectors.toList()));
+    Stream<SdMetaRecord> sdStream = queryBuilder.createQuery().stream()
+        .peek(t -> currentSession.detach(t));
+    if (withContent) {
+      sdStream = sdStream.peek(t -> t.setSelfDescription(getSDFileByHash(t.getSdHash())));
+    }
+    final List<SelfDescriptionMetadata> SdList = sdStream.collect(Collectors.toList());
+    return new PaginatedResults<>(totalCount.longValue(), SdList);
   }
 
   @Override
-  public void storeSelfDescription(final SelfDescriptionMetadata sdMetadata,
-      final VerificationResult verificationResult) {
+  public void storeSelfDescription(final SelfDescriptionMetadata sdMetadata, final VerificationResult verificationResult) {
     if (verificationResult == null) {
       throw new IllegalArgumentException("verification result must not be null");
     }

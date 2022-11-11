@@ -18,7 +18,6 @@ import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
-import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.core.util.HashUtils;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -28,7 +27,6 @@ import java.io.UnsupportedEncodingException;
 import java.time.Instant;
 import liquibase.repackaged.org.apache.commons.collections4.IterableUtils;
 
-import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,13 +36,15 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -60,7 +60,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.MethodName.class)
@@ -69,7 +68,6 @@ import org.springframework.transaction.annotation.Transactional;
 @ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, FileStoreConfig.class,
   SelfDescriptionStoreImpl.class, SelfDescriptionStoreImplTest.class, DatabaseConfig.class, Neo4jGraphStore.class})
 @DirtiesContext
-@Transactional
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
@@ -87,16 +85,25 @@ public class SelfDescriptionStoreImplTest {
   private SelfDescriptionStore sdStore;
 
   @Autowired
+  private SessionFactory sessionFactory;
+
+  @Autowired
   private Neo4j embeddedDatabaseServer;
 
   @Autowired
   private Neo4jGraphStore graphStore;
+
   @Autowired
   @Qualifier("sdFileStore")
   private FileStore fileStore;
 
   @AfterEach
   public void storageSelfCleaning() throws IOException {
+    try ( Session session = sessionFactory.openSession()) {
+      Transaction t = session.beginTransaction();
+      session.createNativeQuery("delete from sdfiles").executeUpdate();
+      t.commit();
+    }
     fileStore.clearStorage();
   }
 
@@ -129,9 +136,9 @@ public class SelfDescriptionStoreImplTest {
   }
 
   private static VerificationResult createVerificationResult(final int idSuffix, String subject) {
-      return new VerificationResultOffering(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer" + idSuffix, Instant.now(), 
-              "id" + idSuffix, createClaims(subject), new ArrayList<>());
-    }
+    return new VerificationResultOffering(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer" + idSuffix, Instant.now(),
+        "id" + idSuffix, createClaims(subject), new ArrayList<>());
+  }
 
   private static VerificationResult createVerificationResult(final int idSuffix) {
     return createVerificationResult(idSuffix, "<https://delta-dao.com/.well-known/serviceMVGPortal.json>");
@@ -169,8 +176,8 @@ public class SelfDescriptionStoreImplTest {
   }
 
   /**
-   * Test storing a self-description, ensuring it creates exactly one file on
-   * disk, retrieving it by hash, and deleting it again.
+   * Test storing a self-description, ensuring it creates exactly one file on disk, retrieving it by hash, and deleting
+   * it again.
    */
   @Test
   void test01StoreSelfDescription() throws Exception {
@@ -178,7 +185,7 @@ public class SelfDescriptionStoreImplTest {
     final String content = "Some Test Content";
 
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("https://delta-dao.com/.well-known/serviceMVGPortal.json", // "TestSd/1",
-            "TestUser/1",
+        "TestUser/1",
         Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content);
     final String hash = sdMeta.getSdHash();
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
@@ -187,7 +194,7 @@ public class SelfDescriptionStoreImplTest {
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
 
     List<Map<String, Object>> claims = graphStore.queryData(
-            new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
+        new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
     //Assertions.assertEquals(5, claims.size()); only 1 node found..
 
     final ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
@@ -198,7 +205,7 @@ public class SelfDescriptionStoreImplTest {
     assertAllSdFilesDeleted();
 
     claims = graphStore.queryData(
-            new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
+        new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
     Assertions.assertEquals(0, claims.size());
 
     Assertions.assertThrows(NotFoundException.class, () -> {
@@ -207,8 +214,7 @@ public class SelfDescriptionStoreImplTest {
   }
 
   /**
-   * Test storing a self-description, and deprecating it by storing a second SD
-   * with the same subjectId.
+   * Test storing a self-description, and deprecating it by storing a second SD with the same subjectId.
    */
   @Test
   void test02StoreAndUpdateSelfDescription() {
@@ -217,14 +223,14 @@ public class SelfDescriptionStoreImplTest {
     final String content2 = "Some Test Content 2";
 
     final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
-            Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content1);
+        Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content1);
     final String hash1 = sdMeta1.getSdHash();
     sdMeta1.setSelfDescription(new ContentAccessorDirect(content1));
     sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
     assertStoredSdFiles(1);
 
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
-            Instant.parse("2022-01-01T13:00:00Z"), Instant.parse("2022-01-02T13:00:00Z"), content2);
+        Instant.parse("2022-01-01T13:00:00Z"), Instant.parse("2022-01-02T13:00:00Z"), content2);
     final String hash2 = sdMeta2.getSdHash();
     sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
     assertStoredSdFiles(2);
@@ -254,13 +260,13 @@ public class SelfDescriptionStoreImplTest {
     final String content1 = "Some Test Content";
 
     final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
-            Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content1);
+        Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content1);
     final String hash1 = sdMeta1.getSdHash();
     sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
     assertStoredSdFiles(1);
 
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
-            Instant.parse("2022-01-01T13:00:00Z"), Instant.parse("2022-01-02T13:00:00Z"), content1);
+        Instant.parse("2022-01-01T13:00:00Z"), Instant.parse("2022-01-02T13:00:00Z"), content1);
     Assertions.assertThrows(ConflictException.class, () -> {
       sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
     });
@@ -289,7 +295,7 @@ public class SelfDescriptionStoreImplTest {
     final String content = "Some Test Content";
 
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
-            Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content);
+        Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content);
     final String hash = sdMeta.getSdHash();
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
@@ -334,11 +340,41 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setIssuers(List.of(issuer, "TestUser/21"));
-    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
-    final int matchCount = byFilter.getResults().size();
+    PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, true);
+    int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(1, matchCount, "expected 1 filter match, but got " + matchCount);
-    assertEquals(sdMeta.getId(), byFilter.getResults().get(0).getId());
+    SelfDescriptionMetadata firstResult = byFilter.getResults().get(0);
+    assertEquals(sdMeta.getSdHash(), firstResult.getSdHash(), "Incorrect Hash");
+    assertEquals(sdMeta.getId(), firstResult.getId(), "Incorrect SubjectId");
+    assertEquals(sdMeta.getSelfDescription(), firstResult.getSelfDescription(), "Incorrect SelfDescription content");
+
+    byFilter = sdStore.getByFilter(filterParams, true, false);
+    matchCount = byFilter.getResults().size();
+    log.info("filter returned {} match(es)", matchCount);
+    assertEquals(1, matchCount, "expected 1 filter match, but got " + matchCount);
+    firstResult = byFilter.getResults().get(0);
+    assertEquals(sdMeta.getSdHash(), firstResult.getSdHash(), "Incorrect Hash");
+    assertEquals(sdMeta.getId(), firstResult.getId(), "Incorrect SubjectId");
+    Assertions.assertNull(firstResult.getSelfDescription(), "SelfDescription should not have been returned.");
+
+    byFilter = sdStore.getByFilter(filterParams, false, true);
+    matchCount = byFilter.getResults().size();
+    log.info("filter returned {} match(es)", matchCount);
+    assertEquals(1, matchCount, "expected 1 filter match, but got " + matchCount);
+    firstResult = byFilter.getResults().get(0);
+    assertEquals(sdMeta.getSdHash(), firstResult.getSdHash(), "Incorrect Hash");
+    Assertions.assertNull(firstResult.getId(), "SubjectId should not have been returned");
+    assertEquals(sdMeta.getSelfDescription(), firstResult.getSelfDescription(), "Incorrect SelfDescription content");
+
+    byFilter = sdStore.getByFilter(filterParams, false, false);
+    matchCount = byFilter.getResults().size();
+    log.info("filter returned {} match(es)", matchCount);
+    assertEquals(1, matchCount, "expected 1 filter match, but got " + matchCount);
+    firstResult = byFilter.getResults().get(0);
+    assertEquals(sdMeta.getSdHash(), firstResult.getSdHash(), "Incorrect Hash");
+    Assertions.assertNull(firstResult.getId(), "SubjectId should not have been returned");
+    Assertions.assertNull(firstResult.getSelfDescription(), "SelfDescription should not have been returned.");
 
     sdStore.deleteSelfDescription(hash);
     assertAllSdFilesDeleted();
@@ -368,7 +404,7 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setIssuers(List.of(otherIssuer));
-    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, false);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(0, matchCount, "expected 0 filter matches, but got " + matchCount);
@@ -403,7 +439,7 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setStatusTimeRange(statusTimeStart, statusTimeEnd);
-    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, false);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(1, matchCount, "expected 1 filter match, but got " + matchCount);
@@ -438,7 +474,7 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setStatusTimeRange(statusTimeStart, statusTimeEnd);
-    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, false);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(0, matchCount, "expected 0 filter matches, but got " + matchCount);
@@ -488,7 +524,7 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setStatusTimeRange(statusTimeStart, statusTimeEnd);
-    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, false);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(2, matchCount, "expected 2 filter match, but got " + matchCount);
@@ -550,7 +586,7 @@ public class SelfDescriptionStoreImplTest {
     assertStoredSdFiles(3);
 
     final SdFilter filterParams = new SdFilter();
-    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, false);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(3, matchCount, "expected 3 filter match, but got " + matchCount);
@@ -601,7 +637,7 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setValidators(List.of(validatorId, "TestSd/0820"));
-    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, false);
     final long matchCount = byFilter.getTotalCount();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(1, matchCount, "expected 1 filter matches");
@@ -636,7 +672,7 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setValidators(List.of(validatorId));
-    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, false);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(0, matchCount, "expected 0 filter matches");
@@ -685,7 +721,7 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setLimit(2);
-    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, false);
     final int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(2, matchCount, "expected 2 filter match, but got " + matchCount);
@@ -711,8 +747,8 @@ public class SelfDescriptionStoreImplTest {
     signatures.add(new Validator("did:first", "", firstSigInstant));
     signatures.add(new Validator("did:second", "", Instant.now().plus(1, ChronoUnit.DAYS)));
     signatures.add(new Validator("did:third", "", Instant.now().plus(2, ChronoUnit.DAYS)));
-    return new VerificationResult(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer", Instant.now(), 
-            id, new ArrayList<>(), signatures);
+    return new VerificationResult(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer", Instant.now(),
+        id, new ArrayList<>(), signatures);
   }
 
   @Test
@@ -804,7 +840,7 @@ public class SelfDescriptionStoreImplTest {
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setLimit(1);
-    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams);
+    final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, false);
     final int matchCount = byFilter.getResults().size();
 
     log.info("filter returned {} match(es)", matchCount);
