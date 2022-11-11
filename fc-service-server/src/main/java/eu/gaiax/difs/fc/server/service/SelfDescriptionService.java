@@ -88,7 +88,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
       filter.setLimit(limit);
       filter.setOffset(offset);
     }
-    final PaginatedResults<SelfDescriptionMetadata> selfDescriptions = sdStore.getByFilter(filter);
+    final PaginatedResults<SelfDescriptionMetadata> selfDescriptions = sdStore.getByFilter(filter, withMeta, withContent);
     log.debug("readSelfDescriptions.exit; returning: {}", selfDescriptions);
     List<SelfDescriptionResult> results = null;
     if (withMeta) {

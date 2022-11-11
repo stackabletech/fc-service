@@ -35,10 +35,12 @@ public interface SelfDescriptionStore {
    * Fetch all self-descriptions that match the filter parameters.
    *
    * @param filter The filter to match all self-descriptions against.
+   * @param withMeta flax indicating the full metaData of the SD should be loaded instead of just the hash.
+   * @param withContent flag indicating the content of the SelfDescription should also be returned.
    * @return List of all self-description meta data objects that match the
    *         specified filter.
    */
-  PaginatedResults<SelfDescriptionMetadata> getByFilter(SdFilter filter);
+  PaginatedResults<SelfDescriptionMetadata> getByFilter(SdFilter filter, boolean withMeta, boolean withContent);
 
   /**
    * Store the given self-description.
@@ -80,7 +82,7 @@ public interface SelfDescriptionStore {
    * @param count the number of hashes to retrieve.
    * @param chunks the number of chunks to subdivide hashes into.
    * @param chunkId the 0-based id of the chunk to get.
-   * @return the list of hashes coming after the hash "afterHash", odered by
+   * @return the list of hashes coming after the hash "afterHash", ordered by
    * hash.
    */
   List<String> getActiveSdHashes(String afterHash, int count, int chunks, int chunkId);
