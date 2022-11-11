@@ -22,31 +22,34 @@ spec:
     spec:
       containers:
         - name: fc-service-server-image
-          image: registry.gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/fc-service-server:latest
+          image: registry.gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/fc-service-server
           imagePullPolicy: Always
           env:
             - name: GRAPHSTORE_URI
-              # NEED TO CHANGE AFTER DEPLOYING GRAPH DB
               value: bolt://10.110.142.153:7687
             - name: SPRING_DATASOURCE_URL
-              # NEED TO CHANGE AFTER DEPLOYING POSTGRESQL
               value: jdbc:postgresql://10.104.96.87:5432/postgres
             - name: GRAPHSTORE_QUERY_TIMEOUT_IN_SECONDS
               value: "5"
-              # NEED TO CHANGE AFTER DEPLOYING KEYCLOAK
             - name: KEYCLOAK_AUTH_SERVER_URL
-              value: http://10.104.3.140:8080
-              # NEED TO CHANGE AFTER DEPLOYING KEYCLOAK
+              value: http://78.138.66.202:8080
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
-              value: http://10.104.3.140:8080/realms/gaia-x
+              value: http://78.138.66.202:8080/realms/gaia-x
             - name: KEYCLOAK_CREDENTIALS_SECRET
               valueFrom:
                 secretKeyRef:
                   name: fc-server-keys-secret
                   key: keycloak_client_secret
+            - name: FEDERATED_CATALOGUE_FILE_STORE_SD_LOCATION
+              value: /var/lib/filestore/sd
+            - name: FEDERATED_CATALOGUE_FILE_STORE_SCHEMA_LOCATION
+              value: /var/lib/filestore/schema
           ports:
             - name: "http"
               containerPort: 8081
+          volumeMounts:
+            - name: fc-file-store
+              mountPath: "/var/lib/filestore"
           readinessProbe:
             httpGet:
               path: "/actuator/health"
@@ -54,4 +57,8 @@ spec:
             initialDelaySeconds: 60
             periodSeconds: 30
           resources: { }
+      volumes:
+        - name: fc-file-store
+          persistentVolumeClaim:
+            claimName: fc-service-pvc
       restartPolicy: Always
