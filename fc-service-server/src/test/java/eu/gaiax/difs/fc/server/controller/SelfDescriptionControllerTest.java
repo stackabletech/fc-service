@@ -200,7 +200,32 @@ public class SelfDescriptionControllerTest {
             assertEquals(1, selfDescriptions.getItems().size());
             assertEquals(1, selfDescriptions.getTotalCount());
         }
-        
+
+        result =  mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions")
+                .accept(MediaType.APPLICATION_JSON)
+                .queryParam("withMeta", "false") //default is true
+                .queryParam("withContent", "true"))  //default is false
+            .andExpect(status().isOk())
+            .andReturn();
+        selfDescriptions = objectMapper.readValue(result.getResponse().getContentAsString(), SelfDescriptions.class);
+        assertNotNull(selfDescriptions);
+        assertEquals(1, selfDescriptions.getItems().size());
+        assertEquals(1, selfDescriptions.getTotalCount());
+        assertNotNull(selfDescriptions.getItems().get(0).getContent());
+        assertNull(selfDescriptions.getItems().get(0).getMeta());
+
+        result =  mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions")
+                .accept(MediaType.APPLICATION_JSON)
+                .queryParam("withMeta", "true") //default is true
+                .queryParam("withContent", "false"))  //default is false
+            .andExpect(status().isOk())
+            .andReturn();
+        selfDescriptions = objectMapper.readValue(result.getResponse().getContentAsString(), SelfDescriptions.class);
+        assertNotNull(selfDescriptions);
+        assertEquals(1, selfDescriptions.getItems().size());
+        assertEquals(1, selfDescriptions.getTotalCount());
+        assertNull(selfDescriptions.getItems().get(0).getContent());
+        assertNotNull(selfDescriptions.getItems().get(0).getMeta());
         sdStore.deleteSelfDescription(sdMeta.getSdHash());
     }
 
