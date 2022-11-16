@@ -21,6 +21,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,8 @@ public class ParticipantDaoImpl implements ParticipantDao {
 
   @Value("${keycloak.realm}")
   private String realm;
+  @Value("${keycloak.resource}")
+  private String resourceId;
   @Autowired
   private Keycloak keycloak;
 
@@ -99,11 +102,12 @@ public class ParticipantDaoImpl implements ParticipantDao {
     List<UserProfile> profiles = new ArrayList<>();
 
     GroupResource group = instance.group(groupRepo.getId());
+    ClientRepresentation client = keycloak.realm(realm).clients().findByClientId(resourceId).get(0);
     UsersResource usersResource = keycloak.realm(realm).users();
       users = group.members(offset, limit, false);
-      users.stream().map(user->
-          toUserProfile(user, usersResource.get(user.getId()).roles().realmLevel().listAll())).forEach(profiles::add);
-
+    users.stream().map(user ->
+            toUserProfile(user, usersResource.get(user.getId()).roles().clientLevel(client.getId()).listAll()))
+        .forEach(profiles::add);
     return Optional.of(new PaginatedResults<>(profiles));
   }
 

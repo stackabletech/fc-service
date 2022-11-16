@@ -34,6 +34,7 @@ import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 
 import java.util.ArrayList;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -60,6 +61,8 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -68,6 +71,7 @@ import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -75,6 +79,7 @@ import org.neo4j.harness.Neo4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -97,6 +102,8 @@ import org.springframework.web.context.WebApplicationContext;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Import(EmbeddedNeo4JConfig.class)
 public class ParticipantsControllerTest {
+    @Value("${keycloak.resource}")
+    private String clientId;
     @Autowired
     private WebApplicationContext context;
     @Autowired
@@ -121,6 +128,10 @@ public class ParticipantsControllerTest {
     private Keycloak keycloak;
     @MockBean
     private RealmResource realmResource;
+    @MockBean
+    private ClientsResource clientsResource;
+    @MockBean
+    private ClientResource clientResource;
     @MockBean
     private GroupsResource groupsResource;
     @MockBean
@@ -309,8 +320,9 @@ public class ParticipantsControllerTest {
         ParticipantMetaData part = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key-1", "empty SD");
         setupKeycloak(HttpStatus.SC_OK, part);
         String partId = URLEncoder.encode(part.getId(), Charset.defaultCharset());
-        
-        setupKeycloakForUsers(HttpStatus.SC_NO_CONTENT, null, userId);
+
+        User userOfParticipant = getUserOfParticipant(part.getId());
+        setupKeycloakForUsers(HttpStatus.SC_CREATED, userOfParticipant, userId);
         MvcResult result = mockMvc
             .perform(MockMvcRequestBuilders.get("/participants/{participantId}/users", partId)
             .contentType(MediaType.APPLICATION_JSON))
@@ -661,6 +673,7 @@ public class ParticipantsControllerTest {
         when(realmResource.users()).thenReturn(usersResource);
         when(usersResource.create(any())).thenReturn(Response.status(status).build());
         when(realmResource.roles()).thenReturn(rolesResource);
+        when(realmResource.clients()).thenReturn(clientsResource);
         if (user == null) {
             when(usersResource.search(any())).thenReturn(List.of());
         } else {
@@ -674,7 +687,13 @@ public class ParticipantsControllerTest {
             when(userResource.toRepresentation()).thenReturn(userRepo);
             when(rolesResource.list()).thenReturn(getAllRoles());
             when(userResource.roles()).thenReturn(roleMappingResource);
-            when(roleMappingResource.realmLevel()).thenReturn(roleScopeResource);
+            ClientRepresentation client = new ClientRepresentation();
+            client.setClientId(UUID.randomUUID().toString());
+            client.setClientId(clientId);
+            when(clientsResource.findByClientId(client.getClientId())).thenReturn(List.of(client));
+            when(clientsResource.get(client.getId())).thenReturn(clientResource);
+            when(clientResource.roles()).thenReturn(rolesResource);
+            when(roleMappingResource.clientLevel(any())).thenReturn(roleScopeResource);
             List<RoleRepresentation> roleRepresentations =  new ArrayList<>();
             user.getRoleIds().forEach(roleId-> roleRepresentations.add(new RoleRepresentation(roleId, roleId, false)));
             when(roleScopeResource.listAll()).thenReturn(roleRepresentations);

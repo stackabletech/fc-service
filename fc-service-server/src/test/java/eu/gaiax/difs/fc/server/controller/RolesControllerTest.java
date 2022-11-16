@@ -8,14 +8,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RolesResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -42,9 +47,10 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 @ExtendWith(SpringExtension.class)
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 public class RolesControllerTest {
+    @Value("${keycloak.resource}")
+    private String clientId;
 
-    private static final TypeReference<List<?>> LIST_TYPE_REF = new TypeReference<List<?>>() {
-    };
+    private static final TypeReference<List<?>> LIST_TYPE_REF = new TypeReference<>() {};
 
     @Autowired
     private WebApplicationContext context;
@@ -59,6 +65,10 @@ public class RolesControllerTest {
     private RealmResource realmResource;
     @MockBean
     private RolesResource rolesResource;
+    @MockBean
+    private ClientsResource clientsResource;
+    @MockBean
+    private ClientResource clientResource;
     @Autowired
     private  ObjectMapper objectMapper;
 
@@ -91,9 +101,15 @@ public class RolesControllerTest {
         when(builder.build()).thenReturn(keycloak);
         when(keycloak.realm("gaia-x")).thenReturn(realmResource);
         when(realmResource.roles()).thenReturn(rolesResource);
+        when(realmResource.clients()).thenReturn(clientsResource);
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(UUID.randomUUID().toString());
+        client.setClientId(clientId);
+        when(clientsResource.findByClientId(client.getClientId())).thenReturn(List.of(client));
+        when(clientsResource.get(client.getId())).thenReturn(clientResource);
+        when(clientResource.roles()).thenReturn(rolesResource);
         List<RoleRepresentation> roles = List.of(new RoleRepresentation("RO_MA_A", null, false),
                 new RoleRepresentation("RO_MA_B", null, true), new RoleRepresentation("RO_MA_C", null, false));
-        when(rolesResource.list(true)).thenReturn(roles);
+        when(rolesResource.list()).thenReturn(roles);
     }
-
 }

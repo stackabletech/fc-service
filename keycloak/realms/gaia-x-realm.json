@@ -65,48 +65,9 @@
         "attributes": {}
       },
       {
-        "id": "6838e500-df21-4755-a6e3-467d432ec367",
-        "name": "Ro-MU-CA",
-        "composite": true,
-        "composites": {
-          "realm": [
-            "Ro-MU-A",
-            "Ro-SD-A",
-            "Ro-PA-A"
-          ]
-        },
-        "clientRole": false,
-        "containerId": "gaia-x",
-        "attributes": {}
-      },
-      {
-        "id": "4eb96146-2ff7-4246-82c7-b7b6f9e6ac27",
-        "name": "Ro-PA-A",
-        "composite": false,
-        "clientRole": false,
-        "containerId": "gaia-x",
-        "attributes": {}
-      },
-      {
         "id": "8ee7d6f7-f168-4b62-ae34-1c18ffbf631a",
         "name": "default-roles-gaia-x",
         "description": "${role_default-roles}",
-        "composite": false,
-        "clientRole": false,
-        "containerId": "gaia-x",
-        "attributes": {}
-      },
-      {
-        "id": "2941b209-9f63-4797-ae35-592066d887a4",
-        "name": "Ro-MU-A",
-        "composite": false,
-        "clientRole": false,
-        "containerId": "gaia-x",
-        "attributes": {}
-      },
-      {
-        "id": "d1da6e3e-7121-4ad6-ac02-f47cb28c0ad5",
-        "name": "Ro-SD-A",
         "composite": false,
         "clientRole": false,
         "containerId": "gaia-x",
@@ -116,8 +77,49 @@
     "client": {
       "federated-catalogue": [
         {
+          "id": "f657c29c-1939-4735-b10e-681a61f10df3",
+          "name": "Ro-SD-A",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
+          "attributes": {}
+        },
+        {
+          "id": "fb6bd4dd-0b5c-4774-8fa8-943bc6263e55",
+          "name": "Ro-PA-A",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
+          "attributes": {}
+        },
+        {
           "id": "99dd313d-b5c1-4c87-ab50-c8a3f23d6a98",
           "name": "uma_protection",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
+          "attributes": {}
+        },
+        {
+          "id": "2c40b6e8-7ab1-442e-a666-6df273a76f97",
+          "name": "Ro-MU-CA",
+          "composite": true,
+          "composites": {
+            "client": {
+              "federated-catalogue": [
+                "Ro-SD-A",
+                "Ro-PA-A",
+                "Ro-MU-A"
+              ]
+            }
+          },
+          "clientRole": true,
+          "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
+          "attributes": {}
+        },
+        {
+          "id": "73cdff87-5679-403f-8a3c-d965bcb9d830",
+          "name": "Ro-MU-A",
           "composite": false,
           "clientRole": true,
           "containerId": "52c9c697-c860-4edd-bde4-5e03904fdb44",
@@ -427,7 +429,8 @@
         ],
         "realm-management": [
           "manage-users",
-          "view-users"
+          "view-users",
+          "view-clients"
         ]
       },
       "notBefore": 0,
@@ -435,15 +438,6 @@
     }
   ],
   "scopeMappings": [
-    {
-      "clientScope": "gaia-x",
-      "roles": [
-        "Ro-MU-CA",
-        "Ro-MU-A",
-        "Ro-SD-A",
-        "Ro-PA-A"
-      ]
-    },
     {
       "clientScope": "offline_access",
       "roles": [
@@ -1681,63 +1675,7 @@
   "enabledEventTypes": [],
   "adminEventsEnabled": false,
   "adminEventsDetailsEnabled": false,
-  "identityProviders": [
-    {
-      "alias": "ssi-oidc",
-      "displayName": "SSI OIDC Broker",
-      "internalId": "532c5037-eb4b-4f73-99df-cbe236279bb2",
-      "providerId": "oidc",
-      "enabled": true,
-      "updateProfileFirstLoginMode": "on",
-      "trustEmail": true,
-      "storeToken": false,
-      "addReadTokenRoleOnCreate": false,
-      "authenticateByDefault": false,
-      "linkOnly": false,
-      "firstBrokerLoginFlowAlias": "first broker login",
-      "config": {
-        "userInfoUrl": "http://localhost:9000/userinfo",
-        "clientId": "aas-app-oidc",
-        "tokenUrl": "http://localhost:9000/oauth2/token",
-        "uiLocales": "false",
-        "issuer": "http://localhost:9000",
-        "useJwksUrl": "true",
-        "loginHint": "false",
-        "authorizationUrl": "http://localhost:9000/oauth2/authorize",
-        "clientAuthMethod": "client_secret_basic",
-        "syncMode": "IMPORT",
-        "clientSecret": "**********",
-        "defaultScope": "openid profile email"
-      }
-    },
-    {
-      "alias": "ssi-siop",
-      "displayName": "SSI SIOP Broker",
-      "internalId": "a6fc3365-616b-4432-8b9e-e8beb7a63324",
-      "providerId": "oidc",
-      "enabled": true,
-      "updateProfileFirstLoginMode": "on",
-      "trustEmail": true,
-      "storeToken": false,
-      "addReadTokenRoleOnCreate": false,
-      "authenticateByDefault": false,
-      "linkOnly": false,
-      "firstBrokerLoginFlowAlias": "first broker login",
-      "config": {
-        "loginHint": "false",
-        "userInfoUrl": "http://localhost:9000/userinfo",
-        "clientId": "aas-app-siop",
-        "tokenUrl": "http://localhost:9000/oauth2/token",
-        "authorizationUrl": "http://localhost:9000/oauth2/authorize",
-        "clientAuthMethod": "client_secret_basic",
-        "syncMode": "IMPORT",
-        "clientSecret": "**********",
-        "defaultScope": "openid profile email",
-        "issuer": "http://localhost:9000",
-        "useJwksUrl": "true"
-      }
-    }
-  ],
+  "identityProviders": [],
   "identityProviderMappers": [
     {
       "id": "21c25498-7016-4e09-8290-95fe306173b1",
