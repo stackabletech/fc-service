@@ -21,7 +21,6 @@ public class VerificationResultParticipant extends VerificationResult {
    */
   @JsonIgnore
   private String participantPublicKey;
-
   /**
    * Constructor for the VerificationResultParticipant
    *
@@ -30,7 +29,7 @@ public class VerificationResultParticipant extends VerificationResult {
    * @param participantPublicKey public key of participant
    * @param verificationTimestamp time stamp of verification
    * @param lifecycleStatus status according to GAIA-X lifecycle
-   * @param issuedDate issuing date of the SD
+   * @param issuedDateTime issuing date of the SD
    * @param validators Validators, signing parts of the SD
    * @param claims List of claims in the SD
    */
@@ -40,7 +39,6 @@ public class VerificationResultParticipant extends VerificationResult {
     this.participantName = participantName;
     this.participantPublicKey = participantPublicKey;
   }
-
 }
 
 

@@ -15,9 +15,11 @@ import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
+import eu.gaiax.difs.fc.core.pojo.Validator;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
+import eu.gaiax.difs.fc.core.service.validatorcache.ValidatorCache;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.generated.controller.ParticipantsApiDelegate;
 import java.io.IOException;
@@ -43,6 +45,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public class ParticipantsService implements ParticipantsApiDelegate {
   @Autowired
   private ParticipantDao partDao;
+  @Autowired
+  private ValidatorCache validatorCache;
   @Autowired
   @Qualifier("sdFileStore")
   private FileStore fileStore;
@@ -75,6 +79,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     registerRollBackForFileStoreManuallyIfTransactionFail(participantMetaData);
 
     participantMetaData = partDao.create(participantMetaData);
+    setParticipantPublicKey(participantMetaData);
     return ResponseEntity.created(URI.create("/participants/" + participantMetaData.getId())).body(participantMetaData);
   }
 
@@ -101,6 +106,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     participant = partDao.delete(participant.getId()).get();
     log.debug("deleteParticipant.exit; returning: {}", participant);
     participant.setSelfDescription(selfDescription);
+    setParticipantPublicKey(participant);
     return ResponseEntity.ok(participant);
   }
 
@@ -123,6 +129,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
     SelfDescriptionMetadata selfDescriptionMetadata = selfDescriptionStore.getByHash(part.getSdHash());
     part.setSelfDescription(selfDescriptionMetadata.getSelfDescription().getContentAsString());
+    setParticipantPublicKey(part);
     log.debug("getParticipant.exit; returning: {}", part);
     return ResponseEntity.ok(part);
   }
@@ -170,7 +177,10 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     filter.setHashes(results.getResults().stream().map(ParticipantMetaData::getSdHash).collect(Collectors.toList()));
     Map<String, ContentAccessor> sdsMap = selfDescriptionStore.getByFilter(filter, true, true).getResults().stream()
         .collect(Collectors.toMap(SelfDescriptionMetadata::getSdHash, SelfDescriptionMetadata::getSelfDescription));
-    results.getResults().forEach(part -> part.setSelfDescription(sdsMap.get(part.getSdHash()).getContentAsString()));
+    results.getResults().forEach(part -> {
+      part.setSelfDescription(sdsMap.get(part.getSdHash()).getContentAsString());
+      setParticipantPublicKey(part);
+    });
     log.debug("getParticipants.exit; returning results: {}", results);
     int total = (int) results.getTotalCount();
     List parts = results.getResults();
@@ -216,6 +226,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
     log.debug("updateParticipant.exit; returning: {}", participantMetaData);
     participantMetaData.setSelfDescription(selfDescriptionStore.getByHash(participantMetaData.getSdHash()).getSelfDescription().getContentAsString());
+    setParticipantPublicKey(participantMetaData);
     return ResponseEntity.ok(participantMetaData);
   }
 
@@ -275,4 +286,9 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     });
   }
 
+  private void setParticipantPublicKey(ParticipantMetaData participant) {
+    String publicKey = participant.getPublicKey();
+    Validator validator = publicKey != null ? validatorCache.getFromCache(publicKey) : null;
+    participant.setPublicKey(validator == null ? publicKey : validator.getPublicKey());
+  }
 }

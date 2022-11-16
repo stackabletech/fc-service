@@ -238,8 +238,7 @@ public class VerificationServiceImpl implements VerificationService {
     if (type.getLeft()) {
       LdProof proof = vp.getLdProof();
       URI method = proof == null ? null : proof.getVerificationMethod();
-      Validator validator = method == null ? null : validatorCache.getFromCache(method.toString());
-      String key = validator == null ? null : validator.getPublicKey();
+      String methodName = method == null ? null : method.toString();
 
       if (issuer == null) {
         issuer = id;
@@ -247,7 +246,7 @@ public class VerificationServiceImpl implements VerificationService {
       URI holder = vp.getHolder();
       String name = holder == null ? issuer : holder.toString();
       result = new VerificationResultParticipant(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
-          claims, validators, name, key);
+          claims, validators, name, methodName);
     } else if (type.getRight()) {
       result = new VerificationResultOffering(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
           id, claims, validators);

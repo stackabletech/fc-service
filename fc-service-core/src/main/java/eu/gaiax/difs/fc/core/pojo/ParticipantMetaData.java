@@ -18,10 +18,9 @@ public class ParticipantMetaData extends Participant {
     super(id, participantName, participantPublicKey, selfDescription);
     this.sdHash = HashUtils.calculateSha256AsHex(selfDescription);
   }
-  
+
   public ParticipantMetaData(String id, String participantName, String participantPublicKey, String selfDescription, String sdHash) {
     super(id, participantName, participantPublicKey, selfDescription);
-    this.sdHash=sdHash;
+    this.sdHash = sdHash;
   }
-   
 }
