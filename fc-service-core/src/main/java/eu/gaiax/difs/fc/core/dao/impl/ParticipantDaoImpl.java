@@ -35,7 +35,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ParticipantDaoImpl implements ParticipantDao {
   private static final String ATR_NAME = "name";
-  private static final String ATR_PUBLIC_KEY = "publicKey";
+  private static final String ATR_PUBLIC_KEY  = "publicKey";
   private static final String ATR_SD_HASH = "sdHash";
 
   @Value("${keycloak.realm}")
@@ -201,7 +201,7 @@ public class ParticipantDaoImpl implements ParticipantDao {
     return new Participant(groupRepo.getName(), attributes.get(ATR_NAME).get(0),
         attributes.get(ATR_PUBLIC_KEY).get(0), attributes.get(ATR_SD_HASH).get(0));
   }
-  
+
   private ParticipantMetaData toParticipantExt(GroupRepresentation groupRepo) {
     Map<String, List<String>> attributes = groupRepo.getAttributes();
     return new ParticipantMetaData(groupRepo.getName(), attributes.get(ATR_NAME).get(0),
