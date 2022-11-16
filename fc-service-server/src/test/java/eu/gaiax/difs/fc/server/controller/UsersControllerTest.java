@@ -50,6 +50,8 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
@@ -58,6 +60,7 @@ import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -124,6 +127,10 @@ public class UsersControllerTest {
     private RealmResource realmResource;
     @MockBean
     private UsersResource usersResource;
+    @MockBean
+    private ClientsResource clientsResource;
+    @MockBean
+    private ClientResource clientResource;
     @MockBean
     private RolesResource rolesResource;
     @MockBean
@@ -512,6 +519,7 @@ public class UsersControllerTest {
         when(realmResource.users()).thenReturn(usersResource);
         when(realmResource.roles()).thenReturn(rolesResource);
         when(realmResource.groups()).thenReturn(groupsResource);
+        when(realmResource.clients()).thenReturn(clientsResource);
         if (user == null) {
             when(usersResource.create(any())).thenReturn(Response.status(status).build());
             when(usersResource.delete(any())).thenThrow(new NotFoundException("User with id " + id + " not found"));
@@ -529,7 +537,13 @@ public class UsersControllerTest {
             when(userResource.toRepresentation()).thenReturn(userRepo);
             when(rolesResource.list()).thenReturn(getAllRoles());
             when(userResource.roles()).thenReturn(roleMappingResource);
-            when(roleMappingResource.realmLevel()).thenReturn(roleScopeResource);
+            ClientRepresentation client = new ClientRepresentation();
+            client.setClientId(UUID.randomUUID().toString());
+            client.setClientId(clientId);
+            when(clientsResource.findByClientId(client.getClientId())).thenReturn(List.of(client));
+            when(clientsResource.get(client.getId())).thenReturn(clientResource);
+            when(clientResource.roles()).thenReturn(rolesResource);
+            when(roleMappingResource.clientLevel(any())).thenReturn(roleScopeResource);
             List<RoleRepresentation> roleRepresentations =  new ArrayList<>();
             user.getRoleIds().forEach(roleId-> roleRepresentations.add(new RoleRepresentation(roleId, roleId, false)));
             when(roleScopeResource.listAll()).thenReturn(roleRepresentations);
@@ -592,7 +606,7 @@ public class UsersControllerTest {
         claims.setClaim("typ", "Bearer");
         claims.setClaim("azp", clientId);
         claims.setClaim("session_state", UUID.randomUUID().toString());
-        claims.setClaim("realm_access", Map.of("roles", List.of(CATALOGUE_ADMIN_ROLE)));
+        claims.setClaim("resource_access", Map.of(clientId, Map.of("roles", List.of(CATALOGUE_ADMIN_ROLE))));
         claims.setClaim("scope", "openid gaia-x");
         claims.setClaim("email_verified", true);
         claims.setClaim("preferred_username", user.getEmail());

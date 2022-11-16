@@ -37,9 +37,10 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, Abstract
    */
   private Collection<? extends GrantedAuthority> extractResourceRoles(final Jwt jwt, final String resourceId) {
     Collection<GrantedAuthority> authorities = this.jwtGrantedAuthoritiesConverter.convert(jwt);
-    Map<String, Object> resourceAccess = jwt.getClaim("realm_access");
+    Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
+    Map<String, Object> resourceData = (Map<String, Object>) resourceAccess.get(resourceId);
     Collection<String> resourceRoles;
-    if (resourceAccess != null && (resourceRoles = (Collection<String>) resourceAccess.get("roles")) != null) {
+    if (resourceAccess != null && (resourceRoles = (Collection<String>) resourceData.get("roles")) != null) {
       authorities.addAll(resourceRoles.stream()
           .map(x -> new SimpleGrantedAuthority("ROLE_" + x)).collect(Collectors.toSet()));
     }
