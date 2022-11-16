@@ -26,7 +26,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
@@ -40,8 +39,8 @@ import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
-import eu.gaiax.difs.fc.core.service.verification.impl.VerificationDirectTest;
 import eu.gaiax.difs.fc.core.service.verification.impl.VerificationServiceImpl;
+import eu.gaiax.difs.fc.core.util.GraphRebuilder;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
@@ -54,7 +53,6 @@ import lombok.extern.slf4j.Slf4j;
 @ContextConfiguration(classes = {SelfDescriptionStoreCompositeTest.TestApplication.class, FileStoreConfig.class, VerificationServiceImpl.class,
   SelfDescriptionStoreImpl.class, SelfDescriptionStoreCompositeTest.class, SchemaStoreImpl.class, DatabaseConfig.class, Neo4jGraphStore.class, ValidatorCacheImpl.class})
 @DirtiesContext
-@Transactional
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
@@ -124,8 +122,8 @@ public class SelfDescriptionStoreCompositeTest {
   }
 
   /**
-   * Test storing a self-description, ensuring it creates exactly one file on
-   * disk, retrieving it by hash, and deleting it again.
+   * Test storing a self-description, ensuring it creates exactly one file on disk, retrieving it by hash, and deleting
+   * it again.
    */
   @Test
   void test01StoreSelfDescription() throws Exception {
@@ -142,23 +140,22 @@ public class SelfDescriptionStoreCompositeTest {
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
 
     List<Map<String, Object>> claims = graphStore.queryData(
-            new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n)", Map.of("uri", sdMeta.getId()))).getResults();
+        new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n)", Map.of("uri", sdMeta.getId()))).getResults();
     log.debug("test01StoreSelfDescription; got claims: {}", claims);
     //Assertions.assertEquals(5, claims.size()); only 1 node found..
 
     List<Map<String, Object>> nodes = graphStore.queryData(
-            new GraphQuery("MATCH (n) RETURN labels(n)", Map.of())).getResults();
+        new GraphQuery("MATCH (n) RETURN labels(n)", Map.of())).getResults();
     log.debug("test01StoreSelfDescription; got nodes: {}", nodes);
 
     //final ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
     //assertEquals(sdfileByHash, sdMeta.getSelfDescription(),
     //    "Getting the SD file by hash is equal to the stored SD file");
-
     sdStore.deleteSelfDescription(hash);
     assertAllSdFilesDeleted();
 
     claims = graphStore.queryData(
-            new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
+        new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
     Assertions.assertEquals(0, claims.size());
 
     Assertions.assertThrows(NotFoundException.class, () -> {
@@ -166,5 +163,50 @@ public class SelfDescriptionStoreCompositeTest {
     });
   }
 
+  @Test
+  void test02RebuildGraphDb() throws Exception {
+    log.info("test02RebuildGraphDb");
+    ContentAccessor content = getAccessor("Claims-Extraction-Tests/providerTest.jsonld");
+    // Only verify semantics, not schema or signatures
+    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false);
+    SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
+    sdStore.storeSelfDescription(sdMeta, result);
+
+    assertStoredSdFiles(1);
+    String hash = sdMeta.getSdHash();
+
+    assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
+
+    List<Map<String, Object>> claims = graphStore.queryData(
+        new GraphQuery("MATCH (n) RETURN n", null)).getResults();
+    log.debug("Claims: {}", claims);
+    Assertions.assertEquals(8, claims.size());
+
+    graphStore.deleteClaims(sdMeta.getId());
+
+    claims = graphStore.queryData(
+        new GraphQuery("MATCH (n) RETURN n", null)).getResults();
+    log.debug("Claims: {}", claims);
+    Assertions.assertEquals(1, claims.size());
+
+    GraphRebuilder reBuilder = new GraphRebuilder(sdStore, graphStore, verificationService);
+    reBuilder.rebuildGraphDb(1, 0, 1, 1);
+
+    claims = graphStore.queryData(
+        new GraphQuery("MATCH (n) RETURN n", null)).getResults();
+    log.debug("Claims: {}", claims);
+    Assertions.assertEquals(8, claims.size());
+
+    sdStore.deleteSelfDescription(hash);
+    assertAllSdFilesDeleted();
+
+    claims = graphStore.queryData(
+        new GraphQuery("MATCH (n) RETURN n", null)).getResults();
+    Assertions.assertEquals(1, claims.size());
+
+    Assertions.assertThrows(NotFoundException.class, () -> {
+      sdStore.getByHash(hash);
+    });
+  }
 
 }
