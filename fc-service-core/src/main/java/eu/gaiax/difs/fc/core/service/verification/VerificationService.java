@@ -2,11 +2,12 @@ package eu.gaiax.difs.fc.core.service.verification;
 
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
+import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SemanticValidationResult;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
-import eu.gaiax.difs.fc.core.pojo.Validator;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
+import java.util.List;
 import org.springframework.stereotype.Service;
 
 /**
@@ -59,4 +60,12 @@ public interface VerificationService {
    */
   VerificationResult verifySelfDescription(ContentAccessor payload,
       boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException;
+
+  /**
+   * Extract claims from the given payload. This does not do any validation of the payload.
+   *
+   * @param payload The payload to extract claims from.
+   * @return The list of extracted claims.
+   */
+  List<SdClaim> extractClaims(ContentAccessor payload);
 }

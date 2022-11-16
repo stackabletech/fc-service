@@ -383,15 +383,14 @@ public class VerificationServiceImpl implements VerificationService {
     return null;
   }
 
-
-  /*package private functions*/
   /**
    * A method that returns a list of claims given a self-description's VerifiablePresentation
    *
    * @param payload a self-description as Verifiable Presentation for claims extraction
    * @return a list of claims.
    */
-  private List<SdClaim> extractClaims(ContentAccessor payload) {
+  @Override
+  public List<SdClaim> extractClaims(ContentAccessor payload) {
     // Make sure our interceptors are in place.
     initLoaders();
     //TODO does it work with an Array of VCs

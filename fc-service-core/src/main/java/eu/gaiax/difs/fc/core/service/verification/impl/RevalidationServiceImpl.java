@@ -7,18 +7,15 @@ import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
+import eu.gaiax.difs.fc.core.util.ProcessorUtils;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -132,7 +129,6 @@ public class RevalidationServiceImpl implements RevalidationService {
         if (taskQueue.size() < 0.5 * batchSize) {
           // Fetch more hashes.
           List<String> activeSdHashes = sdStore.getActiveSdHashes(lastHash, batchSize, instanceCount, workingOnChunk);
-          log.debug("Fetched {} hashes for chunk {} of {}", activeSdHashes.size(), workingOnChunk, instanceCount);
           if (activeSdHashes.isEmpty()) {
             log.info("Finished revalidating.");
             workingOnChunk = -1;
@@ -140,6 +136,7 @@ public class RevalidationServiceImpl implements RevalidationService {
           } else {
             taskQueue.addAll(activeSdHashes);
             lastHash = activeSdHashes.get(activeSdHashes.size() - 1);
+            log.debug("Added {} hashes for chunk {} of {}. Queue now: {}", activeSdHashes.size(), workingOnChunk, instanceCount, taskQueue.size());
           }
         }
       }
@@ -197,7 +194,7 @@ public class RevalidationServiceImpl implements RevalidationService {
     }
     checkChunkTable();
     taskQueue = new ArrayBlockingQueue<>(batchSize * 2);
-    executorService = createProcessors(workerCount, taskQueue, this::handleTask, REVALIDATOR_THREAD_NAME);
+    executorService = ProcessorUtils.createProcessors(workerCount, taskQueue, this::handleTask, REVALIDATOR_THREAD_NAME);
     managementThread = new Thread(this::manage, MANAGER_THREAD_NAME);
     managementThread.start();
   }
@@ -212,23 +209,13 @@ public class RevalidationServiceImpl implements RevalidationService {
       return;
     }
     notifyManager();
-    executorService.shutdown();
-    try {
-      if (executorService.awaitTermination(2, TimeUnit.SECONDS)) {
-        return;
-      }
-    } catch (InterruptedException ex) {
-      log.error("Interrupted while waiting for shutdown.", ex);
-      Thread.currentThread().interrupt();
-    }
-    executorService.shutdownNow();
+    ProcessorUtils.shutdownProcessors(executorService, taskQueue, 10, TimeUnit.SECONDS);
     taskQueue = null;
     executorService = null;
     managementThread = null;
   }
 
   private int findChunkForWork() {
-    log.debug("Searching for chunk to work on...");
     int chunkId = -1;
     try ( Session session = sessionFactory.openSession()) {
       Transaction transaction = session.beginTransaction();
@@ -292,78 +279,6 @@ public class RevalidationServiceImpl implements RevalidationService {
       transaction.commit();
     }
     log.debug("Resetting chunk table times done.");
-  }
-
-  private static <T> ExecutorService createProcessors(int threadCount, BlockingQueue<T> queue, Consumer<T> consumer, String name) {
-    ThreadFactory factory = new BasicThreadFactory.Builder().namingPattern(name + "-%d").build();
-    ExecutorService result = Executors.newFixedThreadPool(threadCount, factory);
-    for (int i = 0; i < threadCount; i++) {
-      result.submit(new Processor(queue, consumer, name));
-    }
-    return result;
-  }
-
-  private static void shutdownProcessors(ExecutorService executorService, BlockingQueue<?> queue, long timeout, TimeUnit timeUnit) {
-    if (executorService != null) {
-      executorService.shutdown();
-      queue.clear();
-      try {
-        executorService.shutdownNow();
-        if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
-          log.debug("executoreService did not terminate in time");
-        }
-      } catch (InterruptedException ie) {
-        executorService.shutdownNow();
-        Thread.currentThread().interrupt();
-      }
-    }
-  }
-
-  /**
-   * A processor thread that blocks on queue.take, waiting for tasks to process. Stops working when it is interrupted.
-   *
-   * @param <T> The type of the tasks the processor processes.
-   */
-  private static class Processor<T> implements Runnable {
-
-    private final BlockingQueue<T> queue;
-    private final Consumer<T> consumer;
-    private final String name;
-
-    private Processor(BlockingQueue<T> queue, Consumer<T> consumer, String name) {
-      if (queue == null) {
-        throw new IllegalArgumentException("queue must be non-null");
-      }
-      if (consumer == null) {
-        throw new IllegalArgumentException("handler must be non-null");
-      }
-      if (name == null || name.isEmpty()) {
-        this.name = getClass().getName();
-      } else {
-        this.name = name;
-      }
-      this.queue = queue;
-      this.consumer = consumer;
-    }
-
-    @Override
-    public void run() {
-      log.debug("starting {}-Thread", name);
-      while (!Thread.currentThread().isInterrupted()) {
-        T event;
-        try {
-          event = queue.take();
-          consumer.accept(event);
-        } catch (InterruptedException ex) {
-          log.trace("{} interrupted", name, ex);
-          Thread.currentThread().interrupt();
-          break;
-        } catch (Exception ex) {
-          log.warn("Exception while executing {}", name, ex);
-        }
-      }
-      log.debug("exiting {}-Thread", name);
-    }
   }
 
 }
