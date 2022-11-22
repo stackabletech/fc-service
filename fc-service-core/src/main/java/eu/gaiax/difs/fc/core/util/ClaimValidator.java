@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.core.util;
 
 import eu.gaiax.difs.fc.core.exception.QueryException;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
+import liquibase.pro.packaged.E;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.datatypes.DatatypeFormatException;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 
 @Slf4j
 public class ClaimValidator {
@@ -50,12 +52,20 @@ public class ClaimValidator {
      * Validates if a claim elements are following the required syntax and
      * conditions before sending them to Neo4J
      *
-     * @param sdClaim the claim to be validated
+     * @param sdClaimList the set of claims to be validated
      * @return the claim as a formatted triple string
      */
-    public Model validateClaim(SdClaim sdClaim) {
-        Model model = validateRDFTripleSyntax(sdClaim);
-        return model;
+    public Model validateClaims(List<SdClaim> sdClaimList) {
+        Model listClaims = ModelFactory.createDefaultModel();
+        StringBuilder payload = new StringBuilder();
+        for (SdClaim sdClaim : sdClaimList) {
+            validateRDFTripleSyntax(sdClaim);
+            payload.append(sdClaim.asTriple());
+
+        }
+        InputStream in = IOUtils.toInputStream(payload, "UTF-8");
+        RDFDataMgr.read(listClaims, in, Lang.TTL);
+        return listClaims;
     }
 
     private String removeEnclosingAngleBrackets(String uriStr) {
@@ -70,29 +80,16 @@ public class ClaimValidator {
      *
      * @param sdClaim the claim to be validated
      */
-    private Model validateRDFTripleSyntax(SdClaim sdClaim) {
+    private void validateRDFTripleSyntax(SdClaim sdClaim) {
         Model model = ModelFactory.createDefaultModel();
         try (InputStream in = IOUtils.toInputStream(sdClaim.asTriple(), "UTF-8")) {
             switchOnJenaLiteralValidation();
             RDFDataMgr.read(model, in, Lang.TTL);
 
-        } catch (IOException e) {
-            // TODO: How to consistently log syntax errors in input data? DEBUG, WARN, ERR?
-            log.debug(e.getMessage());
-            throw new QueryException("Syntax error in triple " + sdClaim.asTriple());
-
-        } catch (DatatypeFormatException e) {
-            // Only occurs if the value of a literal does not comply with the
-            // literals datatype
+        } catch (IOException | DatatypeFormatException | RiotException e) {
+            log.debug("Error in Validating validateRDFTripleSyntax {}", e.getMessage());
             throw new QueryException(
-                    "Object in triple " +
-                            sdClaim.asTriple() +
-                            " has an invalid value given its datatype"
-            );
-
-        } catch (RiotException e) {
-            throw new QueryException(
-                    "Object in triple " + sdClaim.asTriple() +
+                    "Triple " + sdClaim.asTriple() +
                             " has a syntax error: " + e.getMessage()
             );
 
@@ -100,73 +97,70 @@ public class ClaimValidator {
             resetJenaLiteralValidation();
         }
 
-        for (ExtendedIterator<Triple> it = model.getGraph().find(); it.hasNext(); ) {
-            Triple triple = it.next();
-            // --- subject ----------------------------------------------------
-            Node s = triple.getSubject();
-            if (s.isURI()) {
-                // Caution! Jena will automatically apply modifications
-                // to generate valid URIs. E.g. the broken URI
-                // htw3id.org/gaia-x/indiv#serviceElasticSearch.json
-                // will be converted to the URL
-                // file:///home/user/some/path/fc-service/htw3id.org/gaia-x/indiv#serviceElasticSearch.json
-                // Hence, we have to use the original URI string here
-                // otherwise calling URI.create( ) will not fail in case
-                // of a broken URI.
-                // AND: We will have to strip off the angle brackets!
-                // Any abbreviated URIS (i.e. something like ex:Foo without
-                // angle brackets) will already be rejected above as Jena
-                // should complain about the not defined prefix (e.g. ex in
-                // the ex:Foo example above).
-                try {
-                    String subjectStr =
-                            removeEnclosingAngleBrackets(sdClaim.getSubject());
-                    URI uri = new URI(subjectStr);
+        Triple triple = model.getGraph().find().next();
+        // --- subject ----------------------------------------------------
+        Node s = triple.getSubject();
+        if (s.isURI()) {
+            // Caution! Jena will automatically apply modifications
+            // to generate valid URIs. E.g. the broken URI
+            // htw3id.org/gaia-x/indiv#serviceElasticSearch.json
+            // will be converted to the URL
+            // file:///home/user/some/path/fc-service/htw3id.org/gaia-x/indiv#serviceElasticSearch.json
+            // Hence, we have to use the original URI string here
+            // otherwise calling URI.create( ) will not fail in case
+            // of a broken URI.
+            // AND: We will have to strip off the angle brackets!
+            // Any abbreviated URIS (i.e. something like ex:Foo without
+            // angle brackets) will already be rejected above as Jena
+            // should complain about the not defined prefix (e.g. ex in
+            // the ex:Foo example above).
+            try {
+                String subjectStr =
+                        removeEnclosingAngleBrackets(sdClaim.getSubject());
+                URI uri = new URI(subjectStr);
 
-                } catch (URISyntaxException e) {
-                    throw new QueryException(
-                            "Subject in triple " +
-                                    sdClaim.asTriple() +
-                                    " is not a valid URI ");
-                } // else it should be a blank node
-            }
-            // --- predicate --------------------------------------------------
-            Node p = triple.getPredicate();
-            if (p.isURI()) {
-                try {
-                    // c.f. the comment for handling subject nodes above
-                    String predicateStr =
-                            removeEnclosingAngleBrackets(sdClaim.getPredicate());
-                    URI uri = new URI(predicateStr);
-                } catch (URISyntaxException e) {
-                    throw new QueryException(
-                            "Predicate in triple " +
-                                    sdClaim.asTriple() +
-                                    " is not a valid URI ");
-
-                }
-            } 
-            // --- object -----------------------------------------------------
-            Node o = triple.getObject();
-            if (o.isURI()) {
-                // c.f. the comment for handling subject nodes above
-                try {
-                    String objectStr =
-                            removeEnclosingAngleBrackets(sdClaim.getObject());
-                    URI uri = new URI(objectStr);
-                } catch (URISyntaxException e) {
-                    throw new QueryException(
-                            "Object in triple " +
-                                    sdClaim.asTriple() +
-                                    " is not a valid URI ");
-                }
-            } else if (o.isLiteral()) {
-                // Nothing needs to be done here as literal syntax errors and
-                // datatype errors are already handled by the parser directly.
-                // See the catch blocks after the RDFDataMgr.read( ) call above.
-
-            } // else it's a blank node, which is OK
+            } catch (URISyntaxException e) {
+                throw new QueryException(
+                        "Subject in triple " +
+                                sdClaim.asTriple() +
+                                " is not a valid URI ");
+            } // else it should be a blank node
         }
-        return model;
+        // --- predicate --------------------------------------------------
+        Node p = triple.getPredicate();
+        if (p.isURI()) {
+            try {
+                // c.f. the comment for handling subject nodes above
+                String predicateStr =
+                        removeEnclosingAngleBrackets(sdClaim.getPredicate());
+                URI uri = new URI(predicateStr);
+            } catch (URISyntaxException e) {
+                throw new QueryException(
+                        "Predicate in triple " +
+                                sdClaim.asTriple() +
+                                " is not a valid URI ");
+
+            }
+        }
+        // --- object -----------------------------------------------------
+        Node o = triple.getObject();
+        if (o.isURI()) {
+            // c.f. the comment for handling subject nodes above
+            try {
+                String objectStr =
+                        removeEnclosingAngleBrackets(sdClaim.getObject());
+                URI uri = new URI(objectStr);
+            } catch (URISyntaxException e) {
+                throw new QueryException(
+                        "Object in triple " +
+                                sdClaim.asTriple() +
+                                " is not a valid URI ");
+            }
+        } else if (o.isLiteral()) {
+            // Nothing needs to be done here as literal syntax errors and
+            // datatype errors are already handled by the parser directly.
+            // See the catch blocks after the RDFDataMgr.read( ) call above.
+
+        } // else it's a blank node, which is OK
     }
 }

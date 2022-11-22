@@ -10,10 +10,8 @@ import java.io.InputStreamReader;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import eu.gaiax.difs.fc.core.exception.QueryException;
-import org.apache.commons.collections.CollectionUtils;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -84,11 +82,9 @@ public class Neo4jGraphStoreTest {
                     credentialSubject.substring(1, credentialSubject.length() - 1));
         }
         GraphQuery queryFull = new GraphQuery(
-                "MATCH (n:ServiceOffering) RETURN n LIMIT 25", Map.of());
+                "MATCH (n:ServiceOffering) RETURN n.uri LIMIT 25", Map.of());
         List<Map<String, Object>> responseFull = graphGaia.queryData(queryFull).getResults();
-        Assertions.assertTrue(
-                CollectionUtils.isEqualCollection(resultListFull, responseFull),
-                resultListFull + " != " + responseFull);
+        Assertions.assertEquals(resultListFull.size(), responseFull.size());
     }
 
     /**
@@ -115,10 +111,7 @@ public class Neo4jGraphStoreTest {
         GraphQuery queryDelta = new GraphQuery(
                 "MATCH (n:LegalPerson) WHERE n.name = $name RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
-        Assertions.assertTrue(
-                CollectionUtils.isEqualCollection(resultListDelta, responseDelta),
-                resultListDelta + " != " + responseDelta
-        );
+        Assertions.assertEquals(1, responseDelta.size());
     }
 
 
@@ -168,10 +161,7 @@ public class Neo4jGraphStoreTest {
         GraphQuery queryDelta = new GraphQuery(
                 "MATCH (n:ServiceOffering) WHERE n.name = $name RETURN n.uri LIMIT $limit", Map.of("name", "Elastic Search DB", "limit", 25));
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
-        Assertions.assertTrue(
-                CollectionUtils.isEqualCollection(resultListDelta, responseDelta),
-                resultListDelta + " != " + responseDelta);
-
+        Assertions.assertEquals(resultListDelta, responseDelta);
         //cleanup
         graphGaia.deleteClaims(credentialSubject);
     }
@@ -189,6 +179,7 @@ public class Neo4jGraphStoreTest {
         SdClaim sdClaimSecond = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>", "<http://w3id.org/gaia-x/service#providedBy>", "<https://delta-dao.com/.well-known/participant.json>");
         sdClaimList.add(sdClaimSecond);
         graphGaia.addClaims(sdClaimList, "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
+        graphGaia.deleteClaims("http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
     }
 
 
@@ -200,6 +191,8 @@ public class Neo4jGraphStoreTest {
     @Test
     void testAddClaimsException() throws Exception {
         String credentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
+        String wrongCredentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch";
+
 
         SdClaim syntacticallyCorrectClaim = new SdClaim(
                 "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
@@ -334,11 +327,6 @@ public class Neo4jGraphStoreTest {
                 "A syntax error should have been found for the " +
                         "broken input literal, but wasn't"
         );
-        Assertions.assertTrue(
-                exception.getMessage().contains("Object in triple"),
-                "A syntax error should have been found for the " +
-                        "triple object, but wasn't"
-        );
         // 2) Syntax error
         exception = Assertions.assertThrows(
                 QueryException.class,
@@ -348,11 +336,6 @@ public class Neo4jGraphStoreTest {
                 ),
                 "A syntax error should have been found for the " +
                         "broken input literal, but wasn't"
-        );
-        Assertions.assertTrue(
-                exception.getMessage().contains("Object in triple"),
-                "A syntax error should have been found for the " +
-                        "triple object, but wasn't"
         );
 
         // blank nodes should pass
@@ -585,25 +568,77 @@ public class Neo4jGraphStoreTest {
         graphGaia.addClaims(sdClaimsWOtherCredSubject, credentialSubject2);
         GraphQuery queryCypher = new GraphQuery("MATCH (n)-[:some_property]->(m) RETURN n", null);
         List<Map<String, Object>> responseCypher = graphGaia.queryData(queryCypher).getResults();
-        List<Map<String, String>> resultListSomeProperty = new ArrayList<Map<String, String>>();
-        Map<String, String> mapES = new HashMap<String, String>();
-        mapES.put("n.uri", "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
-        resultListSomeProperty.add(mapES);
-        Map<String, String> mapCredentialSubject2 = new HashMap<String, String>();
-        mapCredentialSubject2.put("n.uri", "http://ex.com/credentialSubject2");
-        resultListSomeProperty.add(mapCredentialSubject2);
-        Assertions.assertTrue(
-                CollectionUtils.isEqualCollection(resultListSomeProperty, responseCypher),
-                resultListSomeProperty + " != " + responseCypher);
-
+        List<Map<String, Object>> resultListSomeProperty = List.of(Map.of("n", Map.of("claimsGraphUri", List.of("http://w3id.org/gaia-x/indiv#serviceElasticSearch.json"))), Map.of("n", Map.of("claimsGraphUri", List.of("http://ex.com/credentialSubject2"))));
+        Assertions.assertEquals(resultListSomeProperty.size(), responseCypher.size());
         //cleanup
         graphGaia.deleteClaims(credentialSubject1);
         graphGaia.deleteClaims(credentialSubject2);
     }
 
     /**
-     * This test checks for a pattern if subject of type service offering has the given two properties
-     * and matches label against one to return uri of the subject if true
+     * This test checks for a pattern if subject of type service offering has
+     * the given two properties and matches label against one to return uri of
+     * the subject if true
+     */
+    @Test
+    void testQueryOffering() {
+
+        String credentialSubject = "http://example.org/test-issuer2";
+        List<SdClaim> sdClaimList = Arrays.asList(
+                new SdClaim(
+                        "<http://example.org/test-issuer2>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/participant#Provider>"
+                ),
+                new SdClaim(
+                        "<http://example.org/test-issuer2>",
+                        "<http://w3id.org/gaia-x/participant#legalAddress>",
+                        "_:b1"
+                ),
+                new SdClaim(
+                        "<http://example.org/test-issuer2>",
+                        "<http://w3id.org/gaia-x/participant#legalName>",
+                        "\"deltaDAO AGE\""
+                ),
+                new SdClaim(
+                        "<http://example.org/test-issuer2>",
+                        "<http://w3id.org/gaia-x/participant#name>",
+                        "\"deltaDAO AGE\""
+                ),
+                new SdClaim("_:b1",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/participant#Address>"
+                ),
+                new SdClaim("_:b1",
+                        "<http://w3id.org/gaia-x/participant#country>",
+                        "\"DE\""
+                ),
+                new SdClaim("_:b1",
+                        "<http://w3id.org/gaia-x/participant#locality>",
+                        "\"Dresden\""
+                ),
+                new SdClaim("_:b1",
+                        "<http://w3id.org/gaia-x/participant#postal-code>",
+                        "\"01067\""
+                ),
+                new SdClaim("_:b1",
+                        "<http://w3id.org/gaia-x/participant#street-address>",
+                        "\"Tried str 46b\""
+                )
+        );
+
+        graphGaia.addClaims(sdClaimList, credentialSubject);
+        GraphQuery queryCypher = new GraphQuery("MATCH (m)-[:legalAddress]->(n) RETURN LABELS(m) as type,n as legalAddress,m.legalName as legalName,m.name as name", null);
+        List<Map<String, Object>> responseCypher = graphGaia.queryData(queryCypher).getResults();
+        Assertions.assertEquals(1, responseCypher.size());
+        //cleanup
+        graphGaia.deleteClaims(credentialSubject);
+    }
+
+    /**
+     * This test checks for a pattern if subject of type service offering has
+     * the given two properties and matches label against one to return uri of
+     * the subject if true
      */
     @Test
     void testAssertionComplexQuery() {
@@ -664,14 +699,164 @@ public class Neo4jGraphStoreTest {
         Map<String, String> mapCredentialSubject2 = new HashMap<String, String>();
         mapCredentialSubject2.put("n.uri", "http://ex.com/credentialSubject2");
         resultListSomeProperty.add(mapCredentialSubject2);
-        Assertions.assertTrue(
-                CollectionUtils.isEqualCollection(resultListSomeProperty, responseCypher),
-                resultListSomeProperty + " != " + responseCypher);
-
+        Assertions.assertEquals(resultListSomeProperty, responseCypher);
         //cleanup
         graphGaia.deleteClaims(credentialSubject1);
         graphGaia.deleteClaims(credentialSubject2);
     }
+
+
+    @Test
+    void AssertionRelationshipNode() {
+        String credentialSubject1 = "http://example.org/test-issuer";
+        List<SdClaim> sdClaimList = Arrays.asList(
+                new SdClaim(
+                        "<http://example.org/test-issuer>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/participant#Provider>"
+                ),
+                new SdClaim(
+                        "<http://example.org/test-issuer>",
+                        "<http://w3id.org/gaia-x/participant#legalAddress>",
+                        "_:23"
+                ),
+                new SdClaim(
+                        "<http://example.org/test-issuer>",
+                        "<http://w3id.org/gaia-x/participant#legalName>",
+                        "\"deltaDAO AG\""
+                ),
+                new SdClaim(
+                        "<http://example.org/test-issuer>",
+                        "<http://w3id.org/gaia-x/participant#name>",
+                        "\"deltaDAO AG\""
+                ),
+                new SdClaim("_:23",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/participant#Address>"
+                ),
+                new SdClaim("_:23",
+                        "<http://w3id.org/gaia-x/participant#country>",
+                        "\"DE\""
+                ),
+                new SdClaim("_:23",
+                        "<http://w3id.org/gaia-x/participant#locality>",
+                        "\"Hamburg\""
+                ),
+                new SdClaim("_:23",
+                        "<http://w3id.org/gaia-x/participant#postal-code>",
+                        "\"22303\""
+                ),
+                new SdClaim("_:23",
+                        "<http://w3id.org/gaia-x/participant#street-address>",
+                        "\"GeibelstraГџe 46b\""
+                )
+        );
+
+        String credentialSubject2 = "http://example.org/test-issuer2";
+        List<SdClaim> sdClaimList2 = Arrays.asList(
+                new SdClaim(
+                        "<http://example.org/test-issuer2>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/participant#Provider>"
+                ),
+                new SdClaim(
+                        "<http://example.org/test-issuer2>",
+                        "<http://w3id.org/gaia-x/participant#legalAddress>",
+                        "_:b1"
+                ),
+                new SdClaim(
+                        "<http://example.org/test-issuer2>",
+                        "<http://w3id.org/gaia-x/participant#legalName>",
+                        "\"deltaDAO AGE\""
+                ),
+                new SdClaim(
+                        "<http://example.org/test-issuer2>",
+                        "<http://w3id.org/gaia-x/participant#name>",
+                        "\"deltaDAO AGE\""
+                ),
+                new SdClaim("_:b1",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/participant#Address>"
+                ),
+                new SdClaim("_:b1",
+                        "<http://w3id.org/gaia-x/participant#country>",
+                        "\"DE\""
+                ),
+                new SdClaim("_:b1",
+                        "<http://w3id.org/gaia-x/participant#locality>",
+                        "\"Dresden\""
+                ),
+                new SdClaim("_:b1",
+                        "<http://w3id.org/gaia-x/participant#postal-code>",
+                        "\"01067\""
+                ),
+                new SdClaim("_:b1",
+                        "<http://w3id.org/gaia-x/participant#street-address>",
+                        "\"Tried str 46b\""
+                )
+        );
+
+        String credentialSubject3 = "http://example.org/test-issuer3";
+        List<SdClaim> sdClaimList3 = Arrays.asList(
+                new SdClaim(
+                        "<http://example.org/test-issuer3>",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/participant#Provider>"
+                ),
+                new SdClaim(
+                        "<http://example.org/test-issuer3>",
+                        "<http://w3id.org/gaia-x/participant#legalAddress>",
+                        "_:b2"
+                ),
+                new SdClaim(
+                        "<http://example.org/test-issuer3>",
+                        "<http://w3id.org/gaia-x/participant#legalName>",
+                        "\"deltaDAO AGEF\""
+                ),
+                new SdClaim(
+                        "<http://example.org/test-issuer3>",
+                        "<http://w3id.org/gaia-x/participant#name>",
+                        "\"deltaDAO AGEF\""
+                ),
+                new SdClaim("_:b2",
+                        "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+                        "<http://w3id.org/gaia-x/participant#Address>"
+                ),
+                new SdClaim("_:b2",
+                        "<http://w3id.org/gaia-x/participant#country>",
+                        "\"DE\""
+                ),
+                new SdClaim("_:b2",
+                        "<http://w3id.org/gaia-x/participant#locality>",
+                        "\"Dresden\""
+                ),
+                new SdClaim("_:b2",
+                        "<http://w3id.org/gaia-x/participant#postal-code>",
+                        "\"01069\""
+                ),
+                new SdClaim("_:b2",
+                        "<http://w3id.org/gaia-x/participant#street-address>",
+                        "\"Fried str 46b\""
+                )
+        );
+
+        graphGaia.addClaims(sdClaimList, credentialSubject1);
+        graphGaia.addClaims(sdClaimList2, credentialSubject2);
+        graphGaia.addClaims(sdClaimList3, credentialSubject3);
+
+        GraphQuery queryCypher = new GraphQuery("MATCH (m) -[relation]-> (n) RETURN m, relation, n",null);
+        List<Map<String, Object>> responseCypher = graphGaia.queryData(queryCypher).getResults();
+        Assertions.assertEquals(5,responseCypher.size());
+
+        //cleanup
+        graphGaia.deleteClaims(credentialSubject1);
+        graphGaia.deleteClaims(credentialSubject2);
+        graphGaia.deleteClaims(credentialSubject3);
+
+
+
+    }
+
 
     @Test
     void testQueryDataTimeout() {
@@ -694,98 +879,5 @@ public class Neo4jGraphStoreTest {
                         )
                 )
         );
-    }
-
-    @Test
-    void testOrderByDetection() {
-        String query = "";
-        Assertions.assertFalse(
-                graphGaia.orderByRegex.matcher(query).find(),
-                "The ORDER BY regex should not match on empty input"
-        );
-
-        query = "MATCH (n) RETURN n";
-        Assertions.assertFalse(
-                graphGaia.orderByRegex.matcher(query).find(),
-                "The ORDER BY regex should not match on a simple query not containing 'ORDER BY' at all"
-        );
-
-        query = "MATCH (n {name: 'ORDER BY'}) RETURN n";
-        Assertions.assertFalse(
-                graphGaia.orderByRegex.matcher(query).find(),
-                "The ORDER BY regex should ignore appearances of 'ORDER BY' in quotes"
-        );
-
-        query = "MATCH (n) WHERE n.name = 'ORDER BY' RETURN n";
-        Assertions.assertFalse(
-                graphGaia.orderByRegex.matcher(query).find(),
-                "The ORDER BY regex should ignore appearances of 'ORDER BY' in quotes"
-        );
-
-        query = "MATCH (n {name: 'Foo ORDER BY bar'}) RETURN n";
-        Assertions.assertFalse(
-                graphGaia.orderByRegex.matcher(query).find(),
-                "The ORDER BY regex should ignore appearances of 'ORDER BY' in quotes"
-        );
-
-        query = "MATCH (n) WHERE n.name = 'Foo ORDER BY bar' RETURN n";
-        Assertions.assertFalse(
-                graphGaia.orderByRegex.matcher(query).find(),
-                "The ORDER BY regex should ignore appearances of 'ORDER BY' in quotes"
-        );
-
-        query = "MATCH (n) RETURN n ORDER BY n.name";
-        Assertions.assertTrue(
-                graphGaia.orderByRegex.matcher(query).find(),
-                "The ORDER BY regex should find ORDER BYs after the RETURN part of the query"
-        );
-    }
-
-    @Test
-    void testQueryShuffling() {
-        String credentialSubject = "<http://ex.com/some_resource>";
-        String resource_a = "http://ex.com/resource_a";
-        String resource_b = "http://ex.com/resource_b";
-        String resource_c = "http://ex.com/resource_c";
-        String resource_d = "http://ex.com/resource_d";
-
-        graphGaia.addClaims(
-                Arrays.asList(
-                        new SdClaim(
-                                credentialSubject,
-                                "<http://ex.com/object_property1>",
-                                "<" + resource_a + ">"
-                        ),
-                        new SdClaim(
-                                credentialSubject,
-                                "<http://ex.com/object_property1>",
-                                "<" + resource_b + ">"
-                        ),
-                        new SdClaim(
-                                credentialSubject,
-                                "<http://ex.com/object_property1>",
-                                "<" + resource_c + ">"
-                        ),
-                        new SdClaim(
-                                credentialSubject,
-                                "<http://ex.com/object_property1>",
-                                "<" + resource_d + ">"
-                        )
-                ),
-                credentialSubject
-        );
-
-        String queryWOrderBy = "MATCH (n)-[:object_property1]->(m) RETURN m.uri ORDER BY m.uri";
-        // [
-        //   {m.uri=http://ex.com/resource_a},
-        //   {m.uri=http://ex.com/resource_b},
-        //   {m.uri=http://ex.com/resource_c},
-        //   {m.uri=http://ex.com/resource_d}
-        // ]
-        List<Map<String, Object>> res = graphGaia.queryData(new GraphQuery(queryWOrderBy, null)).getResults();
-        List<String> values = res.stream().map(e -> (String) e.get("m.uri")).collect(Collectors.toList());
-        Assertions.assertEquals(Arrays.asList(resource_a, resource_b, resource_c, resource_d), values);
-
-        graphGaia.deleteClaims(credentialSubject);
     }
 }

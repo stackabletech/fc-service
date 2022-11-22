@@ -18,7 +18,9 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.TransactionConfig;
 import org.neo4j.driver.exceptions.DatabaseException;
+import org.neo4j.driver.internal.InternalEntity;
 import org.neo4j.driver.internal.InternalNode;
+import org.neo4j.driver.internal.InternalRelationship;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -57,20 +59,14 @@ public class Neo4jGraphStore implements GraphStore {
         log.debug("addClaims.enter; got claims: {}, subject: {}", sdClaimList, credentialSubject);
         int cnt = 0;
         if (!sdClaimList.isEmpty()) {
-            StringBuilder payload = new StringBuilder();
             try (Session session = driver.session()) {
-                for (SdClaim sdClaim : sdClaimList) {
-                    Model model = claimValidator.validateClaim(sdClaim);
-                    String claimsAdded = ExtendClaims.addPropertyGraphUri(model, credentialSubject);
-                    payload.append(claimsAdded);
-                    cnt++;
-                }
-
+                Model model = claimValidator.validateClaims(sdClaimList);
+                String claimsAdded = ExtendClaims.addPropertyGraphUri(model, credentialSubject);
                 String query = "CALL n10s.rdf.import.inline($payload, \"N-Triples\")\n"
-                        + "YIELD terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo\n"
+                        + "YIELD terminationStatus, triplesLoa" +
+                        "ded, triplesParsed, namespaces, extraInfo\n"
                         + "RETURN terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo";
-                log.debug("addClaims; query: {}", query);
-                Result rs = session.run(query, Map.of("payload", payload.toString()));
+                Result rs = session.run(query, Map.of("payload", claimsAdded));
                 log.debug("addClaims; response: {}", rs.list());
             }
         }
@@ -129,13 +125,17 @@ public class Neo4jGraphStore implements GraphStore {
                             Map<String, Object> outputMap = new HashMap<>();
                             totalCount = (Long) map.getOrDefault("totalCount", resultList.size());
                             for (var entry : map.entrySet()) {
-                                if(entry.getKey().equals("totalCount"))
+                                if (entry.getKey().equals("totalCount"))
                                     continue;
                                 if (entry.getValue() == null) {
                                     outputMap.put(entry.getKey(), null);
                                 } else if (entry.getValue() instanceof InternalNode) {
-                                    InternalNode SDNode = (InternalNode) entry.getValue();
-                                    outputMap.put("n.uri", SDNode.get("uri").toString().replace("\"", ""));
+                                    Map<String, Object> nodeMap = ((InternalNode) entry.getValue()).asMap();
+                                    Map<String, Object> modifiableNodeMap = new HashMap<>(nodeMap);
+                                    modifiableNodeMap.remove("uri");
+                                    outputMap.put(entry.getKey(), modifiableNodeMap);
+                                } else if (entry.getValue() instanceof InternalRelationship) {
+                                    outputMap.put(entry.getKey(), ((InternalRelationship) entry.getValue()).type());
                                 } else {
                                     outputMap.put(entry.getKey(), entry.getValue());
                                 }
@@ -161,7 +161,8 @@ public class Neo4jGraphStore implements GraphStore {
                     },
                     transactionConfig
             );
-        } catch (Exception e) {
+        } catch (
+                Exception e) {
             stamp = System.currentTimeMillis() - stamp;
             log.error("queryData.error", e);
             if (e instanceof DatabaseException) {
@@ -175,6 +176,7 @@ public class Neo4jGraphStore implements GraphStore {
             }
             throw new ServerException("error querying data " + e.getMessage());
         }
+
     }
 
     private String getDynamicallyAddedCountClauseQuery(GraphQuery sdQuery) {
@@ -201,7 +203,6 @@ public class Neo4jGraphStore implements GraphStore {
             return sdQuery.getQuery();
         }
     }
-
 
 
 }

@@ -1,15 +1,13 @@
 package eu.gaiax.difs.fc.core.util;
 
-import org.apache.jena.graph.Node;
-import org.apache.jena.graph.Triple;
-import org.apache.jena.rdf.model.AnonId;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.Property;
-import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.rdf.model.impl.StatementImpl;
 import org.apache.jena.vocabulary.RDF;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ExtendClaims {
 
@@ -17,36 +15,47 @@ public class ExtendClaims {
      * Adds annotation property with value credential subject for claims Uses
      * model which previously validated containing claims
      *
-     * @param model
+     * @param claims
      * @param credentialSubject
      * @return Triples as string
      */
-    public static String addPropertyGraphUri(Model model, String credentialSubject) {
-        Property claimsGraphUri = model.createProperty("http://w3id.org/gaia-x/service#claimsGraphUri");
-        Triple triple = model.getGraph().find().next();
-        Node s = triple.getSubject();
-        Node p = triple.getPredicate();
-        Node o = triple.getObject();
+    public static String addPropertyGraphUri(Model claims, String credentialSubject) {
+        Literal credentialSubjectLiteral = ResourceFactory.createStringLiteral(credentialSubject);
+        Property claimsGraphUri = ResourceFactory.createProperty("http://w3id.org/gaia-x/service#claimsGraphUri");
 
-        Resource subject;
-        if (s.isURI())
-            subject = model.createResource(s.getURI());
-        else // assuming it is a blank node
-            subject = model.createResource(new AnonId(s.getBlankNodeLabel()));
+        List<Statement> additionalTriples = new ArrayList<>();
 
-        model.add(subject, claimsGraphUri, credentialSubject);
-        if (o.isURI() && !p.equals(RDF.type.asNode())) {
-            Resource object = model.createResource(o.getURI());
-            model.add(object, claimsGraphUri, credentialSubject);
-        } else if (o.isBlank() && !p.equals(RDF.type.asNode())) {
-            Resource blankNode = model.createResource(new AnonId(o.getBlankNodeId()));
-            model.add(blankNode, claimsGraphUri, credentialSubject);
+        StmtIterator triples = claims.listStatements();
+        while (triples.hasNext()) {
+            Statement triple = triples.next();
+            Resource s = triple.getSubject();
+            Property p = triple.getPredicate();
+            RDFNode o = triple.getObject();
+
+            additionalTriples.add(
+                    new StatementImpl(
+                            s,
+                            claimsGraphUri,
+                            credentialSubjectLiteral
+                    )
+            );
+
+            if (o.isResource() && !p.equals(RDF.type)) {
+                // URIs and blank nodes, but not literals
+                additionalTriples.add(
+                        new StatementImpl(
+                                o.asResource(),
+                                claimsGraphUri,
+                                credentialSubjectLiteral
+                        )
+                );
+            }
         }
+
+        claims.add(additionalTriples);
         OutputStream outputstream = new ByteArrayOutputStream();
-        model.write(outputstream, "N-TRIPLES");
+        claims.write(outputstream, "N-TRIPLES");
 
         return outputstream.toString();
     }
-
-
 }
