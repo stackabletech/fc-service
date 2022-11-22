@@ -185,7 +185,7 @@ public class SelfDescriptionStoreCompositeTest {
     List<Map<String, Object>> claims = graphStore.queryData(
         new GraphQuery("MATCH (n) RETURN n", null)).getResults();
     log.debug("Claims: {}", claims);
-    Assertions.assertEquals(8, claims.size());
+    Assertions.assertEquals(3, claims.size());
 
     graphStore.deleteClaims(sdMeta.getId());
 
@@ -200,7 +200,7 @@ public class SelfDescriptionStoreCompositeTest {
     claims = graphStore.queryData(
         new GraphQuery("MATCH (n) RETURN n", null)).getResults();
     log.debug("Claims: {}", claims);
-    Assertions.assertEquals(8, claims.size());
+    Assertions.assertEquals(3, claims.size());
 
     sdStore.deleteSelfDescription(hash);
     assertAllSdFilesDeleted();
