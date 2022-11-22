@@ -1,8 +1,7 @@
+
 {
   "@context": [
-    "http://www.w3.org/ns/shacl#",
-    "http://www.w3.org/2001/XMLSchema#",
-    "http://w3id.org/gaia-x/participant#"
+    "https://www.w3.org/2018/credentials/v1"
   ],
   "@id": "http://example.edu/verifiablePresentation/self-description1",
   "type": [
@@ -11,26 +10,24 @@
   "verifiableCredential": [
     {
       "@context": [
-        "http://www.w3.org/ns/shacl#",
-        "http://www.w3.org/2001/XMLSchema#",
-        "http://w3id.org/gaia-x/participant#",
-        "@nest"
+        "https://www.w3.org/2018/credentials/v1"
       ],
       "@id": "https://delta-dao.com/.well-known/participant.json",
       "type": [
-        "VerifiableCredential", "LegalPerson"
+        "VerifiableCredential"
       ],
       "issuer": "https://example.edu/issuers/particiant1",
       "issuanceDate": "2010-01-01T00:00:00Z",
       "credentialSubject": {
+        "@context": {
+          "gx-participant": "http://w3id.org/gaia-x/participant#",
+          "gx-service-offering": "http://w3id.org/gaia-x/service#",
+          "xsd": "http://www.w3.org/2001/XMLSchema#"
+        },
         "id": "did:web:delta-dao.com",
         "@type": [
-          "LegalPerson"
+          "gx-participant:LegalPerson"
         ],
-        "gx-participant:name": {
-          "@value": "deltaDAO AG",
-          "@type": "xsd:string"
-        },
         "gx-participant:legalName": {
           "@value": "deltaDAO AG",
           "@type": "xsd:string"

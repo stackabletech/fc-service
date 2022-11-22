@@ -1,22 +1,24 @@
 {
   "@context": [
-    "https://www.w3.org/2018/credentials/v1",
-    "https://w3id.org/gaia-x/context.jsonld"
+    "https://www.w3.org/2018/credentials/v1"
   ],
   "type": "VerifiablePresentation",
   "verifiableCredential": [
     {
       "@context": [
-        "https://www.w3.org/2018/credentials/v1",
-        "https://w3id.org/gaia-x/context.jsonld"
+        "https://www.w3.org/2018/credentials/v1"
       ],
       "id": "http://example.edu/credentials/1872",
       "type": "VerifiableCredential",
       "issuer": "https://www.handelsregister.de/",
       "issuanceDate": "2010-01-01T19:73:24Z",
       "credentialSubject": {
+        "@context": {
+          "gax": "http://w3id.org/gaia-x/participant#",
+          "vcard": "http://www.w3.org/2006/vcard/ns#"
+        },
         "@id": "http://example.org/test-issuer",
-        "@type": "LegalPerson",
+        "@type": "gax:LegalPerson",
         "gax:hasLegallyBindingName": "My example provider",
         "gax:hasLegallyBindingAddress": {
           "id": "_:b0",

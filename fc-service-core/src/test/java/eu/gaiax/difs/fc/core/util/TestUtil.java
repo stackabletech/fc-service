@@ -1,12 +1,16 @@
 package eu.gaiax.difs.fc.core.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.File;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.temporal.ChronoUnit;
 
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
+import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 
 public class TestUtil {
 
@@ -20,4 +24,17 @@ public class TestUtil {
     return new ContentAccessorFile(new File(str));
   }
 
+  // Since SdMetaRecord class extends SelfDescriptionMetadata class instead of being formed from it, then check
+  // in the equals method will always be false. Because we are downcasting SdMetaRecord to SelfDescriptionMetadata.
+  public static void assertThatSdHasTheSameData(final SelfDescriptionMetadata expected, final SelfDescriptionMetadata actual) {
+    assertEquals(expected.getId(), actual.getId());
+    assertEquals(expected.getSdHash(), actual.getSdHash());
+    assertEquals(expected.getStatus(), actual.getStatus());
+    assertEquals(expected.getIssuer(), actual.getIssuer());
+    assertEquals(expected.getValidatorDids(), actual.getValidatorDids());
+    assertEquals(expected.getUploadDatetime().truncatedTo(ChronoUnit.MILLIS), actual.getUploadDatetime().truncatedTo(ChronoUnit.MILLIS));
+    assertEquals(expected.getStatusDatetime().truncatedTo(ChronoUnit.MILLIS), actual.getStatusDatetime().truncatedTo(ChronoUnit.MILLIS));
+    assertEquals(expected.getSelfDescription().getContentAsString(), actual.getSelfDescription().getContentAsString());
+  }
+    
 }

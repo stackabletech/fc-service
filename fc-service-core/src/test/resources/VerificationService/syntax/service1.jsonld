@@ -1,71 +1,51 @@
 {
-	"@context": [
-		"https://www.w3.org/2018/credentials/v1"
-	],
+	"@context": ["https://www.w3.org/2018/credentials/v1"],
 	"@id": "http://example.edu/verifiablePresentation/self-description1",
-	"@type": [
-		"VerifiablePresentation"
-	],
-	"issuer": "did:example:ebfeb1f712ebc6f1c276e12ec21",
-	"issuanceDate": "2010-01-01T19:23:24Z",
+	"type": ["VerifiablePresentation"],
 	"verifiableCredential": {
-		"@context": [
-			"https://www.w3.org/2018/credentials/v1"
-		],
-		"@id": "https://delta-dao.com/.well-known/participant.json",
-		"@type": [
-			"VerifiableCredential"
-		],
+		"@context": ["https://www.w3.org/2018/credentials/v1"],
+		"@id": "https://www.example.org/legalPerson.json",
+		"@type": ["VerifiableCredential"],
+		"issuer": "http://gaiax.de",
+		"issuanceDate": "2022-10-19T18:48:09Z",
 		"credentialSubject": {
 			"@context": {
-				"owl": "http://www.w3.org/2002/07/owl#",
-				"rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-				"rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+				"dcat": "http://www.w3.org/ns/dcat#",
+				"gax-core": "http://w3id.org/gaia-x/core#",
+				"gax-participant": "http://w3id.org/gaia-x/participant#",
+				"gax-service": "http://w3id.org/gaia-x/service#",
 				"xsd": "http://www.w3.org/2001/XMLSchema#"
 			},
-			"@graph": [
-				{
-					"@id": "http://w3id.org/gaia-x/service#service1",
-					"@type": "http://w3id.org/gaia-x/service#ServiceOffering",
-					"http://w3id.org/gaia-x/service#dataExport": {
-						"@id": "_:N061bc80a4ec1458f8cd416bb61c4fea6"
-					},
-					"http://w3id.org/gaia-x/service#providedBy": {
-						"@id": "http://w3id.org/gaia-x/participant#provider1"
-					},
-					"http://w3id.org/gaia-x/service#serviceTitle": "Service Title",
-					"http://w3id.org/gaia-x/service#termsAndConditions": {
-						"@id": "_:N546695a291944257aec9d6e8d35d2b18"
-					},
-					"http://www.w3.org/ns/dcat#keyword": [
-						"Keyword1",
-						"Keyword2",
-						"Keyword3",
-						"Keyword4",
-						"Keyword5",
-						"Keyword6",
-						"Keyword7",
-						"Keyword8",
-						"Keyword9",
-						"Keyword10"
-					]
+			"@id": "gax-service:Service1",
+			"@type": "gax-service:ServiceOffering",
+			"gax-service:dataExport": {
+				"@type": "gax-service:DataExport",
+				"gax-core:accessType": "access type",
+				"gax-core:formatType": "format type",
+				"gax-core:requestType": "request type"
+			},
+
+			"gax-service:providedBy": {
+				"@id": "gax-participant:Provider1"
+			},
+			"gax-service:termsAndConditions": {
+				"@type": "gax-core:TermsAndConditions",
+				"gax-core:content": {
+					"@type": "xsd:anyURI",
+					"@value": "http://example.org/tac"
 				},
-				{
-					"@id": "_:N546695a291944257aec9d6e8d35d2b18",
-					"@type": "http://w3id.org/gaia-x/core#TermsAndConditions",
-					"http://w3id.org/gaia-x/core#content": {
-						"@type": "xsd:anyURI",
-						"@value": "http://example.org/tac"
-					},
-					"http://w3id.org/gaia-x/core#hash": "1234"
-				},
-				{
-					"@id": "_:N061bc80a4ec1458f8cd416bb61c4fea6",
-					"http://w3id.org/gaia-x/core#accessType": "access type",
-					"http://w3id.org/gaia-x/core#formatType": "format type",
-					"http://w3id.org/gaia-x/core#requestType": "request type"
-				}
-			]
+				"gax-core:hash": "1234"
+			},
+			"dcat:keyword": [
+				"Keyword1_1",
+				"Keyword1_2",
+				"Keyword1_3",
+				"Keyword1_4",
+				"Keyword1_5",
+				"Keyword1_6",
+				"Keyword1_7"
+			],
+			"gax-service:serviceTitle": "Service Title"
 		}
 	}
 }

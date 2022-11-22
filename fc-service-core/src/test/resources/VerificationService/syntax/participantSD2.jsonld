@@ -6,65 +6,66 @@
     "VerifiablePresentation"
   ],
   "holder": "did:example:holder",
-  "verifiableCredential": {
-    "@context": [
-      "https://www.w3.org/2018/credentials/v1"
-    ],
-    "@id": "https://delta-dao.com/.well-known/participant.json",
-    "issuer": "https://www.handelsregister.de/",
-    "issuanceDate": "2010-01-01T19:37:24Z",
-    "type": [
-      "VerifiableCredential",
-      "LegalPerson"
-    ],
-    "credentialSubject": {
-      "@context": {
-        "gax-participant": "http://w3id.org/gaia-x/participant#",
-        "xsd": "http://www.w3.org/2001/XMLSchema#"
-      },
-      "id": "http://example.org/test-issuer",
-      "@type": "LegalPerson",
-      "gax-participant:name": {
-        "@value": "deltaDAO AG",
-        "@type": "xsd:string"
-      },
-      "gax-participant:legalName": {
-        "@value": "deltaDAO AG",
-        "@type": "xsd:string"
-      },
-      "gax-participant:legalAddress": {
-        "@type": "gax-participant:Address",
-        "gax-participant:country": {
-          "@value": "DE",
+  "verifiableCredential": [
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1"
+      ],
+      "@id": "https://delta-dao.com/.well-known/participant.json",
+      "issuer": "https://www.handelsregister.de/",
+      "issuanceDate": "2010-01-01T19:37:24Z",
+      "type": [
+        "VerifiableCredential"
+      ],
+      "credentialSubject": {
+        "@context": {
+          "gax-participant": "http://w3id.org/gaia-x/participant#",
+          "xsd": "http://www.w3.org/2001/XMLSchema#"
+        },
+        "id": "http://example.org/test-issuer",
+        "@type": "gax-participant:LegalPerson",
+        "gax-participant:name": {
+          "@value": "deltaDAO AG",
           "@type": "xsd:string"
         },
-        "gax-participant:street-address": {
-          "@value": "Geibelstraße 46b",
+        "gax-participant:legalName": {
+          "@value": "deltaDAO AG",
           "@type": "xsd:string"
         },
-        "gax-participant:postal-code": {
-          "@value": "22303",
-          "@type": "xsd:string"
-        },
-        "gax-participant:locality": {
-          "@value": "Hamburg",
-          "@type": "xsd:string"
+        "gax-participant:legalAddress": {
+          "@type": "gax-participant:Address",
+          "gax-participant:country": {
+            "@value": "DE",
+            "@type": "xsd:string"
+          },
+          "gax-participant:street-address": {
+            "@value": "Geibelstraße 46b",
+            "@type": "xsd:string"
+          },
+          "gax-participant:postal-code": {
+            "@value": "22303",
+            "@type": "xsd:string"
+          },
+          "gax-participant:locality": {
+            "@value": "Hamburg",
+            "@type": "xsd:string"
+          }
         }
+      },
+      "proof": {
+        "type": "JsonWebSignature2020",
+        "created": "2022-11-10T07:47:46Z",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:web:compliance.lab.gaia-x.eu",
+        "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..mU6TkTSK2aNkfaENGMmZ8CElhs5uM02nDz0kF2q_tLjSX8JSj59SOWaiwIlreqKVxYxGRX1kGw5ZSDw-ZEM1bvY7iWerGWSRQnft4vdDO1NFTwNlo3whK43s-tUfdcDZrxnosMysZ2rgFUy35wVAgZ6JJ8UsPpHy9lBfD_EFxL_03FV0wqF2O6c5ob91soJ8GUo7yceTu1dSvQL7advNemkMStLGRhBEQUlQbBaKVSTd-dPXRQPUuc-FBQUX2eSEIXDb2jMH65QGFW0Z-UVKhhCz74D8sy8QP7irbn_watFdO3GgKs1LT6TuG2XwJzGDo0p6WxrPNZ1GSL5wWi_F4e8kBHtsidXCb8Q90gfaov7Fdi72twLJFmttawpUfppnBvj3NInkipNW-Jc_o6mRCqjdoYTTQZvN2vQSJaIvc06QG3KT4LHh157hQ7BE_eKbKjRE3EWGXmWKz2onztWauzdW5nrEDfTXtrQcbtYHL4IJQytloTWu9AS7Oy9VmHIE_XWexGulJv3-sBU0Boz8k3TVqJsu3rGuGi0Leso3yKCWUiJkXtwaX8IrTOmou-J3nKjgSDAgZ7GFp4JBGdriX9OxbX6j5vA2eXESIELvC0APt3YMsU7nBeD84lso2BNO-XePnVjTE45ju-1s558N02h9E3W-u9vb9qrSCZnNZ34"
       }
-    },
-    "proof": {
-      "type": "JsonWebSignature2020",
-      "created": "2022-10-25T13:34:55Z",
-      "proofPurpose": "assertionMethod",
-      "verificationMethod": "did:web:example",
-      "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..y9_kaFtArtAWCzpxXQy_TfYtG49yNXIT8tuVlABsJ8YXLMCa9xeUIZr6-ugdwaBACUOXr3KJ4c9-EN6pyHe-GHkDdXfarE7WQR2iqH3csgp_lD4-eoOtj19xQlxAC11FHokZ4b2DXbHIPpJ0rmITNFJxjBtp1BLtmVeC_KR-ysQlvAj8Dtp4OSSbwMyAZ0Qh0_v3MdZy2XLwMLm4k5Nt2gXIxI9GMGL4n74xovHJHY2OtYUsxynl3p_2Uh5-v5gGabJ06Qm8-MzGJDlqqYs3N4YfnRshzjuKMZTFJvz49C0ZXN3GY6BbwxHyypgR3MgWvEyN4lhYsHU5xgDo2em-Rm41sgccMEUhttOCkQl2BzYECBlht7TM5hTGBQLZl-5OkVN81PrQOufdVFiV2XJwL7l8uaUK7C8KWGW37eNTG5e5Cqtu36hH8CotkobyaeGJGqcuoCUCFnMEDbtlyJyYs1HXqOI5qDVqqpx0QH4ANek2fR6wdzv1q9LddmIEP9pNekeqK03jyPEiaLC0PWWDDicxG6xvGLL0yiepTLDXS4-WZydPnZEEYDcQN4JUPjXCveCPXpRU9U6iQFkUrhhqfBo0QERPSXGy4LnN9ECUe5sDyEQBcI7RqmWEmNxotdCtBILfa3dY6tDvTgECxLOjdtlQeCH4NgECOHDBPrf2Wzs"
     }
-  },
+  ],
   "proof": {
     "type": "JsonWebSignature2020",
-    "created": "2022-10-25T13:34:56Z",
+    "created": "2022-11-10T07:47:46Z",
     "proofPurpose": "assertionMethod",
-    "verificationMethod": "did:web:example",
-    "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..PM5vI0DHSlJ1p3HSfnUP9t_FROYxmYNldO1vfduqHRxHD49YYpPT-B4WR-H0bZbntJ-h9EC6bWljQiV3yR68nxOK2NBIMywqsiVlSyjU0VSCF5cP5zbKTF88CRGtOqIot8kELObNMWO9Olx81g9Bx2-1K2iHW5C4NgjHd9Rt5WumXxpfjyfnUG5rqP7yS0r-mq77RRqhNc49XQKC72AiHUCA9yXcWWyj30OPC4VXt4SZDii00bJAkMRwCzv6PzNMhMH-J7ZlDt7up1Ork8JCgMrKIhifLe7OnfPQag0FIFJL7Yq1qJWXmK4SDn7F_yBzX1RTW_7HQ0bPx6JDRyLLLwYK94kOcRY1tDDXKSTYlUy7-pVrUA7GxgtS5ZwMlKRt6tKA--uqg97sszkvmsThwrsVXjkAEgS44kZPzHu9wEeK78SNQewRJSXVJ2lCccnanYfqAfqSJ2D4ZG2HoUboe8RJNWM-1psR6KYyHE6aCpLIVBb7sFs_-_3myBgUT9fMYVwnmGet-1RJwFhmyBV7IqQi6BccaN1FucR0LdfP56cgO4DDQsAGuSrQOoXjnFHxsPrO3zswFjjfkqpuJ1HSXhs1jenwCJ1GdTIGNaxZjLSamSwVlhl2MfCnQy51HH3rD_n0OG2aH5qXbd--T8DmQ5Xl8ko5VnsVDvleF5Rsm1c"
+    "verificationMethod": "did:web:compliance.lab.gaia-x.eu",
+    "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..oldaYOkNrUfsXmbSQeU5Wpr0opYhN-P253K92R3QCCWH_xmOXBuIRTIT_-sTKxJnSqJ6RjcN34DxhzPZ5hohURvbdki_pqIhz4b-mUtZvQCZo0CmGiAbCuhZxSZQeeS9NcqC8XywURXscO2gSCLCIpukj1h8G2Tm7yPLUr1FSL97PmhvnPqOgLMsn-1MV0r9tZ92pXdDbRK6kR1N67bGDbuKymtXo9S7Ui7ZveA6fMROkVFcEQANtaOtW9HptYxMl_jLf5Y0qB0lArDQq28YKaE5bogPUeoojdkyRMw-7ust3DTNRu_D2MQi8vjTglOI6bzGhuN5_dBikwwki28WxQClYSdJS-_lcYLPeFQrJX-RRhpZaJMxTdFgzZLRfsbywFY2RSX0yoYb3uqgHnbNGSp163j5WwqSkEvDvZ-Aw2aTBLV1EUPT0U9b4N6qds-NgipVFQUBk5w2uM98vGjmwDni1xIxmKz1rb7BpRX6AYAWXHbWf1VvsATuEgdgXmzx26mxI8lsysrf9ycLKfq63-JI99D7WXTPkWlJ-0tqOqKC8Seq6FSC1JhMp57-lLefPuURJNlykHrQIZPBqo1RNBVO0pqwgCbA5CVH10cBPqIKpWJklCAxi91k1yxsKTruPrIqsabOJYexGOXxcCO5rJ3Wf5o0UzHYYWOzlrEaCS0"
   }
 }

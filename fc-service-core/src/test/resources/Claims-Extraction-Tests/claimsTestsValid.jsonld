@@ -15,6 +15,9 @@
 		"gax-service": "http://w3id.org/gaia-x/service#"
 	  },
       "id": "https://delta-dao.com/.well-known/serviceMVGPortal.json",
+      "@type": [
+          "gax-service:ServiceOffering"
+       ],
       "gax-service:providedBy": {
         "@type": "xsd:string",
         "@value": "https://delta-dao.com/.well-known/participant.json"

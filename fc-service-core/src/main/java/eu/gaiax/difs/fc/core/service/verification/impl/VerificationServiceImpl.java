@@ -35,9 +35,11 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.ontology.OntModel;
+import org.apache.jena.ontology.OntModelSpec;
+import org.apache.jena.query.*;
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.vocabulary.RDF;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -71,13 +73,13 @@ public class VerificationServiceImpl implements VerificationService {
 
   private static final Lang SD_LANG = Lang.JSONLD11;
   private static final Lang SHAPES_LANG = Lang.TURTLE;
-  private static final String[] TYPE_KEYS = {"type", "types", "@type", "@types"};
+  private static final int PARTICIPANT_CONSTANT = 1 ;
+  private static final int SERVICE_OFFERING_CONSTANT = 2 ;
+  private static final String CREDENTIAL_SUBJECT = "https://www.w3.org/2018/credentials#credentialSubject";
   private static final String[] ID_KEYS = {"id", "@id"};
-  // This sniffing is extremely unreliable, since namespace-names are not fixed.
-  private static final Set<String> PARTICIPANT_TYPES = Set.of("LegalPerson", "http://w3id.org/gaia-x/participant#LegalPerson", "gax-participant:LegalPerson");
-  private static final Set<String> SERVICE_OFFERING_TYPES = Set.of("ServiceOfferingExperimental", "http://w3id.org/gaia-x/service#ServiceOffering", "gax-service:ServiceOffering");
   private static final Set<String> SIGNATURES = Set.of("JsonWebSignature2020"); //, "Ed25519Signature2018");
-
+  private static final String PARTICIPANT_TYPE = "http://w3id.org/gaia-x/participant#Participant";
+  private static final String SERVICE_OFFERING_TYPE = "http://w3id.org/gaia-x/service#ServiceOffering";
   private static final ClaimExtractor[] extractors = new ClaimExtractor[]{new TitaniumClaimExtractor(), new DanubeTechClaimExtractor()};
 
   private static final int VRT_UNKNOWN = 0;
@@ -349,30 +351,60 @@ public class VerificationServiceImpl implements VerificationService {
     }
     return result ? Pair.of(true, false) : Pair.of(false, true);
   }
-
+  private boolean checkTypeSubClass(String type, int parent) {
+    String gax_type;
+    if(parent == PARTICIPANT_CONSTANT) {
+      gax_type = PARTICIPANT_TYPE;
+    } else if (parent == SERVICE_OFFERING_CONSTANT) {
+      gax_type = SERVICE_OFFERING_TYPE;
+    } else {
+      return false;
+    }
+    
+    if (type.equals(gax_type)) {
+      return true;
+    }
+    String queryString =
+            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                    "select ?uri " +
+                    "where { " +
+                    "?uri rdfs:subClassOf <" + gax_type +">"+
+                    "} \n ";
+    Query query = QueryFactory.create(queryString);
+    ContentAccessor gaxOntology = schemaStore.getCompositeSchema(SchemaStore.SchemaType.ONTOLOGY);
+    OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM_MICRO_RULE_INF);
+    model.read(new StringReader(gaxOntology.getContentAsString()), null, SHAPES_LANG.getName());
+    QueryExecution qe = QueryExecutionFactory.create(query, model);
+    ResultSet results = qe.execSelect();
+    while (results.hasNext()) {
+      QuerySolution q = results.next();
+      String node =  q.get("uri").toString();
+      if (node.equals(type)) {
+        return true;
+      }
+    }
+    return false;
+  }
   private Boolean getSDType(JsonLDObject container) {
     try {
-      for (String key : TYPE_KEYS) {
-        Object _type = container.getJsonObject().get(key);
-        log.debug("getSDType; key: {}, value: {}", key, _type);
-        if (_type == null) {
-          continue;
-        }
+      Model data = ModelFactory.createDefaultModel();
+      RDFParser.create()
+              .streamManager(getStreamManager())
+              .source(new StringReader(container.toJson()))
+              .lang(SD_LANG)
+              .parse(data);
 
-        List<String> types;
-        if (_type instanceof List) {
-          types = (List<String>) _type;
-        } else {
-          types = List.of((String) _type);
-        }
-
-        for (String type : types) {
-          // This should properly expand the namespace before matching.
-          if (PARTICIPANT_TYPES.contains(type)) {
-            return Boolean.TRUE;
+      NodeIterator node = data.listObjectsOfProperty(data.createProperty(CREDENTIAL_SUBJECT));
+      while (node.hasNext()){
+        NodeIterator typeNode = data.listObjectsOfProperty(node.nextNode().asResource(), RDF.type);
+        List <RDFNode> rdfNodeList = typeNode.toList();
+        for ( RDFNode rdfNode : rdfNodeList) {
+          String resourceURI = rdfNode.asResource().getURI();
+          if (checkTypeSubClass(resourceURI, PARTICIPANT_CONSTANT)) {
+            return true;
           }
-          if (SERVICE_OFFERING_TYPES.contains(type)) {
-            return Boolean.FALSE;
+          if (checkTypeSubClass(resourceURI, SERVICE_OFFERING_CONSTANT)) {
+            return false;
           }
         }
       }
@@ -494,30 +526,31 @@ public class VerificationServiceImpl implements VerificationService {
    * @return SemanticValidationResult object
    */
   SemanticValidationResult validatePayloadAgainstSchema(ContentAccessor payload, ContentAccessor shaclShape) {
-    Model data = ModelFactory.createDefaultModel();
-    RDFParser.create()
-        .streamManager(getStreamManager())
-        .source(payload.getContentAsStream())
-        .lang(SD_LANG)
-        .parse(data);
+     Model data = ModelFactory.createDefaultModel();
+     RDFParser.create()
+             .streamManager(getStreamManager())
+             .source(payload.getContentAsStream())
+             .lang(SD_LANG)
+             .parse(data);
 
-    Model shape = ModelFactory.createDefaultModel();
-    RDFParser.create()
-        .streamManager(getStreamManager())
-        .source(shaclShape.getContentAsStream())
-        .lang(SHAPES_LANG)
-        .parse(shape);
+     Model shape = ModelFactory.createDefaultModel();
+     RDFParser.create()
+             .streamManager(getStreamManager())
+             .source(shaclShape.getContentAsStream())
+             .lang(SHAPES_LANG)
+             .parse(shape);
 
-    Resource reportResource = ValidationUtil.validateModel(data, shape, true);
+     Resource reportResource = ValidationUtil.validateModel(data, shape, true);
 
-    data.close();
-    shape.close();
+     data.close();
+     shape.close();
 
-    boolean conforms = reportResource.getProperty(SH.conforms).getBoolean();
-    String report = null;
-    if (!conforms) {
-      report = reportResource.getModel().toString();
-    }
+     boolean conforms = reportResource.getProperty(SH.conforms).getBoolean();
+     String report = null;
+     if (!conforms) {
+       report = reportResource.getModel().toString();
+     }
+
     return new SemanticValidationResult(conforms, report);
   }
 

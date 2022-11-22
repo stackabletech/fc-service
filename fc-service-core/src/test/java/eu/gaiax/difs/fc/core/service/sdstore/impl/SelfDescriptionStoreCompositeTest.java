@@ -1,21 +1,16 @@
 package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
 import static eu.gaiax.difs.fc.core.util.TestUtil.getAccessor;
+import static eu.gaiax.difs.fc.core.util.TestUtil.assertThatSdHasTheSameData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.IOException;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
 import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -68,21 +63,27 @@ public class SelfDescriptionStoreCompositeTest {
 
   @Autowired
   private VerificationService verificationService;
+
   @Autowired
   private SelfDescriptionStore sdStore;
+
+  @Autowired
+  private SchemaStoreImpl schemaStore;
 
   @Autowired
   private Neo4j embeddedDatabaseServer;
 
   @Autowired
   private Neo4jGraphStore graphStore;
+
   @Autowired
   @Qualifier("sdFileStore")
   private FileStore fileStore;
 
   @AfterEach
-  public void storageSelfCleaning() throws IOException {
-    fileStore.clearStorage();
+  public void storageSelfCleaning() {
+    schemaStore.clear();
+    sdStore.clear();
   }
 
   @AfterAll
@@ -99,8 +100,10 @@ public class SelfDescriptionStoreCompositeTest {
     assertEquals(expected.getStatus(), actual.getStatus());
     assertEquals(expected.getIssuer(), actual.getIssuer());
     assertEquals(expected.getValidatorDids(), actual.getValidatorDids());
-    assertEquals(expected.getUploadDatetime(), actual.getUploadDatetime());
-    assertEquals(expected.getStatusDatetime(), actual.getStatusDatetime());
+   // assertEquals(expected.getUploadDatetime(), actual.getUploadDatetime());
+    assertEquals(expected.getUploadDatetime().truncatedTo(ChronoUnit.MILLIS), actual.getUploadDatetime().truncatedTo(ChronoUnit.MILLIS));
+     assertEquals(expected.getStatusDatetime().truncatedTo(ChronoUnit.MILLIS), actual.getStatusDatetime().truncatedTo(ChronoUnit.MILLIS));
+   // assertEquals(expected.getStatusDatetime(), actual.getStatusDatetime());
     assertEquals(expected.getSelfDescription().getContentAsString(), actual.getSelfDescription().getContentAsString());
   }
 
@@ -128,6 +131,7 @@ public class SelfDescriptionStoreCompositeTest {
   @Test
   void test01StoreSelfDescription() throws Exception {
     log.info("test01StoreSelfDescription");
+    schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("Claims-Extraction-Tests/participantSD.jsonld");
     // Only verify semantics, not schema or signatures
     VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false);
@@ -166,6 +170,7 @@ public class SelfDescriptionStoreCompositeTest {
   @Test
   void test02RebuildGraphDb() throws Exception {
     log.info("test02RebuildGraphDb");
+    schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("Claims-Extraction-Tests/providerTest.jsonld");
     // Only verify semantics, not schema or signatures
     VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false);

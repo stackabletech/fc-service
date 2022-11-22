@@ -26,16 +26,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.persistence.EntityExistsException;
 import javax.persistence.LockModeType;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileExistsException;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -46,6 +44,7 @@ import org.apache.jena.vocabulary.SKOS;
 import org.apache.jena.vocabulary.OWL;
 import org.apache.jena.shacl.vocabulary.SHACLM;
 import org.apache.jena.vocabulary.OWL2;
+import org.hibernate.Transaction;
 
 /**
  *
@@ -181,11 +180,7 @@ public class SchemaStoreImpl implements SchemaStore {
 
   public boolean isSchemaType(ContentAccessor schema, SchemaType type) {
     SchemaAnalysisResult result = analyseSchema(schema);
-    if (result.getSchemaType().equals(type)) {
-      return true;
-    } else {
-      return false;
-    }
+    return result.getSchemaType().equals(type);
   }
 
   private ContentAccessor createCompositeSchema(SchemaType type) {
@@ -277,7 +272,6 @@ public class SchemaStoreImpl implements SchemaStore {
 
     currentSession.flush();
     COMPOSITE_SCHEMAS.remove(result.getSchemaType());
-    // TODO: Re-Validate SDs in a separate thread.
     return schemaId;
   }
 
@@ -406,6 +400,29 @@ public class SchemaStoreImpl implements SchemaStore {
     File file = new File(str);
     ContentAccessorFile accessor = new ContentAccessorFile(file);
     return accessor;
+  }
+
+  @Override
+  public void clear() {
+    try ( Session session = sessionFactory.openSession()) {
+      Transaction transaction = session.getTransaction();
+      // Transaction is sometimes not active. For instance when called from an @AfterAll Test method
+      if (transaction == null || !transaction.isActive()) {
+        transaction = session.beginTransaction();
+        session.createNativeQuery("delete from schemafiles").executeUpdate();
+        transaction.commit();
+      } else {
+        session.createNativeQuery("delete from schemafiles").executeUpdate();
+      }
+    } catch (Exception ex) {
+      log.error("SchemaStoreImpl: Exception while clearing Database.", ex);
+    }
+    try {
+      fileStore.clearStorage();
+    } catch (IOException ex) {
+      log.error("SchemaStoreImpl: Exception while clearing FileStore: {}.", ex.getMessage());
+    }
+    COMPOSITE_SCHEMAS.clear();
   }
 
 }
