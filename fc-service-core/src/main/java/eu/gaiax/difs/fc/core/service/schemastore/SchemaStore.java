@@ -92,4 +92,9 @@ public interface SchemaStore {
    */
   ContentAccessor getCompositeSchema(SchemaType schemaType);
 
+  /**
+   * Remove all Schemas from the SchemaStore.
+   */
+  void clear();
+
 }

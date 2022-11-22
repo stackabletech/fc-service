@@ -14,7 +14,7 @@
       "issuer": "https://www.handelsregister.de/" ,
       "issuanceDate": "2010-01-01T19:73:24Z",
       "type": [
-        "VerifiableCredential", "LegalPerson"
+        "VerifiableCredential"
       ],
       "credentialSubject": {
         "@context": {

@@ -1,5 +1,9 @@
 package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
+import static eu.gaiax.difs.fc.core.util.TestUtil.assertThatSdHasTheSameData;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
@@ -42,9 +46,6 @@ import org.hibernate.Transaction;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -60,6 +61,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.transaction.annotation.Transactional;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.MethodName.class)
@@ -68,6 +70,7 @@ import org.springframework.test.context.ContextConfiguration;
 @ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, FileStoreConfig.class,
   SelfDescriptionStoreImpl.class, SelfDescriptionStoreImplTest.class, DatabaseConfig.class, Neo4jGraphStore.class})
 @DirtiesContext
+@Transactional
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
@@ -344,6 +347,7 @@ public class SelfDescriptionStoreImplTest {
     int matchCount = byFilter.getResults().size();
     log.info("filter returned {} match(es)", matchCount);
     assertEquals(1, matchCount, "expected 1 filter match, but got " + matchCount);
+    assertEquals(sdMeta.getId(), byFilter.getResults().get(0).getId());
     SelfDescriptionMetadata firstResult = byFilter.getResults().get(0);
     assertEquals(sdMeta.getSdHash(), firstResult.getSdHash(), "Incorrect Hash");
     assertEquals(sdMeta.getId(), firstResult.getId(), "Incorrect SubjectId");

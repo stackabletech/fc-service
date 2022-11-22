@@ -13,25 +13,25 @@
       "type": "VerifiableCredential",
       "issuanceDate": "2010-01-01T19:73:24Z",
       "credentialSubject": {
-        "@type": "ServiceOfferingExperimental",
+        "@type": "http://w3id.org/gaia-x/service#ServiceOffering",
         "given_name": "Fredrik",
         "family_name": "Str&#246;mberg",
         "birthdate": "1949-01-22"
       },
       "proof": {
         "type": "JsonWebSignature2020",
-        "created": "2022-10-25T14:49:04Z",
+        "created": "2022-11-10T17:39:48Z",
         "proofPurpose": "assertionMethod",
         "verificationMethod": "did:web:compliance.lab.gaia-x.eu",
-        "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..yeopzGntQFLR68v09sNGj_RSejopc0c2b0hfqwPqy2eb3ThuxIS_By2O2FDMyq8JDexZ21KvlSsbyIFGN0ioOxBjwFtOC5EbgvjstW3gYwsl0lVdA1ZT0LuR6V6wZXicBaS-FHj8LUKbTIxIRPp1k3kBYCiNiJ3m83Ava6T4pJF8O5rhYir80SiewoYwGANmHosdOqhVyvKaP8sAvY17_KMQDfkQY0m7DwC2hmRyFYD_JmVp6wfiwvBokBq1z_Idy3maCwgD7HuRULdOY5rrc3y1XqQiW71lMxtEiI7AcxO2CF8SK0EW4_EASUWoONSfOyBkuYm3rQNUFsl-tbSj52KDUzF8lfu2UZHP_vw4JxNmokkyTVQPv0r2pY-CbQtEYmKr0GJtqkY41U74HjVnZQB_2MVJb3sN63GgQPYLvV7XG8MjdqW3Hp3Hun5u_iHpc8MjuauEBwfHNwbtFklBqOMZQy8Wmh2goDS6XRObakARSLRvmD7iryl09MJLL1GtH8Y8lJIAOrtD9JGj_sxQcNC8omxm9fUcu0TWCGnA-1LrP1F_I8RyAZ6dLAdm0cXQiimkal5PED4RxpQPC8EJFqq8MYFvfTlWbgpkf0TWBwVq9-WlvSTty48ICISPfGZxMrZIskHiKP7cL9KckosXMY52qCT5sz-3aWmc9ByCT1g"
+        "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..QK1kc2FKTLEzitUiev9ro9IANt99ZqkJwuhRv5HFW_9rvrUFYM4UBDherJywSrFu-miMlf-J78etLD0VIQHmrajl5Vjzgc_enqY5ueFh6xik6xO6h6rHUb7t31LHMU8zekGfwU7Z6-0SzN2KPg-qXiWF55SBmvWDWX3A2dSFo6xGCVjVIgPKgVwtK6kwmHm28V8XUNpFIMR9tIQRW3xQnlIIxjHPGUEq5PLOdRGm3ILjB-49k5bAf2_XbaQb3xFye6adogPveVn3lxA_Or8TyWoOT8Fn1PTNWxco7bhVgmKkZoKf1vnFUz4xbW69QgJtYkOqb8gAIIUXPpYSsVXPrVBh27_UThYxe312U5YepZzamyq9s5WBgRdyE8VThZ4ZXxLWJKGhb8xOYFmC8fyE4FB-TbkYjib0Pc_ZlUmFZxYnuJ_2GHcOexWtH1i0lfbvfG0VfDYaTZ2aKpnytqajqHVZzjI6qQOAAl45ViwIV4I34uO-irKPnBVGWDGWaCCQ2_ehMzLhCBQU7kPk6_oNjvTtPb1JzG-tpOPO-xrcPXMmTTGXINiHTX_9Pw3Jp6Myrrwv7rYNPCvx_yVD2DiKDyrHnpvFtfYK8wM88S-hbVvoCsKdBMgwqCw19UHRh43xcRkIYnkeB144V6N64Wd17pd6rGCfVUQQjqdxmH5Iysw"
       }
     }
   ],
   "proof": {
     "type": "JsonWebSignature2020",
-    "created": "2022-10-25T14:49:05Z",
+    "created": "2022-11-10T17:39:48Z",
     "proofPurpose": "assertionMethod",
     "verificationMethod": "did:web:compliance.lab.gaia-x.eu",
-    "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..LHa79Nmj9hFsszuDD9qvrfAPciHmOs3t28K6z73CjHBDP3-ZmPlN9ICBtUOXIpecH4OGNYcw5ZPcIASDKByaKuxT3oiYwQZyexkRDrs7BoR9qaMZdHe_AuJNrn_0rtGhZt7TnmA3ZKMd3SD4ZjvbeyH62DZK5x-Z0ORXdJZ-l8AZRjy7H5aMVDol_5jrk_Rt0XzPdnag7WzNIcxSDJ8e-neBkJQNqvH3fw5hlJ8j6M29iIIjJZnV31Kllbjmi4rVeaYDVWvXgzU9xtgDjVO1GQ5cCgVpuA0SxMthbvKSsqceYmEHteG_Lff5R9sfvY-46iEjADJDCRWiB5QY_xou-kFsjEXPP4Uuhz0_q0tJlIea2CWiC4XVv9I9B5s3jefknuxkakKIHa-612uvCQdh-q533iDW_4TyZ-flkIC5j9R3V9H2R5k7U31AelnffCacPc1J_O74SPLTO6qOpIZaxh6r8EzwIenl3AfLCOKXinG62Fl-d5RbVjCLM7GhKLhDl9Gn4jsojGQXHeq0lMHqVy1Z6Al705kCJFdgKXL0BFnkv-qUIomqRHtRw15dpnjqx78M_1qH1TS5Qz3887ccOpYBfZtq4DNAbqN0LDnbSDczQxx3K_jfEZpogLuKpq1S5PjSWcLYP7fZUAcRn1J9lM1X2ia0kMzzmrNelxeAtXs"
+    "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..e2gMtEEtseVw93zv_jZ267XkgpH6dvdYC7crLWFXQcw_S1E49UsHcxOlNvfAUke-_2LLkdC_85H4jCKbQEK3lKDSKBykoBFaRs-aSSk2DObAPk-10pLOUEKz94j3yWz6Jn7DlZpKBk1H9jLcj4oQjqGW6x_DnFBBmTeycl7s9R-VzcMkl4grw20I91ujIPJEdH9ltuidEHX3-Z98E6NO0PIV93oD6b0LD5C_Ap2o4DSuWUixBMCuqhNppvk1P_KWjvFGjGlOEOyTf-CEs-X2FggnEZgu1Tt206orB52qYwKdX3U1GZYu8pS4sUlS2AvkX3KzIkkV5EuN1wfSkYg90otYEx2nRMCL7dqXq2mSr0UrhR8HoZsXXgSunzJwcBUif2empnR3vGraaqNIcDxVgtBP-9OA1XpYBTcjDUvs0_JWLUZDFRziDZhT5c4dRKXuyzDrVybi84c8m2W_QjuTCKYnibPwoqKespVqADEesC7q_wEWofG5dkg-LwdqvekoW9j3LS5voJ93fPa7Oiv_UPutIuAFwt6pVYf5aTApW9U8Fd1UnZJMIyqe6u9wd_Ea-T7qKtuLkSfYznZQ8KLfl5NV5PS2V8rkHc4Ve4IwTjCZJZSGH76fjgbQbT0pdw_QlFbJfRsG5XtFIBEXAwQGkcboWKIB5ERsz8vt2VnIAxs"
   }
 }

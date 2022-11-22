@@ -15,7 +15,7 @@
       "issuanceDate": "2010-01-01T19:73:24Z",
       "credentialSubject": {
         "@id": "http://example.org/test-issuer2",
-        "@type": "ServiceOfferingExperimental",
+        "@type": "http://w3id.org/gaia-x/service#ServiceOffering",
         "gax:hasLegallyBindingName": "My example provider2",
         "gax:hasLegallyBindingAddress": {
           "id": "_:b0",
@@ -28,18 +28,18 @@
       },
       "proof": {
         "type": "JsonWebSignature2020",
-        "created": "2022-10-25T14:46:18Z",
+        "created": "2022-11-10T18:30:14Z",
         "proofPurpose": "assertionMethod",
         "verificationMethod": "did:web:compliance.lab.gaia-x.eu",
-        "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..gxYX5UM-rX30mzMNDRCK9Z3H9tF_EDB5iB98J7KNjblN8-ZCrt58XcCdYsc7FF26Bn6z8B_nKRc29yxmqCinpbozlmRqQM-UvgYxyq48TQJ9nIu2yMR76Xn2EJ6jVwab0W358MNNaZOCprMzk6DoelrH_oYwrbp3v2gypE4Cu9HwqnQ9P3YeuECthJw2LvofOnhVMZl7NlkN9Awq9WrEmeLTMhE5VRor6HlHiFDHcGAC7YESGtcDVDE1-6dr0Ln2FqmBnvRJAC2vKgIL6BZO0xBNl3DD7ZZNhl0RV0St8LgG9wZGVPZPyRR_fjrtZY204vGJLPuq9-4j5AixAeV8RfSBUhITUZOi3EgIJ803GmjbFSp3Ne4JPXaYawHBeE-h4tF55ecyh3HFOB53gvvAciqmPZ4nf7J66CowUiI6rN0TjlM46PvrztgU99eUYWgyAtwVAGN53XI7yjNXWC12i4US-0STMgqTb7GZXGj6RXBNS1I6EE0ZugcBJhnZoeCWKt3CYRWtCTTQpp3QKoP9Atld07Leqel85FO7CC3d_TCSfNvbc3Cqvd26UK-XdXIZrjV8gfMIVWC3w4sOdc9a0cV71UzvHPJR4ljkrHyQLTgeDz6kE-8uQs2Uqya-I9yhvhQ2PJ14YUOs1IiP-WKVwB9Sv21KJ7RmXit6EgFdxUM"
+        "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..Ij90QmT9ejjQbjbqvXg7cewIIf1zeZNyAoxtdw0P_Xq2m4KkhZO_D1QExm55V8g-4z0rgdJBL0BQ6l-WCXpIcQF99GFrZIndxs4bJQNMnJ6i6-ZzamKdLzKqZ95S48zvFw8NMNrMxbRME9RR7Yv7mwJd8SPyftrajzn0FYetqAVdBVKCKqAbKehR6Jf-BJkak169lzgLHVpIdJxF8F3yrXkispNSRCzJNRv2vSe9Tc5Aq1WWYLLimOEkTW_2vP1hm_6Cf-FkzauOEGpsR5UMO3WVWTJISGTGr0Q_auWxLCu1FMU4DxQ1euN26K_R4Y_ncAI_LF4IFGqbJkopZns35SwbPNnsSFcXy9ejOVLL6kQJwr5dgJXdwarpHL5X7y-DDzB8yJX_3Jb_nFFGzud0jpvgcPXy6b9cNyDZjP5WBy3NsaCeq7XyxfzN4ykTFyXF_bAAUlxMzLo7GP8lBFQg4M3pXPjRRgvDryBzTizk4o7sQovhu-vSXL3BK6KTtld9AlSRu2uXTrUsAZx56h2uDd20064PqOtqP58YVKaj5vsCcVSdffKVaZbJMQHQiy8cO-hmEp6SwDbfdQZVttnvq0blap55d7aurj7_sngFoZdrj2ahcuWqlLUibuziiqIBX3Oy6cXWLyDe5mx8IPRmYbvUhiuxf6ZCCyJvtUY2fEA"
       }
     }
   ],
   "proof": {
     "type": "JsonWebSignature2020",
-    "created": "2022-10-25T14:46:19Z",
+    "created": "2022-11-10T18:30:14Z",
     "proofPurpose": "assertionMethod",
     "verificationMethod": "did:web:compliance.lab.gaia-x.eu",
-    "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..hOVG_HyKmr3f4WyBOdLybQmgNLaGGOjzq8J24XbWvCkfilOdEYDJjlG3JU6CVKNiOkYR6dQXqQZdeN2Z4yqnrNQN_2acydl2g64L6TwEogBAc2SoqBeSVLP94yi7GfP-j_lmSzk4uH_8-5BRN7ifzPvVO-MWEWz3xjYp4fZZSjsTHlk-DOboZYSg7P2uGgFc7g4c8N5e1MpNuwcBeWeimYBQUomCvKXko-F5TfGUbiAGybakwPTQEsFrKLSMmOY3t74gWIhDb-kYHZRIlwot2fyvK-BVRv99SpQNFkvYPmEUZrPSo0ZM2I_PkFP6PCBA3Vya01kqszsAD_6RfNECUCGokEUpG8lEHwNKNIYhZZNgKo7BP2TQntd39cuGmq34cADQanwgEH3rw2pslfM5o-XOMblv6ML8Vni9KUvnMTBn8zqsHrhzFLUJOttDFvnZId47-1lKPUof3UtUv4rprPk2GAfNCEnXg8Y8HPlpNh_8CSt-tGQ6nNAlAQ8WLGz3hmevreVIYcWf2teYX3EKqGk-3_iqSB1fyA7jk_yVYvXFB6p7w1p3kT95p-zbV83NGFfLOkyAgk4-nA4wXEUk01xtKUF-hbyYPi-KatW_4KbJxyP3skszYLe_bZPoV2blmDerkVoD6TiKN3q2x3uYbRLjQFrW91vKkWuENNSSY7Y"
+    "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..emlaiXDXwOsFthFPJwg7UigvPoauV8la8dpWE23__0W_c5XvY8zdaKqyEnJUQWzC4s_WhQpSZ-HaHF5WUH4NkCDqelSnHYND72izx1rfQinJCtS1Mvv5QOlSyCKj4MWsfvGxQI9JodEta96NxokjAZ_evyD7VaZPVo3aF4QNgDFvCaw1-6Ev-52IWfQ-tOE5ZOotADR4dDCQYH8A0a7YQsdgb0e0-idd3TLWM8k_0YngVdP749FqpW50ApWy57G1T4cGVIZp2XejruOZqa2dAo8ybd8UrYesgjLACTIn_TctNsgfCLXBWuVSjRS00buLFATpkmscB59An-6d7S5wSM09IIWOJfwTiq3A9dHvJI60MChHmEVmrUJilP4jXMpStvimMp9O8OEx3G75UbNy3zSRqt5WMB0kGrveJ81Ot-Xdx0wgl9LYiNrkhOfnUA19YCGIJNjAFpnj7XB8-7q6_aBL0royBLD_OML9310Bv5QTJb362At9m6BiYTY1rxywJOTS-4d2n2DC1CwM_8-h-y9u_XRiq2gQR7xLDjOHPY8GcgCUoyq3GSrd6ET_0SqUo9ONneRTmUp57_ivl68Hox5qcajHk_wr5d0477RIQun2GTsMwINhFSyhy0l_nUxeO7IAEbm0aoGz6OMZN_RmVhQvLsl5yl4wjvrh7ey1AME"
   }
 }

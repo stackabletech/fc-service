@@ -1,23 +1,25 @@
 {
   "@context": [
-    "https://www.w3.org/2018/credentials/v1",
-    "https://w3id.org/gaia-x/context.jsonld"
+    "https://www.w3.org/2018/credentials/v1"
   ],
   "type": "VerifiablePresentation",
   "id": "presentationID5",
   "verifiableCredential": [
     {
       "@context": [
-        "https://www.w3.org/2018/credentials/v1",
-        "https://w3id.org/gaia-x/context.jsonld"
+        "https://www.w3.org/2018/credentials/v1"
       ],
       "id": "http://example.edu/credentials/1877",
       "type": "VerifiableCredential",
       "issuer": "http://example.org/test-issuer2",
       "issuanceDate": "2010-01-01T19:73:24Z",
       "credentialSubject": {
+        "@context": {
+          "gax": "http://w3id.org/gaia-x/service#",
+          "vcard": "http://www.w3.org/2006/vcard/ns#"
+        },
         "@id": "http://example.org/test-issuer2",
-        "@type": "ServiceOfferingExperimental",
+        "@type": "gax:ServiceOffering",
         "gax:hasLegallyBindingName": "My example provider5",
         "gax:hasLegallyBindingAddress": {
           "id": "_:b0",
