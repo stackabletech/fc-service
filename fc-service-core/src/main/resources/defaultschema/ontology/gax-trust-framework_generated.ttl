@@ -1,4 +1,4 @@
-@prefix gax-trust-framework: <http://w3id.org/gaia-x/gax-trust-framework#> .
+@prefix gax-trust-framework: <https://w3id.org/gaia-x/gax-trust-framework#> .
 @prefix vcard: <https://www.w3.org/2006/vcard/ns#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix vcard: <http://www.w3.org/2006/vcard/ns#> .

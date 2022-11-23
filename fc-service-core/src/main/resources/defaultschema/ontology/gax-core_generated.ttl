@@ -1,4 +1,4 @@
-@prefix gax-core: <http://w3id.org/gaia-x/core#> .
+@prefix gax-core: <https://w3id.org/gaia-x/core#> .
 @prefix cc: <http://creativecommons.org/ns#> .
 @prefix ids: <https://w3id.org/idsa/core/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
