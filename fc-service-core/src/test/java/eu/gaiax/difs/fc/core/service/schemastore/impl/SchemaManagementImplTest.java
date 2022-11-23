@@ -406,14 +406,12 @@ public class SchemaManagementImplTest {
     for (File file : fileStore.getFileIterable()) {
       count++;
     }
-    assertEquals(5, count, "Expected a different number of files in the store.");
+    assertEquals(3, count, "Expected a different number of files in the store.");
     Map<SchemaType, List<String>> schemaList = schemaStore.getSchemaList();
-    assertEquals(4, schemaList.get(SchemaType.ONTOLOGY).size());
+    assertEquals(2, schemaList.get(SchemaType.ONTOLOGY).size());
     assertEquals(1, schemaList.get(SchemaType.SHAPE).size());
-    assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("http://w3id.org/gaia-x/resource#"), "Ontology identifier not found in schema list.");
-    assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("http://w3id.org/gaia-x/participant#"), "Ontology identifier not found in schema list.");
-    assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("http://w3id.org/gaia-x/core#"), "Ontology identifier not found in schema list.");
-    assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("http://w3id.org/gaia-x/service#"), "Ontology identifier not found in schema list.");
+    assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("https://w3id.org/gaia-x/gax-trust-framework#"), "Ontology identifier not found in schema list.");
+    assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("https://w3id.org/gaia-x/core#"), "Ontology identifier not found in schema list.");
   }
 
   /**
