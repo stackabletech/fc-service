@@ -257,7 +257,7 @@ public class VerificationServiceImpl implements VerificationService {
           id, claims, validators);
     }
 
-    log.debug("verifySelfDescription.exit;");
+    log.debug("verifySelfDescription.exit; returning: {}", result);
     return result;
   }
 
@@ -811,34 +811,33 @@ public class VerificationServiceImpl implements VerificationService {
 
   private List<VerifiableCredential> getCredentials(VerifiablePresentation vp) {
     Object obj = vp.getJsonObject().get("verifiableCredential");
+    log.trace("getCredentials.enter; got VC: {}", obj);
 
+    List<VerifiableCredential> result;
     if (obj == null) {
-      return Collections.emptyList();
+      result = Collections.emptyList();
     } else if (obj instanceof List) {
       List<Map<String, Object>> l = (List<Map<String, Object>>) obj;
-      List<VerifiableCredential> result = new ArrayList<>(l.size());
-
+      result = new ArrayList<>(l.size());
       for (Map<String, Object> _vc : l) {
         VerifiableCredential vc = VerifiableCredential.fromMap(_vc);
-
         Pair<Boolean, Boolean> p = getSDTypes(vc);
         if (Objects.equals(p.getLeft(), p.getRight())) {
           continue;
         }
-
         result.add(vc);
       }
-
-      return result;
     } else {
       VerifiableCredential vc = VerifiableCredential.fromMap((Map<String, Object>) obj);
-
       Pair<Boolean, Boolean> p = getSDTypes(vc);
       if (Objects.equals(p.getLeft(), p.getRight())) {
-        return Collections.emptyList();
+        result = Collections.emptyList();
+      } else {
+        result = List.of(vc);
       }
-
-      return List.of(vc);
     }
+
+    log.trace("getCredentials.exit; returning: {}", result);
+    return result;
   }
 }

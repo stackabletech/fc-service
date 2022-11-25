@@ -18,7 +18,7 @@ spring:
   application:
     name: federated-catalogue-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres #catalogdb
+    url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
     password: postgres
     platform: postgresql
@@ -40,11 +40,15 @@ spring:
         jwt:
           issuer-uri: http://key-server:8080/realms/gaia-x
 #          jwk-set-uri: http://key-server:8080/realms/gaia-x/protocol/openid-connect/certs
+  transaction:
+    default-timeout: 10
 
 scheduler:
   sd:
     cron:
       expression: 0 1 0 * * *
+  schema:
+    init-delay: 10000    
 
 openapi:
   gaiaXCatalogue:

@@ -462,16 +462,15 @@ public class SchemaManagementImplTest {
     schemaStore.addSchema(TestUtil.getAccessor(getClass(), schemaPath1));
 
     SchemaAnalysisResult schemaResult = schemaStore.analyseSchema(schema01Content);
+    assertTrue(schemaResult.isValid());
 
     ContentAccessor compositeSchemaActual = schemaStore.getCompositeSchema(SHAPE);
-
     log.info(compositeSchemaActual.getContentAsString());
 
     StringReader schemaContentReaderComposite = new StringReader(compositeSchemaActual.getContentAsString());
-
     modelActual.read(schemaContentReaderComposite, "", "TURTLE");
-
     assertTrue(isExistTriple(modelActual, sub01, pre01, obj01));
+    assertFalse(isExistTriple(modelActual, sub02, pre02, obj02));
 
     ContentAccessor schema02Content = TestUtil.getAccessor(getClass(), schemaPath2);
 
@@ -486,7 +485,7 @@ public class SchemaManagementImplTest {
     schemaContentReaderComposite = new StringReader(compositeSchemaActual.getContentAsString());
 
     modelActual.read(schemaContentReaderComposite, "", "TURTLE");
-
+    assertTrue(isExistTriple(modelActual, sub01, pre01, obj01));
     assertTrue(isExistTriple(modelActual, sub02, pre02, obj02));
   }
 

@@ -1,10 +1,10 @@
 package eu.gaiax.difs.fc.core.pojo;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
-
 
 public class VerificationResult extends eu.gaiax.difs.fc.api.generated.model.VerificationResult {
 
@@ -63,4 +63,16 @@ public class VerificationResult extends eu.gaiax.difs.fc.api.generated.model.Ver
     }
     this.validators = validators;
   }
+
+  @Override
+  public String toString() {
+    List<SdClaim> claims = getClaims();
+    String cls = claims == null ? "null" : "" + claims.size();
+    List<Validator> validators = getValidators();
+    String vls = validators == null ? "null" : "" + validators.size();
+    return "VerificationResult [id=" + getId() + ", issuer=" + getIssuer() + ", validatorDids=" + getValidatorDids()
+            + ", issuedDateTime=" + getIssuedDateTime() + ", claims=" + cls + ", validators=" + vls
+            + ", verificationTimestamp=" + getVerificationTimestamp() + ", lifecycleStatus=" + getLifecycleStatus() + "]";
+  }
+
 }

@@ -24,4 +24,15 @@ public class VerificationResultOffering extends VerificationResult {
     super(verificationTimestamp, lifecycleStatus, issuer, issuedDateTime, id, claims, validators);
   }
 
+  @Override
+  public String toString() {
+    List<SdClaim> claims = getClaims();
+    String cls = claims == null ? "null" : "" + claims.size();
+    List<Validator> validators = getValidators();
+    String vls = validators == null ? "null" : "" + validators.size();
+    return "VerificationResultOffering [id=" + getId() + ", issuer=" + getIssuer() + ", validatorDids=" + getValidatorDids()
+            + ", issuedDateTime=" + getIssuedDateTime() + ", claims=" + cls + ", validators=" + vls
+            + ", verificationTimestamp=" + getVerificationTimestamp() + ", lifecycleStatus=" + getLifecycleStatus() + "]";
+  }
+  
 }

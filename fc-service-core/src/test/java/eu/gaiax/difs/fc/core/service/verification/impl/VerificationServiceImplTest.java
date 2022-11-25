@@ -124,7 +124,6 @@ public class VerificationServiceImplTest {
     String path = "VerificationService/syntax/service1.jsonld";
     VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
     assertNotNull(vr);
-    assertTrue(vr instanceof VerificationResult);
     assertFalse(vr instanceof VerificationResultParticipant);
     assertTrue(vr instanceof VerificationResultOffering);
     //VerificationResultOffering vro = (VerificationResultOffering) vr;
@@ -140,12 +139,16 @@ public class VerificationServiceImplTest {
     String path = "VerificationService/syntax/legalPerson1.jsonld";
     VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
     assertNotNull(vr);
-    assertTrue(vr instanceof VerificationResult);
     assertTrue(vr instanceof VerificationResultParticipant);
     assertFalse(vr instanceof VerificationResultOffering);
-    //VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
-    //assertEquals("https://www.handelsregister.de/", vrp.getId());
-    //assertEquals("https://www.handelsregister.de/", vrp.getIssuer());
+    VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
+    assertEquals("http://gaiax.de", vrp.getId());
+    assertEquals("http://gaiax.de", vrp.getIssuer());
+    assertEquals("http://gaiax.de", vrp.getParticipantName()); // could be 'Provider Name'..
+    assertNotNull(vrp.getClaims());
+    assertEquals(26, vrp.getClaims().size()); //!!
+    assertNull(vrp.getValidators());
+    assertNull(vrp.getValidatorDids());
     //assertEquals(LocalDate.of(2010, 1, 1), vrp.getIssuedDate());
   }
 

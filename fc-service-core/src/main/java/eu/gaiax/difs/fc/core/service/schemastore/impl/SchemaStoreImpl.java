@@ -7,35 +7,41 @@ import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
-import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.util.HashUtils;
-import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 
-import java.net.URL;
-import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.persistence.EntityExistsException;
 import javax.persistence.LockModeType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileExistsException;
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.jena.rdf.model.*;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.ResIterator;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.apache.jena.vocabulary.RDF;
@@ -63,29 +69,43 @@ public class SchemaStoreImpl implements SchemaStore {
 
   private static final Map<SchemaType, ContentAccessor> COMPOSITE_SCHEMAS = new ConcurrentHashMap<>();
 
+
   @Override
   public void initializeDefaultSchemas() {
-    Session currentSession = sessionFactory.getCurrentSession();
-    long count = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
-    if (count > 0) {
-      log.info("Default schemas already initialized.");
-      return;
+    Transaction tx = null;  
+    try (Session session = sessionFactory.openSession()) {
+      Session currentSession = sessionFactory.openSession(); // getCurrentSession();
+      long count = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
+      if (count == 0) {
+        tx = currentSession.beginTransaction();
+        count += addSchemasFromDirectory("defaultschema/ontology");
+        count += addSchemasFromDirectory("defaultschema/shacl");
+        currentSession.flush();
+        log.info("initializeDefaultSchemas; added {} default schemas", count);
+        count = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult(); // it returns 0 for some reason
+        tx.commit();
+      }  
+      log.info("initializeDefaultSchemas; {} schemas found in Schema DB", count);
+    } catch (Exception ex) {
+      log.error("initializeDefaultSchemas.error", ex);
+      if (tx != null) {
+        tx.rollback();
+      }
+      throw new ServerException(ex);
     }
-    addSchemasFromDirectory("defaultschema/ontology");
-    addSchemasFromDirectory("defaultschema/shacl");
-    currentSession.flush();
-    count = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
-    log.info("Added {} default schemas", count);
-  }
-
-  private void addSchemasFromDirectory(String path) {
-    URL url = getClass().getClassLoader().getResource(path);
-    String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8);
-    File ontologyDir = new File(str);
-    for (File ontology : ontologyDir.listFiles()) {
-      log.debug("Adding schema: {}", ontology);
-      addSchema(new ContentAccessorFile(ontology));
+  }  
+  
+  private int addSchemasFromDirectory(String path) throws IOException {
+    PathMatchingResourcePatternResolver scanner = new PathMatchingResourcePatternResolver();
+    org.springframework.core.io.Resource[] resources = scanner.getResources(path + "/*");
+    int cnt = 0;
+    for (org.springframework.core.io.Resource resource: resources) {
+      log.debug("addSchemasFromDirectory; Adding schema: {}", resource.getFilename());
+      String content = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+      addSchema(new ContentAccessorDirect(content));
+      cnt++;
     }
+    return cnt;
   }
 
   /**
@@ -188,32 +208,38 @@ public class SchemaStoreImpl implements SchemaStore {
 
     StringWriter out = new StringWriter();
     Map<SchemaType, List<String>> schemaList = getSchemaList();
-    log.debug("createCompositeSchema; got schemaList: {}", schemaList);
 
-    Model model = ModelFactory.createDefaultModel();
-    Model unionModel = ModelFactory.createDefaultModel();
     List<String> schemaListForType = schemaList.get(type);
     if (schemaListForType == null) {
+      log.debug("createCompositeSchema.exit; returning empty content for unknown type");
       return new ContentAccessorDirect("");
     }
+    
+    Model model = ModelFactory.createDefaultModel();
+    Model unionModel = ModelFactory.createDefaultModel();
     for (String schemaId : schemaListForType) {
       ContentAccessor schemaContent = getSchema(schemaId);
       StringReader schemaContentReader = new StringReader(schemaContent.getContentAsString());
-      model.read(schemaContentReader, "", "TURTLE");
+      model.read(schemaContentReader, null, "TURTLE");
       unionModel.add(model);
     }
     RDFDataMgr.write(out, unionModel, Lang.TURTLE);
-    ContentAccessorDirect content = new ContentAccessorDirect(out.toString());
+    ContentAccessor content = new ContentAccessorDirect(out.toString());
 
     log.debug("createCompositeSchema.exit; returning: {}", content.getContentAsString().length());
     try {
       final String compositeSchemaName = "CompositeSchema" + type.name();
       fileStore.replaceFile(compositeSchemaName, content);
-      return fileStore.readFile(compositeSchemaName);
+      // the ContentAccessor returned from this function is cached until this instance gets a schema change. 
+      // That's why it is important that the file-based ContentAccessor is returned, and not the String-based one. 
+      // Otherwise, if another instance changes the file because that other instance received a schema change, this instance will 
+      // never serve the new content, since it cached the String-based content.
+      // By returning the file-based ContentAccessor, a change of the file will automatically update the content that all instances serve.
+      content = fileStore.readFile(compositeSchemaName);
     } catch (IOException ex) {
       log.error("Failed to store composite schema", ex);
-      return content;
     }
+    return content;
   }
 
   @Override
@@ -329,8 +355,7 @@ public class SchemaStoreImpl implements SchemaStore {
     }
     currentSession.flush();
     COMPOSITE_SCHEMAS.remove(result.getSchemaType());
-
-    // TODO: Re-Validate SDs in a separate thread.
+    // SDs will be revalidated in a separate thread.
   }
 
   @Override
@@ -359,7 +384,7 @@ public class SchemaStoreImpl implements SchemaStore {
     currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaTypeIdPair(s.type, s.schemaId) from SchemaRecord s", SchemaTypeIdPair.class)
         .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
     // TORemove
-    log.debug("getSchemaList; got schemaList: {}", result);
+    log.debug("getSchemaList.exit; returning schemaList: {}", result);
     return result;
   }
 
@@ -392,14 +417,6 @@ public class SchemaStoreImpl implements SchemaStore {
   @Override
   public ContentAccessor getCompositeSchema(SchemaType type) {
     return COMPOSITE_SCHEMAS.computeIfAbsent(type, t -> createCompositeSchema(t));
-  }
-
-  private static ContentAccessorFile getAccessor(String path) throws UnsupportedEncodingException {
-    URL url = SchemaStoreImpl.class.getClassLoader().getResource(path);
-    String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8.name());
-    File file = new File(str);
-    ContentAccessorFile accessor = new ContentAccessorFile(file);
-    return accessor;
   }
 
   @Override
