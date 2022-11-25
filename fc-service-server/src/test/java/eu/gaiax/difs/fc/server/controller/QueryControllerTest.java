@@ -8,11 +8,11 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
 import eu.gaiax.difs.fc.api.generated.model.Results;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
-import eu.gaiax.difs.fc.core.pojo.SdClaim;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
+import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
@@ -23,9 +23,8 @@ import eu.gaiax.difs.fc.server.helper.FileReaderHelper;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
-import java.util.ArrayList;
 import java.util.List;
-
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -55,6 +54,8 @@ import org.springframework.web.context.WebApplicationContext;
 public class QueryControllerTest {
 
   private final static String DEFAULT_SERVICE_SD_FILE_NAME = "default-sd-service-offering.json";
+  private final static String DEFAULT_PARTICIPANT_SD_FILE_NAME = "default_participant.json";
+  private final static String UNIQUE_PARTICIPANT_SD_FILE_NAME = "unique_participant.json";
 
   @Autowired
   private WebApplicationContext context;
@@ -95,13 +96,12 @@ public class QueryControllerTest {
   }
 
   private String QUERY_REQUEST_GET = "{\"statement\": \"MATCH (n:ServiceOffering) RETURN n LIMIT 1\", "
-          + "\"parameters\": "
-          + "null}}";
+          + "\"parameters\": null}";
 
   private String QUERY_REQUEST_TIMEOUT = "{\"statement\": \"CALL apoc.util.sleep($duration)\", \"parameters\": {\"duration\": 3000}}";
 
-  private String QUERY_REQUEST_GET_WITH_PARAMETERS = "{\"statement\": \"MATCH (n:ServiceOffering) where n.name = "
-          + "$name RETURN n \", \"parameters\": { \"name\": \"EuProGigant Portal\"}}";
+  private String QUERY_REQUEST_GET_WITH_PARAMETERS = "{\"statement\": \"MATCH (n)-[:hasLegallyBindingAddress]->(m)  " +
+      "where m.locality = $locality RETURN n \", \"parameters\": { \"locality\": \"City Name 2\"}}";
 
   private String QUERY_REQUEST_GET_WITH_PARAMETERS_UNKNOWN = "{\"statement\": \"MATCH (n:ServiceOffering) where "
           + "n.name = $name RETURN n \", \"parameters\": { \"name\": \"notFound\"}}";
@@ -110,12 +110,13 @@ public class QueryControllerTest {
           + "\"parameters\": null}";
 
   private String QUERY_REQUEST_UPDATE = "{\"statement\": \"Match (m:Person) where m.name = 'TestUser' SET m.name = "
-          + "'TestUserUpdated' RETURN m\", "
-          + "\"parameters\": null}";
+          + "'TestUserUpdated' RETURN m\", \"parameters\": null}";
 
-  private String QUERY_REQUEST_DELETE = "{\"statement\": \"MATCH (n:ServiceOffering) where n.name = 'EuProGigant "
-          + "Portal' DETACH DELETE n\", "
-          + "\"parameters\": null}";
+  private String QUERY_REQUEST_DELETE = "{\"statement\": \"MATCH (n:LegalPerson) where n.name = 'Fredrik "
+          + "DETACH DELETE n\", \"parameters\": null}";
+
+  private String QUERY_REQUEST_GET_SUBJECT_ID = "{\"statement\": \"MATCH (n:ServiceOffering) where n.uri IS NOT NULL RETURN n" +
+      ".uri \", \"parameters\": null}";
 
   @Test
   public void getQueryPageShouldReturnSuccessResponse() throws Exception {
@@ -165,7 +166,38 @@ public class QueryControllerTest {
 
     Results result = objectMapper.readValue(response, Results.class);
     assertEquals(1, result.getItems().size());
-    assertEquals(4, result.getTotalCount());
+    assertEquals(1, result.getTotalCount());
+  }
+
+
+  @Test
+  public void postGetSDMetadataCountBySubjectIDSQueriesReturnSuccessResponse() throws Exception {
+    String response = mockMvc.perform(MockMvcRequestBuilders.post("/query")
+            .content(QUERY_REQUEST_GET_SUBJECT_ID)
+            .with(csrf())
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("Produces", "application/json")
+            .header("Accept", "application/json"))
+        .andExpect(status().isOk())
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
+
+    Results result = objectMapper.readValue(response, Results.class);
+
+    final List<String> uriId = result.getItems().stream()
+        .map(map -> map.get("n.uri").toString())
+        .collect(Collectors.toList());
+
+    assertEquals(1, uriId.size());
+
+    final SdFilter filterParams = new SdFilter();
+    filterParams.setIds(uriId);
+
+    PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, true);
+    int matchCount = byFilter.getResults().size();
+
+    assertEquals(uriId.size(), matchCount);
   }
 
   @Test
@@ -181,7 +213,7 @@ public class QueryControllerTest {
             .getContentAsString();
 
     Results result = objectMapper.readValue(response, Results.class);
-    assertEquals(1, result.getItems().size());
+    assertEquals(2, result.getItems().size());
     assertTrue(result.getItems().size() < 101);
   }
 
@@ -253,38 +285,15 @@ public class QueryControllerTest {
   }
 
   private void initialiseAllDataBaseWithManuallyAddingSDFromRepository() throws Exception {
+
     schemaStore.addSchema(getAccessor("mock-data/gax-test-ontology.ttl"));
-    ContentAccessorDirect contentAccessor = new ContentAccessorDirect(FileReaderHelper.getMockFileDataAsString("default_participant.json"));
-    //try {
+
+    //adding 1st sd
+    ContentAccessorDirect contentAccessor =
+        new ContentAccessorDirect(FileReaderHelper.getMockFileDataAsString(DEFAULT_PARTICIPANT_SD_FILE_NAME));
     VerificationResultParticipant verificationResult = verificationService.verifyParticipantSelfDescription(contentAccessor);
-
-    SdClaim sdClaim = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal.json>",
-            "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
-            "<http://w3id.org/gaia-x/service#ServiceOffering>");
-
-    SdClaim sdClaim1 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal.json>",
-            "<http://w3id.org/gaia-x/service#name>",
-            "\"EuProGigant Portal\"");
-
-    SdClaim sdClaim2 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal2.json>",
-            "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
-            "<http://w3id.org/gaia-x/service#ServiceOffering>");
-
-    SdClaim sdClaim3 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal2.json>",
-            "<http://w3id.org/gaia-x/service#name>",
-            "\"EuProGigant Portal2\"");
-
-    SdClaim sdClaim4 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json>",
-            "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
-            "<http://w3id.org/gaia-x/service#ServiceOffering>");
-
-    List<SdClaim> sdClaimFile = List.of(sdClaim, sdClaim1, sdClaim2, sdClaim3, sdClaim4);
-
-    verificationResult.setClaims(sdClaimFile);
-    verificationResult.setId(sdClaimFile.get(0).stripSubject());
-
     SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(verificationResult.getId(),
-            verificationResult.getIssuer(), new ArrayList<>(), contentAccessor);
+            verificationResult.getIssuer(), verificationResult.getValidators(), contentAccessor);
     sdStore.storeSelfDescription(sdMetadata, verificationResult);
 
     //adding second sd
@@ -292,18 +301,17 @@ public class QueryControllerTest {
             = new ContentAccessorDirect(FileReaderHelper.getMockFileDataAsString(DEFAULT_SERVICE_SD_FILE_NAME));
     VerificationResultOffering verificationResult2
             = verificationService.verifyOfferingSelfDescription(contentAccessor2);
-
-    verificationResult2.setId(sdClaimFile.get(2).stripSubject());
-
     SelfDescriptionMetadata sdMetadata2 = new SelfDescriptionMetadata(verificationResult2.getId(),
-            verificationResult2.getIssuer(), new ArrayList<>(), contentAccessor2);
+            verificationResult2.getIssuer(), verificationResult2.getValidators(), contentAccessor2);
     sdStore.storeSelfDescription(sdMetadata2, verificationResult2);
 
     //adding sd 3
-    ContentAccessorDirect contentAccessorDirect3 = new ContentAccessorDirect("test sd3");
-
-    SelfDescriptionMetadata sdMetadata3 = new SelfDescriptionMetadata("http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json",
-            "http://example.org/test-issuer", new ArrayList<>(), contentAccessorDirect3);
+   ContentAccessorDirect contentAccessorDirect3 =
+        new ContentAccessorDirect(FileReaderHelper.getMockFileDataAsString(UNIQUE_PARTICIPANT_SD_FILE_NAME));
+    VerificationResultParticipant verificationResult3
+        = verificationService.verifyParticipantSelfDescription(contentAccessorDirect3);
+    SelfDescriptionMetadata sdMetadata3 = new SelfDescriptionMetadata(verificationResult3.getId(),
+        verificationResult3.getIssuer(), verificationResult3.getValidators(), contentAccessorDirect3);
     sdStore.storeSelfDescription(sdMetadata3, verificationResult2);
   }
 
