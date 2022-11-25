@@ -23,9 +23,10 @@ public class FileStoreConfig {
   @Value("${federated-catalogue.file-store.context-cache.location}")
   private String contextCacheFilesLocation;
 
-  private final String TEMPORARY_FOLDER_PATH_SD = Files.temporaryFolderPath() + "federated-catalogue" + File.separator + "testSdFiles";
-  private final String TEMPORARY_FOLDER_PATH_SCHEMA = Files.temporaryFolderPath() + "federated-catalogue" + File.separator + "testSchemaFiles";
-  private final String TEMPORARY_FOLDER_PATH_CC = Files.temporaryFolderPath() + "federated-catalogue" + File.separator + "testContextCache";
+  private final File TEMPORARY_FOLDER_FILE = Files.newTemporaryFolder();
+  private final String TEMPORARY_FOLDER_PATH_SD = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testSdFiles";
+  private final String TEMPORARY_FOLDER_PATH_SCHEMA = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testSchemaFiles"; 
+  private final String TEMPORARY_FOLDER_PATH_CC = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testContextCache";
 
   @Bean
   public FileStore sdFileStore() {

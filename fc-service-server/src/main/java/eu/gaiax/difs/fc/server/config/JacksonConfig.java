@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.server.config;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +26,8 @@ public class JacksonConfig {
     return new ObjectMapper()
         .registerModule(new ParameterNamesModule())
         .registerModule(new JavaTimeModule())
+        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+        .configure(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS, false)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
   }
 }

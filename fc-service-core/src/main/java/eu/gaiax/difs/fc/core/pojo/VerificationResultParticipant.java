@@ -39,6 +39,19 @@ public class VerificationResultParticipant extends VerificationResult {
     this.participantName = participantName;
     this.participantPublicKey = participantPublicKey;
   }
+  
+  @Override
+  public String toString() {
+    List<SdClaim> claims = getClaims();
+    String cls = claims == null ? "null" : "" + claims.size();
+    List<Validator> validators = getValidators();
+    String vls = validators == null ? "null" : "" + validators.size();
+    return "VerificationResultParticipant [id=" + getId() + ", participantName=" + participantName
+            + ", issuer=" + getIssuer()  + ", validatorDids=" + getValidatorDids() + ", issuedDateTime=" + getIssuedDateTime()
+            + ", participantPublicKey=" + participantPublicKey + ", claims=" + cls + ", validators=" + vls
+            + ", verificationTimestamp=" + getVerificationTimestamp() + ", lifecycleStatus=" + getLifecycleStatus() + "]";
+  }
+  
 }
 
 

@@ -6,8 +6,6 @@ import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +18,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.event.annotation.AfterTestClass;
 import org.springframework.test.context.event.annotation.BeforeTestClass;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -41,7 +38,6 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -71,13 +67,7 @@ public class SchemaControllerTest {
 
   @AfterEach
   public void storageSelfCleaning() throws IOException {
-    Map<SchemaStore.SchemaType, List<String>> schemaList = schemaStore.getSchemaList();
-    for (List<String> typeList : schemaList.values()) {
-      for (String schema : typeList) {
-        schemaStore.deleteSchema(schema);
-      }
-    }
-    fileStore.clearStorage();
+    schemaStore.clear();
   }
   
   @Test
@@ -105,8 +95,6 @@ public class SchemaControllerTest {
   public void getSchemasShouldReturnSuccessResponse() throws Exception {
     mockMvc.perform(MockMvcRequestBuilders.get("/schemas")
             .with(csrf())
-            //.param("offset", "5")
-            //.param("limit", "10")
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk());
   }
@@ -125,14 +113,10 @@ public class SchemaControllerTest {
   @WithMockUser(roles = {CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE})
   public void getLatestSchemaShouldReturnSuccessResponse() throws Exception {
     String id = schemaStore.addSchema(new ContentAccessorDirect(getMockFileDataAsString("test-schema.ttl")));
-    try {
     mockMvc.perform(MockMvcRequestBuilders.get("/schemas/latest?type=SHAPE")
             .with(csrf())
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk());
-    } catch (Exception ex) {
-        ex.printStackTrace();
-    }
     schemaStore.deleteSchema(id);
   }
 

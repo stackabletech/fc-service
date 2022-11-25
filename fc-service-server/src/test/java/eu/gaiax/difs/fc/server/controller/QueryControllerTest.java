@@ -78,13 +78,10 @@ public class QueryControllerTest {
   @Autowired
   private SchemaStore schemaStore;
 
-  @BeforeTestClass
-  public void setup() {
-    mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
-  }
-
   @BeforeAll
-  public void addManuallyDBEntries() throws Exception {
+  public void setup() throws Exception {
+    mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+    schemaStore.addSchema(getAccessor("mock-data/gax-test-ontology.ttl"));
     initialiseAllDataBaseWithManuallyAddingSDFromRepository();
   }
 
@@ -285,8 +282,6 @@ public class QueryControllerTest {
   }
 
   private void initialiseAllDataBaseWithManuallyAddingSDFromRepository() throws Exception {
-
-    schemaStore.addSchema(getAccessor("mock-data/gax-test-ontology.ttl"));
 
     //adding 1st sd
     ContentAccessorDirect contentAccessor =
