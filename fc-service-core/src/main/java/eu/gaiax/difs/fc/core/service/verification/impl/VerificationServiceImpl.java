@@ -63,6 +63,7 @@ import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFParser;
 import org.apache.jena.riot.system.stream.StreamManager;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * Implementation of the {@link VerificationService} interface.
@@ -73,18 +74,19 @@ public class VerificationServiceImpl implements VerificationService {
 
   private static final Lang SD_LANG = Lang.JSONLD11;
   private static final Lang SHAPES_LANG = Lang.TURTLE;
-  private static final int PARTICIPANT_CONSTANT = 1 ;
-  private static final int SERVICE_OFFERING_CONSTANT = 2 ;
   private static final String CREDENTIAL_SUBJECT = "https://www.w3.org/2018/credentials#credentialSubject";
   private static final String[] ID_KEYS = {"id", "@id"};
   private static final Set<String> SIGNATURES = Set.of("JsonWebSignature2020"); //, "Ed25519Signature2018");
-  private static final String PARTICIPANT_TYPE = "http://w3id.org/gaia-x/participant#Participant";
-  private static final String SERVICE_OFFERING_TYPE = "http://w3id.org/gaia-x/service#ServiceOffering";
   private static final ClaimExtractor[] extractors = new ClaimExtractor[]{new TitaniumClaimExtractor(), new DanubeTechClaimExtractor()};
 
   private static final int VRT_UNKNOWN = 0;
   private static final int VRT_PARTICIPANT = 1;
   private static final int VRT_OFFERING = 2;
+
+  @Value("${federated-catalogue.verification.participant.type}")
+  private String participantType; // "http://w3id.org/gaia-x/participant#Participant";
+  @Value("${federated-catalogue.verification.service-offering.type}")
+  private String serviceOfferingType; //"http://w3id.org/gaia-x/service#ServiceOffering";
 
   @Autowired
   private SchemaStore schemaStore;
@@ -144,7 +146,8 @@ public class VerificationServiceImpl implements VerificationService {
 
   private VerificationResult verifySelfDescription(ContentAccessor payload, boolean strict, int expectedType,
       boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException {
-    log.debug("verifySelfDescription.enter;");
+    log.debug("verifySelfDescription.enter; strict: {}, expectedType: {}, verifySemantics: {}, verifySchema: {}, verifySignatures: {}",
+            strict, expectedType, verifySemantics, verifySchema, verifySignatures);
 
     // syntactic validation
     VerifiablePresentation vp = parseContent(payload);
@@ -158,14 +161,14 @@ public class VerificationServiceImpl implements VerificationService {
         throw ex;
       } catch (Exception ex) {
         log.error("verifySelfDescription.semantic error", ex);
-        throw new VerificationException("Semantic error: " + ex.getMessage()); //, ex);
+        throw new VerificationException("Semantic error: " + ex.getMessage()); 
       }
     } else {
       vcs = getCredentials(vp);
     }
 
     if (vcs.size() == 0) {
-      throw new VerificationException("Semantic Errors: VerifiablePresentation must contain 'verifiableCredential' property");
+      throw new VerificationException("Semantic Error: no proper CredentialSubject found");
     }
 
     VerifiableCredential firstVC = vcs.get(0);
@@ -183,7 +186,7 @@ public class VerificationServiceImpl implements VerificationService {
           throw new VerificationException("Semantic error: Expected Participant SD, got Service Offering SD");
         }
       } else {
-        throw new VerificationException("Semantic error: SD is neither a Participant nor a Service Offering SD");
+        throw new VerificationException("Semantic error: SD is neither Participant nor Service Offering SD");
       }
     }
 
@@ -272,6 +275,7 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   private List<VerifiableCredential> verifyPresentation(VerifiablePresentation presentation) {
+    log.debug("verifyPresentation.enter; got presentation with id: {}", presentation.getId());
     StringBuilder sb = new StringBuilder();
     String sep = System.getProperty("line.separator");
     if (checkAbsence(presentation, "@context")) {
@@ -320,56 +324,76 @@ public class VerificationServiceImpl implements VerificationService {
       throw new VerificationException(sb.toString());
     }
 
+    log.debug("verifyPresentation.exit; returning {} VCs", credentials.size());
     return credentials;
   }
 
   private boolean checkAbsence(JsonLDObject container, String... keys) {
-    boolean found = false;
-    for (String key : keys) {
+    for (String key: keys) {
       if (container.getJsonObject().containsKey(key)) {
-        found = true;
-        break;
+        return false;
       }
     }
-    return !found;
+    return true;
   }
 
   private Pair<Boolean, Boolean> getSDTypes(VerifiableCredential credential) {
     Boolean result = getSDType(credential);
     if (result == null) {
       List<CredentialSubject> subjects = getCredentialSubject(credential);
-      for (CredentialSubject subject : subjects) {
+      for (CredentialSubject subject: subjects) {
         result = getSDType(subject);
         if (result != null) {
           break;
         }
       }
     }
+    log.debug("getSDTypes; got type result: {}", result);
 
     if (result == null) {
       return Pair.of(false, false);
     }
     return result ? Pair.of(true, false) : Pair.of(false, true);
   }
-  private boolean checkTypeSubClass(String type, int parent) {
-    String gax_type;
-    if(parent == PARTICIPANT_CONSTANT) {
-      gax_type = PARTICIPANT_TYPE;
-    } else if (parent == SERVICE_OFFERING_CONSTANT) {
-      gax_type = SERVICE_OFFERING_TYPE;
-    } else {
-      return false;
+  
+  private Boolean getSDType(JsonLDObject container) {
+    try {
+      Model data = ModelFactory.createDefaultModel();
+      RDFParser.create()
+              .streamManager(getStreamManager())
+              .source(new StringReader(container.toJson()))
+              .lang(SD_LANG)
+              .parse(data);
+
+      NodeIterator node = data.listObjectsOfProperty(data.createProperty(CREDENTIAL_SUBJECT));
+      while (node.hasNext()) {
+        NodeIterator typeNode = data.listObjectsOfProperty(node.nextNode().asResource(), RDF.type);
+        List <RDFNode> rdfNodeList = typeNode.toList();
+        for (RDFNode rdfNode: rdfNodeList) {
+          String resourceURI = rdfNode.asResource().getURI();
+          if (checkTypeSubClass(resourceURI, participantType)) {
+            return true;
+          }
+          if (checkTypeSubClass(resourceURI, serviceOfferingType)) {
+            return false;
+          }
+        }
+      }
+    } catch (Exception e) {
+      //log.debug("getSDType.error: {}", e.getMessage());
+      log.error("getSDType.error;", e);
     }
-    
-    if (type.equals(gax_type)) {
+    return null;
+  }
+
+  private boolean checkTypeSubClass(String type, String gaxType) {
+    log.debug("checkTypeSubClass.enter; got type: {}, gaxType: {}", type, gaxType);  
+    if (type.equals(gaxType)) {
       return true;
     }
     String queryString =
             "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
-                    "select ?uri " +
-                    "where { " +
-                    "?uri rdfs:subClassOf <" + gax_type +">"+
-                    "} \n ";
+            "select ?uri where { ?uri rdfs:subClassOf <" + gaxType + ">}\n";
     Query query = QueryFactory.create(queryString);
     ContentAccessor gaxOntology = schemaStore.getCompositeSchema(SchemaStore.SchemaType.ONTOLOGY);
     OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM_MICRO_RULE_INF);
@@ -385,35 +409,39 @@ public class VerificationServiceImpl implements VerificationService {
     }
     return false;
   }
-  private Boolean getSDType(JsonLDObject container) {
-    try {
-      Model data = ModelFactory.createDefaultModel();
-      RDFParser.create()
-              .streamManager(getStreamManager())
-              .source(new StringReader(container.toJson()))
-              .lang(SD_LANG)
-              .parse(data);
+  
+  private List<VerifiableCredential> getCredentials(VerifiablePresentation vp) {
+    Object obj = vp.getJsonObject().get("verifiableCredential");
+    log.trace("getCredentials.enter; got VC: {}", obj);
 
-      NodeIterator node = data.listObjectsOfProperty(data.createProperty(CREDENTIAL_SUBJECT));
-      while (node.hasNext()){
-        NodeIterator typeNode = data.listObjectsOfProperty(node.nextNode().asResource(), RDF.type);
-        List <RDFNode> rdfNodeList = typeNode.toList();
-        for ( RDFNode rdfNode : rdfNodeList) {
-          String resourceURI = rdfNode.asResource().getURI();
-          if (checkTypeSubClass(resourceURI, PARTICIPANT_CONSTANT)) {
-            return true;
-          }
-          if (checkTypeSubClass(resourceURI, SERVICE_OFFERING_CONSTANT)) {
-            return false;
-          }
+    List<VerifiableCredential> result;
+    if (obj == null) {
+      result = Collections.emptyList();
+    } else if (obj instanceof List) {
+      List<Map<String, Object>> l = (List<Map<String, Object>>) obj;
+      result = new ArrayList<>(l.size());
+      for (Map<String, Object> _vc : l) {
+        VerifiableCredential vc = VerifiableCredential.fromMap(_vc);
+        Pair<Boolean, Boolean> p = getSDTypes(vc);
+        if (Objects.equals(p.getLeft(), p.getRight())) {
+          continue;
         }
+        result.add(vc);
       }
-    } catch (Exception e) {
-      log.debug("getSDType.error: {}", e.getMessage());
+    } else {
+      VerifiableCredential vc = VerifiableCredential.fromMap((Map<String, Object>) obj);
+      Pair<Boolean, Boolean> p = getSDTypes(vc);
+      if (Objects.equals(p.getLeft(), p.getRight())) {
+        result = Collections.emptyList();
+      } else {
+        result = List.of(vc);
+      }
     }
-    return null;
-  }
 
+    log.trace("getCredentials.exit; returning: {}", result);
+    return result;
+  }
+  
   /**
    * A method that returns a list of claims given a self-description's VerifiablePresentation
    *
@@ -514,6 +542,11 @@ public class VerificationServiceImpl implements VerificationService {
       streamManager = clone;
     }
     return streamManager;
+  }
+  
+  public void setTypes(String partType, String soType) {
+    this.participantType = partType;
+    this.serviceOfferingType = soType;
   }
 
 
@@ -809,35 +842,4 @@ public class VerificationServiceImpl implements VerificationService {
     return response.getStatusLine().getStatusCode() == 200;
   }
 
-  private List<VerifiableCredential> getCredentials(VerifiablePresentation vp) {
-    Object obj = vp.getJsonObject().get("verifiableCredential");
-    log.trace("getCredentials.enter; got VC: {}", obj);
-
-    List<VerifiableCredential> result;
-    if (obj == null) {
-      result = Collections.emptyList();
-    } else if (obj instanceof List) {
-      List<Map<String, Object>> l = (List<Map<String, Object>>) obj;
-      result = new ArrayList<>(l.size());
-      for (Map<String, Object> _vc : l) {
-        VerifiableCredential vc = VerifiableCredential.fromMap(_vc);
-        Pair<Boolean, Boolean> p = getSDTypes(vc);
-        if (Objects.equals(p.getLeft(), p.getRight())) {
-          continue;
-        }
-        result.add(vc);
-      }
-    } else {
-      VerifiableCredential vc = VerifiableCredential.fromMap((Map<String, Object>) obj);
-      Pair<Boolean, Boolean> p = getSDTypes(vc);
-      if (Objects.equals(p.getLeft(), p.getRight())) {
-        result = Collections.emptyList();
-      } else {
-        result = List.of(vc);
-      }
-    }
-
-    log.trace("getCredentials.exit; returning: {}", result);
-    return result;
-  }
 }

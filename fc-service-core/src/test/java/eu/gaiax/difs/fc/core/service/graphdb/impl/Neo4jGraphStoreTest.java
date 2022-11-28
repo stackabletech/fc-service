@@ -852,9 +852,6 @@ public class Neo4jGraphStoreTest {
         graphGaia.deleteClaims(credentialSubject1);
         graphGaia.deleteClaims(credentialSubject2);
         graphGaia.deleteClaims(credentialSubject3);
-
-
-
     }
 
 

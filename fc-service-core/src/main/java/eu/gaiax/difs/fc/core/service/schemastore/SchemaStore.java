@@ -24,8 +24,9 @@ public interface SchemaStore {
    * Initialise the default Gaia-X schemas, if the schema store is still empty.
    * If there are already schemas in the store, calling this method will do
    * nothing.
+   * @return number of schemas added to Schema DB.
    */
-  public void initializeDefaultSchemas();
+  public int initializeDefaultSchemas();
 
   /**
    * Verify if a given schema is syntactically correct.

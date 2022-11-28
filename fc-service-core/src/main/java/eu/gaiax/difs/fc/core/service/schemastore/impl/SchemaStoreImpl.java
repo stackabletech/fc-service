@@ -71,21 +71,23 @@ public class SchemaStoreImpl implements SchemaStore {
 
 
   @Override
-  public void initializeDefaultSchemas() {
+  public int initializeDefaultSchemas() {
     Transaction tx = null;  
     try (Session session = sessionFactory.openSession()) {
       Session currentSession = sessionFactory.openSession(); // getCurrentSession();
-      long count = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
-      if (count == 0) {
+      int count = 0;
+      Long found = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
+      if (found == 0) {
         tx = currentSession.beginTransaction();
         count += addSchemasFromDirectory("defaultschema/ontology");
         count += addSchemasFromDirectory("defaultschema/shacl");
         currentSession.flush();
         log.info("initializeDefaultSchemas; added {} default schemas", count);
-        count = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult(); // it returns 0 for some reason
+        found = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult(); // it returns 0 for some reason
         tx.commit();
-      }  
-      log.info("initializeDefaultSchemas; {} schemas found in Schema DB", count);
+      }
+      log.info("initializeDefaultSchemas; {} schemas found in Schema DB", found);
+      return count;
     } catch (Exception ex) {
       log.error("initializeDefaultSchemas.error", ex);
       if (tx != null) {
@@ -237,7 +239,7 @@ public class SchemaStoreImpl implements SchemaStore {
       // By returning the file-based ContentAccessor, a change of the file will automatically update the content that all instances serve.
       content = fileStore.readFile(compositeSchemaName);
     } catch (IOException ex) {
-      log.error("Failed to store composite schema", ex);
+      log.error("createCompositeSchema.error: Failed to store composite schema", ex);
     }
     return content;
   }
@@ -279,7 +281,7 @@ public class SchemaStoreImpl implements SchemaStore {
     SchemaRecord newRecord = new SchemaRecord(schemaId, nameHash, result.getSchemaType(), schema.getContentAsString(),
         result.getExtractedUrls());
     try {
-      log.debug("SchemaId: {}, Terms: {}", schemaId, newRecord.getTerms());
+      log.debug("addSchema; SchemaId: {}, terms count: {}", schemaId, newRecord.getTerms().size());
       currentSession.persist(newRecord);
     } catch (EntityExistsException ex) {
       throw new ConflictException("A schema with id " + schemaId + " already exists.");
@@ -292,7 +294,7 @@ public class SchemaStoreImpl implements SchemaStore {
     } catch (final IOException exc) {
       throw new ServerException("Error while adding schema to file storage: " + exc.getMessage());
     } catch (Exception ex) {
-      log.error("Failed to store a new schema file: ", ex);
+      log.error("addSchema.error; Failed to store new schema file: ", ex);
       throw ex;
     }
 
@@ -325,7 +327,7 @@ public class SchemaStoreImpl implements SchemaStore {
     int deleted = currentSession.createNativeQuery("delete from schematerms where schemaid = :schemaid")
         .setParameter("schemaid", identifier)
         .executeUpdate();
-    log.debug("Deleted {} terms", deleted);
+    log.debug("updateSchema; Deleted {} terms", deleted);
     existing.getTerms().forEach(t -> currentSession.detach(t));
 
     // Check duplicate terms
@@ -398,7 +400,6 @@ public class SchemaStoreImpl implements SchemaStore {
     }
     try {
       return fileStore.readFile(existing.getNameHash());
-
     } catch (IOException ex) {
       throw new ServerException("File for Schema " + identifier + " does not exist.");
     }

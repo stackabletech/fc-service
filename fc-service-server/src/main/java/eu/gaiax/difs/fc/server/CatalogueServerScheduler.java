@@ -37,7 +37,9 @@ public class CatalogueServerScheduler {
     
     @Scheduled(initialDelayString = "${scheduler.schema.init-delay}", fixedDelay = Long.MAX_VALUE) 
     public void scheduleSchemaInitialization() {
-      smStore.initializeDefaultSchemas();
+      log.debug("scheduleSchemaInitialization.enter; Launching default schemas initialization.");
+      int numberOfSchemas = smStore.initializeDefaultSchemas();
+      log.debug("scheduleSchemaInitialization.exit; {} default schemas initializated.", numberOfSchemas);
     }    
 
 }

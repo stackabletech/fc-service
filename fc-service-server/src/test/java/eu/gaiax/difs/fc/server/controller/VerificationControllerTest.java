@@ -127,8 +127,8 @@ public class VerificationControllerTest {
             .getContentAsString();
     Error error = objectMapper.readValue(response, Error.class);
     assertEquals("verification_error", error.getCode());
-    assertTrue(error.getMessage().startsWith("Semantic Errors:"), "Message is: " + error.getMessage());
-    assertTrue(error.getMessage().contains("must contain 'verifiableCredential' property"), "Message is: " + error.getMessage());
+    assertTrue(error.getMessage().startsWith("Semantic Error:"), "Message is: " + error.getMessage());
+    assertTrue(error.getMessage().contains("no proper CredentialSubject found"), "Message is: " + error.getMessage());
   }
 
   @Test

@@ -153,6 +153,27 @@ public class VerificationServiceImplTest {
   }
 
   @Test
+  void validSyntax_ValidPerson2() throws Exception {
+    log.debug("validSyntax_ValidPerson2");
+    schemaStore.initializeDefaultSchemas();
+    verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
+    String path = "VerificationService/syntax/legalPerson2.jsonld";
+    VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
+    assertNotNull(vr);
+    assertTrue(vr instanceof VerificationResultParticipant);
+    assertFalse(vr instanceof VerificationResultOffering);
+    VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
+    assertEquals("http://gaiax.de", vrp.getId());
+    assertEquals("http://gaiax.de", vrp.getIssuer());
+    assertEquals("http://gaiax.de", vrp.getParticipantName()); // could be 'Provider Name'..
+    assertNotNull(vrp.getClaims());
+    assertEquals(26, vrp.getClaims().size()); //!!
+    assertNull(vrp.getValidators());
+    assertNull(vrp.getValidatorDids());
+    //assertEquals(LocalDate.of(2010, 1, 1), vrp.getIssuedDate());
+  }
+  
+  @Test
   void invalidProof_InvalidSignatureType() throws Exception {
     log.debug("invalidProof_InvalidSignatureType");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));

@@ -55,15 +55,20 @@ public class FileStoreImpl implements FileStore {
 
   public FileStoreImpl(String storeName) {
     this.storeName = storeName;
+    log.info("<init>; initialized store with name: {}", storeName);
   }
 
   private final Map<String, Path> storePaths = new HashMap<>();
 
-  private Path getPathForStore(String storeName) {
+  private Path getPathForStore(String store) {
+    Path path;  
     if (scope.equals("test")) {
-      return FileSystems.getDefault().getPath(storeName);
+      path = FileSystems.getDefault().getPath(store);
+    } else {
+      path = storePaths.computeIfAbsent(store, n -> FileSystems.getDefault().getPath(basePathName, n));
     }
-    return storePaths.computeIfAbsent(storeName, n -> FileSystems.getDefault().getPath(basePathName, n));
+    log.debug("getPathForStore.exit; returning {} for store {}", path, store);
+    return path;
   }
 
   private File getFileForStoreHash(String hash) {
