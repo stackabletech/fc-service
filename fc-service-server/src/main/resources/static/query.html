@@ -96,13 +96,6 @@
             <textarea id="result" style="width:800px;height:300px;" placeholder="Result of your query statement"></textarea>
         </div>
         <script>
-            // Getting authorization token from response and passing again to server for authentication purpose
-            var req = new XMLHttpRequest();
-            let parameterCount = 0;
-            req.open('GET', document.location, false);
-            req.send(null);
-            var headers = req.getAllResponseHeaders();
-            var Authorization = headers.Authorization;
 
             <!--Post call for query sd to server -->
             function querySD() {
@@ -113,7 +106,6 @@
                         type: 'POST',  // http method
                         contentType: "application/json;charset=utf-8",
                         headers: {"query-language": "openCypher"},
-                        // beforeSend: function(xhr){xhr.setRequestHeader('Authorization', Authorization);}, //to enable token header with value
                         data: JSON.stringify({
                             parameters: getRequestParams(),
                             statement: document.getElementById('content-target').value
