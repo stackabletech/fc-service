@@ -67,7 +67,7 @@ public class FileStoreImpl implements FileStore {
     } else {
       path = storePaths.computeIfAbsent(store, n -> FileSystems.getDefault().getPath(basePathName, n));
     }
-    log.debug("getPathForStore.exit; returning {} for store {}", path, store);
+    log.trace("getPathForStore.exit; returning {} for store {}", path, store);
     return path;
   }
 
@@ -88,7 +88,7 @@ public class FileStoreImpl implements FileStore {
     if (HASH_PATTERN.matcher(filename).matches()) {
       return filename;
     }
-    log.debug("Filename is not a hash: {}", filename);
+    log.debug("validateFileName; Filename is not a hash: {}", filename);
     return HashUtils.calculateSha256AsHex(filename);
   }
 
