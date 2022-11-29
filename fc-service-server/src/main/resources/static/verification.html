@@ -107,10 +107,10 @@
                     contentType: "application/json;charset=utf-8",
                     data: document.getElementById('content-target').value,
                     success: function (data, status, xhr) {
-                         $('#result').append('Status : ' + status + ', Result: ' + JSON.stringify(xhr.responseJSON));
+                         $('#result').append('Status : ' + status + ', Result: '  + JSON.stringify(xhr.responseJSON).replace(/\\n|\\r/g, '<br />'));
                     },
                     error: function (jqXhr, textStatus, errorMessage) {
-                        $('#result').append('Status : ' + textStatus + ', Error : ' + JSON.stringify(jqXhr.responseJSON));
+                          $('#result').append('Status : ' + textStatus + ', Error : ' + JSON.stringify(jqXhr.responseJSON).replace(/\\n|\\r/g, '<br />'));
                     }
                 });
             }
