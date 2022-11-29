@@ -404,30 +404,6 @@ public class SchemaManagementImplTest {
   }
 
   /**
-   * Test of deleteSchema method, of class SchemaManagementImpl.
-   */
-  @Test
-  @Disabled
-  public void testDeleteSchema() {
-  }
-
-  /**
-   * Test of getSchemaList method, of class SchemaManagementImpl.
-   */
-  @Test
-  @Disabled
-  public void testGetSchemaList() {
-  }
-
-  /**
-   * Test of getSchema method, of class SchemaManagementImpl.
-   */
-  @Test
-  @Disabled
-  public void testGetSchema() {
-  }
-
-  /**
    * Test of getCompositeSchema method, of class SchemaManagementImpl.
    */
   @Test
