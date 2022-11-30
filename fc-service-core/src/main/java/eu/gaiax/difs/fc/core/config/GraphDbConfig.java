@@ -14,18 +14,18 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Configuration
-@ConditionalOnProperty(value="federated-catalogue.scope", havingValue="runtime")
+@ConditionalOnProperty(value = "federated-catalogue.scope", havingValue = "runtime")
 public class GraphDbConfig {
 
-	@Value("${graphstore.uri}")
-	private String uri;
-	@Value("${graphstore.user}")
-	private String user;
-	@Value("${graphstore.password}")
-	private String password;
-	
-	@Bean(destroyMethod = "close")
-	public Driver driver() {
+    @Value("${graphstore.uri}")
+    private String uri;
+    @Value("${graphstore.user}")
+    private String user;
+    @Value("${graphstore.password}")
+    private String password;
+
+    @Bean(destroyMethod = "close")
+    public Driver driver() {
         Driver driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
         Session session = driver.session();
         Result result = session.run("CALL gds.graph.exists('neo4j');");
@@ -38,12 +38,13 @@ public class GraphDbConfig {
             }
         }
         if (!session.run("CALL n10s.graphconfig.show();").hasNext()) {
-          session.run("CALL n10s.graphconfig.init({handleVocabUris:'MAP',handleMultival:'ARRAY',multivalPropList:['http://w3id.org/gaia-x/service#claimsGraphUri']});"); /// run only when creating a new graph
-          session.run("CREATE CONSTRAINT n10s_unique_uri IF NOT EXISTS ON (r:Resource) ASSERT r.uri IS UNIQUE");
-          log.info("n10s.graphconfig.init() not called second time.");
+            session.run("CALL n10s.graphconfig.init({handleVocabUris:'MAP',handleMultival:'ARRAY',multivalPropList:['http://w3id.org/gaia-x/service#claimsGraphUri']});"); /// run only when creating a new graph
+            session.run("CREATE CONSTRAINT n10s_unique_uri IF NOT EXISTS ON (r:Resource) ASSERT r.uri IS UNIQUE");
+            session.run("DENY MATCH {*} ON GRAPH neo4j NODES _GraphConfig TO `PUBLIC`");
+            log.info("n10s.graphconfig.init() not called second time.");
         }
         log.info("n10 procedure and Constraints are loaded successfully");
         return driver;
-	}
-	
+    }
+
 }
