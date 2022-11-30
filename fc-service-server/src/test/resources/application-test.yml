@@ -1,5 +1,10 @@
 federated-catalogue:
   scope: test
+  verification:
+    participant:
+      type: "http://w3id.org/gaia-x/participant#Participant"
+    service-offering:
+      type: "http://w3id.org/gaia-x/service#ServiceOffering"
 
 graphstore:
   query-timeout-in-seconds: 5
@@ -7,4 +12,3 @@ graphstore:
 spring:
   liquibase:
     contexts: test
-

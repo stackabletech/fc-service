@@ -132,7 +132,7 @@ public class SelfDescriptionStoreCompositeTest {
   void test01StoreSelfDescription() throws Exception {
     log.info("test01StoreSelfDescription");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
-    ContentAccessor content = getAccessor("Claims-Extraction-Tests/participantSD.jsonld");
+    ContentAccessor content = getAccessor("Claims-Extraction-Tests/providerTest.jsonld"); // participantSD.jsonld");
     // Only verify semantics, not schema or signatures
     VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
@@ -144,14 +144,18 @@ public class SelfDescriptionStoreCompositeTest {
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
 
     List<Map<String, Object>> claims = graphStore.queryData(
-        new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n)", Map.of("uri", sdMeta.getId()))).getResults();
+        new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n), n", Map.of("uri", sdMeta.getId()))).getResults();
     log.debug("test01StoreSelfDescription; got claims: {}", claims);
     //Assertions.assertEquals(5, claims.size()); only 1 node found..
 
-    List<Map<String, Object>> nodes = graphStore.queryData(
-        new GraphQuery("MATCH (n) RETURN labels(n)", Map.of())).getResults();
-    log.debug("test01StoreSelfDescription; got nodes: {}", nodes);
+    List<Map<String, Object>> hNodes = graphStore.queryData(
+        new GraphQuery("MATCH (n)-[r:legalAddress]->(a {locality: $locality}) RETURN n, r, a", Map.of("locality", "Hamburg"))).getResults();
+    log.debug("test01StoreSelfDescription; got Hamburg nodes: {}", hNodes);
 
+    List<Map<String, Object>> aNodes = graphStore.queryData(
+        new GraphQuery("MATCH (n) RETURN labels(n), n", Map.of())).getResults();
+    log.debug("test01StoreSelfDescription; got All nodes: {}", aNodes);
+    
     //final ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
     //assertEquals(sdfileByHash, sdMeta.getSelfDescription(),
     //    "Getting the SD file by hash is equal to the stored SD file");
@@ -159,7 +163,7 @@ public class SelfDescriptionStoreCompositeTest {
     assertAllSdFilesDeleted();
 
     claims = graphStore.queryData(
-        new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
+        new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n), n", Map.of("uri", sdMeta.getId()))).getResults();
     Assertions.assertEquals(0, claims.size());
 
     Assertions.assertThrows(NotFoundException.class, () -> {

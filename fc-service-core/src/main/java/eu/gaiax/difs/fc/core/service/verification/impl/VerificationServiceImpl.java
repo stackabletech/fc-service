@@ -475,17 +475,13 @@ public class VerificationServiceImpl implements VerificationService {
     } else if (obj instanceof List) {
       List<Map<String, Object>> l = (List<Map<String, Object>>) obj;
       List<CredentialSubject> result = new ArrayList<>(l.size());
-
       for (Map<String, Object> _cs : l) {
         CredentialSubject cs = CredentialSubject.fromMap(_cs);
-
         result.add(cs);
       }
-
       return result;
     } else if (obj instanceof Map) {
       CredentialSubject vc = CredentialSubject.fromMap((Map<String, Object>) obj);
-
       return List.of(vc);
     } else {
       return Collections.emptyList();
@@ -522,7 +518,7 @@ public class VerificationServiceImpl implements VerificationService {
 
   private void initLoaders() {
     if (!loadersInitialised) {
-      log.debug("Setting up Caching com.apicatalog.jsonld DocumentLoader");
+      log.debug("initLoaders; Setting up Caching com.apicatalog.jsonld DocumentLoader");
       DocumentLoader cachingLoader = new CachingHttpLoader(fileStore);
       SchemeRouter loader = (SchemeRouter) SchemeRouter.defaultInstance();
       loader.set("http", cachingLoader);
@@ -535,7 +531,7 @@ public class VerificationServiceImpl implements VerificationService {
     if (streamManager == null) {
       // Make sure Caching com.​apicatalog.​jsonld DocumentLoader is set up.
       initLoaders();
-      log.debug("Setting up Jena caching Locator");
+      log.debug("getStreamManager; Setting up Jena caching Locator");
       StreamManager clone = StreamManager.get().clone();
       clone.clearLocators();
       clone.addLocator(new LocatorCaching(fileStore));

@@ -93,8 +93,6 @@ federated-catalogue:
       location: contextCacheFiles
   verification:
     participant:
-#      type: "http://w3id.org/gaia-x/participant#Participant"
       type: "https://w3id.org/gaia-x/core#Participant"
     service-offering:
-#      type: "http://w3id.org/gaia-x/service#ServiceOffering"
       type: "https://w3id.org/gaia-x/core#ServiceOffering"
