@@ -170,6 +170,7 @@ public class VerificationServiceImplTest {
     assertEquals(26, vrp.getClaims().size()); //!!
     assertNull(vrp.getValidators());
     assertNull(vrp.getValidatorDids());
+    verificationService.setTypes("http://w3id.org/gaia-x/participant#Participant", "http://w3id.org/gaia-x/service#ServiceOffering");
     //assertEquals(LocalDate.of(2010, 1, 1), vrp.getIssuedDate());
   }
   
