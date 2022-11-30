@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initialscale=1.0">
+    <meta name="viewport" content="width=device-width">
     <title>Query Self-Description</title>
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link href="css/jquery-ui.css" rel="stylesheet">
+    <script src="js/jquery-1.12.4.js"></script>
+    <script src="js/jquery-ui.js"></script>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
     <style>
         html, body {
             height: 100%;
@@ -96,13 +96,6 @@
             <textarea id="result" style="width:800px;height:300px;" placeholder="Result of your query statement"></textarea>
         </div>
         <script>
-            // Getting authorization token from response and passing again to server for authentication purpose
-            var req = new XMLHttpRequest();
-            let parameterCount = 0;
-            req.open('GET', document.location, false);
-            req.send(null);
-            var headers = req.getAllResponseHeaders();
-            var Authorization = headers.Authorization;
 
             <!--Post call for query sd to server -->
             function querySD() {
@@ -113,7 +106,6 @@
                         type: 'POST',  // http method
                         contentType: "application/json;charset=utf-8",
                         headers: {"query-language": "openCypher"},
-                        // beforeSend: function(xhr){xhr.setRequestHeader('Authorization', Authorization);}, //to enable token header with value
                         data: JSON.stringify({
                             parameters: getRequestParams(),
                             statement: document.getElementById('content-target').value

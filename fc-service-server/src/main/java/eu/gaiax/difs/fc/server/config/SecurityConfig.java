@@ -50,7 +50,7 @@ public class SecurityConfig {
       .csrf().disable()
       .antMatcher("/**")
       .authorizeRequests(authorization -> authorization
-          .antMatchers(HttpMethod.GET, "/api/**", "/swagger-ui/**", "/actuator", "/actuator/**")
+          .antMatchers(HttpMethod.GET, "/api/**", "/swagger-ui/**", "/actuator", "/actuator/**","/js/**","/css/**")
           .permitAll()
 
           // Schema APIs
