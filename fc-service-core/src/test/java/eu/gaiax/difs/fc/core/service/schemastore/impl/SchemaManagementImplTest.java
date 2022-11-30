@@ -401,7 +401,7 @@ public class SchemaManagementImplTest {
     assertEquals(1, schemaList.get(SchemaType.SHAPE).size());
     assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("https://w3id.org/gaia-x/gax-trust-framework#"), "Ontology identifier not found in schema list.");
     assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("https://w3id.org/gaia-x/core#"), "Ontology identifier not found in schema list.");
-    schemaStore.deleteSchema(schemaList.get(ONTOLOGY).get(1));
+    schemaStore.deleteSchema("https://w3id.org/gaia-x/gax-trust-framework#");
     Map<SchemaType, List<String>> schemaListDelete = schemaStore.getSchemaList();
     assertFalse(schemaListDelete.get(SchemaType.ONTOLOGY).contains("https://w3id.org/gaia-x/gax-trust-framework#"), "Ontology identifier not found in schema list.");
     assertEquals(1, schemaListDelete.get(SchemaType.ONTOLOGY).size());
