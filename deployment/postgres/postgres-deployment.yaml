@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: fc-postgres
-          image: postgres:15.0
+          image: postgres:15.1
           env:
             - name: SPRING_DATASOURCE_USERNAME
               valueFrom:
@@ -37,13 +37,13 @@ spec:
                 secretKeyRef:
                   name: fc-postgres-pass-secret
                   key: password
-          imagePullPolicy: "IfNotPresent"
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5432
           volumeMounts:
-            - mountPath: /var/lib/postgres/data
+            - mountPath: /var/lib/postgresql/data
               name: fc-postgres
       volumes:
         - name: fc-postgres
           persistentVolumeClaim:
-            claimName: fc-service-pvc
+            claimName: fc-postgres-claim

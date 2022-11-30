@@ -31,7 +31,7 @@ spec:
                   name: fc-server-keys-secret
                   key: keycloak_client_secret
             - name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI
-              value: http://78.138.66.202:8080/realms/gaia-x
+              value: http://fc-key-server.gxfs.dev/realms/gaia-x
             - name: FEDERATED_CATALOGUE_BASE_URI
               value: http://10.108.152.6:8081
           ports:

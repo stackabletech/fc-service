@@ -6,7 +6,7 @@ metadata:
     app: fc-service
   namespace: federated-catalogue
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: fc-service
@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: fc-service-server-image
-          image: registry.gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/fc-service-server
+          image: registry.gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/fc-service-server:0.0.1-SNAPSHOT
           imagePullPolicy: Always
           env:
             - name: GRAPHSTORE_URI
@@ -31,28 +31,27 @@ spec:
               value: jdbc:postgresql://10.104.96.87:5432/postgres
             - name: GRAPHSTORE_QUERY_TIMEOUT_IN_SECONDS
               value: "5"
+            - name: DATASTORE_FILE_PATH
+              value: /var/lib/fc-service/filestore
             - name: KEYCLOAK_AUTH_SERVER_URL
-              value: http://78.138.66.202:8080
+              value: http://fc-key-server.gxfs.dev
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
-              value: http://78.138.66.202:8080/realms/gaia-x
+              value: http://fc-key-server.gxfs.dev/realms/gaia-x
             - name: KEYCLOAK_CREDENTIALS_SECRET
               valueFrom:
                 secretKeyRef:
                   name: fc-server-keys-secret
                   key: keycloak_client_secret
-            - name: FEDERATED_CATALOGUE_FILE_STORE_SD_LOCATION
-              value: /var/lib/filestore/sd
-            - name: FEDERATED_CATALOGUE_FILE_STORE_SCHEMA_LOCATION
-              value: /var/lib/filestore/schema
           ports:
-            - name: "http"
+            - name: http
               containerPort: 8081
           volumeMounts:
             - name: fc-file-store
-              mountPath: "/var/lib/filestore"
+              mountPath: /var/lib/fc-service
+              subPath: filestore
           readinessProbe:
             httpGet:
-              path: "/actuator/health"
+              path: /actuator/health
               port: 8081
             initialDelaySeconds: 60
             periodSeconds: 30
@@ -60,5 +59,5 @@ spec:
       volumes:
         - name: fc-file-store
           persistentVolumeClaim:
-            claimName: fc-service-pvc
+            claimName: fc-filestore-claim
       restartPolicy: Always
