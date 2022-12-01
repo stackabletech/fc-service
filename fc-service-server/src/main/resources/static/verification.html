@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta content="width=device-width, initialscale=1.0" name="viewport">
+    <meta content="width=device-width, initialscale=1.0">
     <title>Verify Self-Description</title>
-    <link href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/fontawesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/jquery-ui.css" rel="stylesheet">
+    <script src="js/jquery-1.12.4.js"></script>
+    <script src="js/jquery-ui.js"></script>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
     <style>
 
     html,body {
@@ -28,7 +27,7 @@
 </head>
 
 <body>
-<div class="container">
+ <div class="container">
     <div>
         <h2>Verify Self-Description</h2>
         <br>
@@ -61,71 +60,64 @@
         <br><label id="result" style="padding:5px; font-weight:bold; float:left; width: 800px "></label>
         <script>
 
-<!--Getting authorization token from response and passing again to server for authentication purpose -->
-var req = new XMLHttpRequest();
-req.open('GET', document.location, false);
-req.send(null);
-var headers = req.getAllResponseHeaders();
-var Authorization=headers.Authorization;
+            <!--Event for fileUpload and getFile is triggered -->
+            document.getElementById('sdFile').addEventListener('change', getFile)
 
-<!--Event for fileUpload and getFile is triggered -->
-document.getElementById('sdFile').addEventListener('change', getFile)
+            function getFile(event) {
+                $('#result').text("");
+                const input = event.target
+              if ('files' in input && input.files.length > 0) {
+                  placeFileContent(
+                  document.getElementById('content-target'),
+                  input.files[0])
+              }
+            }
 
-function getFile(event) {
-    $('#result').text("");
-	const input = event.target
-  if ('files' in input && input.files.length > 0) {
-	  placeFileContent(
-      document.getElementById('content-target'),
-      input.files[0])
-  }
-}
+            function placeFileContent(target, file) {
+                readFileContent(file).then(content => {
+                target.value = content
+              }).catch(error => console.log(error))
+            }
 
-function placeFileContent(target, file) {
-	readFileContent(file).then(content => {
-  	target.value = content
-  }).catch(error => console.log(error))
-}
+            function readFileContent(file) {
+                const reader = new FileReader()
 
-function readFileContent(file) {
-	const reader = new FileReader()
+                return new Promise((resolve, reject) => {
+                     reader.onload = event => resolve(event.target.result)
+                     reader.onerror = error => reject(error)
+                     reader.readAsText(file)
+                })
+            }
 
-    return new Promise((resolve, reject) => {
-         reader.onload = event => resolve(event.target.result)
-         reader.onerror = error => reject(error)
-         reader.readAsText(file)
-    })
-}
+            <!--Post call for verify sd to server -->
+            function verifySD(){
 
-<!--Post call for verify sd to server -->
-function verifySD(){
+                $('#result').text("");
+                if(document.getElementById('content-target').value=="" || document.getElementById('content-target').value==null){
+                     alert("Please add Self-Description");
+                     return;
+                }
+                var checkVerifySemantics = $("#verifySemantics").is(":checked") ? "true" : "false";
+                var checkVerifySchema = $("#verifySchema").is(":checked") ? "true" : "false";
+                var checkVerifySignatures = $("#verifySignatures").is(":checked") ? "true" : "false";
+                var urlWithParam = "/verification?verifySemantics="+checkVerifySemantics+"&verifySchema="+checkVerifySchema+"&verifySignatures="+checkVerifySignatures;
 
-    $('#result').text("");
-    if(document.getElementById('content-target').value=="" || document.getElementById('content-target').value==null){
-         alert("Please add Self-Description");
-         return;
-    }
-    var checkVerifySemantics = $("#verifySemantics").is(":checked") ? "true" : "false";
-    var checkVerifySchema = $("#verifySchema").is(":checked") ? "true" : "false";
-    var checkVerifySignatures = $("#verifySignatures").is(":checked") ? "true" : "false";
-    var urlWithParam = "/verification?verifySemantics="+checkVerifySemantics+"&verifySchema="+checkVerifySchema+"&verifySignatures="+checkVerifySignatures;
-
-    $.ajax(urlWithParam,{
-        type: 'POST',
-        contentType: "application/json;charset=utf-8",
-        data: document.getElementById('content-target').value,
-        success: function (data, status, xhr) {
-            $('#result').append('Status : ' + status + ', Result: ' + JSON.stringify({data}));
-        },
-        error: function (jqXhr, textStatus, errorMessage) {
-            $('#result').append('Error : ' + JSON.stringify(jqXhr.responseJSON));
-        }
-    });
-}
+                $.ajax(urlWithParam,{
+                    type: 'POST',
+                    contentType: "application/json;charset=utf-8",
+                    data: document.getElementById('content-target').value,
+                    success: function (data, status, xhr) {
+                         $('#result').append('Status : ' + status + ', Result: '  + JSON.stringify(xhr.responseJSON).replace(/\\n|\\r/g, '<br />'));
+                    },
+                    error: function (jqXhr, textStatus, errorMessage) {
+                          $('#result').append('Status : ' + textStatus + ', Error : ' + JSON.stringify(jqXhr.responseJSON).replace(/\\n|\\r/g, '<br />'));
+                    }
+                });
+            }
 
 
         </script>
+     </div>
     </div>
-</div>
-</body>
+  </body>
 </html>
