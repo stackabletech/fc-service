@@ -6,7 +6,7 @@ metadata:
     app: fc-service
   namespace: federated-catalogue
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: fc-service
@@ -56,6 +56,17 @@ spec:
             initialDelaySeconds: 60
             periodSeconds: 30
           resources: { }
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - fc-postgres
+                      - fc-neo4j-db
+              topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: fc-file-store
           persistentVolumeClaim:
