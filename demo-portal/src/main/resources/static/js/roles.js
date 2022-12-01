@@ -11,12 +11,10 @@ $(document).ready(function() {
                          success: function (response) {
                              $.each(response, function(index, item) {
                                // access the properties of each user
-                              //console.log(item);
                               var obj = { "name" : item
                                        }
                                      result.push(obj);
                              });
-                              console.log(JSON.stringify(result));
                              partDataTable = $('#rolesTable').DataTable({
                                              data : result,
                                              columns: [
@@ -24,7 +22,10 @@ $(document).ready(function() {
 
                                                        ]
                                             });
-                         }
+                         },
+                         error: function (xhr, error, thrown) {
+                                alert(JSON.stringify(xhr.responseJSON));
+                                }
                       });
 
 
