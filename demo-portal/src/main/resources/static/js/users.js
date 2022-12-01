@@ -4,7 +4,10 @@ $(document).ready(function() {
       var partDataTable = $('#usersTable').DataTable({
             ajax: {
                 url: 'users',
-                dataSrc: 'items'
+                dataSrc: 'items',
+                error: function (xhr, error, thrown) {
+                        alert(JSON.stringify(xhr.responseJSON));
+                }
              },
             columns: [
                   { data: 'id' } ,
@@ -34,9 +37,7 @@ $(document).ready(function() {
             $('#usersTable').on('click', '#editButton',function(e){
                  e.preventDefault();
                  var data = partDataTable.row( $(this).parents('tr')).data();
-                //console.log("edit call"+JSON.stringify(data));
                 $("#editData").val(JSON.stringify(data,null, ' '));
-//                $("#editData").val(JSON.stringify(data));
                 $('#editModal').modal('show');
             });
 
@@ -45,9 +46,7 @@ $(document).ready(function() {
 
                   var check = confirm("Are you sure you want to delete?");
                      if (check == true) {
-                         console.log("Confirm delete");
                          var data = partDataTable.row( $(this).parents('tr')).data();
-                         //console.log("delete call"+JSON.stringify(data));
 
                              $.ajax('/users/'+data.id, {
                                 type: 'DELETE',  // http method
@@ -58,13 +57,11 @@ $(document).ready(function() {
 
                                 },
                                 error: function (jqXhr, textStatus, errorMessage) {
-                                console.log("post delete failure");
-
+                                 alert(JSON.stringify(jqXhr.responseJSON));
                                 }
                             });
                         } else {
-                             console.log("Cancel delete");
-                              return ;
+                             return ;
                     }
              });
 
@@ -83,7 +80,7 @@ $(document).ready(function() {
                               partDataTable.ajax.reload();
                             },
                             error: function (jqXhr, textStatus, errorMessage) {
-                             console.log("post edit failure");
+                             alert(JSON.stringify(jqXhr.responseJSON));
                             }
                      });
              });
@@ -92,7 +89,6 @@ $(document).ready(function() {
 
                  var normalData=$("#addData").val();
                  var data=JSON.parse(normalData);
-                 //console.log("data"+data);
 
                      $.ajax('/users', {
                             type: 'POST',  // http method
@@ -104,7 +100,7 @@ $(document).ready(function() {
                               partDataTable.ajax.reload();
                             },
                             error: function (jqXhr, textStatus, errorMessage) {
-                             console.log("post edit failure");
+                              alert(JSON.stringify(jqXhr.responseJSON));
                             }
                      });
              });
@@ -116,7 +112,6 @@ $(document).ready(function() {
 
             $('#addButton').on('click', function(e){
                  e.preventDefault();
-                console.log("Add call");
             });
 
             $('.close').on('click', function(e){
