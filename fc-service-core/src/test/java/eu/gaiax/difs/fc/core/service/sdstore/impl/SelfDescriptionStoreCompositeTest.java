@@ -4,7 +4,6 @@ import static eu.gaiax.difs.fc.core.util.TestUtil.getAccessor;
 import static eu.gaiax.difs.fc.core.util.TestUtil.assertThatSdHasTheSameData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -91,22 +90,6 @@ public class SelfDescriptionStoreCompositeTest {
     embeddedDatabaseServer.close();
   }
 
-  // Since SdMetaRecord class extends SelfDescriptionMetadata class instead of being formed from it, then check
-  // in the equals method will always be false. Because we are downcasting SdMetaRecord to SelfDescriptionMetadata.
-  private static void assertThatSdHasTheSameData(final SelfDescriptionMetadata expected,
-      final SelfDescriptionMetadata actual) {
-    assertEquals(expected.getId(), actual.getId());
-    assertEquals(expected.getSdHash(), actual.getSdHash());
-    assertEquals(expected.getStatus(), actual.getStatus());
-    assertEquals(expected.getIssuer(), actual.getIssuer());
-    assertEquals(expected.getValidatorDids(), actual.getValidatorDids());
-   // assertEquals(expected.getUploadDatetime(), actual.getUploadDatetime());
-    assertEquals(expected.getUploadDatetime().truncatedTo(ChronoUnit.MILLIS), actual.getUploadDatetime().truncatedTo(ChronoUnit.MILLIS));
-     assertEquals(expected.getStatusDatetime().truncatedTo(ChronoUnit.MILLIS), actual.getStatusDatetime().truncatedTo(ChronoUnit.MILLIS));
-   // assertEquals(expected.getStatusDatetime(), actual.getStatusDatetime());
-    assertEquals(expected.getSelfDescription().getContentAsString(), actual.getSelfDescription().getContentAsString());
-  }
-
   private void assertStoredSdFiles(final int expected) {
     final MutableInt count = new MutableInt(0);
     fileStore.getFileIterable().forEach(file -> count.increment());
@@ -141,7 +124,7 @@ public class SelfDescriptionStoreCompositeTest {
     assertStoredSdFiles(1);
     String hash = sdMeta.getSdHash();
 
-    assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
+    assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash), false);
 
     List<Map<String, Object>> claims = graphStore.queryData(
         new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n), n", Map.of("uri", sdMeta.getId()))).getResults();
@@ -184,7 +167,7 @@ public class SelfDescriptionStoreCompositeTest {
     assertStoredSdFiles(1);
     String hash = sdMeta.getSdHash();
 
-    assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
+    assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash), false);
 
     List<Map<String, Object>> claims = graphStore.queryData(
         new GraphQuery("MATCH (n) RETURN n", null)).getResults();

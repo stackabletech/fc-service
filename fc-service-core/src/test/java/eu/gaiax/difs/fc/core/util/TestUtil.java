@@ -27,15 +27,20 @@ public class TestUtil {
 
   // Since SdMetaRecord class extends SelfDescriptionMetadata class instead of being formed from it, then check
   // in the equals method will always be false. Because we are downcasting SdMetaRecord to SelfDescriptionMetadata.
-  public static void assertThatSdHasTheSameData(final SelfDescriptionMetadata expected, final SelfDescriptionMetadata actual) {
+  public static void assertThatSdHasTheSameData(final SelfDescriptionMetadata expected, final SelfDescriptionMetadata actual, final boolean precise) {
     assertEquals(expected.getId(), actual.getId());
     assertEquals(expected.getSdHash(), actual.getSdHash());
     assertEquals(expected.getStatus(), actual.getStatus());
     assertEquals(expected.getIssuer(), actual.getIssuer());
     assertEquals(expected.getValidatorDids(), actual.getValidatorDids());
-    assertEquals(expected.getUploadDatetime().truncatedTo(ChronoUnit.MILLIS), actual.getUploadDatetime().truncatedTo(ChronoUnit.MILLIS));
-    assertEquals(expected.getStatusDatetime().truncatedTo(ChronoUnit.MILLIS), actual.getStatusDatetime().truncatedTo(ChronoUnit.MILLIS));
     assertEquals(expected.getSelfDescription().getContentAsString(), actual.getSelfDescription().getContentAsString());
+    if (precise) {
+      assertEquals(expected.getUploadDatetime(), actual.getUploadDatetime());
+      assertEquals(expected.getStatusDatetime(), actual.getStatusDatetime());
+    } else {
+      assertEquals(expected.getUploadDatetime().truncatedTo(ChronoUnit.MILLIS), actual.getUploadDatetime().truncatedTo(ChronoUnit.MILLIS));
+      assertEquals(expected.getStatusDatetime().truncatedTo(ChronoUnit.MILLIS), actual.getStatusDatetime().truncatedTo(ChronoUnit.MILLIS));
+    }
   }
   
   public static int countFilesInStore(FileStore store) {
