@@ -285,17 +285,11 @@ public class SchemaManagementImplTest {
     assertTermsEquals(
         "http://w3id.org/gaia-x/validation#PhysicalResourceShape",
         "http://w3id.org/gaia-x/validation#MeasureShape");
-    int count = 0;
-    for (File file : fileStore.getFileIterable()) {
-      count++;
-    }
+    int count = TestUtil.countFilesInStore(fileStore);
     assertEquals(1, count, "Storing one schama should result in exactly one file in the store.");
 
     schemaStore.deleteSchema(schemaId1);
-    count = 0;
-    for (File file : fileStore.getFileIterable()) {
-      count++;
-    }
+    count = TestUtil.countFilesInStore(fileStore);
     assertEquals(0, count, "Deleting the only file should result in exactly 0 files in the store.");
   }
 
@@ -392,50 +386,25 @@ public class SchemaManagementImplTest {
     assertEquals(TestUtil.getAccessor(getClass(), path1).getContentAsString(), fileStore.readFile(schemaId).getContentAsString(), "The content of the updated schema should be stored in the schema file.");
 
     schemaStore.deleteSchema(schemaId);
-    int count = 0;
-    for (File file : fileStore.getFileIterable()) {
-      count++;
-    }
+    int count = TestUtil.countFilesInStore(fileStore);
     assertEquals(0, count, "Deleting the only file should result in exactly 0 files in the store.");
   }
 
   @Test
-  void addDefaultSchemas() {
-    schemaStore.initializeDefaultSchemas();
-    int count = 0;
-    for (File file : fileStore.getFileIterable()) {
-      count++;
-    }
-    assertEquals(3, count, "Expected a different number of files in the store.");
+  void addDeleteDefaultSchemas() {
+    int initialized = schemaStore.initializeDefaultSchemas();
+    assertEquals(3, initialized, "Expected different number of schemas initialized.");
+    int count = TestUtil.countFilesInStore(fileStore);
+    assertEquals(3, count, "Expected different number of files in the store.");
     Map<SchemaType, List<String>> schemaList = schemaStore.getSchemaList();
     assertEquals(2, schemaList.get(SchemaType.ONTOLOGY).size());
     assertEquals(1, schemaList.get(SchemaType.SHAPE).size());
     assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("https://w3id.org/gaia-x/gax-trust-framework#"), "Ontology identifier not found in schema list.");
     assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("https://w3id.org/gaia-x/core#"), "Ontology identifier not found in schema list.");
-  }
-
-  /**
-   * Test of deleteSchema method, of class SchemaManagementImpl.
-   */
-  @Test
-  @Disabled
-  public void testDeleteSchema() {
-  }
-
-  /**
-   * Test of getSchemaList method, of class SchemaManagementImpl.
-   */
-  @Test
-  @Disabled
-  public void testGetSchemaList() {
-  }
-
-  /**
-   * Test of getSchema method, of class SchemaManagementImpl.
-   */
-  @Test
-  @Disabled
-  public void testGetSchema() {
+    schemaStore.deleteSchema("https://w3id.org/gaia-x/gax-trust-framework#");
+    Map<SchemaType, List<String>> schemaListDelete = schemaStore.getSchemaList();
+    assertFalse(schemaListDelete.get(SchemaType.ONTOLOGY).contains("https://w3id.org/gaia-x/gax-trust-framework#"), "Ontology identifier not found in schema list.");
+    assertEquals(1, schemaListDelete.get(SchemaType.ONTOLOGY).size());
   }
 
   /**

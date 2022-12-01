@@ -46,7 +46,7 @@ import org.hibernate.Transaction;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
+//import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -58,10 +58,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.annotation.DirtiesContext;
+//import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
+//import org.springframework.transaction.annotation.Transactional;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.MethodName.class)
@@ -69,8 +69,8 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("tests-sdstore")
 @ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, FileStoreConfig.class,
   SelfDescriptionStoreImpl.class, SelfDescriptionStoreImplTest.class, DatabaseConfig.class, Neo4jGraphStore.class})
-@DirtiesContext
-@Transactional
+//@DirtiesContext
+//@Transactional
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
@@ -147,20 +147,6 @@ public class SelfDescriptionStoreImplTest {
     return createVerificationResult(idSuffix, "<https://delta-dao.com/.well-known/serviceMVGPortal.json>");
   }
 
-  // Since SdMetaRecord class extends SelfDescriptionMetadata class instead of being formed from it, then check
-  // in the equals method will always be false. Because we are downcasting SdMetaRecord to SelfDescriptionMetadata.
-  private static void assertThatSdHasTheSameData(final SelfDescriptionMetadata excepted,
-      final SelfDescriptionMetadata actual) {
-    assertEquals(actual.getId(), excepted.getId());
-    assertEquals(actual.getSdHash(), excepted.getSdHash());
-    assertEquals(actual.getStatus(), excepted.getStatus());
-    assertEquals(actual.getIssuer(), excepted.getIssuer());
-    assertEquals(actual.getValidatorDids(), excepted.getValidatorDids());
-    assertEquals(actual.getUploadDatetime(), excepted.getUploadDatetime());
-    assertEquals(actual.getStatusDatetime(), excepted.getStatusDatetime());
-    assertEquals(actual.getSelfDescription(), excepted.getSelfDescription());
-  }
-
   private void assertStoredSdFiles(final int expected) {
     final MutableInt count = new MutableInt(0);
     fileStore.getFileIterable().forEach(file -> count.increment());
@@ -194,7 +180,7 @@ public class SelfDescriptionStoreImplTest {
     sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
     assertStoredSdFiles(1);
 
-    assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash));
+    assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash), true);
 
     List<Map<String, Object>> claims = graphStore.queryData(
         new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
@@ -242,7 +228,7 @@ public class SelfDescriptionStoreImplTest {
     assertEquals(SelfDescriptionStatus.DEPRECATED, byHash1.getStatus(),
         "First self-description should have been depricated.");
     assertTrue(byHash1.getStatusDatetime().isAfter(sdMeta1.getStatusDatetime()));
-    assertThatSdHasTheSameData(sdMeta2, sdStore.getByHash(hash2));
+    assertThatSdHasTheSameData(sdMeta2, sdStore.getByHash(hash2), true);
 
     sdStore.deleteSelfDescription(hash1);
     sdStore.deleteSelfDescription(hash2);
@@ -256,7 +242,6 @@ public class SelfDescriptionStoreImplTest {
     });
   }
 
-  @Disabled("TODO Check why self-description is deprecated and if this is intended behavior.")
   @Test
   void test03StoreDuplicateSelfDescription() {
     log.info("test03StoreDuplicateSelfDescription");
@@ -304,7 +289,7 @@ public class SelfDescriptionStoreImplTest {
     assertStoredSdFiles(1);
 
     SelfDescriptionMetadata byHash = sdStore.getByHash(hash);
-    assertThatSdHasTheSameData(sdMeta, byHash);
+    assertThatSdHasTheSameData(sdMeta, byHash, true);
 
     sdStore.changeLifeCycleStatus(hash, SelfDescriptionStatus.REVOKED);
     byHash = sdStore.getByHash(hash);

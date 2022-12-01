@@ -2,14 +2,11 @@ package eu.gaiax.difs.fc.core.service.verification.impl;
 
 import static eu.gaiax.difs.fc.core.util.TestUtil.getAccessor;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import com.danubetech.verifiablecredentials.VerifiableCredential;
 import com.danubetech.verifiablecredentials.VerifiablePresentation;
 import com.danubetech.verifiablecredentials.validation.Validation;
 import com.github.jsonldjava.core.JsonLdOptions;
@@ -35,7 +32,7 @@ public class VerificationDirectTest {
         // Number or null depending on the root object in the file).
         Object jsonObject = JsonUtils.fromInputStream(content.getContentAsStream());
         // Create a context JSON map containing prefixes and definitions
-        Map context = new HashMap();
+        //Map context = new HashMap();
         // Customise context...
         // Create an instance of JsonLdOptions with the standard JSON-LD options
         JsonLdOptions options = new JsonLdOptions();
@@ -48,8 +45,7 @@ public class VerificationDirectTest {
         log.debug("RDF: {}; {}", rdf, JsonUtils.toPrettyString(rdf));
     }
     
-    @Test
-    @Disabled()
+    //@Test
     void parseJSONLDDirectly3() throws Exception {
         String path = "Claims-Extraction-Tests/providerTest.jsonld";
         ContentAccessor content = getAccessor(VerificationDirectTest.class, path);

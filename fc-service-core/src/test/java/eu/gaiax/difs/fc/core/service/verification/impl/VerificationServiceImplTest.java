@@ -106,38 +106,64 @@ public class VerificationServiceImplTest {
   @Test
   void validSyntax_ValidSDVP() throws Exception {
     log.debug("validSyntax_ValidSDVP");
-    schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
+    //schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     String path = "VerificationService/syntax/input.vp.jsonld";
     VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
     assertNotNull(vr);
-    //assertTrue(vr instanceof VerificationResultParticipant);
-    //VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
-    //assertEquals("https://www.handelsregister.de/", vrp.getId());
-    //assertEquals("https://www.handelsregister.de/", vrp.getIssuer());
-    //assertEquals(LocalDate.of(2010, 1, 1), vrp.getIssuedDate());
+    assertTrue(vr instanceof VerificationResultParticipant);
+    VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
+    //assertEquals("http://example.gov/credentials/3732", vrp.getId()); for Participants id = issuer!
+    assertEquals("did:v1:test:nym:z6MkhdmzFu659ZJ4XKj31vtEDmjvsi5yDZG5L7Caz63oP39k", vrp.getId());
+    assertEquals("did:v1:test:nym:z6MkhdmzFu659ZJ4XKj31vtEDmjvsi5yDZG5L7Caz63oP39k", vrp.getIssuer());
+    assertEquals(Instant.parse("2020-03-10T04:24:12.164Z"), vrp.getIssuedDateTime());
   }
 
   @Test
-  void validSyntax_ValidService() throws Exception {
-    log.debug("validSyntax_ValidService");
+  void validSyntax_ValidServiceOldSchema() throws Exception {
+    log.debug("validSyntax_ValidServiceOldSchema");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
-    String path = "VerificationService/syntax/service1.jsonld";
-    VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
+    ContentAccessor content = getAccessor("VerificationService/syntax/serviceOffering1.jsonld");
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
     assertNotNull(vr);
     assertFalse(vr instanceof VerificationResultParticipant);
     assertTrue(vr instanceof VerificationResultOffering);
-    //VerificationResultOffering vro = (VerificationResultOffering) vr;
-    //assertEquals("https://www.handelsregister.de/", vro.getId());
-    //assertEquals("https://www.handelsregister.de/", vro.getIssuer());
-    //assertEquals(LocalDate.of(2010, 1, 1), vro.getIssuedDate());
+    VerificationResultOffering vro = (VerificationResultOffering) vr;
+    assertEquals("https://www.example.org/Service1", vro.getId());
+    assertEquals("http://gaiax.de", vro.getIssuer());
+    assertNotNull(vro.getClaims());
+    assertEquals(19, vro.getClaims().size()); //!!
+    assertNull(vro.getValidators());
+    assertNull(vro.getValidatorDids());
+    assertEquals(Instant.parse("2022-10-19T18:48:09Z"), vro.getIssuedDateTime());
   }
 
   @Test
-  void validSyntax_ValidPerson() throws Exception {
+  void validSyntax_ValidServiceNewSchema() throws Exception {
+    log.debug("validSyntax_ValidServiceNewSchema");
+    schemaStore.initializeDefaultSchemas();
+    ContentAccessor content = getAccessor("VerificationService/syntax/serviceOffering2.jsonld");
+    verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+    verificationService.setTypes("http://w3id.org/gaia-x/participant#Participant", "http://w3id.org/gaia-x/service#ServiceOffering");
+    assertNotNull(vr);
+    assertTrue(vr instanceof VerificationResultOffering);
+    assertFalse(vr instanceof VerificationResultParticipant);
+    VerificationResultOffering vro = (VerificationResultOffering) vr;
+    assertEquals("https://www.example.org/mySoftwareOffering", vro.getId());
+    assertEquals("http://gaiax.de", vro.getIssuer());
+    assertNotNull(vro.getClaims());
+    assertEquals(19, vro.getClaims().size()); //!!
+    assertNull(vro.getValidators());
+    assertNull(vro.getValidatorDids());
+    assertEquals(Instant.parse("2022-10-19T18:48:09Z"), vro.getIssuedDateTime());
+  }
+
+  @Test
+  void validSyntax_ValidPersonOldSchema() throws Exception {
     log.debug("validSyntax_ValidPerson");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
-    String path = "VerificationService/syntax/legalPerson1.jsonld";
-    VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
+    ContentAccessor content = getAccessor("VerificationService/syntax/legalPerson1.jsonld");
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
     assertNotNull(vr);
     assertTrue(vr instanceof VerificationResultParticipant);
     assertFalse(vr instanceof VerificationResultOffering);
@@ -149,9 +175,31 @@ public class VerificationServiceImplTest {
     assertEquals(26, vrp.getClaims().size()); //!!
     assertNull(vrp.getValidators());
     assertNull(vrp.getValidatorDids());
-    //assertEquals(LocalDate.of(2010, 1, 1), vrp.getIssuedDate());
+    assertEquals(Instant.parse("2022-10-19T18:48:09Z"), vrp.getIssuedDateTime());
   }
 
+  @Test
+  void validSyntax_ValidPersonNewSchema() throws Exception {
+    log.debug("validSyntax_ValidPerson2");
+    schemaStore.initializeDefaultSchemas();
+    ContentAccessor content = getAccessor("VerificationService/syntax/legalPerson2.jsonld");
+    verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+    verificationService.setTypes("http://w3id.org/gaia-x/participant#Participant", "http://w3id.org/gaia-x/service#ServiceOffering");
+    assertNotNull(vr);
+    assertTrue(vr instanceof VerificationResultParticipant);
+    assertFalse(vr instanceof VerificationResultOffering);
+    VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
+    assertEquals("http://gaiax.de", vrp.getId());
+    assertEquals("http://gaiax.de", vrp.getIssuer());
+    assertEquals("http://gaiax.de", vrp.getParticipantName()); // could be 'Provider Name'..
+    assertNotNull(vrp.getClaims());
+    assertEquals(26, vrp.getClaims().size()); //!!
+    assertNull(vrp.getValidators());
+    assertNull(vrp.getValidatorDids());
+    assertEquals(Instant.parse("2022-10-19T18:48:09Z"), vrp.getIssuedDateTime());
+  }
+  
   @Test
   void invalidProof_InvalidSignatureType() throws Exception {
     log.debug("invalidProof_InvalidSignatureType");
@@ -237,9 +285,9 @@ public class VerificationServiceImplTest {
 
     Set<SdClaim> expectedClaims = new HashSet<>();
     expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#Provider>"));
-    expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b0"));
-    expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#legalName>", "\"deltaDAO AG\""));
     expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#name>", "\"deltaDAO AG\""));
+    expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#legalName>", "\"deltaDAO AG\""));
+    expectedClaims.add(new SdClaim("<http://example.org/test-issuer>", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b0"));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#Address>"));
     expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#country>", "\"DE\""));
     expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#locality>", "\"Hamburg\""));
@@ -259,26 +307,26 @@ public class VerificationServiceImplTest {
     log.debug("extractClaims_participantTest; actual claims: {}", actualClaims);
 
     Set<SdClaim> expectedClaims = new HashSet<>();
+    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#LegalPerson>"));
+    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/participant#legalName>", "\"deltaDAO AG\""));
+    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/participant#registrationNumber>", "\"DEK1101R.HRB170364\""));
+    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/participant#leiCode>", "\"391200FJBNU0YW987L26\""));
+    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/participant#ethereumAddress>", "\"0x4C84a36fCDb7Bc750294A7f3B5ad5CA8F74C4A52\""));
+    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/participant#headquarterAddress>", "_:b0"));
     expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#street-address>", "\"Geibelstraße 46b\""));
     expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#locality>", "\"Hamburg\""));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#Address>"));
     expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#country>", "\"DE\""));
     expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#postal-code>", "\"22303\""));
-    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/participant#headquarterAddress>", "_:b0"));
+    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b1"));
     expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#street-address>", "\"Geibelstraße 46b\""));
     expectedClaims.add(new SdClaim("_:b1", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#Address>"));
     expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#postal-code>", "\"22303\""));
     expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#locality>", "\"Hamburg\""));
     expectedClaims.add(new SdClaim("_:b1", "<http://w3id.org/gaia-x/participant#country>", "\"DE\""));
-    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b1"));
+    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/service#TermsAndConditions>", "_:b2"));
     expectedClaims.add(new SdClaim("_:b2", "<http://w3id.org/gaia-x/service#url>", "\"https://gaia-x.gitlab.io/policy-rules-committee/trust-framework/participant/#legal-person\""));
     expectedClaims.add(new SdClaim("_:b2", "<http://w3id.org/gaia-x/service#hash>", "\"36ba819f30a3c4d4a7f16ee0a77259fc92f2e1ebf739713609f1c11eb41499e7aa2cd3a5d2011e073f9ba9c107493e3e8629cc15cd4fc07f67281d7ea9023db0\""));
-    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/service#TermsAndConditions>", "_:b2"));
-    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/participant#legalName>", "\"deltaDAO AG\""));
-    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/participant#registrationNumber>", "\"DEK1101R.HRB170364\""));
-    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/participant#leiCode>", "\"391200FJBNU0YW987L26\""));
-    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://w3id.org/gaia-x/participant#ethereumAddress>", "\"0x4C84a36fCDb7Bc750294A7f3B5ad5CA8F74C4A52\""));
-    expectedClaims.add(new SdClaim("<did:web:delta-dao.com>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#LegalPerson>"));
     assertEquals(expectedClaims.size(), actualClaims.size());
     assertEquals(expectedClaims, new HashSet<>(actualClaims));
   }
@@ -293,15 +341,13 @@ public class VerificationServiceImplTest {
     log.debug("extractClaims_participantTest; actual claims: {}", actualClaims);
 
     Set<SdClaim> expectedClaims = new HashSet<>();
-
+    expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#LegalPerson>"));
+    expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://w3id.org/gaia-x/participant#headquarterAddress>", "_:b0"));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#postal-code>", "\"1234\""));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#country-name>", "\"Country\""));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#locality>", "\"Town Name\""));
-    expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#LegalPerson>"));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://www.w3.org/2006/vcard/ns#Address>"));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#street-address>", "\"Street Name\""));
-    expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://w3id.org/gaia-x/participant#headquarterAddress>", "_:b0"));
-
     assertEquals(expectedClaims.size(), actualClaims.size());
     assertEquals(expectedClaims, new HashSet<>(actualClaims));
   }
@@ -316,21 +362,19 @@ public class VerificationServiceImplTest {
     log.debug("extractClaims_participantTest; actual claims: {}", actualClaims);
 
     Set<SdClaim> expectedClaims = new HashSet<>();
-
+    expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#LegalPerson>"));
+    expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://w3id.org/gaia-x/participant#headquarterAddress>", "_:b0"));
+    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://www.w3.org/2006/vcard/ns#Address>"));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#postal-code>", "\"1234\""));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#country-name>", "\"Country\""));
+    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#street-address>", "\"Street Name\""));
+    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#locality>", "\"Town Name\""));
+    expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b1"));
+    expectedClaims.add(new SdClaim("_:b1", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://www.w3.org/2006/vcard/ns#Address>"));
     expectedClaims.add(new SdClaim("_:b1", "<http://www.w3.org/2006/vcard/ns#street-address>", "\"Street Name\""));
     expectedClaims.add(new SdClaim("_:b1", "<http://www.w3.org/2006/vcard/ns#country-name>", "\"Country\""));
-    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#street-address>", "\"Street Name\""));
-    expectedClaims.add(new SdClaim("_:b1", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://www.w3.org/2006/vcard/ns#Address>"));
-    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#locality>", "\"Town Name\""));
-    expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#LegalPerson>"));
-    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://www.w3.org/2006/vcard/ns#Address>"));
-    expectedClaims.add(new SdClaim("_:b0", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b1"));
     expectedClaims.add(new SdClaim("_:b1", "<http://www.w3.org/2006/vcard/ns#postal-code>", "\"1234\""));
     expectedClaims.add(new SdClaim("_:b1", "<http://www.w3.org/2006/vcard/ns#locality>", "\"Town Name\""));
-    expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://w3id.org/gaia-x/participant#headquarterAddress>", "_:b0"));
-
     assertEquals(expectedClaims.size(), actualClaims.size());
     assertEquals(expectedClaims, new HashSet<>(actualClaims));
   }

@@ -4,37 +4,35 @@
 	"type": ["VerifiablePresentation"],
 	"verifiableCredential": {
 		"@context": ["https://www.w3.org/2018/credentials/v1"],
-		"@id": "https://www.example.org/legalPerson.json",
+		"@id": "https://www.example.org/SoftwareOffering.json",
 		"@type": ["VerifiableCredential"],
 		"issuer": "http://gaiax.de",
 		"issuanceDate": "2022-10-19T18:48:09Z",
 		"credentialSubject": {
 			"@context": {
 				"dcat": "http://www.w3.org/ns/dcat#",
-				"gax-core": "http://w3id.org/gaia-x/core#",
-				"gax-participant": "http://w3id.org/gaia-x/participant#",
-				"gax-service": "http://w3id.org/gaia-x/service#",
+				"gax-core": "https://w3id.org/gaia-x/core#",
+				"gax-trust-framework": "https://w3id.org/gaia-x/gax-trust-framework#",
 				"xsd": "http://www.w3.org/2001/XMLSchema#"
 			},
-			"@id": "gax-service:Service1",
-			"@type": "gax-service:ServiceOffering",
-			"gax-service:dataExport": {
-				"@type": "gax-service:DataExport",
-				"gax-core:accessType": "access type",
-				"gax-core:formatType": "format type",
-				"gax-core:requestType": "request type"
+			"@id": "https://www.example.org/mySoftwareOffering",
+			"@type": "gax-trust-framework:ServiceOffering",
+			"gax-trust-framework:mySoftwareOffering": {
+				"@type": "gax-trust-framework:SoftwareOffering",
+				"gax-trust-framework:accessType": "access type",
+				"gax-trust-framework:formatType": "format type",
+				"gax-trust-framework:requestType": "request type"
 			},
-
-			"gax-service:providedBy": {
+			"gax-trust-framework:providedBy": {
 				"@id": "gax-participant:Provider1"
 			},
-			"gax-service:termsAndConditions": {
+			"gax-trust-framework:termsAndConditions": {
 				"@type": "gax-core:TermsAndConditions",
-				"gax-core:content": {
+				"gax-trust-framework:content": {
 					"@type": "xsd:anyURI",
 					"@value": "http://example.org/tac"
 				},
-				"gax-core:hash": "1234"
+				"gax-trust-framework:hash": "1234"
 			},
 			"dcat:keyword": [
 				"Keyword1_1",
@@ -45,7 +43,7 @@
 				"Keyword1_6",
 				"Keyword1_7"
 			],
-			"gax-service:serviceTitle": "Service Title"
+			"gax-trust-framework:serviceTitle": "Software Title"
 		}
 	}
 }

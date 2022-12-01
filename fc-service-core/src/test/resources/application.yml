@@ -31,3 +31,9 @@ federated-catalogue:
       location: schemaFiles
     context-cache:
       location: contextCacheFiles
+  verification:
+    participant:
+      type: "http://w3id.org/gaia-x/participant#Participant"
+    service-offering:
+      type: "http://w3id.org/gaia-x/service#ServiceOffering"
+      
