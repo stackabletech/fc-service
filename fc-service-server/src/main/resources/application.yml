@@ -80,7 +80,6 @@ logging:
     eu.gaiax.difs.fc: DEBUG
     org.springframework.web: DEBUG
     org.springframework.security: DEBUG
-#    org.springframework.web.client.RestTemplate: DEBUG
 
 federated-catalogue:
   scope: runtime
