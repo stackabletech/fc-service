@@ -13,7 +13,7 @@
     <groupId>eu.gaiax.difs.fc</groupId>
     <artifactId>fc-service</artifactId>
     <packaging>pom</packaging>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <name>fc-service</name>
     <description>GAIA-X Federated Catalogue Service</description>
@@ -67,7 +67,7 @@
         <did.version>1.0.0</did.version>
         <titanium.version>1.3.1</titanium.version>
         <jose4j.version>0.8.0</jose4j.version>
-        <neo4j-java-driver-spring-boot-starter.version>4.3.6.0</neo4j-java-driver-spring-boot-starter.version>
+        <neo4j.driver.version>4.3.6.0</neo4j.driver.version>
         <neo4j.neosemantics.version>4.4.0.1</neo4j.neosemantics.version>
         <neo4j.gds.version>2.0.5</neo4j.gds.version>
         <neo4j.test-harness.version>4.4.10</neo4j.test-harness.version>
@@ -87,9 +87,12 @@
 
     <url>https://gitlab.com/${repository.path}</url>
     <scm>
+        <connection>scm:git:git://gitlab.com/${repository.path}.git</connection>
         <url>https://gitlab.com/${repository.path}</url>
+        <tag>HEAD</tag>
     </scm>
     <issueManagement>
+        <system>GitLab</system>
         <url>https://gitlab.com/${repository.path}/-/issues</url>
     </issueManagement>
     <ciManagement>
@@ -112,12 +115,6 @@
                 <groupId>eu.gaiax.difs.fc</groupId>
                 <artifactId>fc-service-core</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>eu.gaiax.difs.fc</groupId>
-                <artifactId>fc-test-support</artifactId>
-                <version>${project.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -181,30 +178,6 @@
                 <version>${keycloak.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-test</artifactId>
-                <version>${spring-boot.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.c4-soft.springaddons</groupId>
-                <artifactId>spring-security-oauth2-test-addons</artifactId>
-                <version>${security.test-addons.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.zonky.test</groupId>
-                <artifactId>embedded-postgres</artifactId>
-                <version>${embedded.postgres.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.zonky.test</groupId>
-                <artifactId>embedded-database-spring-test</artifactId>
-                <version>${embedded.postgres.test.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>com.vladmihalcea</groupId>
                 <artifactId>hibernate-types-55</artifactId>
                 <version>${hibernate-types.version}</version>
@@ -212,7 +185,7 @@
             <dependency>
                 <groupId>org.neo4j.driver</groupId>
                 <artifactId>neo4j-java-driver-spring-boot-starter</artifactId>
-                <version>${neo4j-java-driver-spring-boot-starter.version}</version>
+                <version>${neo4j.driver.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.neo4j</groupId>
@@ -238,7 +211,7 @@
             <dependency>
                 <groupId>org.neo4j.driver</groupId>
                 <artifactId>neo4j-java-driver-test-harness-spring-boot-autoconfigure</artifactId>
-                <version>${neo4j-java-driver-spring-boot-starter.version}</version>
+                <version>${neo4j.driver.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.neo4j.test</groupId>
@@ -251,6 +224,7 @@
                         <groupId>org.slf4j</groupId>
                     </exclusion>
                 </exclusions>
+                <!--scope>test</scope-->
             </dependency>
             <dependency>
                 <groupId>com.github.jsonld-java</groupId>
@@ -287,6 +261,37 @@
                 <groupId>decentralized-identity</groupId>
                 <artifactId>did-common-java</artifactId>
                 <version>${did.version}</version>
+            </dependency>
+            <!-- Test dependencies -->
+            <dependency>
+                <groupId>eu.gaiax.difs.fc</groupId>
+                <artifactId>fc-test-support</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <version>${spring-boot.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.c4-soft.springaddons</groupId>
+                <artifactId>spring-security-oauth2-test-addons</artifactId>
+                <version>${security.test-addons.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.zonky.test</groupId>
+                <artifactId>embedded-postgres</artifactId>
+                <version>${embedded.postgres.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.zonky.test</groupId>
+                <artifactId>embedded-database-spring-test</artifactId>
+                <version>${embedded.postgres.test.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
@@ -387,6 +392,24 @@
                             <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <configuration>
+                    <includes>**/*.java</includes>
+                    <copyrightOwners>${project.organization.name} and all other contributors</copyrightOwners>
+                    <processStartTag>---license-start</processStartTag>
+                    <processEndTag>---license-end</processEndTag>
+                    <sectionDelimiter>---</sectionDelimiter>
+                    <addJavaLicenseAfterPackage>false</addJavaLicenseAfterPackage>
+                    <trimHeaderLine>true</trimHeaderLine>
+                    <emptyLineAfterHeader>true</emptyLineAfterHeader>
+                    <outputDirectory>.</outputDirectory>
+                    <thirdPartyFilename>THIRD-PARTY.txt</thirdPartyFilename>
+                    <!--fileTemplate>templates/third-party.ftl</fileTemplate-->
+                    <!--excludedArtifacts>dgc-lib</excludedArtifacts-->
                 </configuration>
             </plugin>
         </plugins>

@@ -17,9 +17,6 @@ spring:
             client-id: federated-catalogue 
             client-secret: vZo1equicRl1UdxJDWCNNJWe6vJcm2Cg
             authorization-grant-type: authorization_code
-#            redirect-uri: "http://127.0.0.1:8080/login/oauth2/code/{registrationId}"
-#            scope: openid
-#            client-name: fc-client-oidc
         provider:
           keycloak:
             issuer-uri: http://key-server:8080/realms/gaia-x

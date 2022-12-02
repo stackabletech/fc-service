@@ -7,7 +7,7 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 1.0.0
 servers:
-  - url: https://fc.gxfs.dev
+  - url: https://fc-server.gxfs.dev
     description: Gaia-X test environment
 components:
   responses:

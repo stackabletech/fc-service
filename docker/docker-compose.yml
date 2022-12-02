@@ -95,7 +95,7 @@ services:
 
   portal:
     container_name: "demo-portal"
-#    image: "${CI_REGISTRY}/demo-portal:0.0.1-SNAPSHOT"
+#    image: "${CI_REGISTRY}/demo-portal:1.0.0"
     build:
       context: ../demo-portal
       dockerfile: Dockerfile
