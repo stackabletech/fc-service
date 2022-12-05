@@ -2,9 +2,9 @@
 
 
 ## Description
-The Gaia-X Federated Catalogue Service makes Self-Descriptions of Providers and their offerings available to end-users and allows advanced queries on them.
+The Gaia-X Catalogue Service makes Self-Descriptions of Providers and their Service Offerings available to Consumers.
 
-This is a Reference Implementation of GAIA-X LOT5 [Federated Catalogue](https://www.gxfs.eu/core-catalogue-features/).
+This is a Reference Implementation of Gaia-X Federation Services Lot 5 [Federated Catalogue / Core Catalogue Features](https://www.gxfs.eu/core-catalogue-features/).
 
 ## Documentation
 All service documentation, installation instructions and other materials can be found in the [FC documentation section](https://gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/-/wikis/home).
@@ -33,17 +33,17 @@ The project is implemented by T-Systems International GmbH, direct project membe
 
 
 The project implementation wouldn't be possible without a great help of our partners from Fraunhofer Institute:
-- Christoph Lange
-- Hylke van der Schaaf
-- Jürgen Reuter
-- Nikhil Acharya
-- Sebastain Duda
-- Patrick Westphal
-- Ahmad Hemid
-- Diego Collarana
-- Paul Moosmann
-- Philipp Hertweck
-- Khalil Baydoun
+- [Christoph Lange](https://gitlab.com/langec), Fraunhofer FIT
+- [Hylke van der Schaaf](https://gitlab.com/hylkevds), Fraunhofer IOSB
+- [Jürgen Reuter](https://gitlab.com/j_reuter), Fraunhofer IOSB
+- [Nikhil Acharya](https://gitlab.com/nik77612), Fraunhofer IAIS
+- [Sebastian Duda](https://gitlab.com/sebastian.duda), Fraunhofer FIT
+- [Patrick Westphal](https://gitlab.com/patrick_westphal), Fraunhofer IAIS
+- [Ahmad Hemid](https://gitlab.com/ahmad.hemid), Fraunhofer FIT
+- [Diego Collarana](https://gitlab.com/collaran), Fraunhofer IAIS
+- [Paul Moosmann](https://gitlab.com/moosmannp), Fraunhofer FIT
+- [Philipp Hertweck](https://gitlab.com/phertweck), Fraunhofer IOSB
+- [Khalil Baydoun](https://gitlab.com/baydounkhalil), Fraunhofer FIT
 
 ## License
-GAIA-X Federated Catalogue Service is Open Source software released under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0.html).
+Gaia-X Federated Catalogue Service is Open Source software released under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0.html).
