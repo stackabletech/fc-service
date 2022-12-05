@@ -40,7 +40,7 @@
         "vcard:postal-code": "22303",
         "vcard:street-address": "Geibelstraße 46b"
       },
-      "gax-gax-trust-framework:termsAndConditions": {
+      "gax-trust-framework:termsAndConditions": {
         "@type": "gax-trust-framework:TermsAndConditions",
         "gax-trust-framework:content": {
           "@type": "xsd:anyURI",
@@ -53,17 +53,17 @@
     },
     "proof": {
       "type": "JsonWebSignature2020",
-      "created": "2022-12-02T18:29:59Z",
+      "created": "2022-12-05T07:48:45Z",
       "proofPurpose": "assertionMethod",
       "verificationMethod": "did:web:foo.bar",
-      "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..PFzEcjfAPsrAaEt0h7C2WPNS4eRnlRaJs94aBx0iw2q6UCodp9PxHUfe3WMJfy04BQAQxSDxbPEQOdtEuIgFvwDFoCRXiegyD7w7CWM-2BpBgh5WEFutHpF61c2-9VMFGzeXUaFcm1VK_soX_AuccTbdObrCjyczJ49lf-t7YuEYrhscIJyB9FnCZ7esz8PVsYr--jkaLsFzt-aMEgSwHWC8RFHZdldrHRjXQQ0SuoAMTh29fv2ubYWgcSX_2pZJrxe5mY1_qdWDpZKDpwcTmyKURE5gTxGnp0kB6IroVXh8umxkbZfaq-hn9FROZNN1XHtAV8hhBncLo1UJGGi4WSTNujrXWeU54jFV0-UL7dnP1QgTJ274gEyFgioe09x_Ysgw-3EcBWJR4YezIzbo0M2dSJovxMqQ7oFsbdCwnoopV7ITATGP9WFTGSvRVaVTah2GYNN6WW38hd0f8D-L96KnGMLj5JMjTIVXQZtprxkoVuXD5f_CuAb2DWUjTHYBvgLtx8lGVGVBdiYthun6jv8U89wH8NnJi28uzPnSEd_m_7xpY9i6aThL4wAhc3GErxBnKZeJYNssI_3bc7zPt30pPIQGZqfUxtJy_yZXAuRIatgNNpGMsrFeGyyZJrI6jmZ-2I9vvuHYjHyg9rd01D_H9KJXPIJ0COU0VvywkJk"
+      "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..nA0PPnznVgQrg3pRekkT4avu1aNG_FPTD8AoK_oLXCsIub8DR1SZpw86ylgQe3_ov8fxCNFKTT6gBGfAP4OAHfQkRdhGNZGjkHsZ3tt5KGpIhu6N5FG1rMYKe8wZ5su7ICVvJcPcO5u-PPvf52A9JuUqUdkRljirDGycbMXcULFo1rKc7kLrHSo8YzdTPuI7XmI5xTBhDk8wnLOQVVfVHWi8XQqlt4aI4skVx-tCkvQRUDl6tfhP62IMtlJKl7AkefCVLcpel6CNe8AOk-8Fw5PISJhY05gWB5VevR-VA2_Vjz2j1YqIIn9Sok4AfDDAgVcMGr9F-UQ8PGy_984N9m6_u9M1KsUpQ7pd_FGO9TMS0d_xSfKvjGrt-7WQD6DYXBUVEj3jQ3Yl5AUH8fHimjsraaapNNmdqCR3V03zF9FNPbYwFOm3mG8AhgsClGYyALlpbM9S04q0HzFFhJZrZzCR7LxQuZxlQHHDu9P-JnkKzAcPgcNFbr58Yrfuh8WqioZcBTpfffKn5sjaQB3ifgnr6co4w7w_0Zop4dYia2In4XQqIms1kZD5T8UrK5yCZ2VvRkyqaKWucFPtqNH6uPLLbmiD8CG4OcwmZhMv3P5mMtpbWul0tVcpIvbS12nc0rkWwIG2fE_4CBF1Egli0GXUJ1TKSW0r9hR8V8_6ZqU"
     }
   },
   "proof": {
     "type": "JsonWebSignature2020",
-    "created": "2022-12-02T18:30:00Z",
+    "created": "2022-12-05T07:48:46Z",
     "proofPurpose": "assertionMethod",
     "verificationMethod": "did:web:foo.bar",
-    "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..OoyFobbrbn7r-ABSKfiimFT4MUrjOOyyABGrAEG9XFxlJiU2_LcbUHhKLA6-FYspZ4iEAeca7dst4du6oHpp9EOayP27_owkl7Ka9LeiQfIQxot26hCVzycS2DekflH8cPmPgfCaBvWpwgDQQEfnMKBI1cNIwPQnovnbygjg08HZIdi_fchQJIkScWk8r7dHzjRejWxiAbabsYGXT5iU4PVUKEgpkoDZtTz2dJnIW_PNtk-_ahpTp4E-DccHFUKndWW9JHnd17umXmT5j5raMMTDoVLrEnFJiMEAlEmNkcy-_g6N4m4aHHBXDdXk_zpX4HwRmFYpY_lPt5fruiONKlLNNWZVQIG5Ak3JZRi2sdIDs5V5HBXlkLNvGjB6Rnsl1oTwANekdJDxKoEdim2EW61IiCPU2G3VpNmgidKcHrY9MfEM4L65uWnggmVmcMgTW0XKOgh2723PkuS7KaopJacdTIhN0Df_6-Bhmv5IPPMqxl_gYStx_3KaYrQDYTGUBiU74k0umdDEFZduLN3o_yauQkpNdJR44M9__uosOSAARCfjM77cEnI6KprzqzylV7jfwDJIu6UY8GV_N6JhUfDu5Ka5Ax6brXnbIz1_vFzqMv71UW0gVhSlLhhjeDKNB03n-Q9jIXI0KsszpuwYw8_ZN2XNEhSdK_tRUq0-984"
+    "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..ahsV9N7NKwgVYl2dl46txUfdn1HpUcUpIF4P_PK8DxEJdKFROab8dCtOr28jQQnaJ92mhpiqFT56xRiB9zAoy8j8fJoqcgjEu1PNeafEd6he4nr6UXTDgkw9bCUC2zPvAyK_p_TLQ0zPzLZcF4xEqGmIVCbTQJ5W42n8V5_NvuBJU-tzd1_vFgEj82Nn04OoRG-ErTRAenHUvpZXBW39nOTaLyI4mVvKmT3BuNWyTz8BnbBuH9w926n5iX1ohkKFNzNjZSauD-Gd-0Ckn1BAU5iSLjJ-KeN11G4BKFfwV-V11AhieHqaHGs3e4dwCBUhgMprf64yNf9AZ70eZIcoqcZqyADCvlG63Kb1Sos5Gs3txIv42Ts7cdlmMSSe7k6NakXoPI-xcSAjtkvy-Zt62RheF86FeUVgJ20jNrUc4pFVKP0G-2h_TvtLJYgzIS0cLsWHeV6J8h2zD-py6SJWbmUgyyIRoipxBFUq_xa-0eeap6Fkg5jDCvrp1LAsAyCRc_83kdWF5tBa1Xjwa9yU8DbW_nADS8l38XyBAk05dLQeYShdMC1fp-FxDG-lApGkiNHH1nFd7eYwMf-oTTwVmhSfomKe2xuX7GxLiI_VlZtEr1ZRdDIpdrZ1NhbOeplaJh5566N0Il95KqgHnV6U6DrxUdQ5oDJPp5cDn_RKU4o"
   }
 }
