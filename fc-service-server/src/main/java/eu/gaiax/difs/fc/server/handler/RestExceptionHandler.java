@@ -16,6 +16,7 @@ import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.exception.TimeoutException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
+import javax.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -125,5 +126,17 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     log.info("handleVerificationException; Verification error: {}", exception.getMessage());
     return new ResponseEntity<>(new Error("timeout_error", exception.getMessage()), GATEWAY_TIMEOUT);
   }
-  
+
+
+  /**
+   * Method handles the constraintViolationException Exception.
+   *
+   * @param exception Thrown Server Exception.
+   * @return The custom Federated Catalogue application error with status code 400.
+   */
+  @ExceptionHandler({ConstraintViolationException.class})
+  protected ResponseEntity<Error> constraintViolationException(ConstraintViolationException exception) {
+    log.info("ConstraintViolationException; ConstraintViolationException error: {}", exception.getMessage());
+    return new ResponseEntity<>(new Error("constraintViolationException", exception.getMessage()), BAD_REQUEST);
+  }
 }
