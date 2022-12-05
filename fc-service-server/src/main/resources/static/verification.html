@@ -57,14 +57,18 @@
         <!--<br><br><br>-->
         <button class="btn btn-primary" onclick="verifySD()">Verify</button>
         <br>
-        <br><label id="result" style="padding:5px; font-weight:bold; float:left; width: 800px "></label>
+        <br><div><label>Verification result :</label> <br>
+          <textarea id="result" placeholder="Verification result" style="padding:5px; font-weight:bold; float:left; width: 800px; height:auto ">
+         </textarea></div>
+        <br> <br>
+
         <script>
 
             <!--Event for fileUpload and getFile is triggered -->
             document.getElementById('sdFile').addEventListener('change', getFile)
 
             function getFile(event) {
-                $('#result').text("");
+                $('#result').html("");
                 const input = event.target
               if ('files' in input && input.files.length > 0) {
                   placeFileContent(
@@ -92,7 +96,7 @@
             <!--Post call for verify sd to server -->
             function verifySD(){
 
-                $('#result').text("");
+                $('#result').html("");
                 if(document.getElementById('content-target').value=="" || document.getElementById('content-target').value==null){
                      alert("Please add Self-Description");
                      return;
@@ -107,11 +111,13 @@
                     contentType: "application/json;charset=utf-8",
                     data: document.getElementById('content-target').value,
                     success: function (data, status, xhr) {
-                         $('#result').append('Status : ' + status + ', Result: '  + JSON.stringify(xhr.responseJSON).replace(/\\n|\\r/g, '<br />'));
+                         $('#result').html('Status : ' + status + ', Result: '  + JSON.stringify(xhr.responseJSON).replace(/\\n|\\r/g, '\r\n'));
+                         $("#result").height( $("#result")[0].scrollHeight );
                     },
                     error: function (jqXhr, textStatus, errorMessage) {
-                          $('#result').append('Status : ' + textStatus + ', Error : ' + JSON.stringify(jqXhr.responseJSON).replace(/\\n|\\r/g, '<br />'));
-                    }
+                          $('#result').html('Status : ' + textStatus + ', Error : ' + JSON.stringify(jqXhr.responseJSON).replace(/\\n|\\r/g, '\r\n'));
+                          $("#result").height( $("#result")[0].scrollHeight );
+                          }
                 });
             }
 
