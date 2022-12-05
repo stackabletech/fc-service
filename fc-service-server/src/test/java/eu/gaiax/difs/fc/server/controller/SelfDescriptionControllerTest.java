@@ -100,13 +100,9 @@ public class SelfDescriptionControllerTest {
     @Autowired
     private VerificationService verificationService;
 
-    @BeforeTestClass
-    public void setup() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
-    }
-
     @BeforeAll
-    static void initBeforeAll() throws IOException {
+    public void setup() throws IOException {
+        mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
         sdMeta = createSdMetadata();
     }
 
