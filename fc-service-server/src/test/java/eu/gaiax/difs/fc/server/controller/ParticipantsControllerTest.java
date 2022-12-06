@@ -233,8 +233,6 @@ public class ParticipantsControllerTest {
   @Order(15)
   public void getParticipantsShouldReturnEmptyResults() throws Exception {
     setupKeycloak(HttpStatus.SC_OK, null);
-    
-    try {
     MvcResult result = mockMvc
             .perform(MockMvcRequestBuilders.get("/participants")
                     .contentType(MediaType.APPLICATION_JSON))
@@ -244,9 +242,6 @@ public class ParticipantsControllerTest {
     assertNotNull(parts);
     assertEquals(0, parts.getItems().size());
     assertEquals(0, parts.getTotalCount());
-    } catch (Exception ex) {
-        ex.printStackTrace();
-    }
   }
   
   @Test
