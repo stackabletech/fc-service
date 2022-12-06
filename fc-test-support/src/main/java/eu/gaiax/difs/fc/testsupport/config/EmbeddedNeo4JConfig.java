@@ -67,12 +67,12 @@ public class EmbeddedNeo4JConfig {
         }
         session.run("CALL n10s.graphconfig.init({handleVocabUris:'MAP',handleMultival:\"ARRAY\",multivalPropList:[\"http://w3id.org/gaia-x/service#claimsGraphUri\"] });"); /// run only when creating a new graph
         session.run("CREATE CONSTRAINT n10s_unique_uri IF NOT EXISTS ON (r:Resource) ASSERT r.uri IS UNIQUE");
-        try {
-            session.run("DENY MATCH {*} ON GRAPH neo4j NODES _GraphConfig TO `PUBLIC`");
-
-        } catch (Exception e) {
-            log.info("Cannot revoke access to Graph Node due to exception {}",e);
-        }
+        //try {
+        //    session.run("DENY MATCH {*} ON GRAPH neo4j NODES _GraphConfig TO `PUBLIC`");
+        //
+        //} catch (Exception e) {
+        //    log.info("Cannot revoke access to Graph Node due to exception {}",e);
+        //}
         log.info("n10 procedure and Constraints are loaded successfully");
         return driver;
     }

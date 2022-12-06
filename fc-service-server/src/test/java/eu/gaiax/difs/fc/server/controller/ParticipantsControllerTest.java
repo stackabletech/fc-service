@@ -230,6 +230,22 @@ public class ParticipantsControllerTest {
 
   @Test
   @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
+  @Order(15)
+  public void getParticipantsShouldReturnEmptyResults() throws Exception {
+    setupKeycloak(HttpStatus.SC_OK, null);
+    MvcResult result = mockMvc
+            .perform(MockMvcRequestBuilders.get("/participants")
+                    .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andReturn();
+    Participants parts = objectMapper.readValue(result.getResponse().getContentAsString(), Participants.class);
+    assertNotNull(parts);
+    assertEquals(0, parts.getItems().size());
+    assertEquals(0, parts.getTotalCount());
+  }
+  
+  @Test
+  @WithMockUser(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX})
   @Order(20)
   public void getParticipantShouldReturnSuccessResponse() throws Exception {
     String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
@@ -285,7 +301,7 @@ public class ParticipantsControllerTest {
   @Order(20)
   public void wrongParticipantShouldReturnNotFoundResponse() throws Exception {
     String partId = URLEncoder.encode("unknown", Charset.defaultCharset());
-    setupKeycloak(HttpStatus.SC_OK, null);
+    setupKeycloak(HttpStatus.SC_NOT_FOUND, null);
 
     mockMvc
             .perform(MockMvcRequestBuilders.get("/participants/{participantId}", partId)
@@ -643,7 +659,12 @@ public class ParticipantsControllerTest {
     }
 
     if (part == null) {
-      when(groupsResource.group(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
+      if (status == HttpStatus.SC_NOT_FOUND) {  
+        when(groupsResource.group(any())).thenThrow(new NotFoundException("404 NOT FOUND"));
+      } else {
+         when(groupsResource.group(any())).thenReturn(groupResource);  
+      }
+      when(groupsResource.count()).thenReturn(Map.of("count", 0L));
       when(groupResource.members()).thenReturn(List.of());
       when(groupsResource.groups()).thenReturn(List.of());
       when(groupsResource.groups(any(), any())).thenReturn(List.of());
