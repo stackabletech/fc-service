@@ -311,7 +311,6 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       existingSd.setStatusDatetime(Instant.now());
       currentSession.update(existingSd);
       currentSession.flush();
-      graphDb.deleteClaims(existingSd.getSubjectId());
     }
     try {
       currentSession.persist(sdmRecord);
@@ -324,8 +323,6 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       throw ex;
     }
 
-    graphDb.addClaims(verificationResult.getClaims(), sdmRecord.getSubjectId());
-
     try {
       fileStore.storeFile(sdMetadata.getSdHash(), sdMetadata.getSelfDescription());
       currentSession.flush();
@@ -337,6 +334,11 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       log.error("storeSelfDescription.error 3", ex);
       throw ex;
     }
+
+    if (existingSd != null) {
+      graphDb.deleteClaims(existingSd.getSubjectId());
+    }
+    graphDb.addClaims(verificationResult.getClaims(), sdmRecord.getSubjectId());
 
   }
 

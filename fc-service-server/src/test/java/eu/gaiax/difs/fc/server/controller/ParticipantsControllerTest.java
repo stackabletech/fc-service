@@ -26,10 +26,12 @@ import eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
+import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
@@ -111,6 +113,8 @@ public class ParticipantsControllerTest {
   @Autowired
   private Neo4j embeddedDatabaseServer;
   @Autowired
+  private Neo4jGraphStore graphStore;
+  @Autowired
   private VerificationService verificationService;
   @Autowired
   private UserDaoImpl userDao;
@@ -154,7 +158,7 @@ public class ParticipantsControllerTest {
   private final String UNIQUE_PARTICIPANT_FILE = "unique_participant.json";
   private final String PUBLIC_KEY_AS_JWK = "{\"kty\":\"RSA\",\"e\":\"AQAB\",\"alg\":\"PS256\",\"n\":\"0nYZU6EuuzHKBCzkcBZqsMkVZXngYO7VujfLU_4ys7onF4HxTJPP3OGKEjbjbMgmpa7vKaWRomt_XXTjemA3r3f5t8bj0IoqFfvbTIq65GUIIh4y2mVbomdcQLRK2Auf79vDiqiONknTSstoPjAiCg6t6z_KruGFZbDOhYkZwqrjGnmB_LfFSlpeLwkQQ-5dVLhhXkImmWhnACoAo8ECny24Ap7wLbN9i9o1fNSz2uszACj0zxFhl3NGunHFUm3YkGd0URvoToXpK9a4zfihSUxHjeT0_7a9puVF4E3w1AAjSh4nV3pLE0cJyDITVb2M4d3m9tjjz_3XwjYiAAJ1MKVBSKDM27pexRFCJj_Dvb-dr-AImhqBhPDHn_gjdaRZIVoADC4zwBULkpvUaUIKmNFyYOjDYWWTBzTf4Gs9QL5adlVfVyK14MZPBOyq-cqIIymgp6A5_R3hKnCCBP8C_S0-VDidhI6Pr5VJPx9DydI0eB2DiOyOZvbfg7sKVkJXFUEJRiBTMhujyjYqeTtCHjCFHctZVQ8hU279eyk7mpmpDrktfCFJFi-00ZzQWTgtzBoGhke5hj0hjtG1n4jN6BfypdT5oB-DeXl2P1hp_hNC9I5gveWUYHAqN4VKve_52A3ub8vBlISQhEUeZoFUterTiDA3NyK7wsj_V7-KM6U\"}";
 
-  @BeforeAll 
+  @BeforeAll
   public void setup() {
     mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
     schemaStore.addSchema(getAccessor("mock-data/gax-test-ontology.ttl"));
@@ -185,7 +189,7 @@ public class ParticipantsControllerTest {
     ParticipantMetaData part = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key", json);
     setupKeycloak(HttpStatus.SC_CREATED, part);
 
-    initialiseWithParticipantDeleteFromAllDB(part);
+    deleteParticipantFromSdStore(part);
 
     String response = mockMvc
             .perform(MockMvcRequestBuilders.post("/participants")
@@ -214,18 +218,32 @@ public class ParticipantsControllerTest {
     ParticipantMetaData part = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key", json);
     setupKeycloak(HttpStatus.SC_CREATED, part);
 
-    initialiseWithParticipantDeleteFromAllDB(part);
+    deleteParticipantFromSdStore(part);
 
     ContentAccessorDirect contentAccessor = new ContentAccessorDirect(json);
     VerificationResultParticipant verResult = verificationService.verifyParticipantSelfDescription(contentAccessor);
     SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor, verResult);
     selfDescriptionStore.storeSelfDescription(sdMetadata, verResult);
 
+    List<Map<String, Object>> nodes = graphStore.queryData(new GraphQuery(
+            "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
+            Map.of("graphUri", "did:example:issuer")
+    )).getResults();
+    log.debug("addDuplicateParticipantShouldReturnConflictResponse-1; got {} nodes", nodes.size());
+    Assertions.assertEquals(1, nodes.size());
+
     mockMvc
             .perform(MockMvcRequestBuilders.post("/participants")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json))
             .andExpect(status().isConflict());
+
+    nodes = graphStore.queryData(new GraphQuery(
+            "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
+            Map.of("graphUri", "did:example:issuer")
+    )).getResults();
+    log.debug("addDuplicateParticipantShouldReturnConflictResponse-2; got {} nodes", nodes.size());
+    Assertions.assertEquals(1, nodes.size());
   }
 
   @Test
@@ -715,13 +733,10 @@ public class ParticipantsControllerTest {
     }
   }
 
-  private void initialiseWithParticipantDeleteFromAllDB(ParticipantMetaData part) {
+  private void deleteParticipantFromSdStore(ParticipantMetaData part) {
     try {
-      fileStore.deleteFile(part.getSdHash());
       selfDescriptionStore.deleteSelfDescription(part.getSdHash());
-      //TODO: graphdb need to add after implementation
     } catch (Exception ex) {
-
     }
   }
 
