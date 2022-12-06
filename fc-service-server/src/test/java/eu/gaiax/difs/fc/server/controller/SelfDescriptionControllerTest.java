@@ -21,10 +21,12 @@ import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptions;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
+import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.core.util.HashUtils;
@@ -38,13 +40,14 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import javax.transaction.Transactional;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -57,7 +60,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.event.annotation.BeforeTestClass;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -79,24 +81,21 @@ public class SelfDescriptionControllerTest {
 
     @Autowired
     private Neo4j embeddedDatabaseServer;
-
-    private static SelfDescriptionMetadata sdMeta;
-
+    @Autowired
+    private Neo4jGraphStore graphStore;
     @Autowired
     private WebApplicationContext context;
-
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private ObjectMapper objectMapper;
-
     @Autowired
     private SelfDescriptionStore sdStore;
-
     @SpyBean(name = "sdFileStore")
     private FileStore fileStore;
 
+    private static SelfDescriptionMetadata sdMeta;
+    
     @Autowired
     private VerificationService verificationService;
 
@@ -332,9 +331,6 @@ public class SelfDescriptionControllerTest {
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void addSDWithoutIssuerReturnUnprocessableEntity() throws Exception {
-//    @WithMockJwtAuth(authorities = SD_ADMIN_ROLE_WITH_PREFIX, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
-//        @StringClaim(name = "participant_id", value = "")})))
-//    public void addSDWithoutIssuerReturnForbiddenResponse() throws Exception {
       mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
               .content(getMockFileDataAsString("sd-without-issuer.json"))
               .with(csrf())
@@ -449,6 +445,62 @@ public class SelfDescriptionControllerTest {
         sdStore.deleteSelfDescription(sdMeta.getSdHash());
     }
 
+    @Test
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
+    public void revokeThenAddSDReturnCorrectResponse() throws Exception {
+        String content = getMockFileDataAsString(SD_FILE_NAME);
+        String hash = HashUtils.calculateSha256AsHex(content);
+        try {
+          sdStore.deleteSelfDescription(hash);
+        } catch (NotFoundException ex) {
+            // expected
+        }
+        
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
+                .content(content)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        SelfDescription sd = objectMapper.readValue(result.getResponse().getContentAsString(), SelfDescription.class);
+        Assertions.assertEquals(hash, sd.getSdHash());
+
+        List<Map<String, Object>> nodes = graphStore.queryData(new GraphQuery(
+                "MATCH (n {claimsGraphUri: [$uri]}) RETURN n", Map.of("uri", TEST_ISSUER)
+        )).getResults();
+        log.debug("revokeThenAddSDReturnCorrectResponse.1; got {} nodes", nodes.size());
+        Assertions.assertEquals(2, nodes.size());
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions/" + hash + "/revoke")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+        
+        nodes = graphStore.queryData(new GraphQuery(
+                "MATCH (n {claimsGraphUri: [$uri]}) RETURN n", Map.of("uri", TEST_ISSUER)
+        )).getResults();
+        log.debug("revokeThenAddSDReturnCorrectResponse.2; got {} nodes", nodes.size());
+        Assertions.assertEquals(0, nodes.size());
+        
+        result = mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
+                .content(content)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isConflict())
+            .andReturn();
+
+        nodes = graphStore.queryData(new GraphQuery(
+                "MATCH (n {claimsGraphUri: [$uri]}) RETURN n", Map.of("uri", TEST_ISSUER)
+        )).getResults();
+        log.debug("revokeThenAddSDReturnCorrectResponse.3; got {} nodes", nodes.size());
+        Assertions.assertEquals(0, nodes.size());
+        
+        // this call fails for some reason. why cannot we delete revoked SD? 
+        sdStore.deleteSelfDescription(hash);
+    }
+    
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
