@@ -7,8 +7,8 @@ import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
-import eu.gaiax.difs.fc.core.util.ExtendClaims;
 import eu.gaiax.difs.fc.core.util.ClaimValidator;
+import eu.gaiax.difs.fc.core.util.ExtendClaims;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.jena.rdf.model.Model;
 import org.neo4j.driver.Driver;
@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Configuration
@@ -58,6 +59,7 @@ public class Neo4jGraphStore implements GraphStore {
             try (Session session = driver.session()) {
                 Model model = claimValidator.validateClaims(sdClaimList);
                 String claimsAdded = ExtendClaims.addPropertyGraphUri(model, credentialSubject);
+                updateGraphConfig(ExtendClaims.getMultivalProp(model));
                 String query = "CALL n10s.rdf.import.inline($payload, \"N-Triples\")\n"
                         + "YIELD terminationStatus, triplesLoa" +
                         "ded, triplesParsed, namespaces, extraInfo\n"
@@ -174,6 +176,37 @@ public class Neo4jGraphStore implements GraphStore {
         }
 
     }
+
+    private String joinString(List<String> namesList) {
+        return String.join(",", namesList
+                .stream()
+                .map(name -> ("\"" + name + "\""))
+                .collect(Collectors.toList()));
+    }
+
+    private void updateGraphConfig(HashSet<String> properties) {
+        if(properties.isEmpty())
+            return;
+        try (Session session = driver.session()) {
+            Result config = session.run("CALL n10s.graphconfig.show");
+            while (config.hasNext()) {
+                org.neo4j.driver.Record record = config.next();
+                if (record.asMap().get("param").equals("multivalPropList")) {
+                    List<String> propList = new ArrayList<>((Collection<String>) record.asMap().get("value"));
+                    for (String prop : properties) {
+                        propList.add(prop);
+                    }
+                    try {
+                        session.run("call n10s.graphconfig.set({multivalPropList:[" + joinString(propList) + "],, force: true})");
+                    } catch (Exception e) {
+                        log.debug("Failed to add new properties due to Exception {}", e);
+                    }
+
+                }
+            }
+        }
+    }
+
 
     private String getDynamicallyAddedCountClauseQuery(GraphQuery sdQuery) {
         log.debug("getDynamicallyAddedCountClauseQuery.enter; actual query: {}", sdQuery.getQuery());
