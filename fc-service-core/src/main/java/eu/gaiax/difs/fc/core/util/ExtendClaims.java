@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ExtendClaims {
 
@@ -61,20 +62,19 @@ public class ExtendClaims {
     }
 
 
-    public static HashSet<String> getMultivalProp(Model claims) {
-        ExtendClaims extendClaims = new ExtendClaims();
-        HashSet<String> multiprop = new HashSet<String>();
+    public static Set<String> getMultivalProp(Model claims) {
+        Set<String> multiprop = new HashSet<String>();
         StmtIterator triples = claims.listStatements();
         while (triples.hasNext()) {
             Statement triple = triples.next();
-            if (extendClaims.checkMultivalueProp(triple.getSubject(), triple.getPredicate()))
+            if (checkMultivalueProp(triple.getSubject(), triple.getPredicate()))
                 multiprop.add(triple.getPredicate().toString());
         }
         return multiprop;
     }
 
 
-    private boolean checkMultivalueProp(Resource subject, Property predicate) {
+    private static boolean checkMultivalueProp(Resource subject, Property predicate) {
         if (subject.listProperties(predicate).toList().size() > 1)
             return true;
         return false;
