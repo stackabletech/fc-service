@@ -881,7 +881,35 @@ public class Neo4jGraphStoreTest {
         graphGaia.addClaims(sdClaimList, credentialSubject);
         GraphQuery queryCypher = new GraphQuery("match(m:ServiceOffering) return m",null);
         List<Map<String, Object>> responseCypher = graphGaia.queryData(queryCypher).getResults();
+        Assertions.assertEquals(2, responseCypher.size());
+        String credentialSubject2 = "https://www.example.org/mySoftwareOffering2";
+        List<SdClaim> sdClaimList2 = Arrays.asList(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<https://w3id.org/gaia-x/gax-trust-framework#SoftwareOffering2>"),
+                new SdClaim("_:b0", "<https://w3id.org/gaia-x/gax-trust-framework#accessType>", "\"access type\""),
+                new SdClaim("_:b0", "<https://w3id.org/gaia-x/gax-trust-framework#formatType>", "\"format type\""),
+                new SdClaim("_:b0", "<https://w3id.org/gaia-x/gax-trust-framework#requestType>", "\"request type\""),
+                new SdClaim("_:b1", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<https://w3id.org/gaia-x/core#TermsAndConditions>"),
+                new SdClaim("_:b1", "<https://w3id.org/gaia-x/gax-trust-framework#content>", "\"http://example.org/tac\""),
+                new SdClaim("_:b1", "<https://w3id.org/gaia-x/gax-trust-framework#hash>", "\"12345\""),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<https://w3id.org/gaia-x/gax-trust-framework#ServiceOffering>"),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/ns/dcat#keyword2>", "\"Keyword1_1\""),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/ns/dcat#keyword2>", "\"Keyword1_2\""),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/ns/dcat#keyword2>", "\"Keyword1_3\""),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/ns/dcat#keyword>", "\"Keyword1_4\""),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/ns/dcat#keyword>", "\"Keyword1_5\""),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/ns/dcat#keyword>", "\"Keyword1_6\""),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/ns/dcat#keyword>", "\"Keyword1_7\""),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<https://w3id.org/gaia-x/gax-trust-framework#mySoftwareOffering>", "_:b0"),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<https://w3id.org/gaia-x/gax-trust-framework#providedBy>", "<gax-participant:Provider1>"),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<https://w3id.org/gaia-x/gax-trust-framework#serviceTitle>", "\"Software Title 2\""),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<https://w3id.org/gaia-x/gax-trust-framework#termsAndConditions>", "_:b1"));
+
+        graphGaia.addClaims(sdClaimList2, credentialSubject2);
+        GraphQuery queryCypher2 = new GraphQuery("match(m:ServiceOffering) return m",null);
+        List<Map<String, Object>> responseCypher2 = graphGaia.queryData(queryCypher2).getResults();
+        Assertions.assertEquals(2, responseCypher.size());
         graphGaia.deleteClaims(credentialSubject);
+        graphGaia.deleteClaims(credentialSubject2);
+
 
 
     }

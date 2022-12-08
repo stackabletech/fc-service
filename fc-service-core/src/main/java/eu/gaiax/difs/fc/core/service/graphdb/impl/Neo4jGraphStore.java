@@ -59,7 +59,8 @@ public class Neo4jGraphStore implements GraphStore {
             try (Session session = driver.session()) {
                 Model model = claimValidator.validateClaims(sdClaimList);
                 String claimsAdded = ExtendClaims.addPropertyGraphUri(model, credentialSubject);
-                updateGraphConfig(ExtendClaims.getMultivalProp(model));
+                if(!ExtendClaims.getMultivalProp(model).isEmpty())
+                    updateGraphConfig(ExtendClaims.getMultivalProp(model));
                 String query = "CALL n10s.rdf.import.inline($payload, \"N-Triples\")\n"
                         + "YIELD terminationStatus, triplesLoa" +
                         "ded, triplesParsed, namespaces, extraInfo\n"
@@ -177,7 +178,7 @@ public class Neo4jGraphStore implements GraphStore {
 
     }
 
-    private String joinString(List<String> namesList) {
+    private String joinString(Collection<String> namesList) {
         return String.join(",", namesList
                 .stream()
                 .map(name -> ("\"" + name + "\""))
@@ -185,19 +186,19 @@ public class Neo4jGraphStore implements GraphStore {
     }
 
     private void updateGraphConfig(HashSet<String> properties) {
-        if(properties.isEmpty())
-            return;
         try (Session session = driver.session()) {
             Result config = session.run("CALL n10s.graphconfig.show");
             while (config.hasNext()) {
                 org.neo4j.driver.Record record = config.next();
                 if (record.asMap().get("param").equals("multivalPropList")) {
-                    List<String> propList = new ArrayList<>((Collection<String>) record.asMap().get("value"));
+                    Collection<String> propList = new ArrayList<>((Collection<String>) record.asMap().get("value"));
                     for (String prop : properties) {
-                        propList.add(prop);
+                        if(!propList.contains(prop))
+                            propList.add(prop);
                     }
                     try {
-                        session.run("call n10s.graphconfig.set({multivalPropList:[" + joinString(propList) + "],, force: true})");
+                        log.debug("Adding new properties to graphconfig {}",propList.toString());
+                        session.run("call n10s.graphconfig.set({multivalPropList:[" + joinString(propList) + "], force: true})");
                     } catch (Exception e) {
                         log.debug("Failed to add new properties due to Exception {}", e);
                     }

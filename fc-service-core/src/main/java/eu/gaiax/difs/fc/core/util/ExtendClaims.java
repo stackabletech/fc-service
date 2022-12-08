@@ -67,10 +67,8 @@ public class ExtendClaims {
         StmtIterator triples = claims.listStatements();
         while (triples.hasNext()) {
             Statement triple = triples.next();
-            Resource s = triple.getSubject();
-            Property p = triple.getPredicate();
-            if (extendClaims.checkMultivalueProp(s, p))
-                multiprop.add(p.toString());
+            if (extendClaims.checkMultivalueProp(triple.getSubject(), triple.getPredicate()))
+                multiprop.add(triple.getPredicate().toString());
         }
         return multiprop;
     }
