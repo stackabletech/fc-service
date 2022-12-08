@@ -217,26 +217,28 @@ public class VerificationServiceImpl implements VerificationService {
     Instant issuedDate = issDate == null ? Instant.now() : issDate.toInstant();
 
     List<SdClaim> claims = extractClaims(payload);
-    Set<String> ids = new HashSet<>();
+    Set<String> subjects = new HashSet<>();
+    Set<String> objects = new HashSet<>();
 
     if (claims != null && !claims.isEmpty()) {
 
       for (SdClaim claim : claims) {
-        if (claim.getSubject().startsWith("_:")) {
-          continue; //Ignore blank nodes
-        }
-
-        ids.add(claim.getSubject());
+        subjects.add(claim.getSubject());
+        objects.add(claim.getObject());
       }
     }
 
-    if (ids.size() > 1) {
+    subjects.removeAll(objects);
+
+    if (subjects.size() > 1) {
       String sep = System.lineSeparator();
       StringBuilder sb = new StringBuilder("Semantic Errors: There are different subjects ids in the credential subjects:").append(sep);
-      for (String s : ids) {
+      for (String s : subjects) {
         sb.append(s).append(sep);
       }
       throw new VerificationException(sb.toString());
+    } else if (subjects.isEmpty()) {
+      throw new VerificationException("Semantic Errors: There is no node without incoming edge");
     }
 
     VerificationResult result;
