@@ -2,15 +2,19 @@ package eu.gaiax.difs.fc.core.dao.impl;
 
 import static eu.gaiax.difs.fc.core.util.KeycloakUtils.getErrorMessage;
 
+import eu.gaiax.difs.fc.api.generated.model.User;
+import eu.gaiax.difs.fc.api.generated.model.UserProfile;
+import eu.gaiax.difs.fc.core.dao.UserDao;
 import eu.gaiax.difs.fc.core.exception.ClientException;
+import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -26,12 +30,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import eu.gaiax.difs.fc.api.generated.model.User;
-import eu.gaiax.difs.fc.api.generated.model.UserProfile;
-import eu.gaiax.difs.fc.core.dao.UserDao;
-import eu.gaiax.difs.fc.core.exception.ConflictException;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Implementation of the {@link UserDao} interface.
@@ -60,19 +58,27 @@ public class UserDaoImpl implements UserDao {
   @Override
   public UserProfile create(User user) {
     UserRepresentation userRepo = toUserRepo(user);
+    List<String> validatedRoles = validateRoles(user.getRoleIds());
+    user.setRoleIds(validatedRoles);
     UsersResource instance = keycloak.realm(realm).users();
     Response response = instance.create(userRepo);
     if (response.getStatus() == HttpStatus.SC_CONFLICT) {
       String message = getErrorMessage(response);
       log.info("create.error; status {}:{}, {}", response.getStatus(), response.getStatusInfo(), message);
       throw new ConflictException(message);
-    } else if (response.getStatus() != HttpStatus.SC_CREATED){
+    } else if (response.getStatus() != HttpStatus.SC_CREATED) {
       String message = "Invalid used data";
       log.info("create.error; status {}:{}, {}", response.getStatus(), response.getStatusInfo(), message);
       throw new ClientException(message);
     }
     userRepo = instance.search(userRepo.getUsername()).get(0);
-    return toUserProfile(userRepo, assignRolesToUser(instance.get(userRepo.getId()), user.getRoleIds()));
+    UserResource userResource = instance.get(userRepo.getId());
+    List<RoleRepresentation> roleRepresentations = assignRolesToUser(userResource, user.getRoleIds());
+    if(roleRepresentations == null){
+       userResource.remove();
+      throw new ClientException("Please check that the sent roles are valid.");
+    }
+    return toUserProfile(userRepo, roleRepresentations);
   }
 
   /**
@@ -148,9 +154,15 @@ public class UserDaoImpl implements UserDao {
     UsersResource instance = keycloak.realm(realm).users();
     UserResource userResource = instance.get(userId);
     UserRepresentation userRepo = toUserRepo(user);
-
+    List<String> validatedRoles = validateRoles(user.getRoleIds());
+    user.setRoleIds(validatedRoles);
+    UserRepresentation userRepoOld = userResource.toRepresentation();
     userResource.update(userRepo);
-    assignRolesToUser(userResource, user.getRoleIds());
+    List<RoleRepresentation> roleRepresentations = assignRolesToUser(userResource, user.getRoleIds());
+    if(roleRepresentations == null){
+      userResource.update(userRepoOld);
+      throw new ClientException("Please check that the sent roles are valid.");
+    }
     changeUserGroup(userResource, user.getParticipantId());
 
     // no Response ?
@@ -171,14 +183,13 @@ public class UserDaoImpl implements UserDao {
   public UserProfile updateRoles(String userId, List<String> roles) {
     UsersResource instance = keycloak.realm(realm).users();
     UserResource userResource = instance.get(userId);
-    UserRepresentation userRepo = getUserRepresentation(userResource, userId);
-    userRepo.setRealmRoles(roles);
-    userResource.update(userRepo);
-    assignRolesToUser(userResource, roles);
+    List<RoleRepresentation> roleRepresentations = assignRolesToUser(userResource, roles);
+    if (roleRepresentations == null) {
+        throw new ClientException("Please check that the sent roles are valid.");
+    }
     // no Response ?
-
     userResource = instance.get(userId);
-    userRepo = getUserRepresentation(userResource, userId);
+    UserRepresentation userRepo = getUserRepresentation(userResource, userId);
     return toUserProfile(userRepo, getUserRoles(instance, userId));
   }
 
@@ -244,9 +255,24 @@ public class UserDaoImpl implements UserDao {
       roleScopeResource.remove(existedRoles);
       roleScopeResource.add(roleRepresentations);
     } else {
-      throw new ClientException("Please check that the sent roles are valid.");
+     return null;
     }
     return roleRepresentations;
+  }
+
+  private List<String> validateRoles(List<String> roles) {
+    if (roles == null) {
+      roles = Collections.emptyList();
+    }
+    ClientsResource clientsResource = keycloak.realm(realm).clients();
+    ClientRepresentation client = clientsResource.findByClientId(resourceId).get(0);
+    List<RoleRepresentation> existedRoles = clientsResource.get(client.getId()).roles().list();
+    final List<String> finalRoles = roles;
+    List<RoleRepresentation> roleRepresentations = existedRoles.stream().filter(role -> finalRoles.contains(role.getName())).collect(Collectors.toList());
+    if ((roleRepresentations.isEmpty() && roles.size() != roleRepresentations.size())) {
+      throw new ClientException("Please check that the sent roles are valid.");
+    }
+    return finalRoles;
   }
 
   private static List<String> toRoleIds(List<RoleRepresentation> roleRepresentations) {
