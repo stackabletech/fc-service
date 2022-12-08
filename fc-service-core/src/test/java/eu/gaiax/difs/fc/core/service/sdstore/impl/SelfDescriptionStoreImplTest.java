@@ -69,8 +69,6 @@ import org.springframework.test.context.ContextConfiguration;
 @ActiveProfiles("tests-sdstore")
 @ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, FileStoreConfig.class,
   SelfDescriptionStoreImpl.class, SelfDescriptionStoreImplTest.class, DatabaseConfig.class, Neo4jGraphStore.class})
-//@DirtiesContext
-//@Transactional
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
@@ -102,12 +100,7 @@ public class SelfDescriptionStoreImplTest {
 
   @AfterEach
   public void storageSelfCleaning() throws IOException {
-    try ( Session session = sessionFactory.openSession()) {
-      Transaction t = session.beginTransaction();
-      session.createNativeQuery("delete from sdfiles").executeUpdate();
-      t.commit();
-    }
-    fileStore.clearStorage();
+    sdStore.clear();
   }
 
   @AfterAll
@@ -253,11 +246,25 @@ public class SelfDescriptionStoreImplTest {
     sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
     assertStoredSdFiles(1);
 
+    List<Map<String, Object>> nodes = graphStore.queryData(new GraphQuery(
+        "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
+        Map.of("graphUri", "TestSd/1")
+    )).getResults();
+    log.debug("test03StoreDuplicateSelfDescription-1; got {} nodes", nodes.size());
+    Assertions.assertEquals(3, nodes.size());
+
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
         Instant.parse("2022-01-01T13:00:00Z"), Instant.parse("2022-01-02T13:00:00Z"), content1);
     Assertions.assertThrows(ConflictException.class, () -> {
       sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
     });
+
+    nodes = graphStore.queryData(new GraphQuery(
+        "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
+        Map.of("graphUri", "TestSd/1")
+    )).getResults();
+    log.debug("test03StoreDuplicateSelfDescription-2; got {} nodes", nodes.size());
+    Assertions.assertEquals(3, nodes.size(), "After failed put, node count should not have changed");
 
     final int count = IterableUtils.size(fileStore.getFileIterable());
     assertEquals(1, count, "Second file should not have been stored.");

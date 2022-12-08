@@ -215,6 +215,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
   @Override
   public PaginatedResults<SelfDescriptionMetadata> getByFilter(final SdFilter filter, final boolean withMeta, final boolean withContent) {
+    log.debug("getByFilter.enter; got filter: {}, withMeta: {}, withContent: {}", filter, withMeta, withContent);
     final Session currentSession = sessionFactory.getCurrentSession();
     final FilterQueryBuilder queryBuilder = new FilterQueryBuilder(currentSession, withMeta);
 
@@ -268,8 +269,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     if (withContent) {
       sdStream = sdStream.peek(t -> t.setSelfDescription(getSDFileByHash(t.getSdHash())));
     }
-    final List<SelfDescriptionMetadata> SdList = sdStream.collect(Collectors.toList());
-    return new PaginatedResults<>(totalCount.longValue(), SdList);
+    final List<SelfDescriptionMetadata> sdList = sdStream.collect(Collectors.toList());
+    log.debug("getByFilter.exit; returning records: {}, total: {}", sdList.size(), totalCount.longValue());
+    return new PaginatedResults<>(totalCount.longValue(), sdList);
   }
 
   @Override
@@ -309,7 +311,6 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       existingSd.setStatusDatetime(Instant.now());
       currentSession.update(existingSd);
       currentSession.flush();
-      graphDb.deleteClaims(existingSd.getSubjectId());
     }
     try {
       currentSession.persist(sdmRecord);
@@ -322,8 +323,6 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       throw ex;
     }
 
-    graphDb.addClaims(verificationResult.getClaims(), sdmRecord.getSubjectId());
-
     try {
       fileStore.storeFile(sdMetadata.getSdHash(), sdMetadata.getSelfDescription());
       currentSession.flush();
@@ -335,6 +334,11 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       log.error("storeSelfDescription.error 3", ex);
       throw ex;
     }
+
+    if (existingSd != null) {
+      graphDb.deleteClaims(existingSd.getSubjectId());
+    }
+    graphDb.addClaims(verificationResult.getClaims(), sdmRecord.getSubjectId());
 
   }
 
