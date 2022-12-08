@@ -238,7 +238,7 @@ public class VerificationServiceImpl implements VerificationService {
       }
       throw new VerificationException(sb.toString());
     } else if (subjects.isEmpty()) {
-      throw new VerificationException("Semantic Errors: There is no node without incoming edge");
+      throw new VerificationException("Semantic Errors: There is no uniquely identified credential subject");
     }
 
     VerificationResult result;
