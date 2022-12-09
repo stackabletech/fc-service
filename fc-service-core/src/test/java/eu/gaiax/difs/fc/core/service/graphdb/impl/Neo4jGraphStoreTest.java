@@ -847,7 +847,6 @@ public class Neo4jGraphStoreTest {
 
         GraphQuery queryCypher = new GraphQuery("MATCH (m) -[relation]-> (n) WHERE 'http://example.org/test-issuer3' in m.claimsGraphUri RETURN m.name as name , relation, n.country as country, n.locality as locality ", null);
         List<Map<String, Object>> responseCypher = graphGaia.queryData(queryCypher).getResults();
-        System.out.println("result is "+responseCypher.toString());
         List<Map<String, Object>> resultListRelationship = List.of(Map.of("country","DE","name","deltaDAO AGEF","locality","Dresden","relation","legalAddress"));
         Assertions.assertEquals(resultListRelationship, responseCypher);
 
