@@ -845,9 +845,11 @@ public class Neo4jGraphStoreTest {
         graphGaia.addClaims(sdClaimList2, credentialSubject2);
         graphGaia.addClaims(sdClaimList3, credentialSubject3);
 
-        GraphQuery queryCypher = new GraphQuery("MATCH (m) -[relation]-> (n) RETURN m, relation, n", null);
+        GraphQuery queryCypher = new GraphQuery("MATCH (m) -[relation]-> (n) WHERE 'http://example.org/test-issuer3' in m.claimsGraphUri RETURN m.name as name , relation, n.country as country, n.locality as locality ", null);
         List<Map<String, Object>> responseCypher = graphGaia.queryData(queryCypher).getResults();
-        Assertions.assertEquals(5, responseCypher.size());
+        System.out.println("result is "+responseCypher.toString());
+        List<Map<String, Object>> resultListRelationship = List.of(Map.of("country","DE","name","deltaDAO AGEF","locality","Dresden","relation","legalAddress"));
+        Assertions.assertEquals(resultListRelationship, responseCypher);
 
         //cleanup
         graphGaia.deleteClaims(credentialSubject1);
