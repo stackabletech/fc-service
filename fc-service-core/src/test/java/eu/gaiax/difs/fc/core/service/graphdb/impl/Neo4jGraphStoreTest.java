@@ -108,7 +108,7 @@ public class Neo4jGraphStoreTest {
             String credentialSubject = sdClaimList.get(0).getSubject();
             graphGaia.addClaims(sdClaimList, credentialSubject.substring(1, credentialSubject.length() - 1));
         }
-        GraphQuery queryDeltaTest = new GraphQuery("Match(n) RETURN n",null);
+        GraphQuery queryDeltaTest = new GraphQuery("Match(n) RETURN n", null);
         GraphQuery queryDelta = new GraphQuery(
                 "MATCH (n:LegalPerson) WHERE n.name = $name RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
@@ -847,7 +847,7 @@ public class Neo4jGraphStoreTest {
 
         GraphQuery queryCypher = new GraphQuery("MATCH (m) -[relation]-> (n) WHERE 'http://example.org/test-issuer3' in m.claimsGraphUri RETURN m.name as name , relation, n.country as country, n.locality as locality ", null);
         List<Map<String, Object>> responseCypher = graphGaia.queryData(queryCypher).getResults();
-        List<Map<String, Object>> resultListRelationship = List.of(Map.of("country","DE","name","deltaDAO AGEF","locality","Dresden","relation","legalAddress"));
+        List<Map<String, Object>> resultListRelationship = List.of(Map.of("country", "DE", "name", "deltaDAO AGEF", "locality", "Dresden", "relation", "legalAddress"));
         Assertions.assertEquals(resultListRelationship, responseCypher);
 
         //cleanup
@@ -880,7 +880,7 @@ public class Neo4jGraphStoreTest {
                 new SdClaim("<https://www.example.org/mySoftwareOffering>", "<https://w3id.org/gaia-x/gax-trust-framework#serviceTitle>", "\"Software Title\""),
                 new SdClaim("<https://www.example.org/mySoftwareOffering>", "<https://w3id.org/gaia-x/gax-trust-framework#termsAndConditions>", "_:b1"));
         graphGaia.addClaims(sdClaimList, credentialSubject);
-        GraphQuery queryCypher = new GraphQuery("match(m:ServiceOffering) return m",null);
+        GraphQuery queryCypher = new GraphQuery("match(m:ServiceOffering) return m", null);
         List<Map<String, Object>> responseCypher = graphGaia.queryData(queryCypher).getResults();
         Assertions.assertEquals(2, responseCypher.size());
         String credentialSubject2 = "https://www.example.org/mySoftwareOffering2";
@@ -891,7 +891,7 @@ public class Neo4jGraphStoreTest {
                 new SdClaim("_:b1", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<https://w3id.org/gaia-x/core#TermsAndConditions>"),
                 new SdClaim("_:b1", "<https://w3id.org/gaia-x/gax-trust-framework#content>", "\"http://example.org/tac\""),
                 new SdClaim("_:b1", "<https://w3id.org/gaia-x/gax-trust-framework#hash>", "\"12345\""),
-                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<https://w3id.org/gaia-x/gax-trust-framework#ServiceOffering>"),
+                new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<https://w3id.org/gaia-x/gax-trust-framework#ServiceOffering2>"),
                 new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/ns/dcat#keyword2>", "\"Keyword1_1\""),
                 new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/ns/dcat#keyword2>", "\"Keyword1_2\""),
                 new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<http://www.w3.org/ns/dcat#keyword2>", "\"Keyword1_3\""),
@@ -905,14 +905,50 @@ public class Neo4jGraphStoreTest {
                 new SdClaim("<https://www.example.org/mySoftwareOffering2>", "<https://w3id.org/gaia-x/gax-trust-framework#termsAndConditions>", "_:b1"));
 
         graphGaia.addClaims(sdClaimList2, credentialSubject2);
-        GraphQuery queryCypher2 = new GraphQuery("match(m:ServiceOffering) return m",null);
+        GraphQuery queryCypher2 = new GraphQuery("match(m:ServiceOffering2)-[relation]-> (n) return m,relation,n", null);
         List<Map<String, Object>> responseCypher2 = graphGaia.queryData(queryCypher2).getResults();
-        Assertions.assertEquals(2, responseCypher.size());
-        graphGaia.deleteClaims(credentialSubject);
-        graphGaia.deleteClaims(credentialSubject2);
 
+        for (Map<String, Object> map : responseCypher2) {
 
+            Map<String, Object> offering = (Map<String, Object>) map.get("m");
+            Object claimsGraphUri = offering.get("claimsGraphUri");
+            Assertions.assertNotNull(claimsGraphUri);
+            Assertions.assertTrue(claimsGraphUri instanceof List);
+            List<String> urls = (List<String>) claimsGraphUri;
+            Assertions.assertEquals(List.of("https://www.example.org/mySoftwareOffering2"), urls);
+            Assertions.assertEquals("Software Title 2", offering.get("serviceTitle"));
+            Object keywords_1 = offering.get("keyword");
+            List<String> keywords = (List<String>) keywords_1;
+            Object keywords_2 = offering.get("keyword2");
+            List<String> keywords2 = (List<String>) keywords_2;
 
+            Assertions.assertEquals(4, keywords.size()); // [Keyword1_7, Keyword1_5, Keyword1_6, Keyword1_4]
+            Assertions.assertEquals(3, keywords2.size()); // [Keyword1_1, Keyword1_3, Keyword1_2]
+
+            String rel = (String) map.get("relation");
+            if ("mySoftwareOffering".equals(rel)) {
+                Map<String, Object> soft = (Map<String, Object>) map.get("n");
+                Assertions.assertEquals("access type", soft.get("accessType"));
+                Assertions.assertEquals("request type", soft.get("requestType"));
+                Assertions.assertEquals("format type", soft.get("formatType"));
+            } else if ("termsAndConditions".equals(rel)) {
+                Map<String, Object> terms = (Map<String, Object>) map.get("n");
+                Assertions.assertEquals("http://example.org/tac", terms.get("content"));
+                Assertions.assertEquals("12345", terms.get("hash"));
+            } else if ("providedBy".equals(rel)) {
+                Map<String, Object> prov = (Map<String, Object>) map.get("n");
+                Object nClaimsGraphUri = prov.get("claimsGraphUri");
+                List<String> urlGraphuri = (List<String>) nClaimsGraphUri;
+                Assertions.assertEquals(List.of("https://www.example.org/mySoftwareOffering", "https://www.example.org/mySoftwareOffering2"), urlGraphuri);
+            } else {
+                Assertions.assertFalse(true, "unexpected relation: " + rel);
+            }
+
+            Assertions.assertEquals(2, responseCypher.size());
+            graphGaia.deleteClaims(credentialSubject);
+            graphGaia.deleteClaims(credentialSubject2);
+
+        }
     }
 
 
