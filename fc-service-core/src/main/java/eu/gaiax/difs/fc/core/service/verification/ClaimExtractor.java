@@ -16,6 +16,6 @@ public interface ClaimExtractor {
         if (rdf.isLiteral()) return "\"" + rdf.getValue() + "\"";
         // rdf is IRI. here we could try to make it absolute..
         return "<" + rdf.getValue() + ">";
-     }
+    }
     
 }

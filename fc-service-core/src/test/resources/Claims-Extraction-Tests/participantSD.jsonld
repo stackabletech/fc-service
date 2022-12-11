@@ -113,6 +113,9 @@
       "issuer": "did:web:compliance.gaia-x.eu",
       "issuanceDate": "2022-06-19T07:01:10.156Z",
       "credentialSubject": {
+        "@context": {
+          "xsd": "http://www.w3.org/2001/XMLSchema#"
+        },
         "id": "did:web:delta-dao.com",
         "hash": "f19cbf87fe71739d34b3d8943d45f2b11d692e9aeb448eee44bf7a3bf9212f73"
       },
