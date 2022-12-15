@@ -311,12 +311,14 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       existingSd.setStatusDatetime(Instant.now());
       currentSession.update(existingSd);
       currentSession.flush();
+//      graphDb.deleteClaims(existingSd.getSubjectId());
     }
     try {
+//      graphDb.addClaims(verificationResult.getClaims(), sdmRecord.getSubjectId());
       currentSession.persist(sdmRecord);
     } catch (final EntityExistsException exc) {
       log.error("storeSelfDescription.error 1: {}", sdMetadata.getSdHash(), exc);
-      final String message = String.format("self-description file with hash %s already exists", sdMetadata.getSdHash());
+      final String message = String.format("self-description with hash %s already exists", sdMetadata.getSdHash());
       throw new ConflictException(message);
     } catch (Exception ex) {
       log.error("storeSelfDescription.error 2", ex);
@@ -339,7 +341,6 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       graphDb.deleteClaims(existingSd.getSubjectId());
     }
     graphDb.addClaims(verificationResult.getClaims(), sdmRecord.getSubjectId());
-
   }
 
   @Override

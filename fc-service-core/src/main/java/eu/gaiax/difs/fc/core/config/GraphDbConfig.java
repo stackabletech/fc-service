@@ -1,8 +1,10 @@
 package eu.gaiax.difs.fc.core.config;
 
 import org.neo4j.driver.AuthTokens;
+import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Logging;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +28,8 @@ public class GraphDbConfig {
 
     @Bean(destroyMethod = "close")
     public Driver driver() {
-        Driver driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
+        Config config = Config.builder().withLogging(Logging.slf4j()).build();
+        Driver driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password), config);
         Session session = driver.session();
         Result result = session.run("CALL gds.graph.exists('neo4j');");
         if (result.hasNext()) {

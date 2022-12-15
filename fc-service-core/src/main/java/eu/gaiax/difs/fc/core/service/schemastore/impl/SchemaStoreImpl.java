@@ -55,9 +55,9 @@ import org.hibernate.Transaction;
 /**
  *
  */
+@Slf4j
 @Component
 @Transactional
-@Slf4j
 public class SchemaStoreImpl implements SchemaStore {
 
   @Autowired

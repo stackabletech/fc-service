@@ -15,9 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * @author hylke
  */
-@Transactional
-@Component
 @Slf4j
+@Component
+@Transactional
 public class ValidatorCacheImpl implements ValidatorCache {
 
   @Autowired

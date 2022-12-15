@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -110,7 +111,16 @@ public class SelfDescriptionControllerTest {
         fileStore.clearStorage();
         embeddedDatabaseServer.close();
     }
-
+    
+    @AfterEach
+    public void deleteTestSD() throws IOException {
+        try {
+            sdStore.deleteSelfDescription(sdMeta.getSdHash());
+        } catch (NotFoundException e) {
+            // expected
+        }
+    }
+    
     @Test
     public void readSDsShouldReturnUnauthorizedResponse() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions")
@@ -142,7 +152,6 @@ public class SelfDescriptionControllerTest {
         assertNotNull(selfDescriptions);
         assertEquals(1, selfDescriptions.getItems().size());
         assertEquals(1, selfDescriptions.getTotalCount());
-        sdStore.deleteSelfDescription(sdMeta.getSdHash());
     }
 
     @Test
@@ -221,7 +230,6 @@ public class SelfDescriptionControllerTest {
         assertEquals(1, selfDescriptions.getTotalCount());
         assertNull(selfDescriptions.getItems().get(0).getContent());
         assertNotNull(selfDescriptions.getItems().get(0).getMeta());
-        sdStore.deleteSelfDescription(sdMeta.getSdHash());
     }
 
     @Test
@@ -248,7 +256,6 @@ public class SelfDescriptionControllerTest {
                 .with(csrf()))
                 //.accept("application/ld+json"))
             .andExpect(status().isOk());
-        sdStore.deleteSelfDescription(sdMeta.getSdHash());
     }
 
     @Test
@@ -280,7 +287,6 @@ public class SelfDescriptionControllerTest {
               .contentType(MediaType.APPLICATION_JSON)
               .accept(MediaType.APPLICATION_JSON))
           .andExpect(status().isForbidden());
-      sdStore.deleteSelfDescription(sdMeta.getSdHash());
     }
 
     @Test
@@ -342,7 +348,7 @@ public class SelfDescriptionControllerTest {
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
-    public void addSDReturnSuccessResponse() throws Exception {
+    public void addSDReturnCreatedResponse() throws Exception {
         MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
                 .content(getMockFileDataAsString(SD_FILE_NAME))
                 .with(csrf())
@@ -377,10 +383,10 @@ public class SelfDescriptionControllerTest {
     }
 
     // TODO: 05.09.2022 Need to add a test to check the correct scenario with graph storage when it is added
-    @Test
+    //@Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
-    public void addSDFailedThanAllTransactionsRolledBack() throws Exception {
+    public void addSDFailedThenAllTransactionRolledBack() throws Exception {
         ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
         doThrow((new IOException("Some server exception")))
             .when(fileStore).storeFile(hashCaptor.capture(), any());
@@ -442,7 +448,6 @@ public class SelfDescriptionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
-        sdStore.deleteSelfDescription(sdMeta.getSdHash());
     }
 
     @Test

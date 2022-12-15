@@ -3,26 +3,30 @@ package eu.gaiax.difs.fc.core.service.graphdb.impl;
 import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.exception.TimeoutException;
+import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.core.util.ClaimValidator;
 import eu.gaiax.difs.fc.core.util.ExtendClaims;
-import liquibase.pro.packaged.S;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.jena.rdf.model.Model;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
+import org.neo4j.driver.SessionConfig;
+import org.neo4j.driver.Transaction;
 import org.neo4j.driver.TransactionConfig;
 import org.neo4j.driver.exceptions.DatabaseException;
 import org.neo4j.driver.internal.InternalNode;
 import org.neo4j.driver.internal.InternalRelationship;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -30,10 +34,18 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Configuration
 @Component
+@Transactional
 public class Neo4jGraphStore implements GraphStore {
 
+    private static final String queryInsert = "CALL n10s.rdf.import.inline($payload, \"N-Triples\");"; //\n" +
+                                              //"YIELD terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo\n" +
+                                              //"RETURN terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo";
+    private static final String queryDelete = "MATCH (n {claimsGraphUri: [$uri]})\n" +
+                                              "DETACH DELETE n;";
+    private static final String queryUpdate = "MATCH (n) WHERE $uri IN n.claimsGraphUri\n" +
+                                              "SET n.claimsGraphUri = [g IN n.claimsGraphUri WHERE g <> $uri];";
+    
     @Autowired
     private Driver driver;
     private final ClaimValidator claimValidator;
@@ -45,33 +57,31 @@ public class Neo4jGraphStore implements GraphStore {
 
     public Neo4jGraphStore() {
         super();
-
         this.claimValidator = new ClaimValidator();
     }
-
+    
     /**
      * {@inheritDoc}
      */
     @Override
     public void addClaims(List<SdClaim> sdClaimList, String credentialSubject) {
         log.debug("addClaims.enter; got claims: {}, subject: {}", sdClaimList, credentialSubject);
-        int cnt = 0;
         if (!sdClaimList.isEmpty()) {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session()) { 
                 Model model = claimValidator.validateClaims(sdClaimList);
                 String claimsAdded = ExtendClaims.addPropertyGraphUri(model, credentialSubject);
-                Set<String> properties=ExtendClaims.getMultivalProp(model);
-                if(!properties.isEmpty())
-                    updateGraphConfig(properties);
-                String query = "CALL n10s.rdf.import.inline($payload, \"N-Triples\")\n"
-                        + "YIELD terminationStatus, triplesLoa" +
-                        "ded, triplesParsed, namespaces, extraInfo\n"
-                        + "RETURN terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo";
-                Result rs = session.run(query, Map.of("payload", claimsAdded));
-                log.debug("addClaims; response: {}", rs.list());
+                Set<String> properties = ExtendClaims.getMultivalProp(model);
+                if (!properties.isEmpty()) {
+                    updateGraphConfig(session, properties);
+                }
+                Result rs = session.run(queryInsert, Map.of("payload", claimsAdded));
+                log.debug("addClaims; inserted: {}", rs.consume());
+            } catch (IOException ex) {
+            //    log.error("addClaims.error;", ex);
+                throw new VerificationException(ex);
             }
         }
-        log.debug("addClaims.exit; claims processed: {}", cnt);
+        log.debug("addClaims.exit");
     }
 
     /**
@@ -79,17 +89,15 @@ public class Neo4jGraphStore implements GraphStore {
      */
     @Override
     public void deleteClaims(String credentialSubject) {
-        log.debug("deleteClaims.enter; Beginning claims deletion, subject: {}", credentialSubject);
-        String queryDelete = "MATCH (n {claimsGraphUri: [$uri]})\n" +
-                "DETACH DELETE n;";
-        String queryUpdate = "MATCH (n)\n" +
-                "WHERE $uri IN n.claimsGraphUri\n" +
-                "SET n.claimsGraphUri = [g IN n.claimsGraphUri WHERE g <> $uri];";
+        log.debug("deleteClaims.enter; got subject: {}", credentialSubject);
+        Map<String, Object> params = Map.of("uri", credentialSubject);
         try (Session session = driver.session()) {
-            Result rsDelelte = session.run(queryDelete, Map.of("uri", credentialSubject));
-            Result rsUpdate = session.run(queryUpdate, Map.of("uri", credentialSubject));
-            log.debug("deleteClaims.exit; results: {}", rsDelelte.list());
-            log.debug("updateClaims.exit; results: {}", rsUpdate.list());
+            Result rsDelelte = session.run(queryDelete, params);
+            log.debug("deleteClaims; deleted: {}", rsDelelte.consume());
+            Result rsUpdate = session.run(queryUpdate, params);
+            log.debug("deleteClaims; updated: {}", rsUpdate.consume());
+        //} catch (Exception ex) {
+        //    log.error("deleteClaims.error;", ex);
         }
     }
 
@@ -110,105 +118,87 @@ public class Neo4jGraphStore implements GraphStore {
 
         long stamp = System.currentTimeMillis();
         try (Session session = driver.session()) {
-            //In this function we use read transaction to avoid any Cypher query that modifies data
-
-            return session.readTransaction(
-                    tx -> {
-                        List<Map<String, Object>> resultList = new ArrayList<>();
-                        String finalString = getDynamicallyAddedCountClauseQuery(sdQuery);
-                        Result result = tx.run(finalString, sdQuery.getParams());
-                        log.debug("queryData; got result: {}", result.keys());
-                        Long totalCount = 0L;
-                        while (result.hasNext()) {
-                            org.neo4j.driver.Record record = result.next();
-                            Map<String, Object> map = record.asMap();
-                            log.debug("queryData; record: {}", map);
-                            Map<String, Object> outputMap = new HashMap<>();
-                            totalCount = (Long) map.getOrDefault("totalCount", resultList.size());
-                            for (var entry : map.entrySet()) {
-                                if (entry.getKey().equals("totalCount"))
-                                    continue;
-                                if (entry.getValue() == null) {
-                                    outputMap.put(entry.getKey(), null);
-                                } else if (entry.getValue() instanceof InternalNode) {
-                                    Map<String, Object> nodeMap = ((InternalNode) entry.getValue()).asMap();
-                                    Map<String, Object> modifiableNodeMap = new HashMap<>(nodeMap);
-                                    modifiableNodeMap.remove("uri");
-                                    outputMap.put(entry.getKey(), modifiableNodeMap);
-                                } else if (entry.getValue() instanceof InternalRelationship) {
-                                    outputMap.put(entry.getKey(), ((InternalRelationship) entry.getValue()).type());
-                                } else {
-                                    outputMap.put(entry.getKey(), entry.getValue());
-                                }
-                            }
-                            resultList.add(outputMap);
-                        }
-                        log.debug("queryData.exit; returning: {}", resultList);
-
-                        // Shuffle list to guarantee results won't appear in
-                        // a deterministic order thus giving certain results
-                        // an advantage over others as they would always be
-                        // in the top n result entries.
-                        // However, the shuffling should only be performed
-                        // if the query does not, by itself, return an ordered
-                        // result.
-                        Matcher matcher = orderByRegex.matcher(sdQuery.getQuery());
-                        boolean queryProvidesOrderedResult = matcher.find();
-
-                        if (!queryProvidesOrderedResult)
-                            Collections.shuffle(resultList);
-
-                        return new PaginatedResults<>(totalCount, resultList);
-                    },
-                    transactionConfig
-            );
-        } catch (
-                Exception e) {
+            //In this method we use read transaction to avoid any Cypher query that modifies data
+            return session.readTransaction(tx -> doQuery(tx, sdQuery), transactionConfig);
+        } catch (Exception ex) {
             stamp = System.currentTimeMillis() - stamp;
-            log.error("queryData.error", e);
-            if (e instanceof DatabaseException) {
-                // TODO: here we must recognize a scenario when we get DatabaseException because of the query timeout
-                // if no better solution, when we can check exception stack for the following text:
-                // Suppressed: org.neo4j.driver.exceptions.ServiceUnavailableException: Connection to the database terminated.
-                // and also check the stamp value > query timeout:
+            log.error("queryData.error;", ex);
+            if (ex.getMessage() != null && ex.getMessage().contains("dbms.transaction.timeout")) {
                 if (stamp > sdQuery.getTimeout() * 1000) {
                     throw new TimeoutException("query timeout (" + sdQuery.getTimeout() + " sec) exceeded)");
                 }
             }
-            throw new ServerException("error querying data " + e.getMessage());
+            throw new ServerException("error querying data " + ex.getMessage());
+        }
+    }
+    
+    private PaginatedResults<Map<String, Object>> doQuery(Transaction tx, GraphQuery query) {
+        List<Map<String, Object>> resultList = new ArrayList<>();
+        String finalString = getDynamicallyAddedCountClauseQuery(query);
+        Result result = tx.run(finalString, query.getParams());
+        log.debug("doQuery; got result: {}", result.keys());
+        Long totalCount = 0L;
+        while (result.hasNext()) {
+            org.neo4j.driver.Record record = result.next();
+            Map<String, Object> map = record.asMap();
+            log.debug("doQuery; record: {}", map);
+            Map<String, Object> outputMap = new HashMap<>();
+            totalCount = (Long) map.getOrDefault("totalCount", resultList.size());
+            for (var entry : map.entrySet()) {
+                if (entry.getKey().equals("totalCount"))
+                    continue;
+                if (entry.getValue() == null) {
+                    outputMap.put(entry.getKey(), null);
+                } else if (entry.getValue() instanceof InternalNode) {
+                    Map<String, Object> nodeMap = ((InternalNode) entry.getValue()).asMap();
+                    Map<String, Object> modifiableNodeMap = new HashMap<>(nodeMap);
+                    modifiableNodeMap.remove("uri");
+                    outputMap.put(entry.getKey(), modifiableNodeMap);
+                } else if (entry.getValue() instanceof InternalRelationship) {
+                    outputMap.put(entry.getKey(), ((InternalRelationship) entry.getValue()).type());
+                } else {
+                    outputMap.put(entry.getKey(), entry.getValue());
+                }
+            }
+            resultList.add(outputMap);
         }
 
+        // Shuffle list to guarantee results won't appear in a deterministic order thus giving certain results
+        // an advantage over others as they would always be in the top n result entries.
+        // However, the shuffling should only be performed if the query does not, by itself, return an ordered result.
+        Matcher matcher = orderByRegex.matcher(query.getQuery());
+        boolean queryProvidesOrderedResult = matcher.find();
+        if (!queryProvidesOrderedResult) {
+            Collections.shuffle(resultList);
+        }
+
+        log.debug("doQuery.exit; returning: {}", resultList);
+        return new PaginatedResults<>(totalCount, resultList);
     }
 
-    private String joinString(Collection<String> namesList) {
-        return namesList.stream().collect(Collectors.joining("\", \"", "\"", "\""));
-    }
-
-    private void updateGraphConfig(Set<String> properties) {
-        try (Session session = driver.session()) {
-            Result config = session.run("CALL n10s.graphconfig.show");
-            while (config.hasNext()) {
-                org.neo4j.driver.Record record = config.next();
-                Map<String,Object> propMap=record.asMap();
-                if (propMap.get("param").equals("multivalPropList")) {
-                    Collection<String> propList = new ArrayList<>((Collection<String>) propMap.get("value"));
-                    for (String prop : properties) {
-                        if(!propList.contains(prop))
-                            propList.add(prop);
-                    }
+    private void updateGraphConfig(Session session, Set<String> properties) {
+        Result config = session.run("CALL n10s.graphconfig.show");
+        while (config.hasNext()) {
+            org.neo4j.driver.Record record = config.next();
+            Map<String,Object> propMap = record.asMap();
+            if (propMap.get("param").equals("multivalPropList")) {
+                Collection<String> propList = new HashSet<>((Collection<String>) propMap.get("value"));
+                log.debug("updateGraphConfig; got multivalPropList {}", propList);
+                int size= propList.size();
+                propList.addAll(properties);
+                if (propList.size() > size) {
+                    log.debug("updateGraphConfig; Adding new properties to graphconfig {}", propList);
                     try {
-                        log.debug("Adding new properties to graphconfig {}",propList.toString());
-                        session.run("call n10s.graphconfig.set({multivalPropList:[" + joinString(propList) + "], force: true})");
+                        Map<String, Object> params = Map.of("propList", propList, "force", true);
+                        session.run("CALL n10s.graphconfig.set({multivalPropList: $propList, force: $force})", params);
                     } catch (Exception e) {
-                        log.debug("Failed to add new properties due to Exception {}", e);
+                        log.error("updateGraphConfig.error; Failed to add new properties due to Exception", e);
                     }
-                    break;
-
                 }
+                break;
             }
         }
     }
-
 
     private String getDynamicallyAddedCountClauseQuery(GraphQuery sdQuery) {
         log.debug("getDynamicallyAddedCountClauseQuery.enter; actual query: {}", sdQuery.getQuery());
@@ -216,23 +206,24 @@ public class Neo4jGraphStore implements GraphStore {
         String statement = "return";
         int indexOf = sdQuery.getQuery().toLowerCase().lastIndexOf(statement);
 
-        if (indexOf != -1) {
-            /*add totalCount to query to get count*/
-            StringBuilder subStringOfCount = new StringBuilder(sdQuery.getQuery().substring(0, indexOf));
-            subStringOfCount.append("WITH count(*) as totalCount ");
-
-            /*append totalCount to return statements*/
-            StringBuilder actualQuery = new StringBuilder(sdQuery.getQuery());
-            int indexOfAfter = actualQuery.toString().toLowerCase().lastIndexOf(statement) + statement.length();
-            actualQuery.insert(indexOfAfter + 1, "totalCount, ");
-
-            /*finally combine both string */
-            String finalString = subStringOfCount.append(actualQuery).toString();
-            log.debug("getDynamicallyAddedCountClauseQuery.exit; count query appended : {}", finalString);
-            return finalString;
-        } else {
+        if (indexOf == -1) {
+            // no need for count if no return
             return sdQuery.getQuery();
         }
+        
+        /*add totalCount to query to get count*/
+        StringBuilder subStringOfCount = new StringBuilder(sdQuery.getQuery().substring(0, indexOf));
+        subStringOfCount.append("WITH count(*) as totalCount ");
+
+        /*append totalCount to return statements*/
+        StringBuilder actualQuery = new StringBuilder(sdQuery.getQuery());
+        int indexOfAfter = actualQuery.toString().toLowerCase().lastIndexOf(statement) + statement.length();
+        actualQuery.insert(indexOfAfter + 1, "totalCount, ");
+
+        /*finally combine both string */
+        String finalString = subStringOfCount.append(actualQuery).toString();
+        log.debug("getDynamicallyAddedCountClauseQuery.exit; count query appended : {}", finalString);
+        return finalString;
     }
 
 
