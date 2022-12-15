@@ -4,10 +4,13 @@ import java.util.List;
 
 import apoc.util.Utils;
 import org.neo4j.configuration.GraphDatabaseSettings;
+import org.neo4j.configuration.GraphDatabaseSettings.LogQueryLevel;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.helpers.SocketAddress;
+import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Logging;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.springframework.boot.test.autoconfigure.Neo4jTestHarnessAutoConfiguration;
@@ -35,9 +38,11 @@ public class EmbeddedNeo4JConfig {
         log.info("starting Embedded Neo4J DB");
         Neo4j embeddedDatabaseServer = Neo4jBuilders.newInProcessBuilder()
                 .withDisabledServer()
+                .withConfig(BoltConnector.listen_address, new SocketAddress(BoltConnector.DEFAULT_PORT))
                 .withConfig(GraphDatabaseSettings.procedure_allowlist, List.of("gds.*", "n10s.*", "apoc.*"))
-                .withConfig(BoltConnector.listen_address, new SocketAddress(7687))
                 .withConfig(GraphDatabaseSettings.procedure_unrestricted, List.of("gds.*", "n10s.*", "apoc.*"))
+                .withConfig(GraphDatabaseSettings.log_queries_transaction_id, true)
+                .withConfig(GraphDatabaseSettings.log_queries_transactions_level, LogQueryLevel.VERBOSE)
                 // will be user for gds procedure
                 .withProcedure(GraphExistsProc.class) // gds.graph.exists procedure
                 .withProcedure(GraphListProc.class)
@@ -54,7 +59,8 @@ public class EmbeddedNeo4JConfig {
 
     @Bean(destroyMethod = "close")
     public Driver driver(Neo4j embeddedDatabaseServer) {
-        Driver driver = GraphDatabase.driver(embeddedDatabaseServer.boltURI());
+        Config config = Config.builder().withLogging(Logging.slf4j()).build();
+        Driver driver = GraphDatabase.driver(embeddedDatabaseServer.boltURI(), config);
         Session session = driver.session();
         Result result = session.run("CALL gds.graph.exists('neo4j');");
         if (result.hasNext()) {

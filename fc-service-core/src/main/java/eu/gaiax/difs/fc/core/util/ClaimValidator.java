@@ -2,7 +2,6 @@ package eu.gaiax.difs.fc.core.util;
 
 import eu.gaiax.difs.fc.core.exception.QueryException;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
-import liquibase.pro.packaged.E;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.datatypes.DatatypeFormatException;
@@ -13,7 +12,6 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RiotException;
-import org.apache.jena.util.iterator.ExtendedIterator;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,8 +52,9 @@ public class ClaimValidator {
      *
      * @param sdClaimList the set of claims to be validated
      * @return the claim as a formatted triple string
+     * @throws IOException 
      */
-    public Model validateClaims(List<SdClaim> sdClaimList) {
+    public Model validateClaims(List<SdClaim> sdClaimList) throws IOException {
         Model listClaims = ModelFactory.createDefaultModel();
         StringBuilder payload = new StringBuilder();
         for (SdClaim sdClaim : sdClaimList) {
