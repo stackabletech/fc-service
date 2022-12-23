@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initialscale=1.0">
     <title>Verify Self-Description</title>
-    <link href="css/jquery-ui.css" rel="stylesheet">
-    <script src="js/jquery-1.12.4.js"></script>
-    <script src="js/jquery-ui.js"></script>
+    <link href="css/jquery-ui.min.css" rel="stylesheet">
+    <script src="js/jquery-3.6.3.min.js"></script>
+    <script src="js/jquery-ui.min.js"></script>
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <style>
 
@@ -39,6 +39,7 @@
         <textarea id="content-target" placeholder="Please upload or copy paste"
                   style="width:800px;height:500px;"></textarea>
 
+        <br>
         <div class="form-check form-check-inline">
             <input checked class="form-check-input" id="verifySemantics" type="checkbox" value="true"/>
             <label class="form-check-label" for="verifySemantics"> Verify Semantics </label>
@@ -54,6 +55,7 @@
             <label class="form-check-label" for="verifySignatures"> Verify Signature </label>
         </div>
 
+        <br>
         <!--<br><br><br>-->
         <button class="btn btn-primary" onclick="verifySD()">Verify</button>
         <br>
