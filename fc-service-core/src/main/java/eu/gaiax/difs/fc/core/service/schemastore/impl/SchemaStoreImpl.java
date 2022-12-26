@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import javax.persistence.EntityExistsException;
 import javax.persistence.LockModeType;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileExistsException;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.RDFNode;
@@ -51,6 +50,7 @@ import org.apache.jena.vocabulary.OWL;
 import org.apache.jena.shacl.vocabulary.SHACLM;
 import org.apache.jena.vocabulary.OWL2;
 import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 
 /**
  *
@@ -74,16 +74,15 @@ public class SchemaStoreImpl implements SchemaStore {
   public int initializeDefaultSchemas() {
     Transaction tx = null;  
     try (Session session = sessionFactory.openSession()) {
-      Session currentSession = sessionFactory.openSession(); // getCurrentSession();
       int count = 0;
-      Long found = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
+      Long found = session.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
       if (found == 0) {
-        tx = currentSession.beginTransaction();
+        tx = session.beginTransaction();
         count += addSchemasFromDirectory("defaultschema/ontology");
         count += addSchemasFromDirectory("defaultschema/shacl");
-        currentSession.flush();
+        session.flush();
         log.info("initializeDefaultSchemas; added {} default schemas", count);
-        found = currentSession.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult(); // it returns 0 for some reason
+        found = session.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult(); // it returns 0 for some reason
         tx.commit();
       }
       log.info("initializeDefaultSchemas; {} schemas found in Schema DB", found);
@@ -111,12 +110,12 @@ public class SchemaStoreImpl implements SchemaStore {
   }
 
   /**
-   * Analyse the given schema character content.
+   * Analyze the given schema character content.
    *
    * @param schema The schema to analyse.
    * @return The analysis results.
    */
-  public SchemaAnalysisResult analyseSchema(ContentAccessor schema) {
+  public SchemaAnalysisResult analyzeSchema(ContentAccessor schema) {
     SchemaAnalysisResult result = new SchemaAnalysisResult();
     Set<String> extractedUrlsSet = new HashSet<>();
     Model model = ModelFactory.createDefaultModel();
@@ -201,7 +200,7 @@ public class SchemaStoreImpl implements SchemaStore {
   }
 
   public boolean isSchemaType(ContentAccessor schema, SchemaType type) {
-    SchemaAnalysisResult result = analyseSchema(schema);
+    SchemaAnalysisResult result = analyzeSchema(schema);
     return result.getSchemaType().equals(type);
   }
 
@@ -246,13 +245,13 @@ public class SchemaStoreImpl implements SchemaStore {
 
   @Override
   public boolean verifySchema(ContentAccessor schema) {
-    SchemaAnalysisResult result = analyseSchema(schema);
+    SchemaAnalysisResult result = analyzeSchema(schema);
     return result.isValid();
   }
 
   @Override
   public String addSchema(ContentAccessor schema) {
-    SchemaAnalysisResult result = analyseSchema(schema);
+    SchemaAnalysisResult result = analyzeSchema(schema);
     if (!result.isValid()) {
       throw new VerificationException("Schema is not valid: " + result.getErrorMessage());
     }
@@ -283,29 +282,18 @@ public class SchemaStoreImpl implements SchemaStore {
     try {
       log.debug("addSchema; SchemaId: {}, terms count: {}", schemaId, newRecord.getTerms().size());
       currentSession.persist(newRecord);
+      currentSession.flush();
     } catch (EntityExistsException ex) {
       throw new ConflictException("A schema with id " + schemaId + " already exists.");
     }
 
-    try {
-      fileStore.storeFile(nameHash, schema);
-    } catch (FileExistsException e) {
-      throw new ConflictException("The schema with the hash " + nameHash + " already exists in the file storage.", e);
-    } catch (final IOException exc) {
-      throw new ServerException("Error while adding schema to file storage: " + exc.getMessage());
-    } catch (Exception ex) {
-      log.error("addSchema.error; Failed to store new schema file: ", ex);
-      throw ex;
-    }
-
-    currentSession.flush();
     COMPOSITE_SCHEMAS.remove(result.getSchemaType());
     return schemaId;
   }
 
   @Override
   public void updateSchema(String identifier, ContentAccessor schema) {
-    SchemaAnalysisResult result = analyseSchema(schema);
+    SchemaAnalysisResult result = analyzeSchema(schema);
     String schemaId = result.getExtractedId();
     if (!result.isValid()) {
       throw new VerificationException("Schema is not valid.");
@@ -346,16 +334,10 @@ public class SchemaStoreImpl implements SchemaStore {
     existing.setContent(schema.getContentAsString());
     try {
       currentSession.update(existing);
+      currentSession.flush();
     } catch (EntityExistsException ex) {
       throw new ConflictException("Schema redefines terms.");
     }
-    try {
-      //Update schema file
-      fileStore.replaceFile(existing.getNameHash(), schema);
-    } catch (IOException ex) {
-      throw new RuntimeException("Failed to store schema file", ex);
-    }
-    currentSession.flush();
     COMPOSITE_SCHEMAS.remove(result.getSchemaType());
     // SDs will be revalidated in a separate thread.
   }
@@ -364,19 +346,18 @@ public class SchemaStoreImpl implements SchemaStore {
   public void deleteSchema(String identifier) {
     Session currentSession = sessionFactory.getCurrentSession();
     // Find and lock record.
-    SchemaRecord existing = currentSession.find(SchemaRecord.class, identifier, LockModeType.PESSIMISTIC_WRITE);
-    if (existing == null) {
+    String delete = "delete from schemafiles where schemaid = :schemaid returning schemaid, type";
+    Query<?> q = currentSession.createNativeQuery(delete);
+    q.setParameter("schemaid", identifier);
+    List<?> result = q.list();
+    log.debug("deleteSchema; delete result: {}", result);
+    if (result.size() == 0) {
       throw new NotFoundException("Schema with id " + identifier + " was not found");
     }
-    currentSession.delete(existing);
-    try {
-      fileStore.deleteFile(existing.getNameHash());
-    } catch (IOException ex) {
-      currentSession.clear();
-      throw new ServerException("Failed to delete schema from file store. (" + ex.getMessage() + ")");
-    }
+    Object[] values = (Object[]) result.get(0);
+    Integer type = (Integer) values[1];
     currentSession.flush();
-    COMPOSITE_SCHEMAS.remove(existing.getType());
+    COMPOSITE_SCHEMAS.remove(SchemaType.values()[type]);
   }
 
   @Override
@@ -398,11 +379,7 @@ public class SchemaStoreImpl implements SchemaStore {
     if (existing == null) {
       throw new NotFoundException("Schema with id " + identifier + " was not found");
     }
-    try {
-      return fileStore.readFile(existing.getNameHash());
-    } catch (IOException ex) {
-      throw new ServerException("File for Schema " + identifier + " does not exist.");
-    }
+    return new ContentAccessorDirect(existing.getContent());
   }
 
   @Override

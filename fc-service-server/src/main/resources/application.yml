@@ -78,7 +78,7 @@ logging:
   level:
     root: INFO
     eu.gaiax.difs.fc: DEBUG
-#    org.neo4j.driver: DEBUG
+    org.neo4j.driver: DEBUG
 #    org.springframework: DEBUG
     org.springframework.web: DEBUG
 #    org.springframework.security: DEBUG

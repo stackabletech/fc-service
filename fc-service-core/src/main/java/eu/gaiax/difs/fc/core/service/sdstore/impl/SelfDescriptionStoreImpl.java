@@ -1,45 +1,45 @@
 package eu.gaiax.difs.fc.core.service.sdstore.impl;
 
-import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
-import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.exception.NotFoundException;
+import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.Validator;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.persistence.EntityExistsException;
 import javax.persistence.LockModeType;
+import javax.persistence.PersistenceException;
+import javax.persistence.TemporalType;
+
 import lombok.extern.slf4j.Slf4j;
 
-import org.apache.commons.io.FileExistsException;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.jpa.TypedParameterValue;
 import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.vladmihalcea.hibernate.type.array.StringArrayType;
 import org.hibernate.Transaction;
+import org.hibernate.exception.ConstraintViolationException;
 
 /**
  * File system based implementation of the self-description store interface.
@@ -52,13 +52,6 @@ import org.hibernate.Transaction;
 @Transactional
 public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
-  /**
-   * The fileStore to use.
-   */
-  @Autowired
-  @Qualifier("sdFileStore")
-  private FileStore fileStore;
-
   @Autowired
   private SessionFactory sessionFactory;
 
@@ -67,16 +60,8 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
   @Override
   public ContentAccessor getSDFileByHash(final String hash) {
-    try {
-      return fileStore.readFile(hash);
-    } catch (final FileNotFoundException exc) {
-      log.error("Error in getSDFileByHash method: ", exc);
-      return null;
-    } catch (final IOException exc) {
-      log.error("failed reading self-description file with hash {}", hash);
-      // TODO: Need correct error handling if we get something other than FileNotFoundException
-      throw new ServerException("Failed reading self-description file with hash " + hash, exc);
-    }
+    SdMetaRecord meta = (SdMetaRecord) getByHash(hash);
+    return meta.getSelfDescription();
   }
 
   private void checkNonNull(final SdMetaRecord sdmRecord, final String hash) {
@@ -92,13 +77,6 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     final SdMetaRecord sdmRecord = currentSession.byId(SdMetaRecord.class).load(hash);
     checkNonNull(sdmRecord, hash);
     currentSession.detach(sdmRecord);
-    // FIXME: Inconsistent exception handling: IOException will be caught and null
-    //  returned; but NotFoundException will be propagated to caller.
-    final ContentAccessor sdFile = getSDFileByHash(hash);
-    if (sdFile == null) {
-      throw new ServerException("Self-Description with hash " + hash + " not found in the file storage.");
-    }
-    sdmRecord.setSelfDescription(sdFile);
     return sdmRecord;
   }
 
@@ -107,6 +85,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     private final Session currentSession;
     private final List<Clause> clauses;
     private final boolean fullMeta;
+    private final boolean returnContent;
     private int firstResult;
     private int maxResults;
 
@@ -134,9 +113,10 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       }
     }
 
-    private FilterQueryBuilder(final Session currentSession, final boolean fullMeta) {
+    private FilterQueryBuilder(final Session currentSession, final boolean fullMeta, final boolean returnContent) {
       this.currentSession = currentSession;
       this.fullMeta = fullMeta;
+      this.returnContent = returnContent;
       clauses = new ArrayList<>();
     }
 
@@ -167,9 +147,14 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     private String buildHqlQuery() {
       final StringBuilder hqlQuery;
       if (fullMeta) {
-        hqlQuery = new StringBuilder("select sdhash, subjectid, status, issuer, uploadtime, statustime, expirationtime, validators, null as content");
+        hqlQuery = new StringBuilder("select sdhash, subjectid, status, issuer, uploadtime, statustime, expirationtime, validators");
       } else {
-        hqlQuery = new StringBuilder("select sdhash, null as subjectid, null as status, null as issuer, null as uploadtime, null as statustime, null as expirationtime, null as validators, null as content");
+        hqlQuery = new StringBuilder("select sdhash, null as subjectid, null as status, null as issuer, null as uploadtime, null as statustime, null as expirationtime, null as validators");
+      }
+      if (returnContent) {
+        hqlQuery.append(", content");
+      } else {
+        hqlQuery.append(", null as content");  
       }
       hqlQuery.append(" from sdfiles");
       hqlQuery.append(" where 1=1");
@@ -217,7 +202,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
   public PaginatedResults<SelfDescriptionMetadata> getByFilter(final SdFilter filter, final boolean withMeta, final boolean withContent) {
     log.debug("getByFilter.enter; got filter: {}, withMeta: {}, withContent: {}", filter, withMeta, withContent);
     final Session currentSession = sessionFactory.getCurrentSession();
-    final FilterQueryBuilder queryBuilder = new FilterQueryBuilder(currentSession, withMeta);
+    final FilterQueryBuilder queryBuilder = new FilterQueryBuilder(currentSession, withMeta, withContent);
 
     final Instant uploadTimeStart = filter.getUploadTimeStart();
     if (uploadTimeStart != null) {
@@ -266,9 +251,6 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     queryBuilder.setMaxResults(filter.getLimit());
     Stream<SdMetaRecord> sdStream = queryBuilder.createQuery().stream()
         .peek(t -> currentSession.detach(t));
-    if (withContent) {
-      sdStream = sdStream.peek(t -> t.setSelfDescription(getSDFileByHash(t.getSdHash())));
-    }
     final List<SelfDescriptionMetadata> sdList = sdStream.collect(Collectors.toList());
     log.debug("getByFilter.exit; returning records: {}, total: {}", sdList.size(), totalCount.longValue());
     return new PaginatedResults<>(totalCount.longValue(), sdList);
@@ -279,112 +261,119 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     if (verificationResult == null) {
       throw new IllegalArgumentException("verification result must not be null");
     }
+    log.trace("storeSelfDescription.enter; got meta: {}", sdMetadata);
     final Session currentSession = sessionFactory.getCurrentSession();
-
-    final SdMetaRecord existingSd = currentSession
-        .createQuery("select sd from SdMetaRecord sd where sd.subjectId=?1 and sd.status=?2", SdMetaRecord.class)
-        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
-        .setTimeout(1)
-        .setParameter(1, sdMetadata.getId())
-        .setParameter(2, SelfDescriptionStatus.ACTIVE)
-        .uniqueResult();
-
-    final SdMetaRecord sdmRecord = new SdMetaRecord(sdMetadata);
+    String upsert = "with u as (update sdfiles set status = ?1, statustime = ?2\n" +
+            "where subjectid = ?3 and status = 0 returning ?4 sdhash, subjectid),\n" +
+            "i as (insert into sdfiles(sdhash, subjectid, issuer, uploadtime, statustime, expirationtime, status, content, validators)\n" +
+            "values (?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)\n" +
+            "returning sdhash)\n" +
+            "select u.subjectid, i.sdhash from i full join u on u.sdhash = i.sdhash";
+    Query<?> q = currentSession.createNativeQuery(upsert);
+    q.setParameter(1, SelfDescriptionStatus.DEPRECATED.ordinal());
+    q.setParameter(2, Instant.now());
+    q.setParameter(3, sdMetadata.getId());
+    q.setParameter(4, sdMetadata.getSdHash());
+    q.setParameter(5, sdMetadata.getSdHash());
+    q.setParameter(6, sdMetadata.getId());
+    q.setParameter(7, sdMetadata.getIssuer());
+    q.setParameter(8, sdMetadata.getUploadDatetime());
+    q.setParameter(9, sdMetadata.getStatusDatetime());
     final List<Validator> validators = verificationResult.getValidators();
-    final boolean registerValidators = sdMetadata.getValidatorDids() == null || sdMetadata.getValidatorDids().isEmpty();
-    if (validators != null) {
-      Instant expDateFirst = null;
+    Instant expDateFirst = null;
+    List<String> vaDids = sdMetadata.getValidatorDids();
+    if ((vaDids == null || vaDids.isEmpty()) && validators != null) {
+      Set<String> dids = new HashSet<>(validators.size());
       for (Validator validator : validators) {
         Instant expDate = validator.getExpirationDate();
         if (expDateFirst == null || expDate.isBefore(expDateFirst)) {
           expDateFirst = expDate;
         }
-        if (registerValidators) {
-          sdmRecord.addValidatorDidsItem(validator.getDidURI());
-        }
+        dids.add(validator.getDidURI());
       }
-      sdmRecord.setExpirationTime(expDateFirst);
+      if (!dids.isEmpty()) {
+        vaDids = new ArrayList<>(dids);
+      }
     }
+    q.setParameter(10, expDateFirst, TemporalType.TIMESTAMP);
+    q.setParameter(11, sdMetadata.getStatus().ordinal());
+    q.setParameter(12, sdMetadata.getSelfDescription().getContentAsString());
+    q.setParameter(13, (vaDids == null ? null : vaDids.toArray(new String[vaDids.size()])), StringArrayType.INSTANCE);
 
-    if (existingSd != null) {
-      existingSd.setStatus(SelfDescriptionStatus.DEPRECATED);
-      existingSd.setStatusDatetime(Instant.now());
-      currentSession.update(existingSd);
-      currentSession.flush();
-//      graphDb.deleteClaims(existingSd.getSubjectId());
-    }
+    List<?> result = null;
     try {
-//      graphDb.addClaims(verificationResult.getClaims(), sdmRecord.getSubjectId());
-      currentSession.persist(sdmRecord);
-    } catch (final EntityExistsException exc) {
-      log.error("storeSelfDescription.error 1: {}", sdMetadata.getSdHash(), exc);
-      final String message = String.format("self-description with hash %s already exists", sdMetadata.getSdHash());
-      throw new ConflictException(message);
+      result = q.list();
+    } catch (ConstraintViolationException ex) {
+      //log.error("storeSelfDescription.error 1: {}", sdMetadata.getSdHash(), ex);
+      // TODO: check for "sdfiles_pkey"
+      throw new ConflictException(String.format("self-description with hash %s already exists", sdMetadata.getSdHash()));
     } catch (Exception ex) {
+      if (ex.getCause() instanceof ConstraintViolationException) {
+        //log.error("storeSelfDescription.error 1.5: {}", sdMetadata.getSdHash(), ex);
+        // TODO: check for "idx_sd_file_is_active"
+        throw new ConflictException(String.format("active self-description with subjectId %s already exists", sdMetadata.getId()));
+      }
       log.error("storeSelfDescription.error 2", ex);
-      throw ex;
+      throw new ServerException(ex);
     }
-
-    try {
-      fileStore.storeFile(sdMetadata.getSdHash(), sdMetadata.getSelfDescription());
-      currentSession.flush();
-    } catch (FileExistsException e) {
-      throw new ConflictException("The SD file with the hash " + sdMetadata.getSdHash() + " already exists in the file storage.", e);
-    } catch (final IOException exc) {
-      throw new ServerException("Error while adding SD to file storage: " + exc.getMessage());
-    } catch (Exception ex) {
-      log.error("storeSelfDescription.error 3", ex);
-      throw ex;
+    log.trace("storeSelfDescription; upsert result: {}", result);
+    
+    Object[] values = (Object[]) result.get(0);
+    String subjectId = (String) values[0];
+    if (subjectId != null) {
+      graphDb.deleteClaims(subjectId);
     }
-
-    if (existingSd != null) {
-      graphDb.deleteClaims(existingSd.getSubjectId());
-    }
-    graphDb.addClaims(verificationResult.getClaims(), sdmRecord.getSubjectId());
+    graphDb.addClaims(verificationResult.getClaims(), sdMetadata.getId());
+    currentSession.flush();
   }
 
   @Override
   public void changeLifeCycleStatus(final String hash, final SelfDescriptionStatus targetStatus) {
     final Session currentSession = sessionFactory.getCurrentSession();
-    // Get a lock on the record.
-    // TODO: Investigate lock-less update.
-    final SdMetaRecord sdmRecord = currentSession.find(SdMetaRecord.class, hash, LockModeType.PESSIMISTIC_WRITE);
-    checkNonNull(sdmRecord, hash);
-    final SelfDescriptionStatus status = sdmRecord.getStatus();
-    if (status != SelfDescriptionStatus.ACTIVE) {
+    String update = "with u as (update sdfiles set status = :status, statustime = :status_dt\n" + 
+      "where sdhash = :hash and status = 0 returning sdhash, subjectid),\n" +
+      "o as (select sdhash, status from sdfiles where sdhash = :hash and status > 0)\n" +
+      "select u.subjectid, o.status from u full join o on o.sdhash = u.sdhash";
+    Query<?> q = currentSession.createNativeQuery(update);
+    q.setParameter("hash", hash);
+    q.setParameter("status", targetStatus.ordinal());
+    q.setParameter("status_dt", Instant.now());
+    List<?> result = q.list();
+    log.debug("changeLifeCycleStatus; update result: {}", result);
+    if (result.size() == 0) {
+      throw new NotFoundException("no self-description found for hash " + hash);
+    }
+    Object[] values = (Object[]) result.get(0);
+    String subjectId = (String) values[0];
+    if (subjectId == null) {
+      Integer status = (Integer) values[1];
       final String message = String.format(
-          "can not change status of self-description with hash %s: require status %s, but encountered status %s", hash,
-          SelfDescriptionStatus.ACTIVE, status);
+            "can not change status of self-description with hash %s: require status %s, but encountered status %s", hash,
+            SelfDescriptionStatus.ACTIVE, SelfDescriptionStatus.values()[status]);
       throw new ConflictException(message);
     }
-    sdmRecord.setStatus(targetStatus);
-    sdmRecord.setStatusDatetime(Instant.now());
-    currentSession.update(sdmRecord);
-
-    graphDb.deleteClaims(sdmRecord.getSubjectId());
+    graphDb.deleteClaims(subjectId);
     currentSession.flush();
   }
 
   @Override
   public void deleteSelfDescription(final String hash) {
     final Session currentSession = sessionFactory.getCurrentSession();
-    // Get a lock on the record.
-    final SdMetaRecord sdmRecord = currentSession.find(SdMetaRecord.class, hash);
-    checkNonNull(sdmRecord, hash);
-    final SelfDescriptionStatus status = sdmRecord.getStatus();
-    currentSession.delete(sdmRecord);
+    String delete = "delete from sdfiles where sdhash = :hash returning status, subjectid";
+    Query<?> q = currentSession.createNativeQuery(delete);
+    q.setParameter("hash", hash);
+    List<?> result = q.list();
+    log.debug("deleteSelfDescription; delete result: {}", result);
+    if (result.size() == 0) {
+      throw new NotFoundException("no self-description found for hash " + hash);
+    }
+    Object[] values = (Object[]) result.get(0);
+    Integer status = (Integer) values[0];
+    if (status == SelfDescriptionStatus.ACTIVE.ordinal()) {
+      String subjectId = (String) values[1];
+      graphDb.deleteClaims(subjectId);
+    }
     currentSession.flush();
-    try {
-      fileStore.deleteFile(hash);
-    } catch (final FileNotFoundException exc) {
-      log.info("no self-description file with hash {} found for deletion", hash);
-    } catch (final IOException exc) {
-      log.error("failed to delete self-description file with hash {}", hash, exc);
-    }
-
-    if (status == SelfDescriptionStatus.ACTIVE) {
-      graphDb.deleteClaims(sdmRecord.getSubjectId());
-    }
   }
 
   @Override
@@ -402,8 +391,8 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     final MutableInt count = new MutableInt();
     existingSds.forEach((sd) -> {
       try {
-        count.increment();
         changeLifeCycleStatus(sd.getSdHash(), SelfDescriptionStatus.EOL);
+        count.increment();
       } catch (ConflictException exc) {
         log.info("SD was set non-active before we could expire it. Hash: {}", sd.getSdHash());
       }
@@ -443,11 +432,6 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       } else {
         session.createNativeQuery("delete from sdfiles").executeUpdate();
       }
-    }
-    try {
-      fileStore.clearStorage();
-    } catch (IOException ex) {
-      log.error("SelfDescriptionStoreImpl: Exception while clearing FileStore: {}.", ex.getMessage());
     }
   }
 

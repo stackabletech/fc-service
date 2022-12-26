@@ -20,6 +20,8 @@ logging:
   level:
     root: INFO
     liquibase: INFO
+#    org.hibernate: DEBUG
+#    org.neo4j.driver: DEBUG
     eu.gaiax.difs.fc: DEBUG
 
 federated-catalogue:

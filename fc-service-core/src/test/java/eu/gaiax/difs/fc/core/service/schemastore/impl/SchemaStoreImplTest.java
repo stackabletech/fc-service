@@ -5,7 +5,6 @@ import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
-import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
 import static eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType.ONTOLOGY;
@@ -49,13 +48,13 @@ import org.springframework.transaction.annotation.Transactional;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
 @ActiveProfiles("tests-sdstore")
-@ContextConfiguration(classes = {SchemaManagementImplTest.TestApplication.class, FileStoreConfig.class,
-  SchemaManagementImplTest.class, SchemaStoreImpl.class, DatabaseConfig.class})
+@ContextConfiguration(classes = {SchemaStoreImplTest.TestApplication.class, FileStoreConfig.class,
+  SchemaStoreImplTest.class, SchemaStoreImpl.class, DatabaseConfig.class})
 @DirtiesContext
 @Transactional
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
-public class SchemaManagementImplTest {
+public class SchemaStoreImplTest {
 
   @SpringBootApplication
   public static class TestApplication {
@@ -71,13 +70,13 @@ public class SchemaManagementImplTest {
   @Autowired
   private SessionFactory sessionFactory;
 
-  @Autowired
-  @Qualifier("schemaFileStore")
-  private FileStore fileStore;
+  //@Autowired
+  //@Qualifier("schemaFileStore")
+  //private FileStore fileStore;
 
   @AfterEach
   public void storageSelfCleaning() throws IOException {
-    fileStore.clearStorage();
+    //fileStore.clearStorage();
   }
 
   public Set<String> getExtractedTermsSet(ContentAccessor extractedTerms) throws IOException {
@@ -97,7 +96,7 @@ public class SchemaManagementImplTest {
     ContentAccessor contentTerms = TestUtil.getAccessor(getClass(), pathTerms);
     ContentAccessor contentGraph = TestUtil.getAccessor(getClass(), pathGraph);
     Set<String> expectedExtractedUrlsSet = getExtractedTermsSet(contentTerms);
-    SchemaAnalysisResult result = schemaStore.analyseSchema(contentGraph);
+    SchemaAnalysisResult result = schemaStore.analyzeSchema(contentGraph);
     boolean actual = schemaStore.isSchemaType(contentGraph, ONTOLOGY);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     actualExtractedUrlsSet.removeAll(expectedExtractedUrlsSet);
@@ -112,7 +111,7 @@ public class SchemaManagementImplTest {
     ContentAccessor contentTerms = TestUtil.getAccessor(getClass(), pathTerms);
     ContentAccessor contentGraph = TestUtil.getAccessor(getClass(), pathGraph);
     Set<String> expectedExtractedUrlsSet = getExtractedTermsSet(contentTerms);
-    SchemaAnalysisResult result = schemaStore.analyseSchema(contentGraph);
+    SchemaAnalysisResult result = schemaStore.analyzeSchema(contentGraph);
     boolean actual = schemaStore.isSchemaType(contentGraph, SHAPE);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     assertTrue(result.isValid());
@@ -129,7 +128,7 @@ public class SchemaManagementImplTest {
     expectedExtractedUrlsSet.add("http://w3id.org/gaia-x/validation#MeasureShape");
     String path = "Schema-Tests/valid-schemaShape.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
-    SchemaAnalysisResult result = schemaStore.analyseSchema(content);
+    SchemaAnalysisResult result = schemaStore.analyzeSchema(content);
     boolean actual = schemaStore.isSchemaType(content, SHAPE);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     assertTrue(result.isValid());
@@ -146,7 +145,7 @@ public class SchemaManagementImplTest {
     expectedExtractedUrlsSet.add("http://www.example.com/cat");
     String path = "Schema-Tests/validSkosWith2Urls.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
-    SchemaAnalysisResult result = schemaStore.analyseSchema(content);
+    SchemaAnalysisResult result = schemaStore.analyzeSchema(content);
     boolean actual = schemaStore.isSchemaType(content, VOCABULARY);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     String extractedIdActual = result.getExtractedId();
@@ -171,7 +170,7 @@ public class SchemaManagementImplTest {
     expectedExtractedUrlsSet.add("http://w3id.org/gaia-x/core#Contract");
     String path = "Schema-Tests/validOntology.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
-    SchemaAnalysisResult result = schemaStore.analyseSchema(content);
+    SchemaAnalysisResult result = schemaStore.analyzeSchema(content);
     boolean actual = schemaStore.isSchemaType(content, ONTOLOGY);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     String extractedIdActual = result.getExtractedId();
@@ -188,7 +187,7 @@ public class SchemaManagementImplTest {
   public void testNoOntologyIRI() {
     String path = "Schema-Tests/noOntologyIRI.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
-    SchemaAnalysisResult result = schemaStore.analyseSchema(content);
+    SchemaAnalysisResult result = schemaStore.analyzeSchema(content);
     String actual = result.getErrorMessage();
     String expected = "Schema is not supported";
     assertFalse(result.isValid());
@@ -201,7 +200,7 @@ public class SchemaManagementImplTest {
   public void testInvalidOntologyWith2IRI() {
     String path = "Schema-Tests/invalidOntologyWithTwoIRIs.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
-    SchemaAnalysisResult result = schemaStore.analyseSchema(content);
+    SchemaAnalysisResult result = schemaStore.analyzeSchema(content);
     String actual = result.getErrorMessage();
     String expected = "Ontology Schema has multiple Ontology IRIs";
     assertEquals(expected, actual);
@@ -215,7 +214,7 @@ public class SchemaManagementImplTest {
   public void testIsInvalidVocabulary() {
     String path = "Schema-Tests/skosConceptInvalid.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
-    SchemaAnalysisResult result = schemaStore.analyseSchema(content);
+    SchemaAnalysisResult result = schemaStore.analyzeSchema(content);
     String expected = "Vocabulary contains multiple concept schemes";
     assertFalse(result.isValid());
     assertNull(result.getExtractedId());
@@ -227,7 +226,7 @@ public class SchemaManagementImplTest {
   public void testIsInvalidSchema() {
     String path = "Schema-Tests/invalidSchema.ttl";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
-    SchemaAnalysisResult result = schemaStore.analyseSchema(content);
+    SchemaAnalysisResult result = schemaStore.analyzeSchema(content);
     String actual = result.getErrorMessage();
     String expected = "Schema is not supported";
     assertNull(result.getExtractedId());
@@ -241,7 +240,7 @@ public class SchemaManagementImplTest {
     expectedExtractedUrlsSet.add("http://w3id.org/gaia-x/validation#PhysicalResourceShape");
     String path = "Schema-Tests/validShacl.jsonld";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
-    SchemaAnalysisResult result = schemaStore.analyseSchema(content);
+    SchemaAnalysisResult result = schemaStore.analyzeSchema(content);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     assertTrue(result.isValid());
     assertNull(result.getExtractedId());
@@ -256,7 +255,7 @@ public class SchemaManagementImplTest {
     expectedExtractedUrlsSet.add("http://w3id.org/gaia-x/validation#PhysicalResourceShape");
     String path = "Schema-Tests/validShacl.rdfxml";
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
-    SchemaAnalysisResult result = schemaStore.analyseSchema(content);
+    SchemaAnalysisResult result = schemaStore.analyzeSchema(content);
     Set<String> actualExtractedUrlsSet = result.getExtractedUrls();
     assertTrue(result.isValid());
     assertNull(result.getExtractedId());
@@ -285,12 +284,8 @@ public class SchemaManagementImplTest {
     assertTermsEquals(
         "http://w3id.org/gaia-x/validation#PhysicalResourceShape",
         "http://w3id.org/gaia-x/validation#MeasureShape");
-    int count = TestUtil.countFilesInStore(fileStore);
-    assertEquals(1, count, "Storing one schama should result in exactly one file in the store.");
 
     schemaStore.deleteSchema(schemaId1);
-    count = TestUtil.countFilesInStore(fileStore);
-    assertEquals(0, count, "Deleting the only file should result in exactly 0 files in the store.");
   }
 
   private void assertTermsEquals(String... expectedTerms) {
@@ -377,25 +372,25 @@ public class SchemaManagementImplTest {
     assertTermsEquals(
         "http://w3id.org/gaia-x/validation#PhysicalResourceShape",
         "http://w3id.org/gaia-x/validation#MeasureShape");
-    assertEquals(TestUtil.getAccessor(getClass(), path2).getContentAsString(), fileStore.readFile(schemaId).getContentAsString(), "The content of the updated schema should be stored in the schema file.");
+    assertEquals(TestUtil.getAccessor(getClass(), path2).getContentAsString(), schemaStore.getSchema(schemaId).getContentAsString(), 
+            "The content of the updated schema should be stored in the schema DB.");
 
     schemaStore.updateSchema(schemaId, TestUtil.getAccessor(getClass(), path1));
     assertTermCountEquals(1);
     assertTermsEquals(
         "http://w3id.org/gaia-x/validation#PhysicalResourceShape");
-    assertEquals(TestUtil.getAccessor(getClass(), path1).getContentAsString(), fileStore.readFile(schemaId).getContentAsString(), "The content of the updated schema should be stored in the schema file.");
+    assertEquals(TestUtil.getAccessor(getClass(), path1).getContentAsString(), schemaStore.getSchema(schemaId).getContentAsString(), 
+            "The content of the updated schema should be stored in the schema DB.");
 
     schemaStore.deleteSchema(schemaId);
-    int count = TestUtil.countFilesInStore(fileStore);
-    assertEquals(0, count, "Deleting the only file should result in exactly 0 files in the store.");
   }
 
   @Test
   void addDeleteDefaultSchemas() {
     int initialized = schemaStore.initializeDefaultSchemas();
     assertEquals(3, initialized, "Expected different number of schemas initialized.");
-    int count = TestUtil.countFilesInStore(fileStore);
-    assertEquals(3, count, "Expected different number of files in the store.");
+    //int count = TestUtil.countFilesInStore(fileStore);
+    //assertEquals(3, count, "Expected different number of files in the store.");
     Map<SchemaType, List<String>> schemaList = schemaStore.getSchemaList();
     assertEquals(2, schemaList.get(SchemaType.ONTOLOGY).size());
     assertEquals(1, schemaList.get(SchemaType.SHAPE).size());
@@ -430,7 +425,7 @@ public class SchemaManagementImplTest {
 
     schemaStore.addSchema(TestUtil.getAccessor(getClass(), schemaPath1));
 
-    SchemaAnalysisResult schemaResult = schemaStore.analyseSchema(schema01Content);
+    SchemaAnalysisResult schemaResult = schemaStore.analyzeSchema(schema01Content);
     assertTrue(schemaResult.isValid());
 
     ContentAccessor compositeSchemaActual = schemaStore.getCompositeSchema(SHAPE);
@@ -445,7 +440,7 @@ public class SchemaManagementImplTest {
 
     schemaStore.addSchema(TestUtil.getAccessor(getClass(), schemaPath2));
 
-    schemaResult = schemaStore.analyseSchema(schema02Content);
+    schemaResult = schemaStore.analyzeSchema(schema02Content);
 
     compositeSchemaActual = schemaStore.getCompositeSchema(SHAPE);
 
