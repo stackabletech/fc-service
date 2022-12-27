@@ -13,15 +13,16 @@ import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
 @lombok.ToString
 public class GraphQuery {
     
-    private static final int QUERY_TIMEOUT = 5;
+    public static final int QUERY_TIMEOUT = 5;
 	
 	private final String query;
 	private Map<String, Object> params;
 	private QueryLanguage queryLanguage;
     private int timeout;
+    private boolean withTotalCount;
 
     public GraphQuery(String query, Map<String, Object> params) {
-      this(query, params, QueryLanguage.OPENCYPHER, QUERY_TIMEOUT);  
+      this(query, params, QueryLanguage.OPENCYPHER, QUERY_TIMEOUT, true);  
     }
     
 }
