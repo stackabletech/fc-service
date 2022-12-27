@@ -206,21 +206,23 @@ public class Neo4jGraphStore implements GraphStore {
             /*get string before statements and append count clause*/
             String statement = "return";
             int indexOf = sdQuery.getQuery().toLowerCase().lastIndexOf(statement);
-    
+
             if (indexOf == -1) {
                 // no need for count if no return
                 return sdQuery.getQuery();
             }
-            
+
             /*add totalCount to query to get count*/
-            StringBuilder subStringOfCount = new StringBuilder(sdQuery.getQuery().substring(0, indexOf));
+            StringBuffer subStringOfCount = new StringBuffer(sdQuery.getQuery().substring(0, indexOf));
             subStringOfCount.append("WITH count(*) as totalCount ");
-    
+
             /*append totalCount to return statements*/
-            StringBuilder actualQuery = new StringBuilder(sdQuery.getQuery());
+            StringBuffer actualQuery = new StringBuffer(sdQuery.getQuery());
             int indexOfAfter = actualQuery.toString().toLowerCase().lastIndexOf(statement) + statement.length();
-            actualQuery.insert(indexOfAfter + 1, "totalCount, ");
-    
+
+            if(sdQuery.getQuery().toLowerCase().lastIndexOf("return *") == -1) {
+                actualQuery.insert(indexOfAfter + 1, "totalCount, ");
+            }
             /*finally combine both string */
             String finalString = subStringOfCount.append(actualQuery).toString();
             log.debug("getDynamicallyAddedCountClauseQuery.exit; count query appended : {}", finalString);
