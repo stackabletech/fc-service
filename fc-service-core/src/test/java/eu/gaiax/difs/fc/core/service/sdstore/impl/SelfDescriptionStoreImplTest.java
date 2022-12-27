@@ -55,7 +55,7 @@ import org.springframework.test.context.ContextConfiguration;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
-@ActiveProfiles("tests-sdstore")
+@ActiveProfiles("test")
 @ContextConfiguration(classes = {SelfDescriptionStoreImplTest.TestApplication.class, //FileStoreConfig.class,
   SelfDescriptionStoreImpl.class, SelfDescriptionStoreImplTest.class, DatabaseConfig.class, Neo4jGraphStore.class})
 @Slf4j

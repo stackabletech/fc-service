@@ -28,8 +28,8 @@ import org.springframework.test.context.ContextConfiguration;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SpringBootTest
-@ActiveProfiles("tests-sdstore")
-@ContextConfiguration(classes = {FileStoreImplTest.TestApplication.class, FileStoreConfig.class}) //, FileStoreImplTest.class})
+@ActiveProfiles("test")
+@ContextConfiguration(classes = {FileStoreImplTest.TestApplication.class, FileStoreConfig.class}) 
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 public class FileStoreImplTest {
@@ -43,7 +43,7 @@ public class FileStoreImplTest {
   }
 
   @Autowired
-  @Qualifier("sdFileStore")
+  @Qualifier("schemaFileStore")
   private FileStore fileStore;
 
   private static final int TOTAL_FILE_COUNT = 1_000;

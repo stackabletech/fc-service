@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.persistence.LockModeType;
-import javax.persistence.PersistenceException;
 import javax.persistence.TemporalType;
 
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +33,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.jpa.TypedParameterValue;
 import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +57,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
   @Autowired
   private GraphStore graphDb;
+
+  @Value("${federated-catalogue.store.sd-in-graph:true}")
+  private boolean storeInGraph;
 
   @Override
   public ContentAccessor getSDFileByHash(final String hash) {
@@ -318,12 +321,14 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     }
     log.trace("storeSelfDescription; upsert result: {}", result);
     
-    Object[] values = (Object[]) result.get(0);
-    String subjectId = (String) values[0];
-    if (subjectId != null) {
-      graphDb.deleteClaims(subjectId);
+    if (storeInGraph) {
+      Object[] values = (Object[]) result.get(0);
+      String subjectId = (String) values[0];
+      if (subjectId != null) {
+        graphDb.deleteClaims(subjectId);
+      }
+      graphDb.addClaims(verificationResult.getClaims(), sdMetadata.getId());
     }
-    graphDb.addClaims(verificationResult.getClaims(), sdMetadata.getId());
     currentSession.flush();
   }
 
@@ -352,7 +357,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
             SelfDescriptionStatus.ACTIVE, SelfDescriptionStatus.values()[status]);
       throw new ConflictException(message);
     }
-    graphDb.deleteClaims(subjectId);
+    if (storeInGraph) {
+      graphDb.deleteClaims(subjectId);
+    }
     currentSession.flush();
   }
 
@@ -367,11 +374,14 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     if (result.size() == 0) {
       throw new NotFoundException("no self-description found for hash " + hash);
     }
-    Object[] values = (Object[]) result.get(0);
-    Integer status = (Integer) values[0];
-    if (status == SelfDescriptionStatus.ACTIVE.ordinal()) {
-      String subjectId = (String) values[1];
-      graphDb.deleteClaims(subjectId);
+    
+    if (storeInGraph) {
+      Object[] values = (Object[]) result.get(0);
+      Integer status = (Integer) values[0];
+      if (status == SelfDescriptionStatus.ACTIVE.ordinal()) {
+        String subjectId = (String) values[1];
+        graphDb.deleteClaims(subjectId);
+      }
     }
     currentSession.flush();
   }

@@ -26,8 +26,8 @@ spring:
       connectionTimeout: 30000
       idleTimeout: 600000
       maxLifetime: 1800000
-      minimumIdle: 5
-      maximumPoolSize: 25
+      minimumIdle: 8
+      maximumPoolSize: 128
   liquibase:
     change-log: classpath:/liquibase/master-changelog.xml
   main:
@@ -78,7 +78,7 @@ logging:
   level:
     root: INFO
     eu.gaiax.difs.fc: DEBUG
-    org.neo4j.driver: DEBUG
+#    org.neo4j.driver: DEBUG
 #    org.springframework: DEBUG
     org.springframework.web: DEBUG
 #    org.springframework.security: DEBUG
@@ -86,12 +86,14 @@ logging:
 federated-catalogue:
   scope: runtime
   file-store:
-    sd:
-      location: sdFiles
+#    sd:
+#      location: sdFiles
     schema:
       location: schemaFiles
     context-cache:
       location: contextCacheFiles
+  store:
+    sd-in-graph: true
   verification:
     participant:
       type: "https://w3id.org/gaia-x/core#Participant"
