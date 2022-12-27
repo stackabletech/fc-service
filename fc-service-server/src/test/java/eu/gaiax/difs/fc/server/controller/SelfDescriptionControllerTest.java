@@ -4,8 +4,6 @@ import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsS
 import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.SD_ADMIN_ROLE_WITH_PREFIX;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -91,6 +89,7 @@ public class SelfDescriptionControllerTest {
     private ObjectMapper objectMapper;
     @Autowired
     private SelfDescriptionStore sdStore;
+    // can't remove it for some reason, many tests fails with auth error
     @SpyBean(name = "sdFileStore")
     private FileStore fileStore;
 

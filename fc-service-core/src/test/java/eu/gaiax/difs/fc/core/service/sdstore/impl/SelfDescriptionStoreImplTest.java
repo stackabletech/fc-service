@@ -36,8 +36,6 @@ import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -73,9 +71,6 @@ public class SelfDescriptionStoreImplTest {
     }
   }
 
-  @Autowired
-  private SessionFactory sessionFactory;
-  
   @Autowired
   private SelfDescriptionStore sdStore;
 
@@ -172,9 +167,6 @@ public class SelfDescriptionStoreImplTest {
     final String content1 = "Some Test Content 1";
     final String content2 = "Some Test Content 2";
 
-    //Session session = sessionFactory.openSession();
-    //session.beginTransaction();
-    
     final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
         Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content1);
     final String hash1 = sdMeta1.getSdHash();
