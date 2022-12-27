@@ -52,7 +52,7 @@ import org.springframework.context.annotation.Import;
 @Slf4j
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@ActiveProfiles("tests-sdstore")
+@ActiveProfiles("test")
 @ContextConfiguration(classes = {RevalidationImplTest.TestApplication.class, RevalidationServiceImpl.class, FileStoreConfig.class, Neo4jGraphStore.class,
   VerificationServiceImpl.class, SchemaStoreImpl.class, DatabaseConfig.class, ValidatorCacheImpl.class, SelfDescriptionStoreImpl.class})
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)

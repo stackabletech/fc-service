@@ -1,7 +1,7 @@
 spring:
   config:
     activate:
-      on-profile: tests-sdstore
+      on-profile: test
    
   liquibase:
     change-log: classpath:/liquibase/master-changelog.xml
@@ -27,8 +27,8 @@ logging:
 federated-catalogue:
   scope: test
   file-store:
-    sd:
-      location: sdFiles
+#    sd:
+#      location: sdFiles
     schema:
       location: schemaFiles
     context-cache:

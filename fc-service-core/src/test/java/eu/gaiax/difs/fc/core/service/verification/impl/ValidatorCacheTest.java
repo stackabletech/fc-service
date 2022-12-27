@@ -30,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
-@ActiveProfiles("tests-sdstore")
+@ActiveProfiles("test")
 @ContextConfiguration(classes = {ValidatorCacheTest.TestApplication.class, ValidatorCacheImpl.class, DatabaseConfig.class, FileStoreConfig.class,
         VerificationServiceImpl.class, SchemaStoreImpl.class})
 @DirtiesContext

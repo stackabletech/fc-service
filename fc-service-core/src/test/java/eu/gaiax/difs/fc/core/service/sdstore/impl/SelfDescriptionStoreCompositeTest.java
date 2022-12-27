@@ -38,8 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.MethodName.class)
-@SpringBootTest
-@ActiveProfiles("tests-sdstore")
+@SpringBootTest //(properties = {"federated-catalogue.store.sd-in-graph=false"})
+@ActiveProfiles("test")
 @ContextConfiguration(classes = {SelfDescriptionStoreCompositeTest.TestApplication.class, FileStoreConfig.class, VerificationServiceImpl.class,
   SelfDescriptionStoreImpl.class, SelfDescriptionStoreCompositeTest.class, SchemaStoreImpl.class, DatabaseConfig.class, Neo4jGraphStore.class, ValidatorCacheImpl.class})
 @DirtiesContext
@@ -90,20 +90,19 @@ public class SelfDescriptionStoreCompositeTest {
   void test01StoreSelfDescription() throws Exception {
     log.info("test01StoreSelfDescription");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
-    ContentAccessor content = getAccessor("Claims-Extraction-Tests/providerTest.jsonld"); // participantSD.jsonld");
+    ContentAccessor content = getAccessor("Claims-Extraction-Tests/providerTest.jsonld");
     // Only verify semantics, not schema or signatures
     VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
     sdStore.storeSelfDescription(sdMeta, result);
 
     String hash = sdMeta.getSdHash();
-
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash), false);
 
+    String uri = "http://example.org/test-issuer";
     List<Map<String, Object>> claims = graphStore.queryData(
-        new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n), n", Map.of("uri", sdMeta.getId()))).getResults();
-    log.debug("test01StoreSelfDescription; got claims: {}", claims);
-    //Assertions.assertEquals(5, claims.size()); only 1 node found..
+        new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n), n", Map.of("uri", uri))).getResults();
+    Assertions.assertTrue(claims.size() > 0); 
 
     List<Map<String, Object>> hNodes = graphStore.queryData(
         new GraphQuery("MATCH (n)-[r:legalAddress]->(a {locality: $locality}) RETURN n, r, a", Map.of("locality", "Hamburg"))).getResults();
@@ -119,7 +118,7 @@ public class SelfDescriptionStoreCompositeTest {
     sdStore.deleteSelfDescription(hash);
 
     claims = graphStore.queryData(
-        new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n), n", Map.of("uri", sdMeta.getId()))).getResults();
+        new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n), n", Map.of("uri", uri))).getResults();
     Assertions.assertEquals(0, claims.size());
 
     Assertions.assertThrows(NotFoundException.class, () -> {

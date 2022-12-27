@@ -16,8 +16,8 @@ public class FileStoreConfig {
   @Value("${federated-catalogue.scope}")
   private String scope;
 
-  @Value("${federated-catalogue.file-store.sd.location}")
-  private String sdFilesLocation;
+  //@Value("${federated-catalogue.file-store.sd.location}")
+  //private String sdFilesLocation;
 
   @Value("${federated-catalogue.file-store.schema.location}")
   private String schemaFilesLocation;
@@ -26,17 +26,17 @@ public class FileStoreConfig {
   private String contextCacheFilesLocation;
 
   private final File TEMPORARY_FOLDER_FILE = Files.createTempDir(); // Files.newTemporaryFolder();
-  private final String TEMPORARY_FOLDER_PATH_SD = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testSdFiles";
+  //private final String TEMPORARY_FOLDER_PATH_SD = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testSdFiles";
   private final String TEMPORARY_FOLDER_PATH_SCHEMA = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testSchemaFiles"; 
   private final String TEMPORARY_FOLDER_PATH_CC = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testContextCache";
 
-  @Bean
-  public FileStore sdFileStore() {
-    if (scope.equals("test")) {
-      return new FileStoreImpl(TEMPORARY_FOLDER_PATH_SD);
-    }
-    return new FileStoreImpl(sdFilesLocation);
-  }
+  //@Bean
+  //public FileStore sdFileStore() {
+  //  if (scope.equals("test")) {
+  //    return new FileStoreImpl(TEMPORARY_FOLDER_PATH_SD);
+  //  }
+  //  return new FileStoreImpl(sdFilesLocation);
+  //}
 
   @Bean
   public FileStore schemaFileStore() {

@@ -90,7 +90,7 @@ public class SelfDescriptionControllerTest {
     @Autowired
     private SelfDescriptionStore sdStore;
     // can't remove it for some reason, many tests fails with auth error
-    @SpyBean(name = "sdFileStore")
+    @SpyBean(name = "schemaFileStore") // "sdFileStore")
     private FileStore fileStore;
 
     private static SelfDescriptionMetadata sdMeta;

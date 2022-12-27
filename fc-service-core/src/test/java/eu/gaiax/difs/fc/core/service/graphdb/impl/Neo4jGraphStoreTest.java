@@ -37,7 +37,7 @@ import eu.gaiax.difs.fc.core.pojo.SdClaim;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @EnableAutoConfiguration(exclude = {LiquibaseAutoConfiguration.class, DataSourceAutoConfiguration.class})
 @SpringBootTest
-@ActiveProfiles({"tests-sdstore"}) //"test", 
+@ActiveProfiles({"test"}) 
 @ContextConfiguration(classes = {Neo4jGraphStore.class})
 @Import(EmbeddedNeo4JConfig.class)
 public class Neo4jGraphStoreTest {
