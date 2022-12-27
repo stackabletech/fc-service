@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
 import eu.gaiax.difs.fc.core.exception.QueryException;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.AfterAll;
@@ -56,6 +57,31 @@ public class Neo4jGraphStoreTest {
         embeddedDatabaseServer.close();
     }
 
+    @Test
+    void testCypherQueriesSyntax() throws Exception {
+
+        List<SdClaim> sdClaimFile = loadTestClaims("Claims-Tests/claimsForQuery.nt");
+        List<Map<String, String>> resultListFull = new ArrayList<Map<String, String>>();
+        Map<String, String> mapFull = new HashMap<String, String>();
+        mapFull.put("n.uri", "http://w3id.org/gaia-x/indiv#serviceMVGPortal.json");
+        resultListFull.add(mapFull);
+        Map<String, String> mapFullES = new HashMap<String, String>();
+        mapFullES.put("n.uri", "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json");
+        resultListFull.add(mapFullES);
+        for (SdClaim sdClaim : sdClaimFile) {
+            List<SdClaim> sdClaimList = new ArrayList<>();
+            sdClaimList.add(sdClaim);
+            String credentialSubject = sdClaimList.get(0).getSubject();
+            graphGaia.addClaims(
+                    sdClaimList,
+                    credentialSubject.substring(1, credentialSubject.length() - 1));
+        }
+        GraphQuery query = new GraphQuery("MATCH (n) RETURN * LIMIT 25", Map.of(), 
+                QueryLanguage.OPENCYPHER, GraphQuery.QUERY_TIMEOUT, false);
+        List<Map<String, Object>> responseFull = graphGaia.queryData(query).getResults();
+        Assertions.assertEquals(6, responseFull.size());
+    }
+    
     /**
      * Given set of credentials connect to graph and upload self description.
      * Instantiate list of claims with subject predicate and object in N-triples

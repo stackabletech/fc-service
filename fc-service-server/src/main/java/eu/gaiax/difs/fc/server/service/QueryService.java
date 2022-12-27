@@ -47,13 +47,13 @@ public class QueryService implements QueryApiDelegate {
    * @return List of {@link Results}
    */
   @Override
-  public ResponseEntity<Results> query(QueryLanguage queryLanguage, Integer timeout, Statement statement) {
-    log.debug("query.enter; got queryLanguage: {}, timeout: {}, statement: {}", queryLanguage, timeout, statement);
+  public ResponseEntity<Results> query(QueryLanguage queryLanguage, Integer timeout, Boolean withTotalCount, Statement statement) {
+    log.debug("query.enter; got queryLanguage: {}, timeout: {}, totalCount: {}, statement: {}", queryLanguage, timeout, withTotalCount, statement);
     if (!checkIfLimitPresent(statement) && statement.getStatement().toLowerCase().indexOf("return") != -1) {
       addDefaultLimit(statement);
     }
-    PaginatedResults<Map<String, Object>> queryResultList =
-        graphStore.queryData(new GraphQuery(statement.getStatement(), statement.getParameters(), queryLanguage, timeout));
+    PaginatedResults<Map<String, Object>> queryResultList = graphStore.queryData(new GraphQuery(statement.getStatement(), 
+            statement.getParameters(), queryLanguage, timeout, withTotalCount));
     Results result = new Results((int) queryResultList.getTotalCount(), queryResultList.getResults());
     log.debug("query.exit; returning results: {}", result);
     return ResponseEntity.ok(result);

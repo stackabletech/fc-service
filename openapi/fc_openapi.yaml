@@ -666,6 +666,12 @@ paths:
             type: integer
             default: 5
           required: false
+        - in: query
+          name: withTotalCount
+          schema:
+            type: boolean
+            default: true
+          required: false
       security:
         - jwt: []
       requestBody:
