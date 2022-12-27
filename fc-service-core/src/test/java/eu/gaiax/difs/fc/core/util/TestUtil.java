@@ -11,7 +11,6 @@ import java.time.temporal.ChronoUnit;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
-import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 
 public class TestUtil {
 
@@ -43,12 +42,4 @@ public class TestUtil {
     }
   }
   
-  public static int countFilesInStore(FileStore store) {
-    int count = 0;
-    for (File file: store.getFileIterable()) {
-      count++;
-    }
-    return count;  
-  }
-    
 }

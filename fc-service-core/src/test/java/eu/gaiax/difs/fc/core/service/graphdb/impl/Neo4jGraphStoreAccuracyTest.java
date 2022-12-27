@@ -1,6 +1,5 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
-import apoc.coll.Coll;
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
@@ -8,7 +7,6 @@ import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
-import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaStoreImpl;
 import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
 import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
@@ -24,7 +22,6 @@ import java.util.*;
 
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -32,7 +29,6 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.runners.MethodSorters;
 import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
@@ -76,10 +72,6 @@ public class Neo4jGraphStoreAccuracyTest {
   @Autowired
   private VerificationServiceImpl verificationService;
 
-  @Autowired
-  @Qualifier("sdFileStore")
-  private FileStore fileStore;
-
   @BeforeAll
   void addDBEntries() throws Exception {
     initialiseAllDataBaseWithManuallyAddingSD();
@@ -88,11 +80,6 @@ public class Neo4jGraphStoreAccuracyTest {
   @AfterAll
   void closeNeo4j() {
     embeddedDatabaseServer.close();
-  }
-
-  @AfterEach
-  public void storageSelfCleaning() throws IOException {
-    fileStore.clearStorage();
   }
 
   @Test
@@ -320,8 +307,6 @@ public class Neo4jGraphStoreAccuracyTest {
   }
 
   private void initialiseAllDataBaseWithManuallyAddingSD() throws Exception {
-
-    fileStore.clearStorage();
 
     ContentAccessorDirect contentAccessor = new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME));
     VerificationResultOffering verificationResult =

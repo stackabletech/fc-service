@@ -76,7 +76,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.neo4j.harness.Neo4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -119,6 +118,8 @@ public class ParticipantsControllerTest {
   private ObjectMapper objectMapper;
   @Autowired
   private MockMvc mockMvc;
+  @Autowired
+  private SchemaStore schemaStore;
 
   @MockBean
   private KeycloakBuilder builder;
@@ -144,9 +145,6 @@ public class ParticipantsControllerTest {
   private RoleMappingResource roleMappingResource;
   @MockBean
   private RoleScopeResource roleScopeResource;
-
-  @Autowired
-  private SchemaStore schemaStore;
 
   private final String userId = "ae366624-8371-401d-b2c4-518d2f308a15";
   private final String DEFAULT_PARTICIPANT_FILE = "default_participant.json";

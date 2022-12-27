@@ -54,9 +54,9 @@ public class SchemaControllerTest {
   @Autowired
   private SchemaStore schemaStore;
 
-  @Autowired
-  @Qualifier("schemaFileStore")
-  private FileStore fileStore;
+  //@Autowired
+  //@Qualifier("schemaFileStore")
+  //private FileStore fileStore;
 
   String SCHEMA_REQUEST = "{\"ontologies\":null,\"shapes\":null,\"vocabularies\":null}";
 
