@@ -26,8 +26,8 @@ spring:
       connectionTimeout: 30000
       idleTimeout: 600000
       maxLifetime: 1800000
-      minimumIdle: 5
-      maximumPoolSize: 25
+      minimumIdle: 8
+      maximumPoolSize: 128
   liquibase:
     change-log: classpath:/liquibase/master-changelog.xml
   main:
