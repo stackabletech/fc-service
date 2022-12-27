@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width">
     <title>Query Self-Description</title>
-    <link href="css/jquery-ui.css" rel="stylesheet">
-    <script src="js/jquery-1.12.4.js"></script>
-    <script src="js/jquery-ui.js"></script>
+    <link href="css/jquery-ui.min.css" rel="stylesheet">
+    <script src="js/jquery-3.6.3.min.js"></script>
+    <script src="js/jquery-ui.min.js"></script>
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <style>
         html, body {
@@ -27,7 +27,7 @@
 
         .query-parameter-block {
             height: 250px;
-            width: 800px;
+            width: 850px;
             overflow: auto;
             border: 2px dotted black;
         }
@@ -85,7 +85,7 @@
         <br>
         <h4>Please write your query statement in textarea:</h4>
         <div class="content-target">
-            <textarea id="content-target" style="width:800px;height:180px;" placeholder="Please write your query statement"></textarea>
+            <textarea id="content-target" style="width:850px;height:180px;" placeholder="Please write your query statement"></textarea>
         </div>
         <div style="  display: flex;justify-content: flex-end;">
             <button class="btn btn-primary" onclick="querySD()">Submit</button>
@@ -93,7 +93,7 @@
         <div class="result">
             <label id="result-status" for="result" class="result-label"></label>
             <br>
-            <textarea id="result" style="width:800px;height:300px;" placeholder="Result of your query statement"></textarea>
+            <textarea id="result" style="width:850px;height:300px;" placeholder="Result of your query statement"></textarea>
         </div>
         <script>
             let parameterCount = 0;

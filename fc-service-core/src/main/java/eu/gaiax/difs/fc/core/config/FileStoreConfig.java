@@ -3,10 +3,12 @@ package eu.gaiax.difs.fc.core.config;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import java.io.File;
-import org.assertj.core.util.Files;
+//import org.assertj.core.util.Files;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import com.google.common.io.Files;
 
 @Configuration
 public class FileStoreConfig {
@@ -23,7 +25,7 @@ public class FileStoreConfig {
   @Value("${federated-catalogue.file-store.context-cache.location}")
   private String contextCacheFilesLocation;
 
-  private final File TEMPORARY_FOLDER_FILE = Files.newTemporaryFolder();
+  private final File TEMPORARY_FOLDER_FILE = Files.createTempDir(); // Files.newTemporaryFolder();
   private final String TEMPORARY_FOLDER_PATH_SD = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testSdFiles";
   private final String TEMPORARY_FOLDER_PATH_SCHEMA = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testSchemaFiles"; 
   private final String TEMPORARY_FOLDER_PATH_CC = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testContextCache";

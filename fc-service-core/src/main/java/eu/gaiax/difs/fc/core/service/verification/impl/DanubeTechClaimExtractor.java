@@ -25,35 +25,41 @@ public class DanubeTechClaimExtractor implements ClaimExtractor {
         List<SdClaim> claims = new ArrayList<>();
         VerifiablePresentation vp = VerifiablePresentation.fromJson(content.getContentAsString());
         Map<String, Object> vpm = vp.getJsonObject();
-        Map<String, Object> vcm;
+        List<Map<String, Object>> vcms;
         Object obj = vp.getJsonObject().get(JSONLD_TERM_VERIFIABLECREDENTIAL); 
         log.debug("extractClaims; got VC: {}", obj);
         if (obj instanceof Map) {
-            vcm = (Map<String, Object>) obj;
+            vcms = List.of((Map<String, Object>) obj);
         } else if (obj instanceof List) {
-            vcm = (Map<String, Object>) ((List) obj).get(0);
+            vcms = (List<Map<String, Object>>) obj;
         } else {
             // vc is a String ?
-            vcm = vpm;
+            vcms = List.of(vpm);
         }
         CredentialSubject cs;
-        obj = vcm.get(JSONLD_TERM_CREDENTIALSUBJECT);
-        log.debug("extractClaims; got CS: {}", obj);
-        if (obj instanceof Map) {
-            cs = CredentialSubject.fromMap((Map<String, Object>) obj);
-        } else if (obj instanceof List) {
-            cs = CredentialSubject.fromMap((Map<String, Object>) ((List) obj).get(0));
-        } else {
-            // cs is a String ?
-            return null; 
+        List<Map<String, Object>> csms;
+        for (Map<String, Object> vcm: vcms) {
+            obj = vcm.get(JSONLD_TERM_CREDENTIALSUBJECT);
+            log.debug("extractClaims; got CS: {}", obj);
+            if (obj instanceof Map) {
+                csms = List.of((Map<String, Object>) obj);
+            } else if (obj instanceof List) {
+                csms = (List<Map<String, Object>>) obj;
+            } else {
+                // cs is a String ?
+                continue;
+            }
+            
+            for (Map<String, Object> csm: csms) {
+                cs = CredentialSubject.fromMap(csm);
+                log.debug("extractClaims; CS claims: {}", cs.getClaims());
+                for (RdfNQuad nquad: cs.toDataset().toList()) {
+                    log.debug("extractClaims; got NQuad: {}", nquad);
+                    SdClaim claim = new SdClaim(rdf2String(nquad.getSubject()), rdf2String(nquad.getPredicate()), rdf2String(nquad.getObject()));
+                    claims.add(claim);
+                }
+            }
         }
-        log.debug("extractClaims; CS claims: {}", cs.getClaims());
-
-        for (RdfNQuad nquad: cs.toDataset().toList()) {
-          log.debug("extractClaims; got NQuad: {}", nquad);
-          SdClaim claim = new SdClaim(rdf2String(nquad.getSubject()), rdf2String(nquad.getPredicate()), rdf2String(nquad.getObject()));
-          claims.add(claim);
-        }  
         log.debug("extractClaims.exit; returning claims: {}", claims);
         return claims;
     }

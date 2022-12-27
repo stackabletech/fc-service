@@ -29,22 +29,22 @@
             ],
             "http://www.w3.org/2006/vcard/ns#country-name": [
               {
-                "@value": "Country"
+                "@value": "Russia"
               }
             ],
             "http://www.w3.org/2006/vcard/ns#locality": [
               {
-                "@value": "Town Name"
+                "@value": "Saint-Petersburg"
               }
             ],
             "http://www.w3.org/2006/vcard/ns#postal-code": [
               {
-                "@value": "1234"
+                "@value": "123456"
               }
             ],
             "http://www.w3.org/2006/vcard/ns#street-address": [
               {
-                "@value": "Street Name"
+                "@value": "pr. Sizova 22, 28"
               }
             ]
           }
@@ -56,34 +56,34 @@
             ],
             "http://www.w3.org/2006/vcard/ns#country-name": [
               {
-                "@value": "Country"
+                "@value": "Russia"
               }
             ],
             "http://www.w3.org/2006/vcard/ns#locality": [
               {
-                "@value": "Town Name"
+                "@value": "Saint-Petersburg"
               }
             ],
             "http://www.w3.org/2006/vcard/ns#postal-code": [
               {
-                "@value": "1234"
+                "@value": "123456"
               }
             ],
             "http://www.w3.org/2006/vcard/ns#street-address": [
               {
-                "@value": "Street Name"
+                "@value": "pr. Sizova 22, 28"
               }
             ]
           }
         ],
         "https://w3id.org/gaia-x/gax-trust-framework#legalName": [
           {
-            "@value": "Provider Name"
+            "@value": "T-Systems RUS"
           }
         ],
         "https://w3id.org/gaia-x/gax-trust-framework#registrationNumber": [
           {
-            "@value": "1234"
+            "@value": "TSI:12345"
           }
         ],
         "https://w3id.org/gaia-x/gax-trust-framework#subOrganisation": [
@@ -114,12 +114,12 @@
             "https://w3id.org/gaia-x/gax-trust-framework#content": [
               {
                 "@type": "http://www.w3.org/2001/XMLSchema#anyURI",
-                "@value": "http://example.org/tac"
+                "@value": "http://example.org/some-content"
               }
             ],
             "https://w3id.org/gaia-x/gax-trust-framework#hash": [
               {
-                "@value": "1234"
+                "@value": "content:1234"
               }
             ]
           }
@@ -155,22 +155,22 @@
             ],
             "http://www.w3.org/2006/vcard/ns#country-name": [
               {
-                "@value": "Country"
+                "@value": "Greece"
               }
             ],
             "http://www.w3.org/2006/vcard/ns#locality": [
               {
-                "@value": "Town Name"
+                "@value": "Thessaloniki"
               }
             ],
             "http://www.w3.org/2006/vcard/ns#postal-code": [
               {
-                "@value": "1234"
+                "@value": "a7890"
               }
             ],
             "http://www.w3.org/2006/vcard/ns#street-address": [
               {
-                "@value": "Street Name"
+                "@value": "Ministiry"
               }
             ]
           }
@@ -182,34 +182,34 @@
             ],
             "http://www.w3.org/2006/vcard/ns#country-name": [
               {
-                "@value": "Country"
+                "@value": "Greece"
               }
             ],
             "http://www.w3.org/2006/vcard/ns#locality": [
               {
-                "@value": "Town Name"
+                "@value": "Thessaloniki"
               }
             ],
             "http://www.w3.org/2006/vcard/ns#postal-code": [
               {
-                "@value": "1234"
+                "@value": "a7890"
               }
             ],
             "http://www.w3.org/2006/vcard/ns#street-address": [
               {
-                "@value": "Street Name"
+                "@value": "Ministiry"
               }
             ]
           }
         ],
         "https://w3id.org/gaia-x/gax-trust-framework#legalName": [
           {
-            "@value": "Provider Name"
+            "@value": "DTIT Greece"
           }
         ],
         "https://w3id.org/gaia-x/gax-trust-framework#registrationNumber": [
           {
-            "@value": "1234"
+            "@value": "DTIT_1234"
           }
         ],
         "https://w3id.org/gaia-x/gax-trust-framework#subOrganisation": [
@@ -240,12 +240,12 @@
             "https://w3id.org/gaia-x/gax-trust-framework#content": [
               {
                 "@type": "http://www.w3.org/2001/XMLSchema#anyURI",
-                "@value": "http://example.org/tac"
+                "@value": "http://example.org/other-content"
               }
             ],
             "https://w3id.org/gaia-x/gax-trust-framework#hash": [
               {
-                "@value": "1234"
+                "@value": "content:7890"
               }
             ]
           }

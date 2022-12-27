@@ -76,7 +76,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.neo4j.harness.Neo4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -106,9 +105,6 @@ public class ParticipantsControllerTest {
   @Autowired
   private WebApplicationContext context;
   @Autowired
-  @Qualifier("sdFileStore")
-  private FileStore fileStore;
-  @Autowired
   private SelfDescriptionStoreImpl selfDescriptionStore;
   @Autowired
   private Neo4j embeddedDatabaseServer;
@@ -122,6 +118,8 @@ public class ParticipantsControllerTest {
   private ObjectMapper objectMapper;
   @Autowired
   private MockMvc mockMvc;
+  @Autowired
+  private SchemaStore schemaStore;
 
   @MockBean
   private KeycloakBuilder builder;
@@ -147,9 +145,6 @@ public class ParticipantsControllerTest {
   private RoleMappingResource roleMappingResource;
   @MockBean
   private RoleScopeResource roleScopeResource;
-
-  @Autowired
-  private SchemaStore schemaStore;
 
   private final String userId = "ae366624-8371-401d-b2c4-518d2f308a15";
   private final String DEFAULT_PARTICIPANT_FILE = "default_participant.json";
@@ -206,7 +201,6 @@ public class ParticipantsControllerTest {
     assertEquals(PUBLIC_KEY_AS_JWK, partResult.getPublicKey());
     assertEquals(part.getSelfDescription(), partResult.getSelfDescription());
 
-    assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
     assertDoesNotThrow(() -> selfDescriptionStore.getByHash(part.getSdHash()));
   }
 
@@ -392,10 +386,6 @@ public class ParticipantsControllerTest {
                     .content(json))
             .andExpect(status().isConflict());
 
-    FileNotFoundException exception = assertThrows(FileNotFoundException.class,
-            () -> fileStore.readFile(partNew.getSdHash()));
-    assertEquals(FileNotFoundException.class, exception.getClass());
-
     NotFoundException exceptionSDStore = assertThrows(NotFoundException.class,
             () -> selfDescriptionStore.getByHash(partNew.getSdHash()));
     assertEquals(NotFoundException.class, exceptionSDStore.getClass());
@@ -415,10 +405,6 @@ public class ParticipantsControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json))
             .andExpect(status().is5xxServerError());
-
-    FileNotFoundException exception = assertThrows(FileNotFoundException.class,
-            () -> fileStore.readFile(part.getSdHash()));
-    assertEquals(FileNotFoundException.class, exception.getClass());
 
     Throwable exceptionSD = assertThrows(Throwable.class,
             () -> selfDescriptionStore.getByHash(part.getSdHash()));
@@ -453,7 +439,6 @@ public class ParticipantsControllerTest {
     assertEquals("did:example:holder", partResult.getName());
     assertEquals(PUBLIC_KEY_AS_JWK, partResult.getPublicKey());
 
-    assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
     assertDoesNotThrow(() -> selfDescriptionStore.getByHash(part.getSdHash()));
 
     SelfDescriptionMetadata metadata = selfDescriptionStore.getByHash(part.getSdHash());
@@ -515,10 +500,6 @@ public class ParticipantsControllerTest {
             .content(json))
             .andExpect(status().is5xxServerError());
 
-    Throwable exception = assertThrows(Throwable.class,
-            () -> fileStore.readFile(part.getSdHash()));
-    assertEquals(FileNotFoundException.class, exception.getClass());
-
     Throwable exceptionSD = assertThrows(Throwable.class,
             () -> selfDescriptionStore.getByHash(part.getSdHash()));
     assertEquals(NotFoundException.class, exceptionSD.getClass());
@@ -565,10 +546,6 @@ public class ParticipantsControllerTest {
     mockMvc.perform(MockMvcRequestBuilders.delete("/participants/{participantId}", partId))
             .andExpect(status().isNotFound());
 
-    Throwable exception = assertThrows(Throwable.class,
-            () -> fileStore.readFile(part.getSdHash()));
-    assertEquals(FileNotFoundException.class, exception.getClass());
-
     Throwable exceptionSD = assertThrows(Throwable.class,
             () -> selfDescriptionStore.getByHash(part.getSdHash()));
     assertEquals(NotFoundException.class, exceptionSD.getClass());
@@ -604,10 +581,6 @@ public class ParticipantsControllerTest {
     assertEquals("did:example:holder", participantMetaData.getName());
     assertEquals("did:example:holder#key", participantMetaData.getPublicKey());
 
-    Throwable exception = assertThrows(Throwable.class,
-            () -> fileStore.readFile(part.getSdHash()));
-    assertEquals(FileNotFoundException.class, exception.getClass());
-
     Throwable exceptionSD = assertThrows(Throwable.class,
             () -> selfDescriptionStore.getByHash(part.getSdHash()));
     assertEquals(NotFoundException.class, exceptionSD.getClass());
@@ -632,7 +605,6 @@ public class ParticipantsControllerTest {
 
     setupKeycloak(HttpStatus.SC_OK, part);
     setupKeycloakForUsers(HttpStatus.SC_NO_CONTENT, userOfParticipant, userId);
-    assertDoesNotThrow(() -> fileStore.readFile(part.getSdHash()));
     String partId = URLEncoder.encode(part.getId(), Charset.defaultCharset());
 
     String response = mockMvc
@@ -643,10 +615,6 @@ public class ParticipantsControllerTest {
             .getContentAsString();
     ParticipantMetaData participantMetaData = objectMapper.readValue(response, ParticipantMetaData.class);
     assertNotNull(participantMetaData);
-
-    Throwable exception = assertThrows(Throwable.class,
-            () -> fileStore.readFile(part.getSdHash()));
-    assertEquals(FileNotFoundException.class, exception.getClass());
 
     Throwable exceptionSD = assertThrows(Throwable.class,
             () -> selfDescriptionStore.getByHash(part.getSdHash()));

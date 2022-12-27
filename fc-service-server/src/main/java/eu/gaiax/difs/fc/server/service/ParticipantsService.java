@@ -17,12 +17,10 @@ import eu.gaiax.difs.fc.core.pojo.SdFilter;
 import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
 import eu.gaiax.difs.fc.core.pojo.Validator;
 import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
-import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.gaiax.difs.fc.core.service.validatorcache.ValidatorCache;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import eu.gaiax.difs.fc.server.generated.controller.ParticipantsApiDelegate;
-import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +28,9 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Implementation of the {@link ParticipantsApiDelegate} interface.
@@ -47,9 +42,6 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   private ParticipantDao partDao;
   @Autowired
   private ValidatorCache validatorCache;
-  @Autowired
-  @Qualifier("sdFileStore")
-  private FileStore fileStore;
   @Autowired
   private SelfDescriptionStore selfDescriptionStore;
   @Autowired
@@ -74,9 +66,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     SelfDescriptionMetadata selfDescriptionMetadata = pairResult.getRight();
 
     selfDescriptionStore.storeSelfDescription(selfDescriptionMetadata, verificationResult);
-
     ParticipantMetaData participantMetaData = toParticipantMetaData(verificationResult, selfDescriptionMetadata);
-    registerRollBackForFileStoreManuallyIfTransactionFail(participantMetaData);
 
     participantMetaData = partDao.create(participantMetaData);
     setParticipantPublicKey(participantMetaData);
@@ -219,9 +209,6 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     }
 
     selfDescriptionStore.storeSelfDescription(selfDescriptionMetadata, verificationResult);
-
-    registerRollBackForFileStoreManuallyIfTransactionFail(participantUpdated);
-
     ParticipantMetaData participantMetaData = partDao.update(participantId, participantUpdated)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
     log.debug("updateParticipant.exit; returning: {}", participantMetaData);
@@ -260,30 +247,6 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     log.debug("validateSelfDescription; SD metadata is: {}", selfDescriptionMetadata);
 
     return Pair.of(verificationResultParticipant, selfDescriptionMetadata);
-  }
-
-  /**
-   * Manually registering rollback for the file system when transactions was rolled-back as spring does not have
-   * rollback for file systems storage.
-   *
-   * @param part participant metadata to be rolled back.
-   */
-  private void registerRollBackForFileStoreManuallyIfTransactionFail(ParticipantMetaData part) {
-    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-      @Override
-      public void afterCompletion(int status) {
-        if (TransactionSynchronization.STATUS_ROLLED_BACK == status) {
-          try {
-            fileStore.deleteFile(part.getSdHash());
-            log.debug("registerRollBackForFileStoreManuallyIfTransactionFail; Rolling back file with hash: {}",
-                    part.getSdHash());
-            TransactionSynchronizationManager.clearSynchronization();
-          } catch (IOException ex) {
-            log.error(ex.getMessage(), ex);
-          }
-        }
-      }
-    });
   }
 
   private void setParticipantPublicKey(ParticipantMetaData participant) {
