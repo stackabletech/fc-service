@@ -252,6 +252,13 @@ public class SelfDescriptionStoreImplTest {
     SelfDescriptionMetadata byHash = sdStore.getByHash(hash);
     assertThatSdHasTheSameData(sdMeta, byHash, true);
 
+    List<Map<String, Object>> nodes = graphStore.queryData(new GraphQuery(
+        "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
+        Map.of("graphUri", "TestSd/1")
+    )).getResults();
+    log.debug("test03StoreDuplicateSelfDescription-1; got {} nodes", nodes.size());
+    Assertions.assertEquals(3, nodes.size());
+
     sdStore.changeLifeCycleStatus(hash, SelfDescriptionStatus.REVOKED);
     byHash = sdStore.getByHash(hash);
     assertEquals(SelfDescriptionStatus.REVOKED, byHash.getStatus(), "Status should have been changed to 'revoked'");
@@ -262,6 +269,24 @@ public class SelfDescriptionStoreImplTest {
     byHash = sdStore.getByHash(hash);
     assertEquals(SelfDescriptionStatus.REVOKED, byHash.getStatus(),
         "Status should not have been changed from 'revoked' to 'active'.");
+
+    nodes = graphStore.queryData(new GraphQuery(
+        "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
+        Map.of("graphUri", "TestSd/1")
+    )).getResults();
+    log.debug("test03StoreDuplicateSelfDescription-1; got {} nodes", nodes.size());
+    Assertions.assertEquals(0, nodes.size(), "Revoked SD should not appear in queries");
+
+    Assertions.assertThrows(ConflictException.class, () -> {
+      sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
+    }, "Adding the same SD after revokation should not be possible.");
+
+    nodes = graphStore.queryData(new GraphQuery(
+        "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
+        Map.of("graphUri", "TestSd/1")
+    )).getResults();
+    log.debug("test03StoreDuplicateSelfDescription-1; got {} nodes", nodes.size());
+    Assertions.assertEquals(0, nodes.size(), "Revoked SD should not appear in queries");
 
     sdStore.deleteSelfDescription(hash);
 
