@@ -122,7 +122,7 @@ public class Neo4jGraphStore implements GraphStore {
             return session.readTransaction(tx -> doQuery(tx, sdQuery), transactionConfig);
         } catch (Exception ex) {
             stamp = System.currentTimeMillis() - stamp;
-            log.error("queryData.error;", ex);
+            log.error("queryData.error: {}", ex.getMessage());
             if (ex.getMessage() != null && ex.getMessage().contains("dbms.transaction.timeout")) {
                 if (stamp > sdQuery.getTimeout() * 1000) {
                     throw new TimeoutException("query timeout (" + sdQuery.getTimeout() + " sec) exceeded)");
