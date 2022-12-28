@@ -147,11 +147,14 @@ public class VerificationServiceImpl implements VerificationService {
       boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException {
     log.debug("verifySelfDescription.enter; strict: {}, expectedType: {}, verifySemantics: {}, verifySchema: {}, verifySignatures: {}",
             strict, expectedType, verifySemantics, verifySchema, verifySignatures);
+    long stamp = System.currentTimeMillis();
 
     // syntactic validation
     VerifiablePresentation vp = parseContent(payload);
+    log.debug("verifySelfDescription; content parsed, time taken: {}", System.currentTimeMillis() - stamp);
 
     // semantic verification
+    long stamp2 = System.currentTimeMillis();
     TypedCredentials tcs;
     if (verifySemantics) {
       try {
@@ -165,6 +168,7 @@ public class VerificationServiceImpl implements VerificationService {
     } else {
       tcs = getCredentials(vp);
     }
+    log.debug("verifySelfDescription; credentials processed, time taken: {}", System.currentTimeMillis() - stamp2);
 
     if (tcs.isEmpty()) {
       throw new VerificationException("Semantic Error: no proper CredentialSubject found");
@@ -172,9 +176,9 @@ public class VerificationServiceImpl implements VerificationService {
 
     if (strict) {
       if (tcs.isParticipant()) {
-        //if (type.getRight()) {
-        //  throw new VerificationException("Semantic error: SD is both, a Participant and a Service Offering SD");
-        //}
+        if (tcs.isOffering()) {
+          throw new VerificationException("Semantic error: SD is both, Participant and Service Offering SD");
+        }
         if (expectedType == VRT_OFFERING) {
           throw new VerificationException("Semantic error: Expected Service Offering SD, got Participant SD");
         }
@@ -187,9 +191,10 @@ public class VerificationServiceImpl implements VerificationService {
       }
     }
 
+    stamp2 = System.currentTimeMillis();
     List<SdClaim> claims = extractClaims(payload);
+    log.debug("verifySelfDescription; claims extracted, time taken: {}", System.currentTimeMillis() - stamp2);
 
-    
     if (verifySemantics) {
       Set<String> subjects = new HashSet<>();
       Set<String> objects = new HashSet<>();
@@ -251,7 +256,8 @@ public class VerificationServiceImpl implements VerificationService {
           id, claims, validators);
     }
 
-    log.debug("verifySelfDescription.exit; returning: {}", result);
+    stamp = System.currentTimeMillis() - stamp;
+    log.debug("verifySelfDescription.exit; returning: {}; time taken: {}", result, stamp);
     return result;
   }
 
@@ -399,45 +405,47 @@ public class VerificationServiceImpl implements VerificationService {
    * @param shaclShape ContentAccessor of a union schemas of type SHACL
    * @return SemanticValidationResult object
    */
-  SemanticValidationResult validatePayloadAgainstSchema(ContentAccessor payload, ContentAccessor shaclShape) {
-     Model data = ModelFactory.createDefaultModel();
-     RDFParser.create()
-             .streamManager(getStreamManager())
-             .source(payload.getContentAsStream())
-             .lang(SD_LANG)
-             .parse(data);
+  SemanticValidationResult validatePayloadAgainstSchema(ContentAccessor payload, ContentAccessor shaclShape) {  
+    Model data = ModelFactory.createDefaultModel();
+    RDFParser.create()
+            .streamManager(getStreamManager())
+            .source(payload.getContentAsStream())
+            .lang(SD_LANG)
+            .parse(data);
 
-     Model shape = ModelFactory.createDefaultModel();
-     RDFParser.create()
-             .streamManager(getStreamManager())
-             .source(shaclShape.getContentAsStream())
-             .lang(SHAPES_LANG)
-             .parse(shape);
+    Model shape = ModelFactory.createDefaultModel();
+    RDFParser.create()
+            .streamManager(getStreamManager())
+            .source(shaclShape.getContentAsStream())
+            .lang(SHAPES_LANG)
+            .parse(shape);
 
-     Resource reportResource = ValidationUtil.validateModel(data, shape, true);
+    Resource reportResource = ValidationUtil.validateModel(data, shape, true);
+    data.close();
+    shape.close();
 
-     data.close();
-     shape.close();
-
-     boolean conforms = reportResource.getProperty(SH.conforms).getBoolean();
-     String report = null;
-     if (!conforms) {
-       report = reportResource.getModel().toString();
-     }
-
+    boolean conforms = reportResource.getProperty(SH.conforms).getBoolean();
+    String report = null;
+    if (!conforms) {
+      report = reportResource.getModel().toString();
+    }
     return new SemanticValidationResult(conforms, report);
   }
 
   @Override
   public SemanticValidationResult verifySelfDescriptionAgainstCompositeSchema(ContentAccessor payload) {
+    log.debug("verifySelfDescriptionAgainstCompositeSchema.enter;");
+    long stamp = System.currentTimeMillis();
     SemanticValidationResult result = null;
     try {
       ContentAccessor shaclShape = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
       result = validatePayloadAgainstSchema(payload, shaclShape);
-      log.debug("validationAgainstShacl.exit; conforms: {}; model: {}", result.isConforming(), result.getValidationReport());
     } catch (Exception exc) {
-      log.debug("Failed: ", exc);
+      log.info("verifySelfDescriptionAgainstCompositeSchema.error: {}", exc.getMessage());
     }
+    stamp = System.currentTimeMillis() - stamp;
+    log.debug("verifySelfDescriptionAgainstCompositeSchema.exit; conforms: {}, model: {}; time taken: {}", 
+    		result.isConforming(), result.getValidationReport(), stamp);
     return result;
   }
 
@@ -448,6 +456,7 @@ public class VerificationServiceImpl implements VerificationService {
   /* SD signatures verification */
   private List<Validator> checkCryptography(TypedCredentials tcs) {
     log.debug("checkCryptography.enter;");
+    long timestamp = System.currentTimeMillis();
 
     Set<Validator> validators = new HashSet<>();
     try {
@@ -461,7 +470,8 @@ public class VerificationServiceImpl implements VerificationService {
       log.error("checkCryptography.error", ex);
       throw new VerificationException("Signatures error; " + ex.getMessage(), ex);
     }
-    log.debug("checkCryptography.exit; returning: {}", validators);
+    timestamp = System.currentTimeMillis() - timestamp;
+    log.debug("checkCryptography.exit; returning: {}; time taken: {}", validators, timestamp);
     return new ArrayList<>(validators);
   }
 
@@ -714,6 +724,8 @@ public class VerificationServiceImpl implements VerificationService {
 		      continue;
 		    }
 		    creds.add(vc);
+		    // TODO: dont't think the next two lines are correct.. 
+		    // not sure we should override existing values
 		    isParticipant = p.getLeft();
 		    isOffering = p.getRight();
 		  }

@@ -27,7 +27,7 @@ public class TitaniumClaimExtractor implements ClaimExtractor {
         List<SdClaim> claims = new ArrayList<>();
         Document document = JsonDocument.of(content.getContentAsStream());
         JsonArray arr = JsonLd.expand(document).get();
-        //log.debug("extractClaims; expanded: {}", arr);
+        log.debug("extractClaims; expanded: {}", arr);
         JsonObject vp = arr.get(0).asJsonObject();
         JsonArray vcs = vp.get("https://www.w3.org/2018/credentials#verifiableCredential").asJsonArray();
         for (JsonValue vcv: vcs) {
