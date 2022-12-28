@@ -222,7 +222,7 @@ public class VerificationServiceImplTest {
     assertEquals("Signatures error; No proof found", ex.getMessage());
     assertNull(ex.getCause());
   }
-
+  
   @Test
   void invalidProof_UnknownVerificationMethod() throws Exception {
     log.debug("invalidProof_UnknownVerificationMethod");
@@ -230,7 +230,7 @@ public class VerificationServiceImplTest {
     String path = "VerificationService/sign/hasInvalidSignatureType.json";
 
     Exception ex = assertThrowsExactly(VerificationException.class, ()
-        -> verificationService.verifySelfDescription(getAccessor(path)));
+        -> verificationService.verifySelfDescription(getAccessor(path), false, true, true));
     assertEquals("Signatures error; Unknown Verification Method: https://example.edu/issuers/565049#key-1", ex.getMessage());
     assertNull(ex.getCause());
   }

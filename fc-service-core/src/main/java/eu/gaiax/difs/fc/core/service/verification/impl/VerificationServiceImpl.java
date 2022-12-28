@@ -188,25 +188,29 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     List<SdClaim> claims = extractClaims(payload);
-    Set<String> subjects = new HashSet<>();
-    Set<String> objects = new HashSet<>();
-    if (claims != null && !claims.isEmpty()) {
-      for (SdClaim claim : claims) {
-        subjects.add(claim.getSubject());
-        objects.add(claim.getObject());
-      }
-    }
-    subjects.removeAll(objects);
 
-    if (subjects.size() > 1) {
-      String sep = System.lineSeparator();
-      StringBuilder sb = new StringBuilder("Semantic Errors: There are different subject ids in credential subjects: ").append(sep);
-      for (String s : subjects) {
-        sb.append(s).append(sep);
+    
+    if (verifySemantics) {
+      Set<String> subjects = new HashSet<>();
+      Set<String> objects = new HashSet<>();
+      if (claims != null && !claims.isEmpty()) {
+        for (SdClaim claim : claims) {
+          subjects.add(claim.getSubject());
+          objects.add(claim.getObject());
+        }
       }
-      throw new VerificationException(sb.toString());
-    } else if (subjects.isEmpty()) {
-      throw new VerificationException("Semantic Errors: There is no uniquely identified credential subject");
+      subjects.removeAll(objects);
+
+      if (subjects.size() > 1) {
+        String sep = System.lineSeparator();
+        StringBuilder sb = new StringBuilder("Semantic Errors: There are different subject ids in credential subjects: ").append(sep);
+        for (String s : subjects) {
+          sb.append(s).append(sep);
+        }
+        throw new VerificationException(sb.toString());
+      } else if (subjects.isEmpty()) {
+        throw new VerificationException("Semantic Errors: There is no uniquely identified credential subject");
+      }
     }
 
     // schema verification
