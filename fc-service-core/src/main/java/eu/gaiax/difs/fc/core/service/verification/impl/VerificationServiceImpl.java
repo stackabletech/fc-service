@@ -187,42 +187,20 @@ public class VerificationServiceImpl implements VerificationService {
       }
     }
 
-    // schema verification
-    if (verifySchema) {
-      SemanticValidationResult result = verifySelfDescriptionAgainstCompositeSchema(payload);
-      if (result == null || !result.isConforming()) {
-        throw new VerificationException("Schema error: " + (result == null ? "unknown" : result.getValidationReport()));
-      }
-    }
-
-    List<Validator> validators;
-    // signature verification
-    if (verifySignatures) {
-      validators = checkCryptographic(tcs);
-    } else {
-      validators = null; //is it ok?
-    }
-
-    String id = tcs.getID();
-    String issuer = tcs.getIssuer();
-    Instant issuedDate = tcs.getIssuanceDate();
-
     List<SdClaim> claims = extractClaims(payload);
     Set<String> subjects = new HashSet<>();
     Set<String> objects = new HashSet<>();
-
     if (claims != null && !claims.isEmpty()) {
       for (SdClaim claim : claims) {
         subjects.add(claim.getSubject());
         objects.add(claim.getObject());
       }
     }
-
     subjects.removeAll(objects);
 
     if (subjects.size() > 1) {
       String sep = System.lineSeparator();
-      StringBuilder sb = new StringBuilder("Semantic Errors: There are different subjects ids in the credential subjects:").append(sep);
+      StringBuilder sb = new StringBuilder("Semantic Errors: There are different subject ids in credential subjects: ").append(sep);
       for (String s : subjects) {
         sb.append(s).append(sep);
       }
@@ -231,19 +209,36 @@ public class VerificationServiceImpl implements VerificationService {
       throw new VerificationException("Semantic Errors: There is no uniquely identified credential subject");
     }
 
+    // schema verification
+    if (verifySchema) {
+      SemanticValidationResult result = verifySelfDescriptionAgainstCompositeSchema(payload);
+      if (result == null || !result.isConforming()) {
+        throw new VerificationException("Schema error: " + (result == null ? "unknown" : result.getValidationReport()));
+      }
+    }
+    
+    // signature verification
+    List<Validator> validators;
+    if (verifySignatures) {
+      validators = checkCryptographic(tcs);
+    } else {
+      validators = null; //is it ok?
+    }
+    
+    String id = tcs.getID();
+    String issuer = tcs.getIssuer();
+    Instant issuedDate = tcs.getIssuanceDate();
+    
     VerificationResult result;
     if (tcs.isParticipant()) {
-      LdProof proof = vp.getLdProof();
-      URI method = proof == null ? null : proof.getVerificationMethod();
-      String methodName = method == null ? null : method.toString();
-
       if (issuer == null) {
         issuer = id;
       }
-      URI holder = vp.getHolder();
-      String name = holder == null ? issuer : holder.toString();
+      String method = tcs.getProofMethod();
+      String holder = tcs.getHolder();
+      String name = holder == null ? issuer : holder;
       result = new VerificationResultParticipant(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
-          claims, validators, name, methodName);
+          claims, validators, name, method);
     } else if (tcs.isOffering()) {
       result = new VerificationResultOffering(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
           id, claims, validators);
@@ -269,7 +264,7 @@ public class VerificationServiceImpl implements VerificationService {
   private TypedCredentials verifyPresentation(VerifiablePresentation presentation) {
     log.debug("verifyPresentation.enter; got presentation with id: {}", presentation.getId());
     StringBuilder sb = new StringBuilder();
-    String sep = System.getProperty("line.separator");
+    String sep = System.lineSeparator();
     if (checkAbsence(presentation, "@context")) {
       sb.append(" - VerifiablePresentation must contain '@context' property").append(sep);
     }
@@ -466,6 +461,7 @@ public class VerificationServiceImpl implements VerificationService {
     return new ArrayList<>(validators);
   }
 
+  @SuppressWarnings("unchecked")
   private Validator checkSignature(JsonLDObject payload) throws IOException, ParseException {
     Map<String, Object> proof_map = (Map<String, Object>) payload.getJsonObject().get("proof");
     if (proof_map == null) {
@@ -482,17 +478,17 @@ public class VerificationServiceImpl implements VerificationService {
 
   private Validator checkSignature(JsonLDObject payload, LdProof proof) throws IOException, ParseException {
     log.debug("checkSignature.enter; got payload: {}, proof: {}", payload, proof);
-    LdVerifier verifier;
+    LdVerifier<?> verifier;
     Validator validator = validatorCache.getFromCache(proof.getVerificationMethod().toString());
     if (validator == null) {
       log.debug("checkSignature; validator was not cached");
-      Pair<PublicKeyVerifier, Validator> pkVerifierAndValidator = null;
+      Pair<PublicKeyVerifier<?>, Validator> pkVerifierAndValidator = null;
       try {
         pkVerifierAndValidator = getVerifiedVerifier(proof);
       } catch (CertificateException e) {
         throw new VerificationException("Signatures error; " + e.getMessage(), e);
       }
-      PublicKeyVerifier publicKeyVerifier = pkVerifierAndValidator.getLeft();
+      PublicKeyVerifier<?> publicKeyVerifier = pkVerifierAndValidator.getLeft();
       validator = pkVerifierAndValidator.getRight();
       verifier = new JsonWebSignature2020LdVerifier(publicKeyVerifier);
       validatorCache.addToCache(validator);
@@ -515,12 +511,12 @@ public class VerificationServiceImpl implements VerificationService {
     return validator;
   }
 
-  private Pair<PublicKeyVerifier, Validator> getVerifiedVerifier(LdProof proof) throws IOException, CertificateException {
+  @SuppressWarnings("unchecked")
+  private Pair<PublicKeyVerifier<?>, Validator> getVerifiedVerifier(LdProof proof) throws IOException, CertificateException {
     log.debug("getVerifiedVerifier.enter;");
     URI uri = proof.getVerificationMethod();
-    String jwt = proof.getJws();
     JWK jwk;
-    PublicKeyVerifier pubKey;
+    PublicKeyVerifier<?> pubKey;
     Validator validator;
 
     if (!SIGNATURES.contains(proof.getType())) {
@@ -604,6 +600,7 @@ public class VerificationServiceImpl implements VerificationService {
     return new_map;
   }
 
+  @SuppressWarnings("unchecked")
   private Instant hasPEMTrustAnchorAndIsNotDeprecated(String uri) throws IOException, CertificateException {
     StringBuilder result = new StringBuilder();
     URL url = new URL(uri);
@@ -648,14 +645,14 @@ public class VerificationServiceImpl implements VerificationService {
     return exp;
   }
 
-  private LdVerifier getVerifierFromValidator(Validator validator) throws IOException, ParseException {
+  private LdVerifier<?> getVerifierFromValidator(Validator validator) throws IOException, ParseException {
     Map<String, Object> jwk_map_uncleaned = JsonLDObject.fromJson(validator.getPublicKey()).getJsonObject();
     Map<String, Object> jwk_map_cleaned = extractRelevantValues(jwk_map_uncleaned);
 
     // use from map and extract only relevant
     JWK jwk = JWK.fromMap(jwk_map_cleaned);
 
-    PublicKeyVerifier pubKey = PublicKeyVerifierFactory.publicKeyVerifierForKey(
+    PublicKeyVerifier<?> pubKey = PublicKeyVerifierFactory.publicKeyVerifierForKey(
         KeyTypeName_for_JWK.keyTypeName_for_JWK(jwk),
         (String) jwk_map_uncleaned.get("alg"),
         JWK_to_PublicKey.JWK_to_anyPublicKey(jwk));
@@ -695,6 +692,7 @@ public class VerificationServiceImpl implements VerificationService {
 		  initCredentials();
 	  }
 	  
+	  @SuppressWarnings("unchecked")
 	  private void initCredentials() {
 		Object obj = presentation.getJsonObject().get("verifiableCredential");  
 		List<VerifiableCredential> creds;
@@ -734,6 +732,14 @@ public class VerificationServiceImpl implements VerificationService {
 	  List<VerifiableCredential> getCredentials() {
 		  return credentials;
 	  }
+	  
+	  String getHolder() {
+		URI holder = presentation.getHolder();
+		if (holder == null) {
+		  return null;	
+		}
+		return holder.toString();
+	  }
 
 	  String getID() {
 		VerifiableCredential first = getFirstVC();
@@ -753,11 +759,11 @@ public class VerificationServiceImpl implements VerificationService {
 		if (first == null) {
 		  return null;	
 		}
-	    URI issuerUri = first.getIssuer();
-	    if (issuerUri == null) {
+	    URI issuer = first.getIssuer();
+	    if (issuer == null) {
 	      return null;
 	    }
-	    return issuerUri.toString();
+	    return issuer.toString();
 	  }
 	  
 	  Instant getIssuanceDate() {
@@ -774,6 +780,12 @@ public class VerificationServiceImpl implements VerificationService {
 	  
 	  VerifiablePresentation getPresentation() {
 		return presentation;
+	  }
+	  
+	  String getProofMethod() {
+        LdProof proof = presentation.getLdProof();
+	    URI method = proof == null ? null : proof.getVerificationMethod();
+	    return method == null ? null : method.toString();
 	  }
 	  
 	  boolean isEmpty() {
@@ -862,6 +874,7 @@ public class VerificationServiceImpl implements VerificationService {
 	    return false;
 	  }
 		  
+	  @SuppressWarnings("unchecked")
 	  private List<CredentialSubject> getSubjects(VerifiableCredential credential) {
 	    Object obj = credential.getJsonObject().get("credentialSubject");
 

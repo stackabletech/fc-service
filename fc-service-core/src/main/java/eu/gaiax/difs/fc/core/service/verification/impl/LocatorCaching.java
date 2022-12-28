@@ -32,19 +32,19 @@ class LocatorCaching implements Locator {
     if (cached != null) {
       return cached;
     }
-    log.debug("Downloading {}", uri);
+    log.debug("getAndCache; Downloading {}", uri);
     TypedInputStream tis = locatorHttp.open(uri);
     if (tis == null) {
       return null;
     }
     try {
-      log.debug("Storing content of {} as {}", uri, hash);
+      log.debug("getAndCache; Storing content of {} as {}", uri, hash);
       final String remoteBody = IOUtils.toString(tis, StandardCharsets.UTF_8);
       HttpDocument fromRemote = new HttpDocument(tis.getContentType(), tis.getBaseURI(), null, remoteBody);
       httpCache.storeInCache(uri, hash, fromRemote);
       return fromRemote;
     } catch (IOException ex) {
-      log.error("Failed to store downloaded content for {}", uri, ex);
+      log.error("getAndCache.error; Failed to store downloaded content for {}", uri, ex);
       return null;
     }
   }
