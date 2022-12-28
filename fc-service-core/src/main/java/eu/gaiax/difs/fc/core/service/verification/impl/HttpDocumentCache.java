@@ -24,23 +24,23 @@ public class HttpDocumentCache {
   public CachingHttpLoader.HttpDocument fetchFromCache(final String uri, final String hash) {
     try {
       final ContentAccessor cachedContent = fileStore.readFile(hash);
-      log.debug("Read cached version of {}", uri);
+      log.debug("fetchFromCache; Read cached version of {}", uri);
       return OBJECT_MAPPER.readValue(cachedContent.getContentAsStream(), CachingHttpLoader.HttpDocument.class);
     } catch (FileNotFoundException ex) {
-      log.trace("No cached version found of {}", uri);
+      log.debug("fetchFromCache.error 1; No cached version found of {}", uri);
     } catch (IOException ex) {
-      log.trace("Error reading cached version found of {}", uri, ex);
+      log.debug("fetchFromCache.error 2; Error reading cached version found of {}", uri, ex);
     }
     return null;
   }
 
   public void storeInCache(final String uri, final String hash, CachingHttpLoader.HttpDocument httpDocument) {
     try {
-      log.debug("Storing content of {} as {}", uri, hash);
+      log.debug("storeInCache; Storing content of {} as {}", uri, hash);
       ContentAccessorDirect content = new ContentAccessorDirect(OBJECT_MAPPER.writeValueAsString(httpDocument));
       fileStore.replaceFile(hash, content);
     } catch (IOException ex) {
-      log.error("Failed to store downloaded content for {}", uri, ex);
+      log.error("storeInCache.error; Failed to store downloaded content for {}", uri, ex);
     }
   }
 

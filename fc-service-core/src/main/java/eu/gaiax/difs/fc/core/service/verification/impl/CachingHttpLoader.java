@@ -150,7 +150,7 @@ class CachingHttpLoader implements DocumentLoader {
     if (httpDocument != null) {
       return httpDocument;
     }
-    log.debug("Downloading {}", uri);
+    log.debug("getAndCache; Downloading {}", uri);
     httpDocument = fetchRemoteDocument(uri, options);
     httpCache.storeInCache(uri.toString(), hash, httpDocument);
     return httpDocument;
