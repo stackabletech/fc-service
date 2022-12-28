@@ -224,7 +224,7 @@ public class VerificationServiceImpl implements VerificationService {
     // signature verification
     List<Validator> validators;
     if (verifySignatures) {
-      validators = checkCryptographic(tcs);
+      validators = checkCryptography(tcs);
     } else {
       validators = null; //is it ok?
     }
@@ -284,29 +284,29 @@ public class VerificationServiceImpl implements VerificationService {
       VerifiableCredential credential = credentials.get(i);
       if (credential != null) {
         if (checkAbsence(credential, "@context")) {
-          sb.append(" - VerifiableCredential [").append(i).append("] must contain '@context' property").append(sep);
+          sb.append(" - VerifiableCredential[").append(i).append("] must contain '@context' property").append(sep);
         }
         if (checkAbsence(credential, "type", "@type")) {
-          sb.append(" - VerifiableCredential [").append(i).append("] must contain 'type' property").append(sep);
+          sb.append(" - VerifiableCredential[").append(i).append("] must contain 'type' property").append(sep);
         }
         if (checkAbsence(credential, "credentialSubject")) {
-          sb.append(" - VerifiableCredential [").append(i).append("] must contain 'credentialSubject' property").append(sep);
+          sb.append(" - VerifiableCredential[").append(i).append("] must contain 'credentialSubject' property").append(sep);
         }
         if (checkAbsence(credential, "issuer")) {
-          sb.append(" - VerifiableCredential [").append(i).append("] must contain 'issuer' property").append(sep);
+          sb.append(" - VerifiableCredential[").append(i).append("] must contain 'issuer' property").append(sep);
         }
         if (checkAbsence(credential, "issuanceDate")) {
-          sb.append(" - VerifiableCredential [").append(i).append("] must contain 'issuanceDate' property").append(sep);
+          sb.append(" - VerifiableCredential[").append(i).append("] must contain 'issuanceDate' property").append(sep);
         }
 
         Date today = Date.from(Instant.now());
         Date issDate = credential.getIssuanceDate();
         if (issDate != null && issDate.after(today)) {
-          sb.append(" - 'issuanceDate' of VerifiableCredential [").append(i).append("] must be in the past").append(sep);
+          sb.append(" - 'issuanceDate' of VerifiableCredential[").append(i).append("] must be in the past").append(sep);
         }
         Date expDate = credential.getExpirationDate();
         if (expDate != null && expDate.before(today)) {
-          sb.append(" - 'expirationDate' of VerifiableCredential [").append(i).append("] must be in the future").append(sep);
+          sb.append(" - 'expirationDate' of VerifiableCredential[").append(i).append("] must be in the future").append(sep);
         }
       }
     }
@@ -446,8 +446,8 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   /* SD signatures verification */
-  private List<Validator> checkCryptographic(TypedCredentials tcs) {
-    log.debug("checkCryptographic.enter;");
+  private List<Validator> checkCryptography(TypedCredentials tcs) {
+    log.debug("checkCryptography.enter;");
 
     Set<Validator> validators = new HashSet<>();
     try {
@@ -458,10 +458,10 @@ public class VerificationServiceImpl implements VerificationService {
     } catch (VerificationException ex) {
       throw ex;
     } catch (Exception ex) {
-      log.error("checkCryptographic.error", ex);
+      log.error("checkCryptography.error", ex);
       throw new VerificationException("Signatures error; " + ex.getMessage(), ex);
     }
-    log.debug("checkCryptographic.exit; returning: {}", validators);
+    log.debug("checkCryptography.exit; returning: {}", validators);
     return new ArrayList<>(validators);
   }
 
@@ -481,7 +481,7 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   private Validator checkSignature(JsonLDObject payload, LdProof proof) throws IOException, ParseException {
-    log.debug("checkSignature.enter; got payload: {}, proof: {}", payload, proof);
+    log.debug("checkSignature.enter; got payload, proof: {}", proof);
     LdVerifier<?> verifier;
     Validator validator = validatorCache.getFromCache(proof.getVerificationMethod().toString());
     if (validator == null) {
@@ -606,6 +606,7 @@ public class VerificationServiceImpl implements VerificationService {
 
   @SuppressWarnings("unchecked")
   private Instant hasPEMTrustAnchorAndIsNotDeprecated(String uri) throws IOException, CertificateException {
+    log.debug("hasPEMTrustAnchorAndIsNotDeprecated.enter; got uri: {}", uri);
     StringBuilder result = new StringBuilder();
     URL url = new URL(uri);
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -646,6 +647,7 @@ public class VerificationServiceImpl implements VerificationService {
       throw new VerificationException("Signatures error; The trust anchor is not set in the registry. URI: " + uri);
     }
 
+    log.debug("hasPEMTrustAnchorAndIsNotDeprecated.exit; returning: {}", exp);
     return exp;
   }
 
