@@ -1,6 +1,7 @@
 package eu.gaiax.difs.fc.core.config;
 
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
+import eu.gaiax.difs.fc.core.service.filestore.impl.CacheFileStore;
 import eu.gaiax.difs.fc.core.service.filestore.impl.FileStoreImpl;
 import java.io.File;
 //import org.assertj.core.util.Files;
@@ -26,19 +27,21 @@ public class FileStoreConfig {
 
   @Bean
   public FileStore schemaFileStore() {
-    if (scope.equals("runtime")) {
-      return new FileStoreImpl(schemaFilesLocation);
-    }
-    String TEMPORARY_FOLDER_PATH_SCHEMA = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testSchemaFiles";	
-    return new FileStoreImpl(TEMPORARY_FOLDER_PATH_SCHEMA);
+    //if (scope.equals("runtime")) {
+    //  return new FileStoreImpl(schemaFilesLocation);
+    //}
+    //String TEMPORARY_FOLDER_PATH_SCHEMA = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testSchemaFiles";	
+    //return new FileStoreImpl(TEMPORARY_FOLDER_PATH_SCHEMA);
+	  return new CacheFileStore();
   }
 
   @Bean
   public FileStore contextCacheFileStore() {
-    if (scope.equals("runtime")) {
-      return new FileStoreImpl(contextCacheFilesLocation);
-    }
-    String TEMPORARY_FOLDER_PATH_CC = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testContextCache";
-    return new FileStoreImpl(TEMPORARY_FOLDER_PATH_CC);
+    //if (scope.equals("runtime")) {
+    //  return new FileStoreImpl(contextCacheFilesLocation);
+    //}
+    //String TEMPORARY_FOLDER_PATH_CC = TEMPORARY_FOLDER_FILE.getAbsolutePath() + File.separator + "testContextCache";
+    //return new FileStoreImpl(TEMPORARY_FOLDER_PATH_CC);
+	  return new CacheFileStore();
   }
 }
