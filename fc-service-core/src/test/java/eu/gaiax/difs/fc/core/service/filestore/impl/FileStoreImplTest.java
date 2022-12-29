@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ import org.springframework.test.context.ContextConfiguration;
 @ContextConfiguration(classes = {FileStoreImplTest.TestApplication.class, FileStoreConfig.class}) 
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
+@Disabled
 public class FileStoreImplTest {
 
   @SpringBootApplication
