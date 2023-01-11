@@ -86,8 +86,8 @@ logging:
 federated-catalogue:
   scope: runtime
   file-store:
-#    sd:
-#      location: sdFiles
+    cached: true
+    cache-size: 128
     schema:
       location: schemaFiles
     context-cache:

@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
@@ -28,12 +27,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@SpringBootTest
+@SpringBootTest(properties = {"federated-catalogue.file-store.cached=false"})
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {FileStoreImplTest.TestApplication.class, FileStoreConfig.class}) 
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
-@Disabled
 public class FileStoreImplTest {
 
   @SpringBootApplication
