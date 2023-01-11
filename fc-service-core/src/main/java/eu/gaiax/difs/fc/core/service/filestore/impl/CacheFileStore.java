@@ -9,28 +9,33 @@ import org.apache.commons.io.FileExistsException;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
-//import eu.gaiax.difs.aas.cache.TriConsumer;
-//import eu.gaiax.difs.aas.cache.caffeine.CaffeineDataCache.DataListener;
+import eu.gaiax.difs.fc.core.exception.ConflictException;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CacheFileStore implements FileStore {
 
     private Cache<String, String> dataCache;
 	
-    public CacheFileStore() { //int cacheSize, Duration ttl, TriConsumer<K, V> synchronizer) {
-        dataCache = Caffeine.newBuilder().initialCapacity(128).build(); 
+    public CacheFileStore(int cacheSize) {
+        dataCache = Caffeine.newBuilder().initialCapacity(cacheSize).build();
+        log.info("<init>. initialized cached store with size: {}", cacheSize);
     }
     
 	@Override
 	public void storeFile(String hash, ContentAccessor content) throws IOException {
-		if (dataCache.asMap().putIfAbsent(hash, content.getContentAsString()) != null) {
-			throw new FileExistsException("A file for the hash " + hash + " already exists.");
+		try {
+		  dataCache.asMap().merge(hash, content.getContentAsString(), (k, v) -> {
+			throw new ConflictException("A file for the hash " + hash + " already exists.");
+		  });
+		} catch (ConflictException ex) {
+			throw new FileExistsException(ex.getMessage());
 		}
 	}
-
+	
 	@Override
 	public void replaceFile(String hash, ContentAccessor content) throws IOException {
 		dataCache.put(hash, content.getContentAsString());
@@ -54,7 +59,7 @@ public class CacheFileStore implements FileStore {
 
 	@Override
 	public Iterable<File> getFileIterable() {
-		// TODO Auto-generated method stub
+		// not used in runtime, so not required
 		return null;
 	}
 

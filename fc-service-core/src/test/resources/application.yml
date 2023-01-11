@@ -27,8 +27,7 @@ logging:
 federated-catalogue:
   scope: test
   file-store:
-#    sd:
-#      location: sdFiles
+    cached: true
     schema:
       location: schemaFiles
     context-cache:

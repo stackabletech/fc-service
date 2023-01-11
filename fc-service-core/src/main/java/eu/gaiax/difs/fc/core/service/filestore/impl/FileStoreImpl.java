@@ -30,7 +30,6 @@ import org.apache.commons.io.FileExistsException;
  * Stores and retrieves files identified by a hash.
  */
 @Slf4j
-//@Component
 public class FileStoreImpl implements FileStore {
 
   @Value("${federated-catalogue.scope}")
@@ -55,7 +54,7 @@ public class FileStoreImpl implements FileStore {
 
   public FileStoreImpl(String storeName) {
     this.storeName = storeName;
-    log.info("<init>; initialized store with name: {}", storeName);
+    log.info("<init>; initialized file store with name: {}", storeName);
   }
 
   private final Map<String, Path> storePaths = new HashMap<>();

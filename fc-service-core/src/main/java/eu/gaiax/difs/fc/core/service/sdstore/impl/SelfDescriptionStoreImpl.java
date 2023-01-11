@@ -58,9 +58,6 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
   @Autowired
   private GraphStore graphDb;
 
-  @Value("${federated-catalogue.store.sd-in-graph:true}")
-  private boolean storeInGraph;
-
   @Override
   public ContentAccessor getSDFileByHash(final String hash) {
     SdMetaRecord meta = (SdMetaRecord) getByHash(hash);
@@ -321,14 +318,12 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     }
     log.trace("storeSelfDescription; upsert result: {}", result);
     
-    if (storeInGraph) {
-      Object[] values = (Object[]) result.get(0);
-      String subjectId = (String) values[0];
-      if (subjectId != null) {
-        graphDb.deleteClaims(subjectId);
-      }
-      graphDb.addClaims(verificationResult.getClaims(), sdMetadata.getId());
+    Object[] values = (Object[]) result.get(0);
+    String subjectId = (String) values[0];
+    if (subjectId != null) {
+      graphDb.deleteClaims(subjectId);
     }
+    graphDb.addClaims(verificationResult.getClaims(), sdMetadata.getId());
     currentSession.flush();
   }
 
@@ -357,9 +352,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
             SelfDescriptionStatus.ACTIVE, SelfDescriptionStatus.values()[status]);
       throw new ConflictException(message);
     }
-    if (storeInGraph) {
-      graphDb.deleteClaims(subjectId);
-    }
+    graphDb.deleteClaims(subjectId);
     currentSession.flush();
   }
 
@@ -375,13 +368,11 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       throw new NotFoundException("no self-description found for hash " + hash);
     }
     
-    if (storeInGraph) {
-      Object[] values = (Object[]) result.get(0);
-      Integer status = (Integer) values[0];
-      if (status == SelfDescriptionStatus.ACTIVE.ordinal()) {
-        String subjectId = (String) values[1];
-        graphDb.deleteClaims(subjectId);
-      }
+    Object[] values = (Object[]) result.get(0);
+    Integer status = (Integer) values[0];
+    if (status == SelfDescriptionStatus.ACTIVE.ordinal()) {
+      String subjectId = (String) values[1];
+      graphDb.deleteClaims(subjectId);
     }
     currentSession.flush();
   }
