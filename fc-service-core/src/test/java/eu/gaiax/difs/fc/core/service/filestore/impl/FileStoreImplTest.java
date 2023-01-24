@@ -18,6 +18,7 @@ import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.neo4j.driver.springframework.boot.test.autoconfigure.Neo4jTestHarnessAutoConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
@@ -34,7 +35,7 @@ import org.springframework.test.context.ContextConfiguration;
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 public class FileStoreImplTest {
 
-  @SpringBootApplication
+  @SpringBootApplication(exclude = Neo4jTestHarnessAutoConfiguration.class)
   public static class TestApplication {
 
     public static void main(final String[] args) {

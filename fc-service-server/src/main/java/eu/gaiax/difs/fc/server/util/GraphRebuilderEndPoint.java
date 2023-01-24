@@ -32,3 +32,5 @@ public class GraphRebuilderEndPoint {
     return ResponseEntity.ok("graph-rebuild started successfully");
   }
 }
+
+//2023-01-11 10:53:06.212  WARN 1 --- [main] o.s.boot.actuate.endpoint.EndpointId     : Endpoint ID 'graph-rebuild' contains invalid characters, please migrate to a valid format.
