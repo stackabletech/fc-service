@@ -15,12 +15,12 @@ spring:
           fc-client-oidc:
             provider: keycloak
             client-id: federated-catalogue 
-            client-secret: vZo1equicRl1UdxJDWCNNJWe6vJcm2Cg
+            client-secret: 4GKU50EsxlrpmMgGA4ayQ0s7MYtHSnJB
             authorization-grant-type: authorization_code
+            redirect-uri: https://fc-demo-server.gxfs.dev
         provider:
           keycloak:
-            issuer-uri: http://key-server:8080/realms/gaia-x
-#            jwk-set-uri: http://key-server:8080/realms/gaia-x/protocol/openid-connect/certs
+            issuer-uri: https://fc-key-server.gxfs.dev/realms/gaia-x
 
 federated-catalogue:
   base-uri: http://localhost:8081

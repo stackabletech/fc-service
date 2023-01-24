@@ -15,7 +15,7 @@
       "@type": [
         "VerifiableCredential"
       ],
-      "issuer": "http://gaiax.de",
+      "issuer": "http://gaiax.de",	
       "issuanceDate": "2022-10-19T18:48:09Z",
       "credentialSubject": {
         "@context": {

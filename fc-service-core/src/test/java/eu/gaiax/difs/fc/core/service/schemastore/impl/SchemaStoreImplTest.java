@@ -33,6 +33,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.neo4j.driver.springframework.boot.test.autoconfigure.Neo4jTestHarnessAutoConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -54,7 +55,7 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 public class SchemaStoreImplTest {
 
-  @SpringBootApplication
+  @SpringBootApplication(exclude = Neo4jTestHarnessAutoConfiguration.class)
   public static class TestApplication {
 
     public static void main(String[] args) {
