@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: fc-demo-portal-image
-          image: registry.gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/demo-portal
+          image: registry.gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/demo-portal:1.0.0
           imagePullPolicy: Always
           env:
             - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FC_CLIENT_OIDC_CLIENT_SECRET
