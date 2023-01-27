@@ -9,6 +9,7 @@ $(document).ready(function() {
                         alert(JSON.stringify(xhr.responseJSON));
                 }
              },
+            scrollX:        true,
             columns: [
                   { data: 'id' } ,
                   { data: 'participantId' },
