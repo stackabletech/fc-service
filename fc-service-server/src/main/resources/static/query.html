@@ -87,6 +87,10 @@
         <div class="content-target">
             <textarea id="content-target" style="width:850px;height:180px;" placeholder="Please write your query statement"></textarea>
         </div>
+        <div class="form-check form-check-inline">
+            <input checked class="form-check-input" id="totalCount" type="checkbox" value="true"/>
+            <label class="form-check-label" for="totalCount"> TotalCount </label>
+        </div>
         <div style="  display: flex;justify-content: flex-end;">
             <button class="btn btn-primary" onclick="querySD()">Submit</button>
         </div>
@@ -101,9 +105,11 @@
             <!--Post call for query sd to server -->
             function querySD() {
                 $('#result-status').text("");
+
                 if(!hasEmptyParams() && !hasEmptyQueryContent()) {
+                 var checkTotalCount = $("#totalCount").is(":checked") ? "true" : "false";
                     $('#result').text("");
-                    $.ajax('/query', {
+                    $.ajax('/query?withTotalCount='+checkTotalCount ,{
                         type: 'POST',  // http method
                         contentType: "application/json;charset=utf-8",
                         headers: {"query-language": "openCypher"},
