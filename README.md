@@ -18,7 +18,7 @@ To start with FC project please follow the instructions: [Steps to build FC](./d
 
 
 ## Roadmap
-The project development is done, we do release, pen and performance testing now.
+The project v1.0.0 released.
 
 ## Contributing
 If you want to contribute to the project - please request a membership at [Project Members](https://gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/-/project_members) section or drop an email to project maintainer [Denis Sukhoroslov](mailto:denis.sukhoroslov@t-systems.com).
