@@ -14,7 +14,7 @@ spring:
               - openid
 #              - profile
             authorization-grant-type: authorization_code
-            redirect-uri: https://fc-demo-server.gxfs.dev
+#            redirect-uri: https://fc-demo-server.gxfs.dev
         provider:
           auth-server:
             issuer-uri: https://auth-server.gxfs.dev
