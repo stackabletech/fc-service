@@ -17,7 +17,7 @@ spring:
             client-id: federated-catalogue 
             client-secret: 4GKU50EsxlrpmMgGA4ayQ0s7MYtHSnJB
             authorization-grant-type: authorization_code
-            redirect-uri: https://fc-demo-server.gxfs.dev
+#            redirect-uri: https://fc-demo-server.gxfs.dev
         provider:
           keycloak:
             issuer-uri: https://fc-key-server.gxfs.dev/realms/gaia-x
