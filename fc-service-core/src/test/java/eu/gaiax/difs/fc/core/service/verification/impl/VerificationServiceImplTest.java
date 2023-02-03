@@ -45,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {VerificationServiceImplTest.TestApplication.class, FileStoreConfig.class,
-  VerificationServiceImpl.class, SchemaStoreImpl.class, DatabaseConfig.class, ValidatorCacheImpl.class})
+        VerificationServiceImpl.class, SchemaStoreImpl.class, DatabaseConfig.class, ValidatorCacheImpl.class})
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 public class VerificationServiceImplTest {
 
@@ -75,7 +75,7 @@ public class VerificationServiceImplTest {
     String path = "VerificationService/syntax/missingQuote.jsonld";
     ContentAccessor content = getAccessor(path);
     Exception ex = assertThrowsExactly(ClientException.class, ()
-        -> verificationService.verifySelfDescription(content));
+            -> verificationService.verifySelfDescription(content));
     assertTrue(ex.getMessage().startsWith("Syntactic error: "));
     assertNotNull(ex.getCause());
   }
@@ -86,7 +86,7 @@ public class VerificationServiceImplTest {
     String path = "VerificationService/syntax/smallExample.jsonld";
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     Exception ex = assertThrowsExactly(VerificationException.class, ()
-        -> verificationService.verifySelfDescription(getAccessor(path)));
+            -> verificationService.verifySelfDescription(getAccessor(path)));
     assertTrue(ex.getMessage().contains("VerifiablePresentation must contain 'type' property"));
     assertTrue(ex.getMessage().contains("VerifiablePresentation must contain 'verifiableCredential' property"));
   }
@@ -201,14 +201,14 @@ public class VerificationServiceImplTest {
     assertNull(vrp.getValidatorDids());
     assertEquals(Instant.parse("2022-10-19T18:48:09Z"), vrp.getIssuedDateTime());
   }
-  
+
   @Test
   void invalidProof_InvalidSignatureType() throws Exception {
     log.debug("invalidProof_InvalidSignatureType");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     String path = "VerificationService/syntax/input.vp.jsonld";
     Exception ex = assertThrowsExactly(VerificationException.class, ()
-        -> verificationService.verifySelfDescription(getAccessor(path)));
+            -> verificationService.verifySelfDescription(getAccessor(path)));
     assertEquals("Signatures error; This proof type is not yet implemented: Ed25519Signature2018", ex.getMessage());
   }
 
@@ -219,11 +219,11 @@ public class VerificationServiceImplTest {
     String path = "VerificationService/sign/hasNoSignature1.json";
 
     Exception ex = assertThrowsExactly(VerificationException.class, ()
-        -> verificationService.verifySelfDescription(getAccessor(path), false, true, true));
+            -> verificationService.verifySelfDescription(getAccessor(path), false, true, true));
     assertEquals("Signatures error; No proof found", ex.getMessage());
     assertNull(ex.getCause());
   }
-  
+
   @Test
   void invalidProof_UnknownVerificationMethod() throws Exception {
     log.debug("invalidProof_UnknownVerificationMethod");
@@ -231,7 +231,7 @@ public class VerificationServiceImplTest {
     String path = "VerificationService/sign/hasInvalidSignatureType.json";
 
     Exception ex = assertThrowsExactly(VerificationException.class, ()
-        -> verificationService.verifySelfDescription(getAccessor(path), false, true, true));
+            -> verificationService.verifySelfDescription(getAccessor(path), false, true, true));
     assertEquals("Signatures error; Unknown Verification Method: https://example.edu/issuers/565049#key-1", ex.getMessage());
     assertNull(ex.getCause());
   }
@@ -243,7 +243,7 @@ public class VerificationServiceImplTest {
     String path = "VerificationService/sign/lacksSomeSignatures.json";
 
     Exception ex = assertThrowsExactly(VerificationException.class, ()
-        -> verificationService.verifySelfDescription(getAccessor(path)));
+            -> verificationService.verifySelfDescription(getAccessor(path)));
     assertEquals("Signatures error; No proof found", ex.getMessage());
     assertNull(ex.getCause());
   }
@@ -254,7 +254,7 @@ public class VerificationServiceImplTest {
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     String path = "VerificationService/sign/hasInvalidSignature.json";
     Exception ex = assertThrowsExactly(VerificationException.class, ()
-        -> verificationService.verifySelfDescription(getAccessor(path)));
+            -> verificationService.verifySelfDescription(getAccessor(path)));
     assertEquals("Signatures error; com.danubetech.verifiablecredentials.VerifiableCredential does not match with proof", ex.getMessage());
   }
 
@@ -332,7 +332,7 @@ public class VerificationServiceImplTest {
     assertEquals(expectedClaims.size(), actualClaims.size());
     assertEquals(expectedClaims, new HashSet<>(actualClaims));
   }
-    
+
   @Test
   void extractClaims_participantTwoVCsTest() throws Exception {
     log.debug("extractClaims_participantTwoVCsTest");
@@ -342,19 +342,19 @@ public class VerificationServiceImplTest {
     List<SdClaim> actualClaims = result.getClaims();
     log.debug("extractClaims_participantTest; actual claims: {}", actualClaims);
     List<SdClaim> expectedClaims = new ArrayList<>();
-    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://www.w3.org/2006/vcard/ns#Address>")); 
+    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://www.w3.org/2006/vcard/ns#Address>"));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#country-name>", "\"Country\""));
-    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#locality>", "\"Town Name\"")); 
-    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#postal-code>", "\"1234\"")); 
+    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#locality>", "\"Town Name\""));
+    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#postal-code>", "\"1234\""));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#street-address>", "\"Street Name\""));
-    expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#LegalPerson>")); 
+    expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#LegalPerson>"));
     expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://w3id.org/gaia-x/participant#headquarterAddress>", "_:b0"));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://www.w3.org/2006/vcard/ns#Address>"));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#country-name>", "\"Country\""));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#locality>", "\"Town Name\""));
     expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#postal-code>", "\"1234\""));
-    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#street-address>", "\"Street Name\"")); 
-    expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#LegalPerson>")); 
+    expectedClaims.add(new SdClaim("_:b0", "<http://www.w3.org/2006/vcard/ns#street-address>", "\"Street Name\""));
+    expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<http://w3id.org/gaia-x/participant#LegalPerson>"));
     expectedClaims.add(new SdClaim("<http://w3id.org/gaia-x/participant#Provider1>", "<http://w3id.org/gaia-x/participant#legalAddress>", "_:b0"));
     assertEquals(expectedClaims.size(), actualClaims.size());
     assertEquals(expectedClaims, actualClaims);
@@ -391,13 +391,32 @@ public class VerificationServiceImplTest {
   void verifyValidationResult() throws IOException {
     log.debug("verifyValidationResult");
     SemanticValidationResult validationResult = verificationService.validatePayloadAgainstSchema(
-        getAccessor("Validation-Tests/DataCenterDataGraph.jsonld"), getAccessor("Validation-Tests/physical-resourceShape.ttl"));
+            getAccessor("Validation-Tests/legalPersonError3.jsonld"), getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
 
     if (!validationResult.isConforming()) {
-      assertTrue(validationResult.getValidationReport().contains("Property needs to have at least 1 value"));
+      assertTrue(validationResult.getValidationReport().contains("Value must be a valid literal of type string"));
     } else {
       assertFalse(validationResult.isConforming());
     }
+  }
+
+  @Test
+  void verifyValidationResultError() throws IOException {
+    log.debug("verifyValidationResult");
+    SemanticValidationResult validationResult = verificationService.rdf4jvalidation(
+            getAccessor("Validation-Tests/legalPerson_one_VC_string.jsonld"), getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
+    assertFalse(validationResult.isConforming());
+
+  }
+
+  @Test
+  void verifyInvalidSDValidation_Result_Against_CompositeSchemaError() throws IOException {
+    log.debug("verifyInvalidSDValidation_Result_Against_CompositeSchema_bug");
+    schemaStore.addSchema(getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
+    schemaStore.addSchema(getAccessor("Validation-Tests/legal-personShape.ttl"));
+    SemanticValidationResult result = verificationService.getSemanticValidationResults(getAccessor("Validation-Tests/legalPersonError3.jsonld"));
+    assertFalse(result.isConforming(), "Validation should have failed.");
+    assertTrue(result.getValidationReport().contains("Value must be a valid literal of type string"));
   }
 
   @Test
@@ -410,13 +429,14 @@ public class VerificationServiceImplTest {
     assertTrue(result.getValidationReport().contains("Property needs to have at least 1 value"));
   }
 
+
   @Test
   void verifyValidVP_SDValidationCompositeSchema() throws IOException {
     log.debug("verifyValidVP_SDValidationCompositeSchema");
     schemaStore.addSchema(getAccessor("Validation-Tests/legal-personShape.ttl"));
-    schemaStore.addSchema(getAccessor("Schema-Tests/FirstValidSchemaShape.ttl"));
+    schemaStore.addSchema(getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
     SemanticValidationResult validationResult = verificationService.getSemanticValidationResults(
-        getAccessor("Claims-Extraction-Tests/providerTest.jsonld"));
+            getAccessor("Validation-Tests/legalPerson_one_VC.jsonld"));
     assertTrue(validationResult.isConforming());
   }
 }
