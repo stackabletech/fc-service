@@ -20,7 +20,7 @@ spring:
 #            redirect-uri: https://fc-demo-server.gxfs.dev
         provider:
           keycloak:
-            issuer-uri: https://fc-key-server.gxfs.dev/realms/gaia-x
+            issuer-uri: http://key-server:8080/realms/gaia-x
 
 federated-catalogue:
   base-uri: http://localhost:8081
