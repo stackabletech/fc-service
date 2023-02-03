@@ -2,6 +2,8 @@ package eu.gaiax.difs.fc.core.service.verification.impl;
 
 import com.apicatalog.jsonld.loader.DocumentLoader;
 import com.apicatalog.jsonld.loader.SchemeRouter;
+import com.apicatalog.rdf.RdfTriple;
+import com.apicatalog.rdf.RdfValue;
 import com.danubetech.keyformats.JWK_to_PublicKey;
 import com.danubetech.keyformats.crypto.PublicKeyVerifier;
 import com.danubetech.keyformats.crypto.PublicKeyVerifierFactory;
@@ -18,6 +20,7 @@ import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.verification.ClaimExtractor;
 import eu.gaiax.difs.fc.core.service.validatorcache.ValidatorCache;
+import eu.gaiax.difs.fc.core.service.verification.TripleExtractor;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.jsonld.JsonLDException;
@@ -35,24 +38,15 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.jena.datatypes.RDFDatatype;
+import org.apache.jena.datatypes.TypeMapper;
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.ontology.OntModelSpec;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.*;
-import org.apache.jena.riot.RDFFormat;
-//import org.eclipse.rdf4j.rio.RDFFormat;
-import org.apache.jena.riot.RDFWriter;
 import org.apache.jena.vocabulary.RDF;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-/*import org.eclipse.rdf4j.common.exception.ValidationException;
-import org.eclipse.rdf4j.model.vocabulary.RDF4J;
-import org.eclipse.rdf4j.repository.RepositoryException;
-import org.eclipse.rdf4j.repository.sail.SailRepository;
-import org.eclipse.rdf4j.repository.sail.SailRepositoryConnection;
-import org.eclipse.rdf4j.rio.Rio;
-import org.eclipse.rdf4j.sail.memory.MemoryStore;
-import org.eclipse.rdf4j.sail.shacl.ShaclSail;
-import org.eclipse.rdf4j.model.Model;*/
+
 import org.mapdb.Atomic;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,8 +67,6 @@ import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFParser;
@@ -83,7 +75,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 
 import static org.apache.jena.rdf.model.ResourceFactory.*;
-
 
 
 /**
@@ -97,6 +88,7 @@ public class VerificationServiceImpl implements VerificationService {
   private static final String CREDENTIAL_SUBJECT = "https://www.w3.org/2018/credentials#credentialSubject";
   private static final Set<String> SIGNATURES = Set.of("JsonWebSignature2020"); //, "Ed25519Signature2018");
   private static final ClaimExtractor[] extractors = new ClaimExtractor[]{new TitaniumClaimExtractor(), new DanubeTechClaimExtractor()};
+  private static final TripleExtractor[] TRIPLE_EXTRACTORS = new TripleExtractor[]{new TitaniumClaimExtractorNQuad(), new DanubeTechClaimExtractorNQuad()};
 
   private static final int VRT_UNKNOWN = 0;
   private static final int VRT_PARTICIPANT = 1;
@@ -387,6 +379,23 @@ public class VerificationServiceImpl implements VerificationService {
     }
     return claims;
   }
+  public List<RdfTriple> extractNquad(ContentAccessor payload) {
+    // Make sure our interceptors are in place.
+    initLoaders();
+    //TODO does it work with an Array of VCs
+    List<RdfTriple> claims = null;
+    for (TripleExtractor extra : TRIPLE_EXTRACTORS) {
+      try {
+        claims = extra.extractClaimsRDF(payload);
+        if (claims != null) {
+          break;
+        }
+      } catch (Exception ex) {
+        log.error("extractClaims.error using {}: {}", extra.getClass().getName(), ex.getMessage());
+      }
+    }
+    return claims;
+  }
 
   private void initLoaders() {
     if (!loadersInitialised) {
@@ -428,13 +437,8 @@ public class VerificationServiceImpl implements VerificationService {
    * @return SemanticValidationResult object
    */
   SemanticValidationResult validatePayloadAgainstSchema(ContentAccessor payload, ContentAccessor shaclShape) {
-    List<SdClaim>  claims = extractClaims (payload);
+    List<RdfTriple> rdfTriples = extractNquad(payload);
     Model data = ModelFactory.createDefaultModel();
-  /*  RDFParser.create()
-            .streamManager(getStreamManager())
-            .source(payload.getContentAsStream())
-            .lang(SD_LANG)
-            .parse(data);*/
     Model shape = ModelFactory.createDefaultModel();
     RDFParser.create()
             .streamManager(getStreamManager())
@@ -442,34 +446,27 @@ public class VerificationServiceImpl implements VerificationService {
             .lang(SHAPES_LANG)
             .parse(shape);
 
-    for (SdClaim claim: claims) {
-      Resource subject = data.createResource(claim.getSubject().replaceAll("\\p{Sm}",""));
-      Property predicate = data.createProperty(claim.getPredicate().replaceAll("\\p{Sm}",""));
-      Resource object = data.createResource(claim.getObject().replaceAll("\\p{Sm}","").replaceAll("\"",""));
+    for (RdfTriple claim: rdfTriples) {
+      System.out.println("Subject is :" + claim.getSubject());
+      System.out.println("predicate is :" + claim.getPredicate());
+      System.out.println("Object is :" + claim.getObject());
+      RdfValue object = claim.getObject();
+      if(object.isLiteral()) {
 
-      data.add(subject, predicate, object);
+        RDFDatatype objectType = TypeMapper.getInstance().getSafeTypeByName(object.asLiteral().getDatatype());
+        System.out.println("objectType is :" + objectType);
+        Literal objectLiteral = createTypedLiteral(object.getValue(),objectType);
+        Statement s = ResourceFactory.createStatement(createResource(claim.getSubject().getValue()), createProperty(claim.getPredicate().getValue()),
+                objectLiteral);
+        data.add(s);
+      } else {
+        Resource objectResource = createResource(object.getValue());
+        Statement s = ResourceFactory.createStatement(createResource(claim.getSubject().getValue()), createProperty(claim.getPredicate().getValue()),
+                objectResource);
+        data.add(s);
+      }
 
-    /* Statement s = ResourceFactory.createStatement(createResource(claim.getSubject().replaceAll("\\p{Sm}","")), createProperty(claim.getPredicate().replaceAll("\\p{Sm}","")),
-              createPlainLiteral(claim.getObject().replaceAll("\\p{Sm}","").replaceAll("\"","")));
-      data.add(s);*/
     }
-    Writer output1 = new StringWriter();
-
-    RDFWriter.create().format(RDFFormat.JSONLD).source(data).build().output(output1);
-
-    /*Model data1 = ModelFactory.createDefaultModel();
-    RDFParser.create()
-            .source(new StringReader(output1.toString()))
-            .lang(SD_LANG)
-            .parse(data1);*/
-    //data1.read(new StringReader(output1.toString()),null,SD_LANG.getLabel());*//*
-
-    RDFWriter.create()
-            .lang(Lang.TTL)
-            .source(data)
-            .output(System.out);
-
-
     Resource reportResource = ValidationUtil.validateModel(data, shape, true);
     data.close();
     shape.close();
@@ -482,57 +479,8 @@ public class VerificationServiceImpl implements VerificationService {
     data.close();
     shape.close();
     return new SemanticValidationResult(conforms, report);
-    //  return new SemanticValidationResult(true, " ");
+
   }
-
- /* public SemanticValidationResult rdf4jvalidation(ContentAccessor payload, ContentAccessor shaclShape) throws IOException {
-    ShaclSail shaclSail = new ShaclSail(new MemoryStore());
-    SemanticValidationResult result = new SemanticValidationResult(false , "");
-  *//*  Logger root = (Logger) LoggerFactory.getLogger(ShaclSail.class.getName());
-    root.setLevel(Level.INFO);
-
-    shaclSail.setLogValidationPlans(true);
-    shaclSail.setGlobalLogValidationExecution(true);
-    shaclSail.setLogValidationViolations(true);*//*
-
-    SailRepository sailRepository = new SailRepository(shaclSail);
-    sailRepository.init();
-
-    try (SailRepositoryConnection connection = sailRepository.getConnection()) {
-
-      connection.begin();
-
-
-      StringReader shaclRules = new StringReader(shaclShape.getContentAsString());
-
-
-      connection.add(shaclRules, "", RDFFormat.TURTLE, RDF4J.SHACL_SHAPE_GRAPH);
-      connection.commit();
-
-      connection.begin();
-
-
-      StringReader invalidSampleData = new StringReader(payload.getContentAsString());
-
-      connection.add(invalidSampleData, "", RDFFormat.JSONLD);
-
-      try {
-        connection.commit();
-      } catch (RepositoryException exception) {
-        Throwable cause = exception.getCause();
-        if (cause instanceof ValidationException) {
-          result.setConforming(false);
-          Model validationReportModel = ((ValidationException) cause).validationReportAsModel();
-          result.setValidationReport(validationReportModel.toString());
-          Rio.write(validationReportModel, System.out, RDFFormat.TURTLE);
-        }
-        throw exception;
-      }
-    }
-    result.setConforming(true);
-    return result;
-  }*/
-
 
   @Override
   public SemanticValidationResult verifySelfDescriptionAgainstCompositeSchema(ContentAccessor payload) {

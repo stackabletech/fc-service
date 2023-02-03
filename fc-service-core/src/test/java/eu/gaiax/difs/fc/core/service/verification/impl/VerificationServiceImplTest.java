@@ -388,46 +388,37 @@ public class VerificationServiceImplTest {
   }
 
   @Test
-  void verifyValidationResult() throws IOException {
+  void verifyValidationResultInvalid() throws IOException {
     log.debug("verifyValidationResult");
     SemanticValidationResult validationResult = verificationService.validatePayloadAgainstSchema(
-            getAccessor("Validation-Tests/legalPersonError3.jsonld"), getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
+            getAccessor("Validation-Tests/legalPerson_one_VC_Invalid.jsonld"), getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
 
     if (!validationResult.isConforming()) {
-      assertTrue(validationResult.getValidationReport().contains("Value must be a valid literal of type string"));
+      assertTrue(validationResult.getValidationReport().contains("Property needs to have at least 1 value"));
     } else {
       assertFalse(validationResult.isConforming());
     }
   }
 
   @Test
-  void verifyValidationResultError() throws IOException {
+  void verifyValidationResultValid() throws IOException {
     log.debug("verifyValidationResult");
-    SemanticValidationResult validationResult = verificationService.rdf4jvalidation(
-            getAccessor("Validation-Tests/legalPerson_one_VC_string.jsonld"), getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
-    assertFalse(validationResult.isConforming());
+    SemanticValidationResult validationResult = verificationService.validatePayloadAgainstSchema(
+            getAccessor("Validation-Tests/legalPerson_one_VC_Valid.jsonld"), getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
+    assertTrue(validationResult.isConforming());
 
-  }
-
-  @Test
-  void verifyInvalidSDValidation_Result_Against_CompositeSchemaError() throws IOException {
-    log.debug("verifyInvalidSDValidation_Result_Against_CompositeSchema_bug");
-    schemaStore.addSchema(getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
-    schemaStore.addSchema(getAccessor("Validation-Tests/legal-personShape.ttl"));
-    SemanticValidationResult result = verificationService.getSemanticValidationResults(getAccessor("Validation-Tests/legalPersonError3.jsonld"));
-    assertFalse(result.isConforming(), "Validation should have failed.");
-    assertTrue(result.getValidationReport().contains("Value must be a valid literal of type string"));
   }
 
   @Test
   void verifyInvalidSDValidation_Result_Against_CompositeSchema() throws IOException {
-    log.debug("verifyInvalidSDValidation_Result_Against_CompositeSchema");
-    schemaStore.addSchema(getAccessor("Schema-Tests/FirstValidSchemaShape.ttl"));
-    schemaStore.addSchema(getAccessor("Schema-Tests/SecondValidSchemaShape.ttl"));
-    SemanticValidationResult result = verificationService.getSemanticValidationResults(getAccessor("Validation-Tests/DataCenterDataGraph.jsonld"));
+    log.debug("verifyInvalidSDValidation_Result_Against_CompositeSchema_bug");
+    schemaStore.addSchema(getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
+    schemaStore.addSchema(getAccessor("Validation-Tests/legal-personShape.ttl"));
+    SemanticValidationResult result = verificationService.getSemanticValidationResults(getAccessor("Validation-Tests/legalPerson_one_VC_Invalid.jsonld"));
     assertFalse(result.isConforming(), "Validation should have failed.");
     assertTrue(result.getValidationReport().contains("Property needs to have at least 1 value"));
   }
+
 
 
   @Test
@@ -436,7 +427,7 @@ public class VerificationServiceImplTest {
     schemaStore.addSchema(getAccessor("Validation-Tests/legal-personShape.ttl"));
     schemaStore.addSchema(getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
     SemanticValidationResult validationResult = verificationService.getSemanticValidationResults(
-            getAccessor("Validation-Tests/legalPerson_one_VC.jsonld"));
+            getAccessor("Validation-Tests/legalPerson_one_VC_Valid.jsonld"));
     assertTrue(validationResult.isConforming());
   }
 }

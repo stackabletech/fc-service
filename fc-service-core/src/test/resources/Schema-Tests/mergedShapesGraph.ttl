@@ -2106,9 +2106,9 @@ gax-validation:InterconnectionShape a sh:NodeShape ;
         [ skos:example "'Copper cable', '5G'" ;
             sh:datatype xsd:string ;
             sh:description "a type of physical interface" ;
-            sh:name "interface.type" ;
+            sh:name "interfaceType" ;
             sh:order 2 ;
-            sh:path gax-trust-framework:interface.type ],
+            sh:path gax-trust-framework:interfaceType ],
         [ skos:example "'a MAC address', 'IP address'" ;
             sh:datatype xsd:string ;
             sh:description "The ID of the source of the connection." ;
