@@ -145,7 +145,7 @@ public class VerificationServiceImplTest {
     schemaStore.initializeDefaultSchemas();
     ContentAccessor content = getAccessor("VerificationService/syntax/serviceOffering2.jsonld");
     verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
-    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, false, false);
     verificationService.setTypes("http://w3id.org/gaia-x/participant#Participant", "http://w3id.org/gaia-x/service#ServiceOffering");
     assertNotNull(vr);
     assertTrue(vr instanceof VerificationResultOffering);
