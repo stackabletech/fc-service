@@ -55,7 +55,7 @@ public class DanubeTechClaimExtractor implements ClaimExtractor {
                 log.debug("extractClaims; CS claims: {}", cs.getClaims());
                 for (RdfNQuad nquad: cs.toDataset().toList()) {
                     log.debug("extractClaims; got NQuad: {}", nquad);
-                    SdClaim claim = new SdClaim(rdf2String(nquad.getSubject()), rdf2String(nquad.getPredicate()), rdf2String(nquad.getObject()));
+                    SdClaim claim = new SdClaim(nquad);
                     claims.add(claim);
                 }
             }

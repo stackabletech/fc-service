@@ -2,7 +2,6 @@ package eu.gaiax.difs.fc.core.service.verification.impl;
 
 import com.apicatalog.jsonld.loader.DocumentLoader;
 import com.apicatalog.jsonld.loader.SchemeRouter;
-import com.apicatalog.rdf.RdfTriple;
 import com.apicatalog.rdf.RdfValue;
 import com.danubetech.keyformats.JWK_to_PublicKey;
 import com.danubetech.keyformats.crypto.PublicKeyVerifier;
@@ -20,7 +19,6 @@ import eu.gaiax.difs.fc.core.service.filestore.FileStore;
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
 import eu.gaiax.difs.fc.core.service.verification.ClaimExtractor;
 import eu.gaiax.difs.fc.core.service.validatorcache.ValidatorCache;
-import eu.gaiax.difs.fc.core.service.verification.TripleExtractor;
 import eu.gaiax.difs.fc.core.service.verification.VerificationService;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.jsonld.JsonLDException;
@@ -47,8 +45,6 @@ import org.apache.jena.rdf.model.*;
 import org.apache.jena.vocabulary.RDF;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import org.mapdb.Atomic;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.topbraid.shacl.validation.ValidationUtil;
@@ -88,7 +84,6 @@ public class VerificationServiceImpl implements VerificationService {
   private static final String CREDENTIAL_SUBJECT = "https://www.w3.org/2018/credentials#credentialSubject";
   private static final Set<String> SIGNATURES = Set.of("JsonWebSignature2020"); //, "Ed25519Signature2018");
   private static final ClaimExtractor[] extractors = new ClaimExtractor[]{new TitaniumClaimExtractor(), new DanubeTechClaimExtractor()};
-  private static final TripleExtractor[] TRIPLE_EXTRACTORS = new TripleExtractor[]{new TitaniumClaimExtractorNQuad(), new DanubeTechClaimExtractorNQuad()};
 
   private static final int VRT_UNKNOWN = 0;
   private static final int VRT_PARTICIPANT = 1;
@@ -213,8 +208,8 @@ public class VerificationServiceImpl implements VerificationService {
       Set<String> objects = new HashSet<>();
       if (claims != null && !claims.isEmpty()) {
         for (SdClaim claim : claims) {
-          subjects.add(claim.getSubject());
-          objects.add(claim.getObject());
+          subjects.add(claim.getSubjectString());
+          objects.add(claim.getObjectString());
         }
       }
       subjects.removeAll(objects);
@@ -233,7 +228,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     // schema verification
     if (verifySchema) {
-      SemanticValidationResult result = verifySelfDescriptionAgainstCompositeSchema(payload);
+      SemanticValidationResult result = verifyClaimsAgainstCompositeSchema(claims);
       if (result == null || !result.isConforming()) {
         throw new VerificationException("Schema error: " + (result == null ? "unknown" : result.getValidationReport()));
       }
@@ -379,23 +374,6 @@ public class VerificationServiceImpl implements VerificationService {
     }
     return claims;
   }
-  public List<RdfTriple> extractNquad(ContentAccessor payload) {
-    // Make sure our interceptors are in place.
-    initLoaders();
-    //TODO does it work with an Array of VCs
-    List<RdfTriple> claims = null;
-    for (TripleExtractor extra : TRIPLE_EXTRACTORS) {
-      try {
-        claims = extra.extractClaimsRDF(payload);
-        if (claims != null) {
-          break;
-        }
-      } catch (Exception ex) {
-        log.error("extractClaims.error using {}: {}", extra.getClass().getName(), ex.getMessage());
-      }
-    }
-    return claims;
-  }
 
   private void initLoaders() {
     if (!loadersInitialised) {
@@ -428,6 +406,46 @@ public class VerificationServiceImpl implements VerificationService {
 
 
   /* SD validation against SHACL Schemas */
+  @Override
+  public SemanticValidationResult verifySelfDescriptionAgainstCompositeSchema(ContentAccessor payload) {
+    return verifySelfDescriptionAgainstSchema(payload, null);
+  }
+
+  @Override
+  public SemanticValidationResult verifySelfDescriptionAgainstSchema(ContentAccessor payload, ContentAccessor schema) {
+    log.debug("verifySelfDescriptionAgainstSchema.enter;");
+    long stamp = System.currentTimeMillis();
+    SemanticValidationResult result = null;
+    try {
+      if (schema == null) { 	
+        schema = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
+      }
+      List<SdClaim> claims = extractClaims(payload);
+      result = verifyClaimsAgainstSchema(claims, schema);
+    } catch (Exception exc) {
+      log.info("verifySelfDescriptionAgainstSchema.error: {}", exc.getMessage());
+    }
+    stamp = System.currentTimeMillis() - stamp;
+    log.debug("verifySelfDescriptionAgainstSchema.exit; conforms: {}, model: {}; time taken: {}",
+            result.isConforming(), result.getValidationReport(), stamp);
+    return result;
+  }
+  
+  private SemanticValidationResult verifyClaimsAgainstCompositeSchema(List<SdClaim> claims) {
+	log.debug("verifyClaimsAgainstCompositeSchema.enter;");
+	long stamp = System.currentTimeMillis();
+	SemanticValidationResult result = null;
+	try {
+	  ContentAccessor shaclShape = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
+	  result = verifyClaimsAgainstSchema(claims, shaclShape);
+	} catch (Exception exc) {
+	  log.info("verifyClaimsAgainstCompositeSchema.error: {}", exc.getMessage());
+	}
+	stamp = System.currentTimeMillis() - stamp;
+	log.debug("verifyClaimsAgainstCompositeSchema.exit; conforms: {}, model: {}; time taken: {}",
+	          result.isConforming(), result.getValidationReport(), stamp);
+	return result;
+  }
 
   /**
    * Method that validates a dataGraph against shaclShape
@@ -436,25 +454,22 @@ public class VerificationServiceImpl implements VerificationService {
    * @param shaclShape ContentAccessor of a union schemas of type SHACL
    * @return SemanticValidationResult object
    */
-  SemanticValidationResult validatePayloadAgainstSchema(ContentAccessor payload, ContentAccessor shaclShape) {
-    List<RdfTriple> rdfTriples = extractNquad(payload);
+  private SemanticValidationResult verifyClaimsAgainstSchema(List<SdClaim> claims, ContentAccessor schema) {
     Model data = ModelFactory.createDefaultModel();
     Model shape = ModelFactory.createDefaultModel();
     RDFParser.create()
             .streamManager(getStreamManager())
-            .source(shaclShape.getContentAsStream())
+            .source(schema.getContentAsStream())
             .lang(SHAPES_LANG)
             .parse(shape);
 
-    for (RdfTriple claim: rdfTriples) {
-      System.out.println("Subject is :" + claim.getSubject());
-      System.out.println("predicate is :" + claim.getPredicate());
-      System.out.println("Object is :" + claim.getObject());
+    for (SdClaim claim: claims) {
+      log.debug("validatePayloadAgainstSchema; {}", claim);
       RdfValue object = claim.getObject();
       if(object.isLiteral()) {
 
         RDFDatatype objectType = TypeMapper.getInstance().getSafeTypeByName(object.asLiteral().getDatatype());
-        System.out.println("objectType is :" + objectType);
+        log.debug("validatePayloadAgainstSchema; objectType is: {}", objectType);
         Literal objectLiteral = createTypedLiteral(object.getValue(),objectType);
         Statement s = ResourceFactory.createStatement(createResource(claim.getSubject().getValue()), createProperty(claim.getPredicate().getValue()),
                 objectLiteral);
@@ -468,8 +483,6 @@ public class VerificationServiceImpl implements VerificationService {
 
     }
     Resource reportResource = ValidationUtil.validateModel(data, shape, true);
-    data.close();
-    shape.close();
 
     boolean conforms = reportResource.getProperty(SH.conforms).getBoolean();
     String report = null;
@@ -479,30 +492,9 @@ public class VerificationServiceImpl implements VerificationService {
     data.close();
     shape.close();
     return new SemanticValidationResult(conforms, report);
-
   }
 
-  @Override
-  public SemanticValidationResult verifySelfDescriptionAgainstCompositeSchema(ContentAccessor payload) {
-    log.debug("verifySelfDescriptionAgainstCompositeSchema.enter;");
-    long stamp = System.currentTimeMillis();
-    SemanticValidationResult result = null;
-    try {
-      ContentAccessor shaclShape = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
-      result = validatePayloadAgainstSchema(payload, shaclShape);
-    } catch (Exception exc) {
-      log.info("verifySelfDescriptionAgainstCompositeSchema.error: {}", exc.getMessage());
-    }
-    stamp = System.currentTimeMillis() - stamp;
-    log.debug("verifySelfDescriptionAgainstCompositeSchema.exit; conforms: {}, model: {}; time taken: {}",
-            result.isConforming(), result.getValidationReport(), stamp);
-    return result;
-  }
-
-  public SemanticValidationResult getSemanticValidationResults(ContentAccessor payload) {
-    return verifySelfDescriptionAgainstCompositeSchema(payload);
-  }
-
+  
   /* SD signatures verification */
   private List<Validator> checkCryptography(TypedCredentials tcs) {
     log.debug("checkCryptography.enter;");

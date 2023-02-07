@@ -43,7 +43,7 @@ public class TitaniumClaimExtractor implements ClaimExtractor {
                     List<RdfTriple> triples = rdfGraph.toList();
                     for (RdfTriple triple: triples) {
                         log.debug("extractClaims; got triple: {}", triple);
-                        SdClaim claim = new SdClaim(rdf2String(triple.getSubject()), rdf2String(triple.getPredicate()), rdf2String(triple.getObject()));
+                        SdClaim claim = new SdClaim(triple);
                         claims.add(claim);
                     }
                 }

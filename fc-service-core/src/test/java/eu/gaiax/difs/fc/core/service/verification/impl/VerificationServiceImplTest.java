@@ -390,7 +390,7 @@ public class VerificationServiceImplTest {
   @Test
   void verifyValidationResultInvalid() throws IOException {
     log.debug("verifyValidationResult");
-    SemanticValidationResult validationResult = verificationService.validatePayloadAgainstSchema(
+    SemanticValidationResult validationResult = verificationService.verifySelfDescriptionAgainstSchema(
             getAccessor("Validation-Tests/legalPerson_one_VC_Invalid.jsonld"), getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
 
     if (!validationResult.isConforming()) {
@@ -403,7 +403,7 @@ public class VerificationServiceImplTest {
   @Test
   void verifyValidationResultValid() throws IOException {
     log.debug("verifyValidationResult");
-    SemanticValidationResult validationResult = verificationService.validatePayloadAgainstSchema(
+    SemanticValidationResult validationResult = verificationService.verifySelfDescriptionAgainstSchema(
             getAccessor("Validation-Tests/legalPerson_one_VC_Valid.jsonld"), getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
     assertTrue(validationResult.isConforming());
 
@@ -414,19 +414,18 @@ public class VerificationServiceImplTest {
     log.debug("verifyInvalidSDValidation_Result_Against_CompositeSchema_bug");
     schemaStore.addSchema(getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
     schemaStore.addSchema(getAccessor("Validation-Tests/legal-personShape.ttl"));
-    SemanticValidationResult result = verificationService.getSemanticValidationResults(getAccessor("Validation-Tests/legalPerson_one_VC_Invalid.jsonld"));
+    SemanticValidationResult result = verificationService.verifySelfDescriptionAgainstCompositeSchema(
+    		getAccessor("Validation-Tests/legalPerson_one_VC_Invalid.jsonld"));
     assertFalse(result.isConforming(), "Validation should have failed.");
     assertTrue(result.getValidationReport().contains("Property needs to have at least 1 value"));
   }
-
-
 
   @Test
   void verifyValidVP_SDValidationCompositeSchema() throws IOException {
     log.debug("verifyValidVP_SDValidationCompositeSchema");
     schemaStore.addSchema(getAccessor("Validation-Tests/legal-personShape.ttl"));
     schemaStore.addSchema(getAccessor("Schema-Tests/mergedShapesGraph.ttl"));
-    SemanticValidationResult validationResult = verificationService.getSemanticValidationResults(
+    SemanticValidationResult validationResult = verificationService.verifySelfDescriptionAgainstCompositeSchema(
             getAccessor("Validation-Tests/legalPerson_one_VC_Valid.jsonld"));
     assertTrue(validationResult.isConforming());
   }
