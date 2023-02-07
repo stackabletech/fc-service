@@ -2,6 +2,7 @@ package eu.gaiax.difs.fc.core.service.verification.impl;
 
 import com.apicatalog.jsonld.loader.DocumentLoader;
 import com.apicatalog.jsonld.loader.SchemeRouter;
+import com.apicatalog.rdf.RdfValue;
 import com.danubetech.keyformats.JWK_to_PublicKey;
 import com.danubetech.keyformats.crypto.PublicKeyVerifier;
 import com.danubetech.keyformats.crypto.PublicKeyVerifierFactory;
@@ -35,12 +36,15 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.jena.datatypes.RDFDatatype;
+import org.apache.jena.datatypes.TypeMapper;
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.ontology.OntModelSpec;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.vocabulary.RDF;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.topbraid.shacl.validation.ValidationUtil;
@@ -59,11 +63,15 @@ import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.*;
+
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFParser;
 import org.apache.jena.riot.system.stream.StreamManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+
+import static org.apache.jena.rdf.model.ResourceFactory.*;
+
 
 /**
  * Implementation of the {@link VerificationService} interface.
@@ -139,12 +147,12 @@ public class VerificationServiceImpl implements VerificationService {
 
   @Override
   public VerificationResult verifySelfDescription(ContentAccessor payload,
-      boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException {
+                                                  boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException {
     return verifySelfDescription(payload, false, VRT_UNKNOWN, verifySemantics, verifySchema, verifySignatures);
   }
 
   private VerificationResult verifySelfDescription(ContentAccessor payload, boolean strict, int expectedType,
-      boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException {
+                                                   boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException {
     log.debug("verifySelfDescription.enter; strict: {}, expectedType: {}, verifySemantics: {}, verifySchema: {}, verifySignatures: {}",
             strict, expectedType, verifySemantics, verifySchema, verifySignatures);
     long stamp = System.currentTimeMillis();
@@ -163,7 +171,7 @@ public class VerificationServiceImpl implements VerificationService {
         throw ex;
       } catch (Exception ex) {
         log.error("verifySelfDescription.semantic error", ex);
-        throw new VerificationException("Semantic error: " + ex.getMessage()); 
+        throw new VerificationException("Semantic error: " + ex.getMessage());
       }
     } else {
       tcs = getCredentials(vp);
@@ -200,8 +208,8 @@ public class VerificationServiceImpl implements VerificationService {
       Set<String> objects = new HashSet<>();
       if (claims != null && !claims.isEmpty()) {
         for (SdClaim claim : claims) {
-          subjects.add(claim.getSubject());
-          objects.add(claim.getObject());
+          subjects.add(claim.getSubjectString());
+          objects.add(claim.getObjectString());
         }
       }
       subjects.removeAll(objects);
@@ -220,12 +228,12 @@ public class VerificationServiceImpl implements VerificationService {
 
     // schema verification
     if (verifySchema) {
-      SemanticValidationResult result = verifySelfDescriptionAgainstCompositeSchema(payload);
+      SemanticValidationResult result = verifyClaimsAgainstCompositeSchema(claims);
       if (result == null || !result.isConforming()) {
         throw new VerificationException("Schema error: " + (result == null ? "unknown" : result.getValidationReport()));
       }
     }
-    
+
     // signature verification
     List<Validator> validators;
     if (verifySignatures) {
@@ -233,11 +241,11 @@ public class VerificationServiceImpl implements VerificationService {
     } else {
       validators = null; //is it ok?
     }
-    
+
     String id = tcs.getID();
     String issuer = tcs.getIssuer();
     Instant issuedDate = tcs.getIssuanceDate();
-    
+
     VerificationResult result;
     if (tcs.isParticipant()) {
       if (issuer == null) {
@@ -247,13 +255,13 @@ public class VerificationServiceImpl implements VerificationService {
       String holder = tcs.getHolder();
       String name = holder == null ? issuer : holder;
       result = new VerificationResultParticipant(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
-          claims, validators, name, method);
+              claims, validators, name, method);
     } else if (tcs.isOffering()) {
       result = new VerificationResultOffering(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
-          id, claims, validators);
+              id, claims, validators);
     } else {
       result = new VerificationResult(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
-          id, claims, validators);
+              id, claims, validators);
     }
 
     stamp = System.currentTimeMillis() - stamp;
@@ -327,7 +335,7 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   private boolean checkAbsence(JsonLDObject container, String... keys) {
-    for (String key: keys) {
+    for (String key : keys) {
       if (container.getJsonObject().containsKey(key)) {
         return false;
       }
@@ -341,7 +349,7 @@ public class VerificationServiceImpl implements VerificationService {
     log.trace("getCredentials.exit; returning: {}", tcs);
     return tcs;
   }
-  
+
   /**
    * A method that returns a list of claims given a self-description's VerifiablePresentation
    *
@@ -390,7 +398,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
     return streamManager;
   }
-  
+
   public void setTypes(String partType, String soType) {
     this.participantType = partType;
     this.serviceOfferingType = soType;
@@ -398,61 +406,95 @@ public class VerificationServiceImpl implements VerificationService {
 
 
   /* SD validation against SHACL Schemas */
+  @Override
+  public SemanticValidationResult verifySelfDescriptionAgainstCompositeSchema(ContentAccessor payload) {
+    return verifySelfDescriptionAgainstSchema(payload, null);
+  }
+
+  @Override
+  public SemanticValidationResult verifySelfDescriptionAgainstSchema(ContentAccessor payload, ContentAccessor schema) {
+    log.debug("verifySelfDescriptionAgainstSchema.enter;");
+    long stamp = System.currentTimeMillis();
+    SemanticValidationResult result = null;
+    try {
+      if (schema == null) { 	
+        schema = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
+      }
+      List<SdClaim> claims = extractClaims(payload);
+      result = verifyClaimsAgainstSchema(claims, schema);
+    } catch (Exception exc) {
+      log.info("verifySelfDescriptionAgainstSchema.error: {}", exc.getMessage());
+    }
+    stamp = System.currentTimeMillis() - stamp;
+    log.debug("verifySelfDescriptionAgainstSchema.exit; conforms: {}, model: {}; time taken: {}",
+            result.isConforming(), result.getValidationReport(), stamp);
+    return result;
+  }
+  
+  private SemanticValidationResult verifyClaimsAgainstCompositeSchema(List<SdClaim> claims) {
+	log.debug("verifyClaimsAgainstCompositeSchema.enter;");
+	long stamp = System.currentTimeMillis();
+	SemanticValidationResult result = null;
+	try {
+	  ContentAccessor shaclShape = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
+	  result = verifyClaimsAgainstSchema(claims, shaclShape);
+	} catch (Exception exc) {
+	  log.info("verifyClaimsAgainstCompositeSchema.error: {}", exc.getMessage());
+	}
+	stamp = System.currentTimeMillis() - stamp;
+	log.debug("verifyClaimsAgainstCompositeSchema.exit; conforms: {}, model: {}; time taken: {}",
+	          result.isConforming(), result.getValidationReport(), stamp);
+	return result;
+  }
+
   /**
    * Method that validates a dataGraph against shaclShape
    *
-   * @param payload ContentAccessor of a self-Description payload to be validated
+   * @param payload    ContentAccessor of a self-Description payload to be validated
    * @param shaclShape ContentAccessor of a union schemas of type SHACL
    * @return SemanticValidationResult object
    */
-  SemanticValidationResult validatePayloadAgainstSchema(ContentAccessor payload, ContentAccessor shaclShape) {  
+  private SemanticValidationResult verifyClaimsAgainstSchema(List<SdClaim> claims, ContentAccessor schema) {
     Model data = ModelFactory.createDefaultModel();
-    RDFParser.create()
-            .streamManager(getStreamManager())
-            .source(payload.getContentAsStream())
-            .lang(SD_LANG)
-            .parse(data);
-
     Model shape = ModelFactory.createDefaultModel();
     RDFParser.create()
             .streamManager(getStreamManager())
-            .source(shaclShape.getContentAsStream())
+            .source(schema.getContentAsStream())
             .lang(SHAPES_LANG)
             .parse(shape);
 
+    for (SdClaim claim: claims) {
+      log.debug("validatePayloadAgainstSchema; {}", claim);
+      RdfValue object = claim.getObject();
+      if(object.isLiteral()) {
+
+        RDFDatatype objectType = TypeMapper.getInstance().getSafeTypeByName(object.asLiteral().getDatatype());
+        log.debug("validatePayloadAgainstSchema; objectType is: {}", objectType);
+        Literal objectLiteral = createTypedLiteral(object.getValue(),objectType);
+        Statement s = ResourceFactory.createStatement(createResource(claim.getSubject().getValue()), createProperty(claim.getPredicate().getValue()),
+                objectLiteral);
+        data.add(s);
+      } else {
+        Resource objectResource = createResource(object.getValue());
+        Statement s = ResourceFactory.createStatement(createResource(claim.getSubject().getValue()), createProperty(claim.getPredicate().getValue()),
+                objectResource);
+        data.add(s);
+      }
+
+    }
     Resource reportResource = ValidationUtil.validateModel(data, shape, true);
-    data.close();
-    shape.close();
 
     boolean conforms = reportResource.getProperty(SH.conforms).getBoolean();
     String report = null;
     if (!conforms) {
       report = reportResource.getModel().toString();
     }
+    data.close();
+    shape.close();
     return new SemanticValidationResult(conforms, report);
   }
 
-  @Override
-  public SemanticValidationResult verifySelfDescriptionAgainstCompositeSchema(ContentAccessor payload) {
-    log.debug("verifySelfDescriptionAgainstCompositeSchema.enter;");
-    long stamp = System.currentTimeMillis();
-    SemanticValidationResult result = null;
-    try {
-      ContentAccessor shaclShape = schemaStore.getCompositeSchema(SchemaStore.SchemaType.SHAPE);
-      result = validatePayloadAgainstSchema(payload, shaclShape);
-    } catch (Exception exc) {
-      log.info("verifySelfDescriptionAgainstCompositeSchema.error: {}", exc.getMessage());
-    }
-    stamp = System.currentTimeMillis() - stamp;
-    log.debug("verifySelfDescriptionAgainstCompositeSchema.exit; conforms: {}, model: {}; time taken: {}", 
-    		result.isConforming(), result.getValidationReport(), stamp);
-    return result;
-  }
-
-  public SemanticValidationResult getSemanticValidationResults(ContentAccessor payload) {
-    return verifySelfDescriptionAgainstCompositeSchema(payload);
-  }
-
+  
   /* SD signatures verification */
   private List<Validator> checkCryptography(TypedCredentials tcs) {
     log.debug("checkCryptography.enter;");
@@ -556,13 +598,13 @@ public class VerificationServiceImpl implements VerificationService {
 
     log.debug("getVerifiedVerifier; create VerifierFactory");
     pubKey = PublicKeyVerifierFactory.publicKeyVerifierForKey(
-        KeyTypeName_for_JWK.keyTypeName_for_JWK(jwk),
-        (String) jwk_map_uncleaned.get("alg"),
-        JWK_to_PublicKey.JWK_to_anyPublicKey(jwk));
+            KeyTypeName_for_JWK.keyTypeName_for_JWK(jwk),
+            (String) jwk_map_uncleaned.get("alg"),
+            JWK_to_PublicKey.JWK_to_anyPublicKey(jwk));
     validator = new Validator(
-        uri.toString(),
-        JsonLDObject.fromJsonObject(jwk_map_uncleaned).toString(),
-        deprecation);
+            uri.toString(),
+            JsonLDObject.fromJsonObject(jwk_map_uncleaned).toString(),
+            deprecation);
 
     log.debug("getVerifiedVerifier.exit;");
     return Pair.of(pubKey, validator);
@@ -622,7 +664,7 @@ public class VerificationServiceImpl implements VerificationService {
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
     conn.setRequestMethod("GET");
     try ( BufferedReader reader = new BufferedReader(
-        new InputStreamReader(conn.getInputStream()))) {
+            new InputStreamReader(conn.getInputStream()))) {
       for (String line; (line = reader.readLine()) != null;) {
         result.append(line).append(System.lineSeparator());
       }
@@ -669,9 +711,9 @@ public class VerificationServiceImpl implements VerificationService {
     JWK jwk = JWK.fromMap(jwk_map_cleaned);
 
     PublicKeyVerifier<?> pubKey = PublicKeyVerifierFactory.publicKeyVerifierForKey(
-        KeyTypeName_for_JWK.keyTypeName_for_JWK(jwk),
-        (String) jwk_map_uncleaned.get("alg"),
-        JWK_to_PublicKey.JWK_to_anyPublicKey(jwk));
+            KeyTypeName_for_JWK.keyTypeName_for_JWK(jwk),
+            (String) jwk_map_uncleaned.get("alg"),
+            JWK_to_PublicKey.JWK_to_anyPublicKey(jwk));
     return new JsonWebSignature2020LdVerifier(pubKey);
   }
 
@@ -695,237 +737,237 @@ public class VerificationServiceImpl implements VerificationService {
     log.debug("checkTrustAnchor.exit; status code: {}", response.getStatusLine().getStatusCode());
     return response.getStatusLine().getStatusCode() == 200;
   }
-  
+
   private class TypedCredentials {
-	  
-	  private Boolean isParticipant;
-	  private Boolean isOffering;
-	  private VerifiablePresentation presentation;
-	  private List<VerifiableCredential> credentials;
-	  
-	  TypedCredentials(VerifiablePresentation presentation) {
-		  this.presentation = presentation;
-		  initCredentials();
-	  }
-	  
-	  @SuppressWarnings("unchecked")
-	  private void initCredentials() {
-		Object obj = presentation.getJsonObject().get("verifiableCredential");  
-		List<VerifiableCredential> creds;
-		if (obj == null) {
-		  creds = Collections.emptyList();
-		} else if (obj instanceof List) {
-		  List<Map<String, Object>> l = (List<Map<String, Object>>) obj;
-		  creds = new ArrayList<>(l.size());
-		  for (Map<String, Object> _vc : l) {
-		    VerifiableCredential vc = VerifiableCredential.fromMap(_vc);
-		    Pair<Boolean, Boolean> p = getSDTypes(vc);
-		    if (Objects.equals(p.getLeft(), p.getRight())) {
-		      continue;
-		    }
-		    creds.add(vc);
-		    // TODO: dont't think the next two lines are correct.. 
-		    // not sure we should override existing values
-		    isParticipant = p.getLeft();
-		    isOffering = p.getRight();
-		  }
-		} else {
-		  VerifiableCredential vc = VerifiableCredential.fromMap((Map<String, Object>) obj);
-		  Pair<Boolean, Boolean> p = getSDTypes(vc);
-		  if (Objects.equals(p.getLeft(), p.getRight())) {
-		    creds = Collections.emptyList();
-		  } else {
-		    creds = List.of(vc);
-		    isParticipant = p.getLeft();
-		    isOffering = p.getRight();
-		  }
-		}
-		this.credentials = creds;
-	  }
-	  
-	  private VerifiableCredential getFirstVC() {
-		 return credentials.isEmpty() ? null : credentials.get(0); 
-	  }
-	  
-	  List<VerifiableCredential> getCredentials() {
-		  return credentials;
-	  }
-	  
-	  String getHolder() {
-		URI holder = presentation.getHolder();
-		if (holder == null) {
-		  return null;	
-		}
-		return holder.toString();
-	  }
 
-	  String getID() {
-		VerifiableCredential first = getFirstVC();
-		if (first == null) {
-		  return null;	
-		}
+    private Boolean isParticipant;
+    private Boolean isOffering;
+    private VerifiablePresentation presentation;
+    private List<VerifiableCredential> credentials;
 
-		List<CredentialSubject> subjects = getSubjects(first);
-		if (subjects.isEmpty()) {
-		  return getID(first.getJsonObject());
-		}
-		return getID(subjects.get(0).getJsonObject());
-	  }
-	  
-	  String getIssuer() {
-		VerifiableCredential first = getFirstVC();
-		if (first == null) {
-		  return null;	
-		}
-	    URI issuer = first.getIssuer();
-	    if (issuer == null) {
-	      return null;
-	    }
-	    return issuer.toString();
-	  }
-	  
-	  Instant getIssuanceDate() {
-		VerifiableCredential first = getFirstVC();
-		if (first == null) {
-		  return null;	
-		}
-	    Date issDate = first.getIssuanceDate();
-	    if (issDate == null) {
-	      return Instant.now();	
-	    }
-	    return issDate.toInstant();
-	  }
-	  
-	  VerifiablePresentation getPresentation() {
-		return presentation;
-	  }
-	  
-	  String getProofMethod() {
-        LdProof proof = presentation.getLdProof();
-	    URI method = proof == null ? null : proof.getVerificationMethod();
-	    return method == null ? null : method.toString();
-	  }
-	  
-	  boolean isEmpty() {
-		return credentials.isEmpty();
-	  }
-	  
-	  boolean isParticipant() {
-		return isParticipant != null && isParticipant;  
-	  }
-	  
-	  boolean isOffering() {
-		return isOffering != null && isOffering;
-	  }
+    TypedCredentials(VerifiablePresentation presentation) {
+      this.presentation = presentation;
+      initCredentials();
+    }
 
-	  private Pair<Boolean, Boolean> getSDTypes(VerifiableCredential credential) {
-	    Boolean result = null;
-        List<CredentialSubject> subjects = getSubjects(credential);
-        for (CredentialSubject subject: subjects) {
-          result = getSDType(subject);
-          if (result != null) {
-        	break;
+    @SuppressWarnings("unchecked")
+    private void initCredentials() {
+      Object obj = presentation.getJsonObject().get("verifiableCredential");
+      List<VerifiableCredential> creds;
+      if (obj == null) {
+        creds = Collections.emptyList();
+      } else if (obj instanceof List) {
+        List<Map<String, Object>> l = (List<Map<String, Object>>) obj;
+        creds = new ArrayList<>(l.size());
+        for (Map<String, Object> _vc : l) {
+          VerifiableCredential vc = VerifiableCredential.fromMap(_vc);
+          Pair<Boolean, Boolean> p = getSDTypes(vc);
+          if (Objects.equals(p.getLeft(), p.getRight())) {
+            continue;
           }
-	    }
-	    if (result == null) {
-	      result = getSDType(credential);
-	    }
-	    log.debug("getSDTypes; got type result: {}", result);
+          creds.add(vc);
+          // TODO: dont't think the next two lines are correct..
+          // not sure we should override existing values
+          isParticipant = p.getLeft();
+          isOffering = p.getRight();
+        }
+      } else {
+        VerifiableCredential vc = VerifiableCredential.fromMap((Map<String, Object>) obj);
+        Pair<Boolean, Boolean> p = getSDTypes(vc);
+        if (Objects.equals(p.getLeft(), p.getRight())) {
+          creds = Collections.emptyList();
+        } else {
+          creds = List.of(vc);
+          isParticipant = p.getLeft();
+          isOffering = p.getRight();
+        }
+      }
+      this.credentials = creds;
+    }
 
-	    if (result == null) {
-	      return Pair.of(false, false);
-	    }
-	    return result ? Pair.of(true, false) : Pair.of(false, true);
-	  }
-		  
-	  private Boolean getSDType(JsonLDObject container) {
-	    try {
-	      Model data = ModelFactory.createDefaultModel();
-	      RDFParser.create()
-	              .streamManager(getStreamManager())
-	              .source(new StringReader(container.toJson()))
-	              .lang(SD_LANG)
-	              .parse(data);
+    private VerifiableCredential getFirstVC() {
+      return credentials.isEmpty() ? null : credentials.get(0);
+    }
 
-	      NodeIterator node = data.listObjectsOfProperty(data.createProperty(CREDENTIAL_SUBJECT));
-	      while (node.hasNext()) {
-	        NodeIterator typeNode = data.listObjectsOfProperty(node.nextNode().asResource(), RDF.type);
-	        List <RDFNode> rdfNodeList = typeNode.toList();
-	        for (RDFNode rdfNode: rdfNodeList) {
-	          String resourceURI = rdfNode.asResource().getURI();
-	          if (checkTypeSubClass(resourceURI, participantType)) {
-	            return true;
-	          }
-	          if (checkTypeSubClass(resourceURI, serviceOfferingType)) {
-	            return false;
-	          }
-	        }
-	      }
-	    } catch (Exception e) {
-	      //log.debug("getSDType.error: {}", e.getMessage());
-	      log.error("getSDType.error;", e);
-	    }
-	    return null;
-	  }
+    List<VerifiableCredential> getCredentials() {
+      return credentials;
+    }
 
-	  private boolean checkTypeSubClass(String type, String gaxType) {
-	    log.debug("checkTypeSubClass.enter; got type: {}, gaxType: {}", type, gaxType);  
-	    if (type.equals(gaxType)) {
-	      return true;
-	    }
-	    String queryString =
-	            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
-	            "select ?uri where { ?uri rdfs:subClassOf <" + gaxType + ">}\n";
-	    Query query = QueryFactory.create(queryString);
-	    ContentAccessor gaxOntology = schemaStore.getCompositeSchema(SchemaStore.SchemaType.ONTOLOGY);
-	    OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM_MICRO_RULE_INF);
-	    model.read(new StringReader(gaxOntology.getContentAsString()), null, SHAPES_LANG.getName());
-	    QueryExecution qe = QueryExecutionFactory.create(query, model);
-	    ResultSet results = qe.execSelect();
-	    while (results.hasNext()) {
-	      QuerySolution q = results.next();
-	      String node =  q.get("uri").toString();
-	      if (node.equals(type)) {
-	        return true;
-	      }
-	    }
-	    return false;
-	  }
-		  
-	  @SuppressWarnings("unchecked")
-	  private List<CredentialSubject> getSubjects(VerifiableCredential credential) {
-	    Object obj = credential.getJsonObject().get("credentialSubject");
+    String getHolder() {
+      URI holder = presentation.getHolder();
+      if (holder == null) {
+        return null;
+      }
+      return holder.toString();
+    }
 
-	    if (obj == null) {
-	      return Collections.emptyList();
-	    } else if (obj instanceof List) {
-	      List<Map<String, Object>> l = (List<Map<String, Object>>) obj;
-	      List<CredentialSubject> result = new ArrayList<>(l.size());
-	      for (Map<String, Object> _cs : l) {
-	        CredentialSubject cs = CredentialSubject.fromMap(_cs);
-	        result.add(cs);
-	      }
-	      return result;
-	    } else if (obj instanceof Map) {
-	      CredentialSubject vc = CredentialSubject.fromMap((Map<String, Object>) obj);
-	      return List.of(vc);
-	    } else {
-	      return Collections.emptyList();
-	    }
-	  }
+    String getID() {
+      VerifiableCredential first = getFirstVC();
+      if (first == null) {
+        return null;
+      }
 
-	  private String getID(Map<String, Object> map) {
-		Object id = map.get("id");
-	    if (id != null) {
-	      return id.toString();
-	    }
-	    id = map.get("@id");
-	    if (id != null) {
-	      return id.toString();
-	    }
-	    return null;
-	  }
-	  
+      List<CredentialSubject> subjects = getSubjects(first);
+      if (subjects.isEmpty()) {
+        return getID(first.getJsonObject());
+      }
+      return getID(subjects.get(0).getJsonObject());
+    }
+
+    String getIssuer() {
+      VerifiableCredential first = getFirstVC();
+      if (first == null) {
+        return null;
+      }
+      URI issuer = first.getIssuer();
+      if (issuer == null) {
+        return null;
+      }
+      return issuer.toString();
+    }
+
+    Instant getIssuanceDate() {
+      VerifiableCredential first = getFirstVC();
+      if (first == null) {
+        return null;
+      }
+      Date issDate = first.getIssuanceDate();
+      if (issDate == null) {
+        return Instant.now();
+      }
+      return issDate.toInstant();
+    }
+
+    VerifiablePresentation getPresentation() {
+      return presentation;
+    }
+
+    String getProofMethod() {
+      LdProof proof = presentation.getLdProof();
+      URI method = proof == null ? null : proof.getVerificationMethod();
+      return method == null ? null : method.toString();
+    }
+
+    boolean isEmpty() {
+      return credentials.isEmpty();
+    }
+
+    boolean isParticipant() {
+      return isParticipant != null && isParticipant;
+    }
+
+    boolean isOffering() {
+      return isOffering != null && isOffering;
+    }
+
+    private Pair<Boolean, Boolean> getSDTypes(VerifiableCredential credential) {
+      Boolean result = null;
+      List<CredentialSubject> subjects = getSubjects(credential);
+      for (CredentialSubject subject: subjects) {
+        result = getSDType(subject);
+        if (result != null) {
+          break;
+        }
+      }
+      if (result == null) {
+        result = getSDType(credential);
+      }
+      log.debug("getSDTypes; got type result: {}", result);
+
+      if (result == null) {
+        return Pair.of(false, false);
+      }
+      return result ? Pair.of(true, false) : Pair.of(false, true);
+    }
+
+    private Boolean getSDType(JsonLDObject container) {
+      try {
+        org.apache.jena.rdf.model.Model data = ModelFactory.createDefaultModel();
+        RDFParser.create()
+                .streamManager(getStreamManager())
+                .source(new StringReader(container.toJson()))
+                .lang(SD_LANG)
+                .parse(data);
+
+        NodeIterator node = data.listObjectsOfProperty(data.createProperty(CREDENTIAL_SUBJECT));
+        while (node.hasNext()) {
+          NodeIterator typeNode = data.listObjectsOfProperty(node.nextNode().asResource(), RDF.type);
+          List <RDFNode> rdfNodeList = typeNode.toList();
+          for (RDFNode rdfNode: rdfNodeList) {
+            String resourceURI = rdfNode.asResource().getURI();
+            if (checkTypeSubClass(resourceURI, participantType)) {
+              return true;
+            }
+            if (checkTypeSubClass(resourceURI, serviceOfferingType)) {
+              return false;
+            }
+          }
+        }
+      } catch (Exception e) {
+        //log.debug("getSDType.error: {}", e.getMessage());
+        log.error("getSDType.error;", e);
+      }
+      return null;
+    }
+
+    private boolean checkTypeSubClass(String type, String gaxType) {
+      log.debug("checkTypeSubClass.enter; got type: {}, gaxType: {}", type, gaxType);
+      if (type.equals(gaxType)) {
+        return true;
+      }
+      String queryString =
+              "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                      "select ?uri where { ?uri rdfs:subClassOf <" + gaxType + ">}\n";
+      Query query = QueryFactory.create(queryString);
+      ContentAccessor gaxOntology = schemaStore.getCompositeSchema(SchemaStore.SchemaType.ONTOLOGY);
+      OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM_MICRO_RULE_INF);
+      model.read(new StringReader(gaxOntology.getContentAsString()), null, SHAPES_LANG.getName());
+      QueryExecution qe = QueryExecutionFactory.create(query, model);
+      ResultSet results = qe.execSelect();
+      while (results.hasNext()) {
+        QuerySolution q = results.next();
+        String node =  q.get("uri").toString();
+        if (node.equals(type)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<CredentialSubject> getSubjects(VerifiableCredential credential) {
+      Object obj = credential.getJsonObject().get("credentialSubject");
+
+      if (obj == null) {
+        return Collections.emptyList();
+      } else if (obj instanceof List) {
+        List<Map<String, Object>> l = (List<Map<String, Object>>) obj;
+        List<CredentialSubject> result = new ArrayList<>(l.size());
+        for (Map<String, Object> _cs : l) {
+          CredentialSubject cs = CredentialSubject.fromMap(_cs);
+          result.add(cs);
+        }
+        return result;
+      } else if (obj instanceof Map) {
+        CredentialSubject vc = CredentialSubject.fromMap((Map<String, Object>) obj);
+        return List.of(vc);
+      } else {
+        return Collections.emptyList();
+      }
+    }
+
+    private String getID(Map<String, Object> map) {
+      Object id = map.get("id");
+      if (id != null) {
+        return id.toString();
+      }
+      id = map.get("@id");
+      if (id != null) {
+        return id.toString();
+      }
+      return null;
+    }
+
   }
 
 }

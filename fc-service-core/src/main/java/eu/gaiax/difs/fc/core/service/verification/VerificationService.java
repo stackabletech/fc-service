@@ -41,14 +41,6 @@ public interface VerificationService {
   VerificationResult verifySelfDescription(ContentAccessor payload) throws VerificationException;
 
   /**
-   * The function validates the Self-Description against the composite schema.
-   *
-   * @param payload ContentAccessor to SD which should be validated.
-   * @return the result of the semantic validation.
-   */
-  SemanticValidationResult verifySelfDescriptionAgainstCompositeSchema(ContentAccessor payload);
-
-  /**
    * The function validates the Self-Description as JSON and tries to parse the json handed over.
    *
    * @param payload
@@ -68,4 +60,22 @@ public interface VerificationService {
    * @return The list of extracted claims.
    */
   List<SdClaim> extractClaims(ContentAccessor payload);
+
+  /**
+   * The function validates the Self-Description against the composite schema.
+   *
+   * @param payload ContentAccessor to SD which should be validated.
+   * @param schema ContentAccessor - the schema to validate SDD against
+   * @return the result of the semantic validation.
+   */
+  SemanticValidationResult verifySelfDescriptionAgainstSchema(ContentAccessor payload, ContentAccessor schema);
+
+  /**
+   * The function validates the Self-Description against the composite schema.
+   *
+   * @param payload ContentAccessor to SD which should be validated.
+   * @return the result of the semantic validation.
+   */
+  SemanticValidationResult verifySelfDescriptionAgainstCompositeSchema(ContentAccessor payload);
+
 }

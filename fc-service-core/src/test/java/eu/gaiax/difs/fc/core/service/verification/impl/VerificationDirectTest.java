@@ -168,8 +168,8 @@ public class VerificationDirectTest {
         Set<String> subjects = new HashSet<>();
         Set<String> objects = new HashSet<>();
         for (SdClaim claim : claims) {
-          subjects.add(claim.getSubject());
-          objects.add(claim.getObject());
+          subjects.add(claim.getSubjectString());
+          objects.add(claim.getObjectString());
         }
 
         subjects.removeAll(objects);

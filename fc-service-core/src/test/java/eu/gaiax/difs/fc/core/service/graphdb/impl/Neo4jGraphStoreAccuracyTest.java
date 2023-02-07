@@ -325,7 +325,7 @@ public class Neo4jGraphStoreAccuracyTest {
     List<SdClaim> sdClaimFile = List.of(sdClaim, sdClaimName);
 
     verificationResult.setClaims(sdClaimFile);
-    verificationResult.setId(sdClaimFile.get(0).stripSubject());
+    verificationResult.setId(sdClaimFile.get(0).getSubjectValue());
 
     SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(verificationResult.getId(),
             verificationResult.getIssuer(), new ArrayList<>(), contentAccessor);
@@ -348,7 +348,7 @@ public class Neo4jGraphStoreAccuracyTest {
     List<SdClaim> sdClaimFile1 = List.of(sdClaim1, sdClaimName1);
 
     verificationResult2.setClaims(sdClaimFile1);
-    verificationResult2.setId(sdClaimFile1.get(0).stripSubject());
+    verificationResult2.setId(sdClaimFile1.get(0).getSubjectValue());
 
     SelfDescriptionMetadata sdMetadata2 = new SelfDescriptionMetadata(
             verificationResult2.getId(),
@@ -372,7 +372,7 @@ public class Neo4jGraphStoreAccuracyTest {
     List<SdClaim> sdClaimFile3 = List.of(sdClaim3, sdClaimName3);
 
     verificationResult3.setClaims(sdClaimFile3);
-    verificationResult3.setId(sdClaimFile3.get(0).stripSubject());
+    verificationResult3.setId(sdClaimFile3.get(0).getSubjectValue());
 
     SelfDescriptionMetadata sdMetadata3 = new SelfDescriptionMetadata(
             verificationResult3.getId(),
@@ -399,7 +399,7 @@ public class Neo4jGraphStoreAccuracyTest {
     List<SdClaim> sdClaimFile4 = List.of(sdClaim4, sdClaimName4);
 
     verificationResult4.setClaims(sdClaimFile4);
-    verificationResult4.setId(sdClaimFile4.get(0).stripSubject());
+    verificationResult4.setId(sdClaimFile4.get(0).getSubjectValue());
 
     SelfDescriptionMetadata sdMetadata4 = new SelfDescriptionMetadata(
             verificationResult4.getId(),

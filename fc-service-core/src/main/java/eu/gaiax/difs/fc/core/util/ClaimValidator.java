@@ -67,11 +67,11 @@ public class ClaimValidator {
         return listClaims;
     }
 
-    private String removeEnclosingAngleBrackets(String uriStr) {
-        int strLen = uriStr.length();
+//    private String removeEnclosingAngleBrackets(String uriStr) {
+//        int strLen = uriStr.length();
 
-        return uriStr.substring(1, strLen - 1);
-    }
+//        return uriStr.substring(1, strLen - 1);
+//    }
 
     /**
      * Method to validate that a claim follow the RDF triple syntax, i.e., <
@@ -114,8 +114,7 @@ public class ClaimValidator {
             // should complain about the not defined prefix (e.g. ex in
             // the ex:Foo example above).
             try {
-                String subjectStr =
-                        removeEnclosingAngleBrackets(sdClaim.getSubject());
+                String subjectStr = sdClaim.getSubjectValue();
                 URI uri = new URI(subjectStr);
 
             } catch (URISyntaxException e) {
@@ -130,8 +129,7 @@ public class ClaimValidator {
         if (p.isURI()) {
             try {
                 // c.f. the comment for handling subject nodes above
-                String predicateStr =
-                        removeEnclosingAngleBrackets(sdClaim.getPredicate());
+                String predicateStr = sdClaim.getPredicateValue();
                 URI uri = new URI(predicateStr);
             } catch (URISyntaxException e) {
                 throw new QueryException(
@@ -146,8 +144,7 @@ public class ClaimValidator {
         if (o.isURI()) {
             // c.f. the comment for handling subject nodes above
             try {
-                String objectStr =
-                        removeEnclosingAngleBrackets(sdClaim.getObject());
+                String objectStr = sdClaim.getObjectValue();
                 URI uri = new URI(objectStr);
             } catch (URISyntaxException e) {
                 throw new QueryException(

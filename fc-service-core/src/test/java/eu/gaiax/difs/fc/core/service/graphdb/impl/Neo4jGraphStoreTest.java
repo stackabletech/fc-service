@@ -71,7 +71,7 @@ public class Neo4jGraphStoreTest {
         for (SdClaim sdClaim : sdClaimFile) {
             List<SdClaim> sdClaimList = new ArrayList<>();
             sdClaimList.add(sdClaim);
-            String credentialSubject = sdClaimList.get(0).getSubject();
+            String credentialSubject = sdClaimList.get(0).getSubjectString();
             graphGaia.addClaims(
                     sdClaimList,
                     credentialSubject.substring(1, credentialSubject.length() - 1));
@@ -97,7 +97,7 @@ public class Neo4jGraphStoreTest {
         for (SdClaim sdClaim : sdClaimFile) {
             List<SdClaim> sdClaimList = new ArrayList<>();
             sdClaimList.add(sdClaim);
-            String credentialSubject = sdClaimList.get(0).getSubject();
+            String credentialSubject = sdClaimList.get(0).getSubjectString();
             graphGaia.addClaims(
                 sdClaimList,
                 credentialSubject.substring(1, credentialSubject.length() - 1));
@@ -129,7 +129,7 @@ public class Neo4jGraphStoreTest {
         for (SdClaim sdClaim : sdClaimFile) {
             List<SdClaim> sdClaimList = new ArrayList<>();
             sdClaimList.add(sdClaim);
-            String credentialSubject = sdClaimList.get(0).getSubject();
+            String credentialSubject = sdClaimList.get(0).getSubjectString();
             graphGaia.addClaims(
                     sdClaimList,
                     credentialSubject.substring(1, credentialSubject.length() - 1));
@@ -158,10 +158,10 @@ public class Neo4jGraphStoreTest {
         for (SdClaim sdClaim : sdClaimFile) {
             List<SdClaim> sdClaimList = new ArrayList<>();
             sdClaimList.add(sdClaim);
-            String credentialSubject = sdClaimList.get(0).getSubject();
+            String credentialSubject = sdClaimList.get(0).getSubjectString();
             graphGaia.addClaims(sdClaimList, credentialSubject.substring(1, credentialSubject.length() - 1));
         }
-        GraphQuery queryDeltaTest = new GraphQuery("Match(n) RETURN n", null);
+        //GraphQuery queryDeltaTest = new GraphQuery("Match(n) RETURN n", null);
         GraphQuery queryDelta = new GraphQuery(
                 "MATCH (n:LegalPerson) WHERE n.name = $name RETURN n LIMIT $limit", Map.of("name", "deltaDAO AG", "limit", 25));
         List<Map<String, Object>> responseDelta = graphGaia.queryData(queryDelta).getResults();
@@ -245,8 +245,7 @@ public class Neo4jGraphStoreTest {
     @Test
     void testAddClaimsException() throws Exception {
         String credentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch.json";
-        String wrongCredentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch";
-
+        //String wrongCredentialSubject = "http://w3id.org/gaia-x/indiv#serviceElasticSearch";
 
         SdClaim syntacticallyCorrectClaim = new SdClaim(
                 "<http://w3id.org/gaia-x/indiv#serviceElasticSearch.json>",
@@ -536,11 +535,15 @@ public class Neo4jGraphStoreTest {
                 )
         );
 
+        try {
         graphGaia.addClaims(sdClaimList, credentialSubject1);
         graphGaia.addClaims(sdClaimsWOtherCredSubject, credentialSubject2);
 
         graphGaia.deleteClaims(credentialSubject1);
-
+        } catch (Exception ex) {
+        	ex.printStackTrace();
+        	throw ex;
+        }
         // The (virtual) graph of nodes belonging to credentialSubject1 should
         // be empty
         GraphQuery queryDelta = new GraphQuery(
