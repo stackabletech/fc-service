@@ -26,23 +26,27 @@
         },
         "@id": "https://www.example.org/mySoftwareOffering",
         "@type": "gax-trust-framework:ServiceOffering",
-        "gax-trust-framework:mySoftwareOffering": {
-          "@type": "gax-trust-framework:SoftwareOffering",
-          "gax-trust-framework:accessType": "access type",
-          "gax-trust-framework:formatType": "format type",
-          "gax-trust-framework:requestType": "request type"
-        },
-        "gax-trust-framework:providedBy": {
+        "gax-core:providedBy": {
           "@id": "gax-participant:Provider1"
         },
+		"gax-core:offeredBy": {
+          "@id": "gax-participant:Provider1"
+        },
+		"gax-trust-framework:dataAccountExport": {
+		  "@type": "gax-trust-framework:DataAccountExport",
+		  "gax-trust-framework:requestType": "API",
+		  "gax-trust-framework:accessType": "digital",
+		  "gax-trust-framework:formatType": "application/gzip"
+		},
         "gax-trust-framework:termsAndConditions": {
-          "@type": "gax-core:TermsAndConditions",
+          "@type": "gax-trust-framework:TermsAndConditions",
           "gax-trust-framework:content": {
             "@type": "xsd:anyURI",
             "@value": "http://example.org/tac"
           },
           "gax-trust-framework:hash": "1234"
         },
+		"gax-trust-framework:policy": "list of policy",
         "dcat:keyword": [
           "Keyword1_1",
           "Keyword1_2",

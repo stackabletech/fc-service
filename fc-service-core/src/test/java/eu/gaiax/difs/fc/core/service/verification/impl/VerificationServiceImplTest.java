@@ -145,7 +145,7 @@ public class VerificationServiceImplTest {
     schemaStore.initializeDefaultSchemas();
     ContentAccessor content = getAccessor("VerificationService/syntax/serviceOffering2.jsonld");
     verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
-    VerificationResult vr = verificationService.verifySelfDescription(content, true, false, false);
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
     verificationService.setTypes("http://w3id.org/gaia-x/participant#Participant", "http://w3id.org/gaia-x/service#ServiceOffering");
     assertNotNull(vr);
     assertTrue(vr instanceof VerificationResultOffering);
@@ -154,7 +154,7 @@ public class VerificationServiceImplTest {
     assertEquals("https://www.example.org/mySoftwareOffering", vro.getId());
     assertEquals("http://gaiax.de", vro.getIssuer());
     assertNotNull(vro.getClaims());
-    assertEquals(19, vro.getClaims().size()); //!!
+    assertEquals(21, vro.getClaims().size()); //!!
     assertNull(vro.getValidators());
     assertNull(vro.getValidatorDids());
     assertEquals(Instant.parse("2022-10-19T18:48:09Z"), vro.getIssuedDateTime());
@@ -165,7 +165,7 @@ public class VerificationServiceImplTest {
     log.debug("validSyntax_ValidPerson");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("VerificationService/syntax/legalPerson1.jsonld");
-    VerificationResult vr = verificationService.verifySelfDescription(content, true, false, false);
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
     assertNotNull(vr);
     assertTrue(vr instanceof VerificationResultParticipant);
     assertFalse(vr instanceof VerificationResultOffering);
@@ -186,7 +186,7 @@ public class VerificationServiceImplTest {
     schemaStore.initializeDefaultSchemas();
     ContentAccessor content = getAccessor("VerificationService/syntax/legalPerson2.jsonld");
     verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
-    VerificationResult vr = verificationService.verifySelfDescription(content, true, false, false);
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
     verificationService.setTypes("http://w3id.org/gaia-x/participant#Participant", "http://w3id.org/gaia-x/service#ServiceOffering");
     assertNotNull(vr);
     assertTrue(vr instanceof VerificationResultParticipant);
