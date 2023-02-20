@@ -160,20 +160,28 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     // sorting is not supported yet by keycloak admin API
     log.debug("getParticipants.enter; got offset: {}, limit: {}", offset, limit);
     PaginatedResults<ParticipantMetaData> results = partDao.search(offset, limit);
-    //Adding actual SD from sd-store for each sd-hash present in keycloak
-    SdFilter filter = new SdFilter();
-    filter.setLimit(results.getResults().size());
-    filter.setOffset(0);
-    filter.setHashes(results.getResults().stream().map(ParticipantMetaData::getSdHash).collect(Collectors.toList()));
-    Map<String, ContentAccessor> sdsMap = selfDescriptionStore.getByFilter(filter, true, true).getResults().stream()
-        .collect(Collectors.toMap(SelfDescriptionMetadata::getSdHash, SelfDescriptionMetadata::getSelfDescription));
-    results.getResults().forEach(part -> {
-      part.setSelfDescription(sdsMap.get(part.getSdHash()).getContentAsString());
-      setParticipantPublicKey(part);
-    });
-    log.debug("getParticipants.exit; returning results: {}", results);
     int total = (int) results.getTotalCount();
+    if (total > 0) {
+      //Adding actual SD from sd-store for each sd-hash present in keycloak
+      SdFilter filter = new SdFilter();
+      filter.setLimit(results.getResults().size());
+      filter.setOffset(0);
+      filter.setHashes(results.getResults().stream().map(ParticipantMetaData::getSdHash).collect(Collectors.toList()));
+      PaginatedResults<SelfDescriptionMetadata> page = selfDescriptionStore.getByFilter(filter, true, true);
+      if (page.getTotalCount() > 0) {
+        Map<String, ContentAccessor> sdsMap = page.getResults().stream().collect(
+    		  Collectors.toMap(SelfDescriptionMetadata::getSdHash, SelfDescriptionMetadata::getSelfDescription));
+        results.getResults().forEach(part -> {
+          part.setSelfDescription(sdsMap.get(part.getSdHash()).getContentAsString());
+          setParticipantPublicKey(part);
+        });
+      } else {
+    	results.getResults().clear();
+    	total = 0;
+      }
+    }
     List parts = results.getResults();
+    log.debug("getParticipants.exit; returning parts: {} from total: {}", parts.size(), total);
     return ResponseEntity.ok(new Participants(total, parts));
   }
 
