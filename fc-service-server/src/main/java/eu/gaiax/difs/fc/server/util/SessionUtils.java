@@ -29,6 +29,7 @@ public class SessionUtils {
       participantId = ((Jwt) principal).getClaim("participant_id");
     }
     log.debug("getSessionParticipantId.exit; got participant id {} from principal: {}", participantId, principal);
+    //log.debug("getSessionParticipantId.exit; got roles: {}", ((Jwt) principal).getClaimAsStringList("roles"));
     return participantId;
   }
 

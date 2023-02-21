@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.c4_soft.springaddons.security.oauth2.test.annotations.Claims;
 import com.c4_soft.springaddons.security.oauth2.test.annotations.OpenIdClaims;
 import com.c4_soft.springaddons.security.oauth2.test.annotations.StringClaim;
+import com.c4_soft.springaddons.security.oauth2.test.annotations.StringArrayClaim;
 import com.c4_soft.springaddons.security.oauth2.test.annotations.WithMockJwtAuth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.gaiax.difs.fc.api.generated.model.Participants;
@@ -412,9 +413,11 @@ public class ParticipantsControllerTest {
   }
 
   @Test
-  @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX},
-        claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
-            {@StringClaim(name = "participant_id", value = "did:example:issuer")})))
+  @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, // think how to provide claims to test Jwt converter
+        claims = @OpenIdClaims(otherClaims = @Claims(
+        	stringClaims = {@StringClaim(name = "participant_id", value = "did:example:issuer")},
+        	stringArrayClaims = {@StringArrayClaim(name = "roles", value = "gaia-x-admin")}
+        	)))
   @Order(30)
   public void updateParticipantShouldReturnSuccessResponse() throws Exception {
 
@@ -521,7 +524,7 @@ public class ParticipantsControllerTest {
   }
 
   @Test
-  @WithMockJwtAuth(authorities = {"ROLE_" + PARTICIPANT_ADMIN_ROLE},
+  @WithMockJwtAuth(authorities = {PARTICIPANT_ADMIN_ROLE_WITH_PREFIX},
         claims = @OpenIdClaims(otherClaims = @Claims(stringClaims =
             {@StringClaim(name = "participant_id", value = "wrongId")})))
   public void deleteParticipantShouldReturnForbiddenResponse() throws Exception {

@@ -1,6 +1,9 @@
 package eu.gaiax.difs.fc.server.config;
 
+import static eu.gaiax.difs.fc.server.util.CommonConstants.*;
+
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -12,10 +15,14 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Converter provides type conversion for custom jwt claim values.
  */
+@Slf4j
 public class CustomJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
+	
   private final String resourceId;
   private final JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
 
@@ -29,25 +36,6 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, Abstract
   }
 
   /**
-   * Extract all user authorities.
-   *
-   * @param jwt User authentication token.
-   * @param resourceId Keycloak client id.
-   * @return Collection of user authorities.
-   */
-  private Collection<? extends GrantedAuthority> extractResourceRoles(final Jwt jwt, final String resourceId) {
-    Collection<GrantedAuthority> authorities = this.jwtGrantedAuthoritiesConverter.convert(jwt);
-    Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
-    Map<String, Object> resourceData = (Map<String, Object>) resourceAccess.get(resourceId);
-    Collection<String> resourceRoles;
-    if (resourceAccess != null && (resourceRoles = (Collection<String>) resourceData.get("roles")) != null) {
-      authorities.addAll(resourceRoles.stream()
-          .map(x -> new SimpleGrantedAuthority("ROLE_" + x)).collect(Collectors.toSet()));
-    }
-    return authorities;
-  }
-
-  /**
    * Convert user jwt token to JwtAuthenticationToken with all user authorities.
    *
    * @param source User authentication token.
@@ -55,9 +43,49 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, Abstract
    */
   @Override
   public AbstractAuthenticationToken convert(final Jwt source) {
-    Collection<GrantedAuthority> authorities =
-        Stream.concat(this.jwtGrantedAuthoritiesConverter.convert(source).stream(),
-          extractResourceRoles(source, resourceId).stream()).collect(Collectors.toSet());
-    return new JwtAuthenticationToken(source, authorities);
+	log.info("convert.enter; got JWT: {}", source);
+    Collection<GrantedAuthority> authorities = jwtGrantedAuthoritiesConverter.convert(source);
+	Collection<GrantedAuthority> roles = extractResourceRoles(source);
+    roles.addAll(authorities);
+	log.info("convert.exit; extracted roles: {}", roles);
+    return new JwtAuthenticationToken(source, roles);
   }
+
+  /**
+   * Extract all user authorities.
+   *
+   * @param jwt User authentication token.
+   * @param resourceId Keycloak client id.
+   * @return Collection of user authorities.
+   */
+  @SuppressWarnings("unchecked")
+  private Collection<GrantedAuthority> extractResourceRoles(final Jwt jwt) {
+    Collection<GrantedAuthority> authorities = new HashSet<>(); 
+    Collection<String> roles = null;
+    Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
+    if (resourceAccess != null) {
+      Map<String, Object> resourceData = (Map<String, Object>) resourceAccess.get(resourceId);
+      if (resourceData != null) {
+        roles = (Collection<String>) resourceData.get("roles");
+        if (roles != null) {
+          roles.stream().forEach(x -> authorities.add(new SimpleGrantedAuthority(PREFIX + x)));
+        } 
+      }
+    } else {
+      roles = jwt.getClaim("roles");
+      if (roles != null) {
+        roles.stream().forEach(x -> {
+        	if ("gaia-x-admin".equals(x)) {
+              authorities.add(new SimpleGrantedAuthority(CATALOGUE_ADMIN_ROLE_WITH_PREFIX));
+            } else if ("gaia-x-notar".equals(x)) {
+              authorities.add(new SimpleGrantedAuthority(PARTICIPANT_ADMIN_ROLE_WITH_PREFIX));	
+            } else if ("gaia-x-business-owner".equals(x)) {
+        	  authorities.add(new SimpleGrantedAuthority(PARTICIPANT_USER_ADMIN_ROLE_WITH_PREFIX));
+            }
+        });
+      }
+    }
+    return authorities;
+  }
+
 }
