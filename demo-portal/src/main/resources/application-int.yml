@@ -20,7 +20,8 @@ spring:
             issuer-uri: https://auth-server.gxfs.dev
 
 federated-catalogue:
-  base-uri: http://10.108.152.6:8081
+#  base-uri: http://10.108.152.6:8081
+  base-uri: https://fc-server.gxfs.dev
 
 logging:
   level:
