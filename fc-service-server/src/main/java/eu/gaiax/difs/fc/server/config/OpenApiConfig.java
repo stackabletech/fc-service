@@ -1,8 +1,12 @@
 package eu.gaiax.difs.fc.server.config;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.info.BuildProperties;
@@ -23,6 +27,7 @@ public class OpenApiConfig {
   @Bean
   public OpenAPI openApiInfo() {
     String version;
+    String securitySchemeName = "bearerAuth";
 
     if (buildProperties.isPresent()) {
       version = buildProperties.get().getVersion();
@@ -31,7 +36,19 @@ public class OpenApiConfig {
     }
 
     return new OpenAPI().info(new Info().version(version).title("GAIA-X Federated Catalogue")
-      .description("This is the REST API of the Gaia-X catalogue.")
-      .license(new License().name("Apache 2.0").url("http://www.apache.org/licenses/LICENSE-2.0")));
-  }
+    		.description("This is the REST API of the Gaia-X catalogue.")
+    		.license(new License().name("Apache 2.0").url("http://www.apache.org/licenses/LICENSE-2.0")))
+    		.addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
+            .components(
+                    new Components()
+                        .addSecuritySchemes(securitySchemeName,
+                            new SecurityScheme()
+                                .name(securitySchemeName)
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")
+                       )
+            );
+    }
+  
 }
