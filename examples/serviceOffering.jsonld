@@ -1,73 +1,62 @@
 {
-  "@context": [
-    "https://www.w3.org/2018/credentials/v1"
-  ],
-  "@id": "http://example.edu/verifiablePresentation/self-description1",
-  "type": [
-    "VerifiablePresentation"
-  ],
-  "verifiableCredential": [
-    {
-      "@context": [
-        "https://www.w3.org/2018/credentials/v1"
-      ],
-      "@id": "https://www.example.org/SoftwareOffering.json",
-      "@type": [
-        "VerifiableCredential"
-      ],
-      "issuer": "http://gaiax.de",
-      "issuanceDate": "2022-10-19T18:48:09Z",
-      "credentialSubject": {
-        "@context": {
-          "dcat": "http://www.w3.org/ns/dcat#",
-          "gax-core": "https://w3id.org/gaia-x/core#",
-          "gax-trust-framework": "https://w3id.org/gaia-x/gax-trust-framework#",
-          "xsd": "http://www.w3.org/2001/XMLSchema#"
-        },
-        "@id": "https://www.example.org/mySoftwareOffering",
-        "@type": "gax-trust-framework:ServiceOffering",
-        "gax-trust-framework:mySoftwareOffering": {
-          "@type": "gax-trust-framework:SoftwareOffering",
-          "gax-trust-framework:accessType": "access type",
-          "gax-trust-framework:formatType": "format type",
-          "gax-trust-framework:requestType": "request type"
-        },
-        "gax-trust-framework:providedBy": {
-          "@id": "gax-participant:Provider1"
-        },
-        "gax-trust-framework:termsAndConditions": {
-          "@type": "gax-core:TermsAndConditions",
-          "gax-trust-framework:content": {
-            "@type": "xsd:anyURI",
-            "@value": "http://example.org/tac"
-          },
-          "gax-trust-framework:hash": "1234"
-        },
-        "dcat:keyword": [
-          "Keyword1_1",
-          "Keyword1_2",
-          "Keyword1_3",
-          "Keyword1_4",
-          "Keyword1_5",
-          "Keyword1_6",
-          "Keyword1_7"
-        ],
-        "gax-trust-framework:serviceTitle": "Software Title"
-      },
-      "proof": {
-        "type": "JsonWebSignature2020",
-        "created": "2022-12-02T16:04:48Z",
+    "@id": "http://example.edu/verifiablePresentation/self-description1",
+    "proof": {
+        "created": "2023-03-01T11:05:08Z",
+        "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..RMGGGRlviGNdoBBTygv9JohKwB88mUQirUOZnOhxvNma-kBvP1kXvnnMFVitJ26wsctJjk5hM4EDiagGaxNplBPtFgrrilp6UgGlQiQIx8arjAnwktQIx3HF9E7uZ5iucwlfrsUjro5svej4aqS5n-tCNDW6wwkLgfd1frjIkWb01GA17qa3U1E762-1pnu5Z3EOSatufcnXgY3GdCOezP57y8-CLrpE9s8iTtRfNuJbs-4ka09akuDq_Z-6K_buQ5IXo5_B9C69DAkH_uzj9CGEgZxRwQg-ZykVXdDenfm9TkT2mPlqolt30cUyhDatMwHkOZpRk1vDdQMTmJwdPt_vpVpyXUGcN59ND5stuscXkU43e0lWoivtEs9eHmcuFz-mRsx6VnI-84qkH_TPdB2g5gfsH0HJCB9poK8wAPpNq3O7hf9rnctwt6doc_ZOKkZrVtJT9zaSR78vcER1FXInxx9Qe6idcIYR105YS9Q_VNJSE0vRj6fddi3B05FjweLW3XIqpDmRsFkuAhZI6aI6auNRtLlpNg-xgr_64Ek9EcaLc7PLw6iCvmdIYkl9NzUZgF0EDBPfOHIyjVprVO3bZ16WezbqjGnw6uR2MukDpretLN4ZbhqOiJM80BMz6Kdyk99bWy1xtCseu2Z6eNjwo3QcPhaZfw0pFeWb0V8",
         "proofPurpose": "assertionMethod",
-        "verificationMethod": "did:web:compliance.lab.gaia-x.eu",
-        "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..gqHw7BU2sLubTvLqf6CegEtLSeNYJfj2izkerEs-3DnFGRExjI6z0wiwza0VUXCRrek_ApNYhFiR-jmrq9mBv6qWwGUvpgVFc1oCLa6gZZ6tmw__3I7x5P9W_lkeL4Z8-NA94us2taOCckWDG3kMpye_4kynBdqUzB5ACn7ylpG9HTjzKZ0bA1Mkh49-EJE9SX6vkPeN87b8RRPxj26YYIzecLatldOqh0MHD2hRx-aM3khLRgcbJxj9zU0Cxoy4TOah0oZ33NLDi-UXz2HXAq4MGrdIRtAfLGvTr-XpEQ5LizMAeoVLk884Aag-rNnrBZZQVt_B-CLjtv3LmYJF9OaEtLvCFd9HsVeQw8uSpFVU93keL9m2T5PtxahIyznLsm0SQFmYWrVe7Pw-FoT25Rbc7RZOHQivP6NTiz9lD1HTuFXaGy8YheXhYkZ5nG79qx_-dUVJwau6W8or8deJzTmX48bv16GHWMMVW5zHWj-atpLjHAzc_guTOlP8JPX9ed2C4B32Fh12ZOin2RHC53PEjcdMp-4ZR70kTioQYJaPw2bt8QAV9FBRfyFLiwYeC9nbYUMPNtg78PNf5QgNzg__EOpHcloA5eTRQP3sz09HsYaS8Qwu-CjYfE6cdPV0GZPkCVqLInUQ3hNwamX33brZypTsPV8gJzkSU5kxDZI"
-      }
+        "type": "JsonWebSignature2020",
+        "verificationMethod": "did:web:compliance.lab.gaia-x.eu"
+    },
+    "type": ["VerifiablePresentation"],
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    "verifiableCredential": {
+        "issuanceDate": "2022-10-19T18:48:09Z",
+        "credentialSubject": {
+            "gax-trust-framework:policy": "list of policy",
+            "gax-trust-framework:serviceTitle": "Software Title",
+            "dcat:keyword": [
+                "Keyword1_1",
+                "Keyword1_2",
+                "Keyword1_3",
+                "Keyword1_4",
+                "Keyword1_5",
+                "Keyword1_6",
+                "Keyword1_7"
+            ],
+            "@type": "gax-trust-framework:ServiceOffering",
+            "gax-core:offeredBy": {"@id": "https://www.example.org/Provider1.json"},
+            "@id": "https://www.example.org/mySoftwareOffering",
+            "@context": {
+                "gax-trust-framework": "https://w3id.org/gaia-x/gax-trust-framework#",
+                "xsd": "http://www.w3.org/2001/XMLSchema#",
+                "dcat": "http://www.w3.org/ns/dcat#",
+                "gax-core": "https://w3id.org/gaia-x/core#"
+            },
+            "gax-trust-framework:dataAccountExport": {
+                "gax-trust-framework:formatType": "application/gzip",
+                "@type": "gax-trust-framework:DataAccountExport",
+                "gax-trust-framework:accessType": "digital",
+                "gax-trust-framework:requestType": "API"
+            },
+            "gax-trust-framework:termsAndConditions": {
+                "gax-trust-framework:content": {
+                    "@value": "http://example.org/tac",
+                    "@type": "xsd:anyURI"
+                },
+                "@type": "gax-trust-framework:TermsAndConditions",
+                "gax-trust-framework:hash": "1234"
+            }
+        },
+        "@type": ["VerifiableCredential"],
+        "@id": "https://www.example.org/SoftwareOffering.json",
+        "proof": {
+            "created": "2023-03-01T11:05:07Z",
+            "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..Y9vkgfzscLnY82AUTJsevtve5pmLv28VP39SvjaeKvUk9hUyzFIVrIUxfhIcMowRExLxzMVFKm3lz_1km6-6TU3HkKHgMIhUny6VEv_ozPQYYAWv-TWahefjnpb1Ta6Sl_K7mA4gpuKOFg7C-WQDz8JL-L6OHCSeiPmBUxkhmKdcMFbBX4dMoj90Oqj05hCQqmSs_bYaipMXsa8lDlaZhNQ9mk10wqe3SEf-Cp9YS0d-dvJvdw23HqB_DqH6UFoQ_NcANUKUKOxHDjIafCXhL8j59KezM0fV8rmVzRDxk5wsD0vjAwAOz4tCiiOxVPjQMdQub4ISNEw0ZcLGOYYKsRkIHQHYQo1cbgWg_f8Z6hebI5Jx8rDdwz0vnJky1mw5I09CprPq03Kh6E9PXWPiIJFU4jZxZdDyginm3bZfVaKZ07KRF3HEq00vOgjHBpNaNXkxloUi6hmVEGYTp04OQ-jopQM87zvnoIOqB78jQpRSQK2CYckAph_R0Sna_qI5unb5t-29DDNKuRxYOBJoK5O5i0OgbfecY82FyTvPOoYr2q7tN1WONlZqqBdlyqoo_NBsJ3xVsJQMXeTpF8XCOb9iCn-R3qpCZFdyg-6C0MWMTft8dEZIqVOfyuDSKyiz24qiHufVt94v87LlYIkDnNIFitkLqh4hQ7R4uYIMtEo",
+            "proofPurpose": "assertionMethod",
+            "type": "JsonWebSignature2020",
+            "verificationMethod": "did:web:compliance.lab.gaia-x.eu"
+        },
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        "issuer": "http://gaiax.de"
     }
-  ],
-  "proof": {
-    "type": "JsonWebSignature2020",
-    "created": "2022-12-02T16:04:48Z",
-    "proofPurpose": "assertionMethod",
-    "verificationMethod": "did:web:compliance.lab.gaia-x.eu",
-    "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..EZXMjh9hgg1BCeUayzvjVSXNIbAVn9pFSyoU477S84TYVxOEzkjs1UDDHgcxhqEx2q9aqr8G0tGvsyDS_e1LVTyzmGzY5b08k3wBwxrHTxY6u-qgYxE9Glx-3Dr-yv6KVQi70YFTChccb6VkkjXII9REKteVXavRB3jPgDNl6d-QtG8tE26rhOnp8y8QfdbleJAR8al66WJgghfXvEcHLAhdsCRuwJRrLz33i1J-XrM6VDY53LhSoHNr-xrZ7cBUzR-ki1ukL-ajUxsx67vxAKgOBvvp26GZi0Rc2lnw6cf-eIn9ZRwjp_RN6k6UWN5xNIhTxZ4IWZMxHdQk-D1Ib1JXdNzCHHcxkr0Njyr2LlS-nHxLBPcYUutlQoxzNBjHforJpAQeCd-s5wk2xBAAag8LP4kqWIekbJN0nuGAOV7wWbPJi7BbIcXLfktS8DnEDoBiUUoZkMZzOwEWv8-UIVZoYhlzhx7sAMH0T-QwpL-4PJyjN6hvZWJxBWY9fyL388pudb1XFakovqmULcXjsqGnG_rXEE7S28rD8qNBJDSgp6tAXK4kN7JPE2sh3FI9Yk5ytc9RPq38I9tez4U9cKNvL3OPykEm6fautCmCGpWPuVNE8ukQ9Q31QRcDg53bxwLryPNphTfAK8d3sIZRY5rhWc2A_RqKSssPrJeClf4"
-  }
 }
