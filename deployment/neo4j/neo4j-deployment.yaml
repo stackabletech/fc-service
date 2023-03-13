@@ -22,6 +22,8 @@ spec:
           volumeMounts:
             - name: fc-neo4j-data
               mountPath: /plugins
+          securityContext:
+            allowPrivilegeEscalation: false    
           command:
             - "/bin/sh"
             - "-c"
@@ -36,6 +38,8 @@ spec:
         - image: neo4j:4.4.12
           name: neo4j
           imagePullPolicy: "IfNotPresent"
+          securityContext:
+            allowPrivilegeEscalation: false    
           env:
             - name: NEO4J_AUTH
               valueFrom:
@@ -75,7 +79,7 @@ spec:
                     operator: In
                     values:
                       - fc-postgres
-                      - fc-service
+#                      - fc-service
               topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: fc-neo4j-data
