@@ -70,17 +70,17 @@ spec:
           volumeMounts:
             - name: fc-neo4j-data
               mountPath: /data
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - fc-postgres
+#      affinity:
+#        podAffinity:
+#          requiredDuringSchedulingIgnoredDuringExecution:
+#            - labelSelector:
+#                matchExpressions:
+#                  - key: app
+#                    operator: In
+#                    values:
+#                      - fc-postgres
 #                      - fc-service
-              topologyKey: "kubernetes.io/hostname"
+#              topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: fc-neo4j-data
           persistentVolumeClaim:
