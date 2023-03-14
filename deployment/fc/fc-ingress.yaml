@@ -3,7 +3,8 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
-    cert-manager.io/cluster-issuer: cert-manager-webhook
+#    cert-manager.io/cluster-issuer: cert-manager-webhook
+    cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/affinity: cookie
     nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
@@ -18,10 +19,13 @@ metadata:
 spec:
   tls:
     - hosts:
-        - fc-server.gxfs.dev
-      secretName: wildcard-gxfs-dev
+#        - fc-server.gxfs.dev
+        - fc-server.lila.dih-cloud.com
+#      secretName: wildcard-gxfs-dev
+      secretName: fc-server.lila.dih-cloud.com-tls
   rules:
-    - host: fc-server.gxfs.dev
+#    - host: fc-server.gxfs.dev
+    - host: fc-server.lila.dih-cloud.com
       http:
         paths:
           - path: /
