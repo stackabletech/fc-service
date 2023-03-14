@@ -61,6 +61,8 @@ spec:
             initialDelaySeconds: 60
             periodSeconds: 30
           resources: { }
+          securityContext:
+            allowPrivilegeEscalation: false 
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
