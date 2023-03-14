@@ -26,22 +26,27 @@ spec:
           imagePullPolicy: Always
           env:
             - name: GRAPHSTORE_URI
-              value: bolt://10.110.142.153:7687
+#              value: bolt://10.110.142.153:7687
+              value: bolt://10.0.222.40:7687
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:postgresql://10.104.96.87:5432/postgres
+#              value: jdbc:postgresql://10.104.96.87:5432/postgres
+              value: jdbc:postgresql://10.0.29.123:5432/postgres
             - name: GRAPHSTORE_QUERY_TIMEOUT_IN_SECONDS
               value: "5"
             - name: DATASTORE_FILE_PATH
               value: /var/lib/fc-service/filestore
             - name: KEYCLOAK_AUTH_SERVER_URL
-              value: http://fc-key-server.gxfs.dev
+#              value: http://fc-key-server.gxfs.dev
+              value: https://id.lila.dih-cloud.com
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
-              value: http://fc-key-server.gxfs.dev/realms/gaia-x
+#              value: http://fc-key-server.gxfs.dev/realms/gaia-x
+              value: https://id.lila.dih-cloud.com/realms/gaia-x
             - name: KEYCLOAK_CREDENTIALS_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: fc-server-keys-secret
-                  key: keycloak_client_secret
+              value: DVIgraQHZsKG3IVDSDwu5CgCE07gx4YE
+#              valueFrom:
+#                secretKeyRef:
+#                  name: fc-server-keys-secret
+#                  key: keycloak_client_secret
           ports:
             - name: http
               containerPort: 8081
