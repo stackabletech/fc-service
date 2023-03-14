@@ -45,10 +45,10 @@ spec:
           ports:
             - name: http
               containerPort: 8081
-          volumeMounts:
-            - name: fc-file-store
-              mountPath: /var/lib/fc-service
-              subPath: filestore
+#          volumeMounts:
+#            - name: fc-file-store
+#              mountPath: /var/lib/fc-service
+#              subPath: filestore
           readinessProbe:
             httpGet:
               path: /actuator/health
@@ -68,8 +68,8 @@ spec:
                       values:
                         - fc-service
                 topologyKey: "kubernetes.io/hostname"
-      volumes:
-        - name: fc-file-store
-          persistentVolumeClaim:
-            claimName: fc-filestore-claim
+#      volumes:
+#        - name: fc-file-store
+#          persistentVolumeClaim:
+#            claimName: fc-filestore-claim
       restartPolicy: Always
