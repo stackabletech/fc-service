@@ -47,6 +47,10 @@ public abstract class ServiceClient {
                 .findAndRegisterModules()   // .registerModule(new ParanamerModule()) .registerModule(new JavaTimeModule())
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
+    
+    public String getUrl() {
+    	return this.baseUrl;
+    }
 
     protected <T> T doGet(String path, Map<String, Object> params, Class<T> reType) {
         return client
@@ -65,7 +69,9 @@ public abstract class ServiceClient {
             .retrieve()
             .bodyToMono(reType) 
             .block();
-    }    
+    }
+    
+    // TODO: add asynch methods also
 
     protected <T> T doPost(String path, Object body, Map<String, Object> params, Class<T> reType) {
         return client
@@ -132,7 +138,7 @@ public abstract class ServiceClient {
             .uri(path, builder -> builder.build(params))
             .attributes(oauth2AuthorizedClient(authorizedClient))
             .retrieve()
-            .bodyToMono(reType) 
+            .bodyToMono(reType)
             .block();
     }
     
