@@ -92,8 +92,10 @@ federated-catalogue:
       location: schemaFiles
     context-cache:
       location: contextCacheFiles
-  store:
-    sd-in-graph: true
+  query:
+    partners:
+      - "http://localhost:8081"
+    recursive: true
   verification:
     participant:
       type: "https://w3id.org/gaia-x/core#Participant"

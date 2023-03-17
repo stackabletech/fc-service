@@ -7,7 +7,7 @@
     <parent>
         <groupId>eu.gaiax.difs.fc</groupId>
         <artifactId>fc-service</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
     </parent>
 
     <artifactId>fc-service-server</artifactId>
@@ -22,6 +22,14 @@
         </dependency>
         <dependency>
             <groupId>eu.gaiax.difs.fc</groupId>
+            <artifactId>fc-service-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>eu.gaiax.difs.fc</groupId>
+            <artifactId>fc-service-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>eu.gaiax.difs.fc</groupId>
             <artifactId>fc-test-support</artifactId>
             <exclusions>
                 <exclusion>
@@ -30,10 +38,6 @@
                 </exclusion>
             </exclusions>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>eu.gaiax.difs.fc</groupId>
-            <artifactId>fc-service-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -46,6 +50,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
