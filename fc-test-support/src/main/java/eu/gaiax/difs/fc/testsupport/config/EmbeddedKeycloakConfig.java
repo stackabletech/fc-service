@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Import;
 @ConditionalOnProperty(value = "federated-catalogue.scope", havingValue = "test")
 @EnableConfigurationProperties({KeycloakServerProperties.class})
 public class EmbeddedKeycloakConfig {
-
+/*
   @Bean
   @ConditionalOnMissingBean(name = "keycloakJaxRsApplication")
   ServletRegistrationBean<HttpServlet30Dispatcher> keycloakJaxRsApplication(KeycloakServerProperties properties,
@@ -49,7 +49,7 @@ public class EmbeddedKeycloakConfig {
     servlet.setAsyncSupported(true);
     return servlet;
   }
-
+*/
   @Bean
   FilterRegistrationBean<EmbeddedKeycloakRequestFilter> keycloakSessionManagement(KeycloakServerProperties properties) {
     FilterRegistrationBean<EmbeddedKeycloakRequestFilter> filter = new FilterRegistrationBean<>();

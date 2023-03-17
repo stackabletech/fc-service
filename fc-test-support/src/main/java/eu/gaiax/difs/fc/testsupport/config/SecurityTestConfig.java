@@ -1,5 +1,7 @@
 package eu.gaiax.difs.fc.testsupport.config;
 
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,14 +20,14 @@ public class SecurityTestConfig {
   public SecurityFilterChain authFilterChain(HttpSecurity http) throws Exception {
     http
         .csrf().disable()
-        .antMatcher("/auth/**")
-        .authorizeRequests(authorization -> authorization
-            .antMatchers("/auth/realms/gaia-x/protocol/openid-connect/token").permitAll()
-            .antMatchers("/auth/realms/gaia-x/.well-known/openid-configuration").permitAll()
-            .antMatchers("/auth/realms/gaia-x/protocol/openid-connect/certs").permitAll()
-            .antMatchers("/.well-known/oauth-authorization-server/auth/realms/gaia-x").permitAll()
-        )
-    ;
+        .authorizeHttpRequests(authorize -> authorize 
+    			.requestMatchers(antMatcher("/auth/realms/gaia-x/protocol/openid-connect/token")).permitAll()
+    			.requestMatchers(antMatcher("/auth/realms/gaia-x/.well-known/openid-configuration")).permitAll()
+    			.requestMatchers(antMatcher("/auth/realms/gaia-x/protocol/openid-connect/certs")).permitAll()
+    			.requestMatchers(antMatcher("/.well-known/oauth-authorization-server/auth/realms/gaia-x")).permitAll()
+    			.requestMatchers(antMatcher("/auth/**")).authenticated()
+		);
     return http.build();
   }
+
 }

@@ -3,7 +3,7 @@ package eu.gaiax.difs.fc.server.util;
 import eu.gaiax.difs.fc.core.exception.ClientException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Helper class for the Time parsing.

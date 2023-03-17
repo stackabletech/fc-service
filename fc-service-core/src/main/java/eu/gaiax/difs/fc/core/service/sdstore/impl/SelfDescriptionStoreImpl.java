@@ -22,15 +22,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.persistence.LockModeType;
-import javax.persistence.TemporalType;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TemporalType;
 
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.jpa.TypedParameterValue;
+//import org.hibernate.jpa.TypedParameterValue;
 import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -225,8 +225,8 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
     final List<String> validators = filter.getValidators();
     if (validators != null) {
-      queryBuilder.addClause("validators && cast(? as varchar[])", "validators",
-          new TypedParameterValue(StringArrayType.INSTANCE, validators));
+      queryBuilder.addClause("validators && cast(? as varchar[])", "validators", validators);
+          //new TypedParameterValue(StringArrayType.INSTANCE, validators));
     }
 
     final List<SelfDescriptionStatus> statuses = filter.getStatuses();

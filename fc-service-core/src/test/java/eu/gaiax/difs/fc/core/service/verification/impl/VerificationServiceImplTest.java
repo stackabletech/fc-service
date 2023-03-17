@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.*;
-import org.neo4j.driver.springframework.boot.test.autoconfigure.Neo4jTestHarnessAutoConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -49,7 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 public class VerificationServiceImplTest {
 
-  @SpringBootApplication(exclude = Neo4jTestHarnessAutoConfiguration.class)
+  @SpringBootApplication
   public static class TestApplication {
 
     public static void main(final String[] args) {

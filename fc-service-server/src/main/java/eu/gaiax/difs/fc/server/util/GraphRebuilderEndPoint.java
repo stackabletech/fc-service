@@ -4,7 +4,7 @@ package eu.gaiax.difs.fc.server.util;
 import eu.gaiax.difs.fc.core.util.GraphRebuilder;
 import eu.gaiax.difs.fc.server.model.GraphRebuildRequest;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.web.annotation.RestControllerEndpoint;

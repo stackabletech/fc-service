@@ -9,16 +9,16 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
+//import org.hibernate.annotations.TypeDef;
+//import org.hibernate.annotations.TypeDefs;
 
 /**
  * Database record for SdMetaData table.
@@ -27,12 +27,12 @@ import org.hibernate.annotations.TypeDefs;
 @Access(AccessType.PROPERTY)
 @Table(name = "sdfiles")
 @NoArgsConstructor
-@TypeDefs({
-  @TypeDef(
-      name = "string-array",
-      typeClass = StringArrayType.class
-  )
-})
+//@TypeDefs({
+//  @TypeDef(
+//      name = "string-array",
+//      typeClass = StringArrayType.class
+//  )
+//})
 public class SdMetaRecord extends SelfDescriptionMetadata {
 
   private static final long serialVersionUID = -1010712678262829212L;
@@ -119,7 +119,7 @@ public class SdMetaRecord extends SelfDescriptionMetadata {
   /**
    * @return The validators' DIDs as an array for Hibernate.
    */
-  @Type(type = "string-array")
+  @Type(StringArrayType.class)
   @Column(
       name = "validators",
       columnDefinition = "text[]"

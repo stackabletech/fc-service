@@ -1,7 +1,7 @@
 package eu.gaiax.difs.fc.server.model;
 
 
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Min;
 
 @lombok.AllArgsConstructor
 @lombok.Getter
