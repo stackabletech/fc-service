@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fc-service-part
+  labels:
+    app: fc-service-part
+  namespace: federated-catalogue-partner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fc-service-part
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 50%
+  template:
+    metadata:
+      labels:
+        app: fc-service-part
+    spec:
+      containers:
+        - name: fc-service-server-image
+          image: registry.gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/fc-service-server:1.0.1
+          imagePullPolicy: Always
+          env:
+            - name: GRAPHSTORE_URI
+#              value: bolt://10.110.142.153:7687
+              value: bolt://10.0.222.40:7687
+            - name: SPRING_DATASOURCE_URL
+#              value: jdbc:postgresql://10.104.96.87:5432/postgres
+              value: jdbc:postgresql://10.0.29.123:5432/postgres
+            - name: GRAPHSTORE_QUERY_TIMEOUT_IN_SECONDS
+              value: "5"
+            - name: DATASTORE_FILE_PATH
+              value: /var/lib/fc-service/filestore
+            - name: KEYCLOAK_AUTH_SERVER_URL
+#              value: http://fc-key-server.gxfs.dev
+              value: https://id.lila.dih-cloud.com
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+#              value: http://fc-key-server.gxfs.dev/realms/gaia-x
+              value: https://id.lila.dih-cloud.com/realms/gaia-x
+            - name: KEYCLOAK_CREDENTIALS_SECRET
+              value: DVIgraQHZsKG3IVDSDwu5CgCE07gx4YE
+#              valueFrom:
+#                secretKeyRef:
+#                  name: fc-server-keys-secret-part
+#                  key: keycloak_client_secret
+            - name: FEDERATED_CATALOGUE_QUERY_PARTNERS
+              value: "https://fc-server.lila.dih-cloud.com"
+          ports:
+            - name: http
+              containerPort: 8081
+#          volumeMounts:
+#            - name: fc-file-store
+#              mountPath: /var/lib/fc-service
+#              subPath: filestore
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources: { }
+          securityContext:
+            allowPrivilegeEscalation: false 
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - fc-service-part
+                topologyKey: "kubernetes.io/hostname"
+#      volumes:
+#        - name: fc-file-store
+#          persistentVolumeClaim:
+#            claimName: fc-filestore-claim
+      restartPolicy: Always
