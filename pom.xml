@@ -385,6 +385,10 @@
                     <artifactId>jib-maven-plugin</artifactId>
                     <version>${plugin.jib.version}</version>
                     <configuration>
+                        <container>
+						    <!-- ${maven.build.timestamp} should work also -->
+                            <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
+                        </container>						
                         <!-- Turn it off for all the modules, but
                             turn it on in server module only -->
                         <skip>true</skip>

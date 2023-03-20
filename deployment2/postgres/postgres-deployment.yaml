@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fc-postgres-part
+  namespace: federated-catalogue-partner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fc-postgres-part
+  template:
+    metadata:
+      labels:
+        app: fc-postgres-part
+    spec:
+      containers:
+        - name: fc-postgres
+          image: postgres:15.1
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: fc-postgres-pass-secret-part
+                  key: username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: fc-postgres-pass-secret-part
+                  key: password
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: fc-postgres-pass-secret-part
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: fc-postgres-pass-secret-part
+                  key: password
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          securityContext:
+            allowPrivilegeEscalation: false 
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: fc-postgres
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - fc-neo4j-db-part
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: fc-postgres
+          persistentVolumeClaim:
+            claimName: fc-postgres-claim-part
