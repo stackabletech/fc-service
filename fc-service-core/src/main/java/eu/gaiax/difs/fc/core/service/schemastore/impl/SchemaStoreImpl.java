@@ -74,12 +74,15 @@ public class SchemaStoreImpl implements SchemaStore {
   public int initializeDefaultSchemas() {
     Transaction tx = null;  
     try (Session session = sessionFactory.openSession()) {
+      log.debug("initializeDefaultSchemas; got session: {}", session);
       int count = 0;
       Long found = session.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
       if (found == 0) {
         tx = session.beginTransaction();
-        count += addSchemasFromDirectory("defaultschema/ontology");
-        count += addSchemasFromDirectory("defaultschema/shacl");
+        log.debug("initializeDefaultSchemas; tx: {}, session: {}", tx, session);
+        
+        count += addSchemasFromDirectory("defaultschema/ontology", session);
+        count += addSchemasFromDirectory("defaultschema/shacl", session);
         session.flush();
         log.info("initializeDefaultSchemas; added {} default schemas", count);
         found = session.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult(); // it returns 0 for some reason
@@ -96,14 +99,14 @@ public class SchemaStoreImpl implements SchemaStore {
     }
   }  
   
-  private int addSchemasFromDirectory(String path) throws IOException {
+  private int addSchemasFromDirectory(String path, Session session) throws IOException {
     PathMatchingResourcePatternResolver scanner = new PathMatchingResourcePatternResolver();
     org.springframework.core.io.Resource[] resources = scanner.getResources(path + "/*");
     int cnt = 0;
     for (org.springframework.core.io.Resource resource: resources) {
       log.debug("addSchemasFromDirectory; Adding schema: {}", resource.getFilename());
       String content = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-      addSchema(new ContentAccessorDirect(content));
+      addSchema(new ContentAccessorDirect(content), session);
       cnt++;
     }
     return cnt;
@@ -177,7 +180,6 @@ public class SchemaStoreImpl implements SchemaStore {
           addExtractedUrls(model, OWL2.ObjectProperty, extractedUrlsSet);
           addExtractedUrls(model, RDFS.Class, extractedUrlsSet);
           addExtractedUrls(model, OWL2.Class, extractedUrlsSet);
-
           break;
 
         case VOCABULARY:
@@ -251,7 +253,14 @@ public class SchemaStoreImpl implements SchemaStore {
 
   @Override
   public String addSchema(ContentAccessor schema) {
-    SchemaAnalysisResult result = analyzeSchema(schema);
+    Session currentSession = sessionFactory.getCurrentSession();
+    log.debug("addSchema; current session: {}", currentSession);
+    return addSchema(schema, currentSession);
+  }
+    
+  private String addSchema(ContentAccessor schema, Session currentSession) {
+	  
+	SchemaAnalysisResult result = analyzeSchema(schema);
     if (!result.isValid()) {
       throw new VerificationException("Schema is not valid: " + result.getErrorMessage());
     }
@@ -264,8 +273,6 @@ public class SchemaStoreImpl implements SchemaStore {
     } else {
       nameHash = HashUtils.calculateSha256AsHex(schemaId);
     }
-
-    Session currentSession = sessionFactory.getCurrentSession();
 
     // Check duplicate terms
     List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)

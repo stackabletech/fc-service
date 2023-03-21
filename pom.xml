@@ -46,8 +46,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- dependencies -->
-        <spring.version>6.0.1</spring.version>
-        <spring-boot.version>3.0.1</spring-boot.version>
+        <spring.version>6.0.6</spring.version>
+        <spring-boot.version>3.0.4</spring-boot.version>
         <spring.security.version>6.0.2</spring.security.version>
         <spring-cloud-contract-wiremock.version>3.1.4</spring-cloud-contract-wiremock.version>
         <security.test-addons.version>3.0.1</security.test-addons.version>
