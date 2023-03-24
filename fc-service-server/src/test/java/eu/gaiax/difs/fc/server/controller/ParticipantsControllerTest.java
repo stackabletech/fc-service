@@ -2,62 +2,45 @@ package eu.gaiax.difs.fc.server.controller;
 
 import static eu.gaiax.difs.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static eu.gaiax.difs.fc.server.helper.UserServiceHelper.getAllRoles;
-import static eu.gaiax.difs.fc.server.util.CommonConstants.*;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_ADMIN_ROLE_WITH_PREFIX;
+import static eu.gaiax.difs.fc.server.util.CommonConstants.PARTICIPANT_USER_ADMIN_ROLE;
 import static eu.gaiax.difs.fc.server.util.TestCommonConstants.SD_ADMIN_ROLE_WITH_PREFIX;
 import static eu.gaiax.difs.fc.server.util.TestUtil.getAccessor;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.c4_soft.springaddons.security.oauth2.test.annotations.Claims;
-import com.c4_soft.springaddons.security.oauth2.test.annotations.OpenIdClaims;
-import com.c4_soft.springaddons.security.oauth2.test.annotations.StringClaim;
-import com.c4_soft.springaddons.security.oauth2.test.annotations.StringArrayClaim;
-import com.c4_soft.springaddons.security.oauth2.test.annotations.WithMockJwtAuth;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.gaiax.difs.fc.api.generated.model.Participants;
-import eu.gaiax.difs.fc.api.generated.model.SelfDescriptions;
-import eu.gaiax.difs.fc.api.generated.model.User;
-import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
-import eu.gaiax.difs.fc.core.dao.impl.ParticipantDaoImpl;
-import eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl;
-import eu.gaiax.difs.fc.core.exception.NotFoundException;
-import eu.gaiax.difs.fc.core.exception.ServerException;
-import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
-import eu.gaiax.difs.fc.core.pojo.GraphQuery;
-import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
-import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
-import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
-import eu.gaiax.difs.fc.core.service.filestore.FileStore;
-import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
-import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
-import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
-import eu.gaiax.difs.fc.core.service.verification.VerificationService;
-import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
-
-import java.util.ArrayList;
-import java.util.UUID;
-import lombok.extern.slf4j.Slf4j;
-
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
-
 import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
-import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.ws.rs.core.Response;
-import org.apache.http.HttpStatus;
 
-import org.junit.jupiter.api.*;
+import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -75,7 +58,6 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.neo4j.harness.Neo4j;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -90,6 +72,35 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+
+import com.c4_soft.springaddons.security.oauth2.test.annotations.Claims;
+import com.c4_soft.springaddons.security.oauth2.test.annotations.OpenIdClaims;
+import com.c4_soft.springaddons.security.oauth2.test.annotations.StringArrayClaim;
+import com.c4_soft.springaddons.security.oauth2.test.annotations.StringClaim;
+import com.c4_soft.springaddons.security.oauth2.test.annotations.WithMockJwtAuth;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import eu.gaiax.difs.fc.api.generated.model.Participants;
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptions;
+import eu.gaiax.difs.fc.api.generated.model.User;
+import eu.gaiax.difs.fc.api.generated.model.UserProfiles;
+import eu.gaiax.difs.fc.core.dao.impl.ParticipantDaoImpl;
+import eu.gaiax.difs.fc.core.dao.impl.UserDaoImpl;
+import eu.gaiax.difs.fc.core.exception.NotFoundException;
+import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
+import eu.gaiax.difs.fc.core.pojo.ParticipantMetaData;
+import eu.gaiax.difs.fc.core.pojo.SelfDescriptionMetadata;
+import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
+import eu.gaiax.difs.fc.core.service.graphdb.impl.Neo4jGraphStore;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
+import eu.gaiax.difs.fc.core.service.sdstore.impl.SelfDescriptionStoreImpl;
+import eu.gaiax.difs.fc.core.service.verification.VerificationService;
+import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @SpringBootTest

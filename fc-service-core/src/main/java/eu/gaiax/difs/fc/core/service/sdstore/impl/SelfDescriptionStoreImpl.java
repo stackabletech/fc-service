@@ -13,7 +13,6 @@ import eu.gaiax.difs.fc.core.pojo.Validator;
 import eu.gaiax.difs.fc.core.pojo.VerificationResult;
 import eu.gaiax.difs.fc.core.service.sdstore.SelfDescriptionStore;
 
-import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -23,17 +22,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.persistence.LockModeType;
-import jakarta.persistence.TemporalType;
 
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-//import org.hibernate.jpa.TypedParameterValue;
 import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -190,9 +186,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       return query;
     }
 
-    private Query<?> createCountQuery() {
+    private Query<Long> createCountQuery() {
       final String hqlQuery = buildCountQuery();
-      final Query<?> query = currentSession.createNativeQuery(hqlQuery);
+      final Query<Long> query = currentSession.createNativeQuery(hqlQuery, Long.class);
       clauses.stream().forEach(clause -> query.setParameter(clause.formalParameterName, clause.actualParameter));
       return query;
     }
@@ -225,8 +221,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
     final List<String> validators = filter.getValidators();
     if (validators != null) {
-      queryBuilder.addClause("validators && cast(? as varchar[])", "validators", validators);
-          //new TypedParameterValue(StringArrayType.INSTANCE, validators));
+      queryBuilder.addClause("validators && cast(? as varchar[])", "validators", validators.toArray(new String[validators.size()]));
     }
 
     final List<SelfDescriptionStatus> statuses = filter.getStatuses();
@@ -245,7 +240,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       queryBuilder.addClause("sdhash in (?)", "hashes", hashes);
     }
 
-    BigInteger totalCount = (BigInteger) queryBuilder.createCountQuery().uniqueResult();
+    Long totalCount = queryBuilder.createCountQuery().uniqueResult();
 
     queryBuilder.setFirstResult(filter.getOffset());
     queryBuilder.setMaxResults(filter.getLimit());
@@ -269,7 +264,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
             "values (?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)\n" +
             "returning sdhash)\n" +
             "select u.subjectid, i.sdhash from i full join u on u.sdhash = i.sdhash";
-    Query<?> q = currentSession.createNativeQuery(upsert);
+    Query<?> q = currentSession.createNativeQuery(upsert); //, Object[].class);
     q.setParameter(1, SelfDescriptionStatus.DEPRECATED.ordinal());
     q.setParameter(2, Instant.now());
     q.setParameter(3, sdMetadata.getId());
@@ -295,7 +290,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
         vaDids = new ArrayList<>(dids);
       }
     }
-    q.setParameter(10, expDateFirst, TemporalType.TIMESTAMP);
+    q.setParameter(10, expDateFirst); 
     q.setParameter(11, sdMetadata.getStatus().ordinal());
     q.setParameter(12, sdMetadata.getSelfDescription().getContentAsString());
     q.setParameter(13, (vaDids == null ? null : vaDids.toArray(new String[vaDids.size()])), StringArrayType.INSTANCE);
@@ -407,10 +402,10 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     final Query<String> query;
     if (afterHash == null) {
       String select = "select sdhash from sdfiles where status = :status and abs(hashtext(sdhash) % :chunks) = :chunkid order by sdhash asc limit :limit";
-      query = currentSession.createNativeQuery(select);
+      query = currentSession.createNativeQuery(select, String.class);
     } else {
       String select = "select sdhash from sdfiles where sdhash > :lastSdHash and status = :status and abs(hashtext(sdhash) % :chunks) = :chunkid order by sdhash asc limit :limit";
-      query = currentSession.createNativeQuery(select);
+      query = currentSession.createNativeQuery(select, String.class);
       query.setParameter("lastSdHash", afterHash);
     }
     query.setParameter("status", SelfDescriptionStatus.ACTIVE.ordinal());
@@ -423,7 +418,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
   @Override
   public void clear() {
-    try ( Session session = sessionFactory.openSession()) {
+    try (Session session = sessionFactory.openSession()) {
       Transaction transaction = session.getTransaction();
       // Transaction is sometimes not active. For instance when called from an @AfterAll Test method
       if (transaction == null || !transaction.isActive()) {

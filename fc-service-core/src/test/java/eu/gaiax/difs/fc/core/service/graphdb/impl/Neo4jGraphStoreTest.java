@@ -1,18 +1,17 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
-import eu.gaiax.difs.fc.core.exception.ServerException;
-import eu.gaiax.difs.fc.core.exception.TimeoutException;
-import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
-import eu.gaiax.difs.fc.core.exception.QueryException;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -22,21 +21,22 @@ import org.junit.runners.MethodSorters;
 import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
+import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
+import eu.gaiax.difs.fc.core.exception.QueryException;
+import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.exception.TimeoutException;
 import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
+import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@EnableAutoConfiguration(exclude = {LiquibaseAutoConfiguration.class, DataSourceAutoConfiguration.class})
 @SpringBootTest
 @ActiveProfiles({"test"}) 
 @ContextConfiguration(classes = {Neo4jGraphStore.class})

@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
@@ -33,7 +34,8 @@ import org.springframework.security.web.access.AccessDeniedHandler;
  */
 @Configuration
 @EnableWebSecurity //(debug = true)
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+//@EnableMethodSecurity
+//@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
   private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -93,8 +95,9 @@ public class SecurityConfig {
             	.hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
 
           // User APIs
-         // .antMatchers(HttpMethod.GET, "/users").hasAnyRole(CATALOGUE_ADMIN_ROLE)
-          .requestMatchers(antMatcher("/users"))  //, "/users/**")
+          .requestMatchers(antMatcher("/users"))
+              .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
+          .requestMatchers(antMatcher("/users/{userId}"))
               .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
 
           // Roles APIs

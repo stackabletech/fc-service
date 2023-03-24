@@ -17,9 +17,6 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.harness.Neo4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
@@ -27,7 +24,6 @@ import org.springframework.test.context.ContextConfiguration;
 
 import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorFile;
-import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.verification.impl.VerificationServiceImplTest;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@EnableAutoConfiguration(exclude = {LiquibaseAutoConfiguration.class, DataSourceAutoConfiguration.class})
 @ActiveProfiles({"test"})
 @ContextConfiguration(classes = {Neo4jDirectTest.class})
 @Import(EmbeddedNeo4JConfig.class)

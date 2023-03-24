@@ -104,15 +104,14 @@ public class UsersService implements UsersApiDelegate {
     checkParticipantAccess(profile.getParticipantId());
 
     //last participant-admin-user cannot deleted
+    // weird code, con't understand how it works..
     PaginatedResults<UserProfile> profiles = userDao.search(profile.getParticipantId(), 0, 100);
-      Long participantAdminCount =
-          profiles.getResults().stream()
-              .filter(userProfile -> userProfile.getRoleIds().contains(PARTICIPANT_ADMIN_ROLE))
-              .count();
-      if (participantAdminCount == 1) {
-        log.debug("total count of participant  admin is : {}", participantAdminCount);
+    Long participantAdminCount = profiles.getResults().stream()
+        .filter(userProfile -> userProfile.getRoleIds().contains(PARTICIPANT_ADMIN_ROLE)).count();
+    log.debug("deleteUser; total count of participant  admin is : {}", participantAdminCount);
+    if (participantAdminCount == 1) {
         throw new ConflictException("Last participant admin cannot be deleted");
-      }
+    }
     profile = userDao.delete(userId);
     log.debug("deleteUser.exit; returning: {}", profile);
     return ResponseEntity.ok(profile);

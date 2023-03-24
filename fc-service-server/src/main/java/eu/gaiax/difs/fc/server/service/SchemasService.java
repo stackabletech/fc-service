@@ -50,7 +50,7 @@ public class SchemasService implements SchemasApiDelegate {
       throw new NotFoundException("There is no Schema with id " + schemaId);
     }
     String schema = accessor.getContentAsString();
-    log.debug("getSchema.exit; returning schema by schemaId: {}", schema);
+    log.debug("getSchema.exit; returning schema of length: {}", schema.length());
     return ResponseEntity.ok(schema);
   }
 
@@ -113,7 +113,7 @@ public class SchemasService implements SchemasApiDelegate {
    */
   @Override
   public ResponseEntity<Void> addSchema(String schema) {
-    log.debug("addSchema.enter; got schema: {}", schema);
+    log.debug("addSchema.enter; got schema of length: {}", schema.length());
     String id = schemaStore.addSchema(new ContentAccessorDirect(schema));
     log.debug("addSchema.exit; returning schema id {}", id);
 

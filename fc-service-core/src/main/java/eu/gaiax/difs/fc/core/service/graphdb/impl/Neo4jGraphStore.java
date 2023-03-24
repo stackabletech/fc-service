@@ -1,5 +1,30 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
+import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.jena.rdf.model.Model;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.Transaction;
+import org.neo4j.driver.TransactionConfig;
+import org.neo4j.driver.internal.InternalNode;
+import org.neo4j.driver.internal.InternalRelationship;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
 import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.exception.TimeoutException;
@@ -11,36 +36,13 @@ import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.core.util.ClaimValidator;
 import eu.gaiax.difs.fc.core.util.ExtendClaims;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.jena.rdf.model.Model;
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
-import org.neo4j.driver.SessionConfig;
-import org.neo4j.driver.Transaction;
-import org.neo4j.driver.TransactionConfig;
-import org.neo4j.driver.exceptions.DatabaseException;
-import org.neo4j.driver.internal.InternalNode;
-import org.neo4j.driver.internal.InternalRelationship;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import java.io.IOException;
-import java.time.Duration;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
 @Transactional
 public class Neo4jGraphStore implements GraphStore {
 
-    private static final String queryInsert = "CALL n10s.rdf.import.inline($payload, \"N-Triples\");"; //\n" +
-                                              //"YIELD terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo\n" +
-                                              //"RETURN terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo";
+    private static final String queryInsert = "CALL n10s.rdf.import.inline($payload, \"N-Triples\");"; 
     private static final String queryDelete = "MATCH (n {claimsGraphUri: [$uri]})\n" +
                                               "DETACH DELETE n;";
     private static final String queryUpdate = "MATCH (n) WHERE $uri IN n.claimsGraphUri\n" +
@@ -119,11 +121,12 @@ public class Neo4jGraphStore implements GraphStore {
         long stamp = System.currentTimeMillis();
         try (Session session = driver.session()) {
             //In this method we use read transaction to avoid any Cypher query that modifies data
+        	// TODO: use executeRead instead..
             return session.readTransaction(tx -> doQuery(tx, sdQuery), transactionConfig);
         } catch (Exception ex) {
             stamp = System.currentTimeMillis() - stamp;
             log.error("queryData.error: {}", ex.getMessage());
-            if (ex.getMessage() != null && ex.getMessage().contains("dbms.transaction.timeout")) {
+            if (ex.getMessage() != null && ex.getMessage().contains("db.transaction.timeout")) {
                 if (stamp > sdQuery.getTimeout() * 1000) {
                     throw new TimeoutException("query timeout (" + sdQuery.getTimeout() + " sec) exceeded)");
                 }

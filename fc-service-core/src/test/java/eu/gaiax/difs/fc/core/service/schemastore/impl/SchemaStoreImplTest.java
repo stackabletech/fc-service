@@ -37,20 +37,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {SchemaStoreImplTest.TestApplication.class, FileStoreConfig.class,
   SchemaStoreImplTest.class, SchemaStoreImpl.class, DatabaseConfig.class})
-@DirtiesContext
 @Transactional
-@Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 public class SchemaStoreImplTest {
 
@@ -72,10 +70,10 @@ public class SchemaStoreImplTest {
   //@Qualifier("schemaFileStore")
   //private FileStore fileStore;
 
-  @AfterEach
-  public void storageSelfCleaning() throws IOException {
+  //@AfterEach
+  //public void storageSelfCleaning() throws IOException {
     //fileStore.clearStorage();
-  }
+  //}
 
   public Set<String> getExtractedTermsSet(ContentAccessor extractedTerms) throws IOException {
     Set<String> extractedTermsSet = new HashSet<>();
@@ -267,7 +265,7 @@ public class SchemaStoreImplTest {
    * Test of addSchema method, of class SchemaManagementImpl.
    */
   @Test
-  public void testAddSchema() {
+  public void test01AddSchema() {
     log.info("testAddSchema");
     String path = "Schema-Tests/valid-schemaShape.ttl";
     ContentAccessor content = TestUtil.getAccessor(path);
@@ -288,7 +286,7 @@ public class SchemaStoreImplTest {
 
   private void assertTermsEquals(String... expectedTerms) {
     List<String> foundTermsList = sessionFactory.getCurrentSession()
-        .createNativeQuery("select term from schematerms")
+        .createNativeQuery("select term from schematerms", String.class)
         .getResultList();
     Set<String> foundTermsSet = new HashSet<>(foundTermsList);
     Set<String> expectedTermsSet = new HashSet<>(Arrays.asList(expectedTerms));
@@ -297,7 +295,7 @@ public class SchemaStoreImplTest {
 
   private void assertTermCountEquals(int count) {
     Object termCount = sessionFactory.getCurrentSession()
-        .createNativeQuery("select count(*) from schematerms")
+        .createNativeQuery("select count(*) from schematerms", Long.class)
         .getSingleResult();
     assertEquals(Integer.toString(count), termCount.toString(), "incorrect number of terms found in database");
   }
@@ -337,7 +335,7 @@ public class SchemaStoreImplTest {
   }
 
   @Test
-  public void testAddSchemaConflictingTerm() throws IOException {
+  public void test02AddSchemaConflictingTerm() throws IOException {
     log.info("testAddSchemaConflictingTerm");
     String pathOne = "Schema-Tests/shapeCpu.ttl";
     String idOne = schemaStore.addSchema(TestUtil.getAccessor(pathOne));
@@ -355,7 +353,7 @@ public class SchemaStoreImplTest {
    * Test of updateSchema method, of class SchemaManagementImpl.
    */
   @Test
-  public void testUpdateSchema() throws IOException {
+  public void test03UpdateSchema() throws IOException {
     log.info("UpdateSchema");
     String path1 = "Schema-Tests/valid-schemaShapeReduced.ttl";
     String path2 = "Schema-Tests/valid-schemaShape.ttl";
@@ -384,7 +382,7 @@ public class SchemaStoreImplTest {
   }
 
   @Test
-  void addDeleteDefaultSchemas() {
+  void testAddDeleteDefaultSchemas() {
     int initialized = schemaStore.initializeDefaultSchemas();
     assertEquals(3, initialized, "Expected different number of schemas initialized.");
     //int count = TestUtil.countFilesInStore(fileStore);
@@ -419,7 +417,7 @@ public class SchemaStoreImplTest {
 
     ContentAccessor schema01Content = TestUtil.getAccessor(getClass(), schemaPath1);
 
-    storageSelfCleaning();
+    //storageSelfCleaning();
 
     schemaStore.addSchema(TestUtil.getAccessor(getClass(), schemaPath1));
 
@@ -427,7 +425,7 @@ public class SchemaStoreImplTest {
     assertTrue(schemaResult.isValid());
 
     ContentAccessor compositeSchemaActual = schemaStore.getCompositeSchema(SHAPE);
-    log.info(compositeSchemaActual.getContentAsString());
+    log.trace(compositeSchemaActual.getContentAsString());
 
     StringReader schemaContentReaderComposite = new StringReader(compositeSchemaActual.getContentAsString());
     modelActual.read(schemaContentReaderComposite, "", "TURTLE");
@@ -442,7 +440,7 @@ public class SchemaStoreImplTest {
 
     compositeSchemaActual = schemaStore.getCompositeSchema(SHAPE);
 
-    log.info(compositeSchemaActual.getContentAsString());
+    log.trace(compositeSchemaActual.getContentAsString());
 
     schemaContentReaderComposite = new StringReader(compositeSchemaActual.getContentAsString());
 

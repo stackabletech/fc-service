@@ -7,7 +7,7 @@
     <parent>
         <groupId>eu.gaiax.difs.fc</groupId>
         <artifactId>fc-service</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>fc-service-server</artifactId>
@@ -16,6 +16,14 @@
     <description>GAIA-X Federated Catalogue Server Application</description>
 
     <dependencies>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
         <dependency>
             <groupId>eu.gaiax.difs.fc</groupId>
             <artifactId>fc-service-api</artifactId>
@@ -29,20 +37,9 @@
             <artifactId>fc-service-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>eu.gaiax.difs.fc</groupId>
-            <artifactId>fc-test-support</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.neo4j</groupId>
-                    <artifactId>neosemantics</artifactId>
-                </exclusion>
-            </exclusions>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>        
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
@@ -74,7 +71,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <scope>provided</scope>
+            <!--scope>provided</scope-->
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
@@ -83,7 +80,17 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+        </dependency>              
+        <dependency>
+            <groupId>eu.gaiax.difs.fc</groupId>
+            <artifactId>fc-test-support</artifactId>
+            <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.neo4j.gds</groupId>
+            <artifactId>open-model-catalog</artifactId>
+            <scope>test</scope>
+   		</dependency>                
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

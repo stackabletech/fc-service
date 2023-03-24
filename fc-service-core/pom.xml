@@ -7,7 +7,7 @@
     <parent>
         <groupId>eu.gaiax.difs.fc</groupId>
         <artifactId>fc-service</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>fc-service-core</artifactId>
@@ -18,11 +18,6 @@
         <dependency>
             <groupId>eu.gaiax.difs.fc</groupId>
             <artifactId>fc-service-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>eu.gaiax.difs.fc</groupId>
-            <artifactId>fc-test-support</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -51,7 +46,21 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
-        </dependency>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.hibernate</groupId>
+                    <artifactId>hibernate-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.persistence</groupId>
+                    <artifactId>javax.persistence-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.hibernate.common</groupId>
+                    <artifactId>hibernate-commons-annotations</artifactId>
+				</exclusion>
+   		    </exclusions>
+   		</dependency>
         <dependency>
             <groupId>com.vladmihalcea</groupId>
             <artifactId>hibernate-types-60</artifactId>
@@ -65,13 +74,18 @@
             <artifactId>jsonld-java</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.neo4j</groupId>
-            <artifactId>neosemantics</artifactId>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.eclipse.collections</groupId>
+            <artifactId>eclipse-collections</artifactId>        
+        </dependency>        
+        <dependency>
             <groupId>org.neo4j.gds</groupId>
-            <artifactId>proc</artifactId>
-        </dependency>
+            <artifactId>open-model-catalog</artifactId>
+            <scope>test</scope>
+   		</dependency>        
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>apache-jena-libs</artifactId>
@@ -99,8 +113,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>eu.gaiax.difs.fc</groupId>
+            <artifactId>fc-test-support</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -112,7 +136,7 @@
             <groupId>io.zonky.test</groupId>
             <artifactId>embedded-database-spring-test</artifactId>
             <scope>test</scope>
-        </dependency>
+        </dependency> 
     </dependencies>
 
     <build>
@@ -136,6 +160,17 @@
                         <phase>validate</phase>
                         <goals>
                             <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
                         </goals>
                     </execution>
                 </executions>

@@ -1,7 +1,33 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.neo4j.harness.Neo4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+
 import eu.gaiax.difs.fc.core.config.DatabaseConfig;
 import eu.gaiax.difs.fc.core.config.FileStoreConfig;
+import eu.gaiax.difs.fc.core.config.GraphDbConfig;
 import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
 import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
@@ -13,65 +39,42 @@ import eu.gaiax.difs.fc.core.service.validatorcache.impl.ValidatorCacheImpl;
 import eu.gaiax.difs.fc.core.service.verification.impl.VerificationServiceImpl;
 import eu.gaiax.difs.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-
-import org.junit.FixMethodOrder;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.runners.MethodSorters;
-import org.neo4j.harness.Neo4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
-@ActiveProfiles({"test"}) 
-@ContextConfiguration(classes = {
-        Neo4jGraphStoreAccuracyTest.class, Neo4jGraphStore.class,
-        SelfDescriptionStoreImpl.class,
-        FileStoreConfig.class,
-        VerificationServiceImpl.class, DatabaseConfig.class,
-        SchemaStoreImpl.class, ValidatorCacheImpl.class})
-@DirtiesContext
-@Transactional
+@ActiveProfiles("test")
+@ContextConfiguration(classes = {Neo4jGraphStoreAccuracyTest.TestApplication.class, DatabaseConfig.class, GraphDbConfig.class, FileStoreConfig.class,
+		Neo4jGraphStoreAccuracyTest.class, Neo4jGraphStore.class, SelfDescriptionStoreImpl.class, VerificationServiceImpl.class, SchemaStoreImpl.class, ValidatorCacheImpl.class})
+@AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
-@AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 public class Neo4jGraphStoreAccuracyTest {
-
+	
   //TODO:: We need to update SD  file when final implementation of claim parsing is done .
   private final String SERVICE_SD_FILE_NAME = "serviceOfferingSD.jsonld";
-
   private final String SERVICE_SD_FILE_NAME1 = "serviceOfferingSD1.jsonld";
-
   private final String SERVICE_SD_FILE_NAME2 = "serviceOfferingSD2.jsonld";
-
   private final String SERVICE_SD_FILE_NAME3 = "serviceOfferingSD3.jsonld";
+
+  @SpringBootApplication
+  public static class TestApplication {
+
+    public static void main(String[] args) {
+      SpringApplication.run(TestApplication.class, args);
+    }
+  }
+  
   @Autowired
   private Neo4j embeddedDatabaseServer;
-
   @Autowired
   private Neo4jGraphStore neo4jGraphStore;
-
   @Autowired
   private SelfDescriptionStoreImpl sdStore;
-
   @Autowired
   private VerificationServiceImpl verificationService;
 
+  
   @BeforeAll
   void addDBEntries() throws Exception {
     initialiseAllDataBaseWithManuallyAddingSD();
@@ -83,7 +86,7 @@ public class Neo4jGraphStoreAccuracyTest {
   }
 
   @Test
-  void testCypherServiceOfferingAccuracy() throws Exception {
+  public void testCypherServiceOfferingAccuracy() throws Exception {
 
 
     List<Map<String, Object>> resultListExpected = List.of(Map.of("n", Map.of("name", "Portal", "claimsGraphUri", List.of("http://w3id.org/gaia-x/indiv#serviceMVGPortal.json"))));
@@ -96,7 +99,7 @@ public class Neo4jGraphStoreAccuracyTest {
   }
 
   @Test
-  void testCypherServiceOfferingByURIAccuracy() throws Exception {
+  public void testCypherServiceOfferingByURIAccuracy() throws Exception {
     /*expected only one node as previous added claims with same ID deleted from code*/
     List<Map<String, String>> resultListExpected = List.of(
             Map.of("n.name", "Portal3"));
@@ -109,7 +112,7 @@ public class Neo4jGraphStoreAccuracyTest {
   }
 
   @Test
-  void testCypherAllServiceOfferingAccuracy() throws Exception {
+  public void testCypherAllServiceOfferingAccuracy() throws Exception {
 
     List<Map<String, Object>> resultListExpected = List.of(Map.of("n", Map.of("name", "Portal", "claimsGraphUri", List.of("http://w3id.org/gaia-x/indiv#serviceMVGPortal.json"))),Map.of("n", Map.of("name", "Portal2", "claimsGraphUri", List.of("http://w3id.org/gaia-x/indiv#serviceMVGPortal2.json"))),Map.of("n", Map.of("name", "Portal3", "claimsGraphUri", List.of("http://w3id.org/gaia-x/indiv#serviceMVGPortal3.json"))),Map.of("n",Map.of("name","Portal2","claimsGraphUri", List.of("http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json"))));
 

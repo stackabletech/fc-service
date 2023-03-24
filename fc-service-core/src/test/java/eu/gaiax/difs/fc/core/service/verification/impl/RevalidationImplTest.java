@@ -188,7 +188,7 @@ public class RevalidationImplTest {
     }
     long time = System.currentTimeMillis() - start;
     Object count = sessionFactory.openSession()
-        .createNativeQuery("select count (*) from sdfiles where status = :status")
+        .createNativeQuery("select count (*) from sdfiles where status = :status", Integer.class)
         .setParameter("status", SelfDescriptionStatus.ACTIVE.ordinal())
         .getSingleResult();
     log.debug("added {} Self-Descriptions from {} in {}ms", count, path, time);
@@ -196,8 +196,8 @@ public class RevalidationImplTest {
 
   private boolean allChunksAfter(Instant treshold) {
     Object count;
-    try ( Session session = sessionFactory.openSession()) {
-      count = session.createNativeQuery("select count(chunkid) from revalidatorchunks where lastcheck < :treshold")
+    try (Session session = sessionFactory.openSession()) {
+      count = session.createNativeQuery("select count(chunkid) from revalidatorchunks where lastcheck < :treshold", Integer.class)
           .setParameter("treshold", treshold)
           .getSingleResult();
     }
@@ -208,7 +208,7 @@ public class RevalidationImplTest {
   private int countChunks() {
     Object count;
     try ( Session session = sessionFactory.openSession()) {
-      count = session.createNativeQuery("select count(chunkid) from revalidatorchunks")
+      count = session.createNativeQuery("select count(chunkid) from revalidatorchunks", Integer.class)
           .getSingleResult();
     }
     log.debug("Chunk Count: {}", count);
@@ -230,6 +230,9 @@ public class RevalidationImplTest {
     } catch (VerificationException exc) {
       log.debug("Failed to add: {}", exc.getMessage());
       return null;
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      throw ex;
     }
   }
 
