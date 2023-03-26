@@ -1,6 +1,5 @@
 package eu.gaiax.difs.fc.core.service.schemastore.impl;
 
-import java.util.List;
 import java.util.Set;
 
 import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;

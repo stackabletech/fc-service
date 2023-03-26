@@ -7,7 +7,7 @@ import eu.gaiax.difs.fc.core.dao.SessionDao;
 import eu.gaiax.difs.fc.server.generated.controller.SessionApiDelegate;
 
 import eu.gaiax.difs.fc.server.util.SessionUtils;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

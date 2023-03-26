@@ -16,7 +16,7 @@ import eu.gaiax.difs.fc.core.exception.NotFoundException;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.exception.TimeoutException;
 import eu.gaiax.difs.fc.core.exception.VerificationException;
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -137,6 +137,6 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
   @ExceptionHandler({ConstraintViolationException.class})
   protected ResponseEntity<Error> constraintViolationException(ConstraintViolationException exception) {
     log.info("ConstraintViolationException; ConstraintViolationException error: {}", exception.getMessage());
-    return new ResponseEntity<>(new Error("constraintViolationException", exception.getMessage()), BAD_REQUEST);
+    return new ResponseEntity<>(new Error("constraint_violation_error", exception.getMessage()), BAD_REQUEST);
   }
 }

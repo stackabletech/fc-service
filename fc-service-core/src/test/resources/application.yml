@@ -2,10 +2,18 @@ spring:
   config:
     activate:
       on-profile: test
+
+#spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+  jpa:
+#    hibernate:
+#      ddl-auto: update
+    properties:
+      hibernate:
+        current_session_context_class: org.springframework.orm.hibernate5.SpringSessionContext
    
   liquibase:
     change-log: classpath:/liquibase/master-changelog.xml
-    contexts: test
+    contexts: test 
     
 datastore:
   file-path: target

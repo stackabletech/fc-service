@@ -1,5 +1,7 @@
 package eu.gaiax.difs.fc.demo.config;
 
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,11 +21,15 @@ public class SecurityConfig {
         http
           .csrf()
           .disable()
-          .authorizeRequests()
-          .antMatchers("/","/index.html","/css/styles.css","/js/scripts.js","js/library/**").permitAll()
-          .anyRequest()
-          .authenticated()
-          .and()
+          .authorizeHttpRequests(authorization -> authorization
+        		  .requestMatchers(antMatcher("/")).permitAll()
+        		  .requestMatchers(antMatcher("/index.html")).permitAll()
+        		  .requestMatchers(antMatcher("/css/**")).permitAll()
+        		  .requestMatchers(antMatcher("/js/**")).permitAll()
+        		  .requestMatchers(antMatcher("/")).permitAll()
+        		  .anyRequest().authenticated()
+        	)
+          //.and()
           .oauth2Login(oauth2Login ->
               oauth2Login
                   .loginPage("/oauth2/authorization/fc-client-oidc")

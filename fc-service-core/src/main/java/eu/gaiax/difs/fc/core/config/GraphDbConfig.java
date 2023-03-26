@@ -42,7 +42,7 @@ public class GraphDbConfig {
         }
         if (!session.run("CALL n10s.graphconfig.show();").hasNext()) {
             session.run("CALL n10s.graphconfig.init({handleVocabUris:'MAP',handleMultival:'ARRAY',multivalPropList:['http://w3id.org/gaia-x/service#claimsGraphUri']});"); /// run only when creating a new graph
-            session.run("CREATE CONSTRAINT n10s_unique_uri IF NOT EXISTS ON (r:Resource) ASSERT r.uri IS UNIQUE");
+            session.run("CREATE CONSTRAINT n10s_unique_uri IF NOT EXISTS FOR (r:Resource) REQUIRE r.uri IS UNIQUE");
 //            session.run("DENY MATCH {*} ON GRAPH neo4j NODES _GraphConfig TO `PUBLIC`");
             log.info("n10s.graphconfig.init() not called second time.");
         }

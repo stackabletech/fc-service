@@ -2,7 +2,7 @@ package eu.gaiax.difs.fc.demo.handler;
 
 import eu.gaiax.difs.fc.api.generated.model.Error;
 import java.net.ConnectException;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

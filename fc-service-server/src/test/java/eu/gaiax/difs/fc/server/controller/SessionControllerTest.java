@@ -14,7 +14,6 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;

@@ -48,7 +48,7 @@ scheduler:
     cron:
       expression: 0 1 0 * * *
   schema:
-    init-delay: 10000    
+    init-delay: 10000
 
 openapi:
   gaiaXCatalogue:

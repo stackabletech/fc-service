@@ -13,13 +13,12 @@ import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Logging;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
-import org.neo4j.driver.springframework.boot.test.autoconfigure.Neo4jTestHarnessAutoConfiguration;
 import org.neo4j.gds.catalog.GraphExistsProc;
 import org.neo4j.gds.catalog.GraphListProc;
 import org.neo4j.gds.catalog.GraphProjectProc;
 import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+//import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
@@ -31,9 +30,10 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 @Configuration
 @ConditionalOnProperty(value = "federated-catalogue.scope", havingValue = "test")
-@EnableAutoConfiguration(exclude = {Neo4jTestHarnessAutoConfiguration.class})
+//@EnableAutoConfiguration
 public class EmbeddedNeo4JConfig {
-    @Bean
+    
+	@Bean
     public Neo4j embeddedDatabaseServer() {
         log.info("starting Embedded Neo4J DB");
         Neo4j embeddedDatabaseServer = Neo4jBuilders.newInProcessBuilder()
@@ -41,7 +41,7 @@ public class EmbeddedNeo4JConfig {
                 .withConfig(BoltConnector.listen_address, new SocketAddress(BoltConnector.DEFAULT_PORT))
                 .withConfig(GraphDatabaseSettings.procedure_allowlist, List.of("gds.*", "n10s.*", "apoc.*"))
                 .withConfig(GraphDatabaseSettings.procedure_unrestricted, List.of("gds.*", "n10s.*", "apoc.*"))
-                .withConfig(GraphDatabaseSettings.log_queries_transaction_id, true)
+                //.withConfig(GraphDatabaseSettings.log_queries_transaction_id, true)
                 .withConfig(GraphDatabaseSettings.log_queries_transactions_level, LogQueryLevel.VERBOSE)
                 // will be user for gds procedure
                 .withProcedure(GraphExistsProc.class) // gds.graph.exists procedure
@@ -72,13 +72,7 @@ public class EmbeddedNeo4JConfig {
             }
         }
         session.run("CALL n10s.graphconfig.init({handleVocabUris:'MAP',handleMultival:\"ARRAY\",multivalPropList:[\"http://w3id.org/gaia-x/service#claimsGraphUri\"] });"); /// run only when creating a new graph
-        session.run("CREATE CONSTRAINT n10s_unique_uri IF NOT EXISTS ON (r:Resource) ASSERT r.uri IS UNIQUE");
-        //try {
-        //    session.run("DENY MATCH {*} ON GRAPH neo4j NODES _GraphConfig TO `PUBLIC`");
-        //
-        //} catch (Exception e) {
-        //    log.info("Cannot revoke access to Graph Node due to exception {}",e);
-        //}
+        session.run("CREATE CONSTRAINT n10s_unique_uri IF NOT EXISTS FOR (r:Resource) REQUIRE r.uri IS UNIQUE");
         log.info("n10 procedure and Constraints are loaded successfully");
         return driver;
     }

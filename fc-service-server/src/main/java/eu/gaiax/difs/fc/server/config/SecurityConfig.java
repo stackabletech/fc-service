@@ -8,8 +8,11 @@ import static eu.gaiax.difs.fc.server.util.CommonConstants.SD_ADMIN_ROLE;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import eu.gaiax.difs.fc.api.generated.model.Error;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
@@ -30,7 +34,8 @@ import org.springframework.security.web.access.AccessDeniedHandler;
  */
 @Configuration
 @EnableWebSecurity //(debug = true)
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+//@EnableMethodSecurity
+//@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
   private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -48,53 +53,58 @@ public class SecurityConfig {
 
     http
       .csrf().disable()
-      .antMatcher("/**")
-      .authorizeRequests(authorization -> authorization
-          .antMatchers(HttpMethod.GET, "/api/**", "/swagger-ui/**", "/actuator", "/actuator/**","/js/**","/css/**")
-          .permitAll()
+      //.antMatcher("/**")
+      .authorizeHttpRequests(authorization -> authorization
+		  .requestMatchers(antMatcher(HttpMethod.GET, "/api/**")).permitAll()
+          .requestMatchers(antMatcher(HttpMethod.GET, "/swagger-ui/**")).permitAll()
+          .requestMatchers(antMatcher(HttpMethod.GET, "/actuator")).permitAll()
+          .requestMatchers(antMatcher(HttpMethod.GET, "/actuator/**")).permitAll()
+          .requestMatchers(antMatcher(HttpMethod.GET, "/js/**")).permitAll()
+          .requestMatchers(antMatcher(HttpMethod.GET, "/css/**")).permitAll()
 
           // Schema APIs
-          .antMatchers(HttpMethod.POST, "/schemas").hasRole(CATALOGUE_ADMIN_ROLE)
-          .antMatchers(HttpMethod.DELETE, "/schemas/**").hasRole(CATALOGUE_ADMIN_ROLE)
-          .antMatchers(HttpMethod.PUT, "/schemas").hasRole(CATALOGUE_ADMIN_ROLE)
-          .antMatchers(HttpMethod.GET, "/schemas", "/schemas/**").authenticated()
+          .requestMatchers(antMatcher(HttpMethod.POST, "/schemas")).hasRole(CATALOGUE_ADMIN_ROLE)
+          .requestMatchers(antMatcher(HttpMethod.DELETE, "/schemas/**")).hasRole(CATALOGUE_ADMIN_ROLE)
+          .requestMatchers(antMatcher(HttpMethod.PUT, "/schemas")).hasRole(CATALOGUE_ADMIN_ROLE)
+          .requestMatchers(antMatcher(HttpMethod.GET, "/schemas")).authenticated() //, "/schemas/**"
 
           // Query APIs
-          .antMatchers("/query").permitAll()
+          .requestMatchers(antMatcher("/query")).permitAll()
 
           // Verification APIs
-          .antMatchers("/verification").permitAll()
+          .requestMatchers(antMatcher("/verification")).permitAll()
           
           // Self-Description APIs
-          .antMatchers(HttpMethod.GET, "/self-descriptions").authenticated()
-          .antMatchers(HttpMethod.GET, "/self-descriptions/{self_description_hash}").authenticated()
-          .antMatchers(HttpMethod.POST, "/self-descriptions")
-          .hasAnyRole(CATALOGUE_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
-          .antMatchers(HttpMethod.DELETE, "/self-descriptions/{self_description_hash}")
-          .hasAnyRole(CATALOGUE_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
-          .antMatchers(HttpMethod.POST, "/self-descriptions/{self_description_hash}/revoke")
-          .hasAnyRole(CATALOGUE_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
+          .requestMatchers(antMatcher(HttpMethod.GET, "/self-descriptions")).authenticated()
+          .requestMatchers(antMatcher(HttpMethod.GET, "/self-descriptions/{self_description_hash}")).authenticated()
+          .requestMatchers(antMatcher(HttpMethod.POST, "/self-descriptions"))
+          		.hasAnyRole(CATALOGUE_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
+          .requestMatchers(antMatcher(HttpMethod.DELETE, "/self-descriptions/{self_description_hash}"))
+          		.hasAnyRole(CATALOGUE_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
+          .requestMatchers(antMatcher(HttpMethod.POST, "/self-descriptions/{self_description_hash}/revoke"))
+          		.hasAnyRole(CATALOGUE_ADMIN_ROLE, SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
 
           // Participants API
-          .antMatchers(HttpMethod.POST, "/participants").hasRole(CATALOGUE_ADMIN_ROLE)
-          .antMatchers(HttpMethod.GET, "/participants").hasAnyRole(CATALOGUE_ADMIN_ROLE)
-          .antMatchers(HttpMethod.PUT, "/participants/*").hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
-          .antMatchers(HttpMethod.DELETE, "/participants/*").hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
-          .antMatchers(HttpMethod.GET, "/participants/*")
-            .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE, SD_ADMIN_ROLE)
-          .antMatchers(HttpMethod.GET, "/participants/*/users")
-            .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
+          .requestMatchers(antMatcher(HttpMethod.POST, "/participants")).hasRole(CATALOGUE_ADMIN_ROLE)
+          .requestMatchers(antMatcher(HttpMethod.GET, "/participants")).hasAnyRole(CATALOGUE_ADMIN_ROLE)
+          .requestMatchers(antMatcher(HttpMethod.PUT, "/participants/*")).hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
+          .requestMatchers(antMatcher(HttpMethod.DELETE, "/participants/*")).hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)
+          .requestMatchers(antMatcher(HttpMethod.GET, "/participants/*"))
+            	.hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE, SD_ADMIN_ROLE)
+          .requestMatchers(antMatcher(HttpMethod.GET, "/participants/*/users"))
+            	.hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
 
           // User APIs
-         // .antMatchers(HttpMethod.GET, "/users").hasAnyRole(CATALOGUE_ADMIN_ROLE)
-          .antMatchers("/users", "/users/**")
+          .requestMatchers(antMatcher("/users"))
+              .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
+          .requestMatchers(antMatcher("/users/{userId}"))
               .hasAnyRole(CATALOGUE_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE, PARTICIPANT_USER_ADMIN_ROLE)
 
           // Roles APIs
-          .antMatchers("/roles").authenticated()
+          .requestMatchers(antMatcher("/roles")).authenticated()
 
           // Session APIs
-          .antMatchers("/session").authenticated()
+          .requestMatchers(antMatcher("/session")).authenticated()
           
           .anyRequest().authenticated()
         )
