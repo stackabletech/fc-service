@@ -94,7 +94,7 @@ federated-catalogue:
       location: contextCacheFiles
   query:
     partners:
-      - "http://localhost:8081"
+#      - "http://localhost:8081"
     recursive: true
   verification:
     participant:

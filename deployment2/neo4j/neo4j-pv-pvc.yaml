@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: federated-catalogue-partner
+  name: fc-neo4j-data-volume-part
+  labels:
+    app: fc-service-part
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/shared-data/neo4j-part
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: federated-catalogue-partner
+  name: fc-neo4j-data-claim-part
+  labels:
+    app: fc-service-part
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

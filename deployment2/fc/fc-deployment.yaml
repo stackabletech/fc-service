@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fc-service
+  name: fc-service-part
   labels:
-    app: fc-service
-  namespace: federated-catalogue
+    app: fc-service-part
+  namespace: federated-catalogue-partner
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: fc-service
+      app: fc-service-part
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        app: fc-service
+        app: fc-service-part
     spec:
       containers:
         - name: fc-service-server-image
@@ -45,8 +45,10 @@ spec:
               value: DVIgraQHZsKG3IVDSDwu5CgCE07gx4YE
 #              valueFrom:
 #                secretKeyRef:
-#                  name: fc-server-keys-secret
+#                  name: fc-server-keys-secret-part
 #                  key: keycloak_client_secret
+            - name: FEDERATED_CATALOGUE_QUERY_PARTNERS
+              value: "https://fc-server.lila.dih-cloud.com"
           ports:
             - name: http
               containerPort: 8081
@@ -73,7 +75,7 @@ spec:
                     - key: app
                       operator: In
                       values:
-                        - fc-service
+                        - fc-service-part
                 topologyKey: "kubernetes.io/hostname"
 #      volumes:
 #        - name: fc-file-store

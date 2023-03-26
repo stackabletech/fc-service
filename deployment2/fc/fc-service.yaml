@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fc-service-part
+  namespace: federated-catalogue-partner
+  labels:
+    app: fc-service-part
+spec:
+  ports:
+    - name: "8081"
+      port: 8081
+      targetPort: 8081
+  selector:
+    app: fc-service-part
+  type: ClusterIP

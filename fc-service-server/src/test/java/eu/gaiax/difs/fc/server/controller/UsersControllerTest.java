@@ -326,7 +326,7 @@ public class UsersControllerTest {
     }
 
     @Test
-    @Disabled
+    @Disabled // TODO: fix me!!
     public void deleteUserAndKeycloakAccessShouldReturnUnauthorizedError() throws Exception {
         User user = getTestUser("newuser", "newuser").addRoleIdsItem(CATALOGUE_ADMIN_ROLE);
         String userId = UUID.randomUUID().toString();
