@@ -39,7 +39,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    */
   @ExceptionHandler({ClientException.class})
   protected ResponseEntity<Error> handleBadRequestException(ClientException exception) {
-    log.info("handleBadRequestException; Bad request error: {}", exception.getMessage());
+    log.info("handleBadRequestException; Bad Request error: {}", exception.getMessage());
     return new ResponseEntity<>(new Error("client_error", exception.getMessage()), BAD_REQUEST);
   }
 
@@ -75,7 +75,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    */
   @ExceptionHandler({NotFoundException.class})
   protected ResponseEntity<Error> handleNotFoundException(NotFoundException exception) {
-    log.info("handleNotFoundException; Not found error: {}", exception.getMessage());
+    log.info("handleNotFoundException; Not Found error: {}", exception.getMessage());
     return new ResponseEntity<>(new Error("not_found_error", exception.getMessage()), NOT_FOUND);
   }
   
@@ -87,7 +87,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    */
   @ExceptionHandler({javax.ws.rs.NotFoundException.class})
   protected ResponseEntity<Error> handleRsNotFoundException(javax.ws.rs.NotFoundException exception) {
-    log.info("handleRsNotFoundException; Not found error: {}", exception.getMessage()); 
+    log.info("handleRsNotFoundException; Not Found error: {}", exception.getMessage()); 
     return new ResponseEntity<>(new Error("not_found_error", exception.getMessage()), NOT_FOUND);
   }
 
@@ -111,7 +111,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    */
   @ExceptionHandler({UnsupportedOperationException.class})
   protected ResponseEntity<Error> handleUnsupportedOperationException(UnsupportedOperationException exception) {
-    log.info("handleUnsupportedOperationException; handleUnsupportedOperation error: {}", exception.getMessage());
+    log.info("handleUnsupportedOperationException; Unsupported Operation error: {}", exception.getMessage());
     return new ResponseEntity<>(new Error("processing_error", exception.getMessage()), NOT_IMPLEMENTED);
   }
   
@@ -123,7 +123,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    */
   @ExceptionHandler({TimeoutException.class})
   protected ResponseEntity<Error> handleTimeoutException(TimeoutException exception) {
-    log.info("handleVerificationException; Verification error: {}", exception.getMessage());
+    log.info("handleTimeoutException; Tiomeout error: {}", exception.getMessage());
     return new ResponseEntity<>(new Error("timeout_error", exception.getMessage()), GATEWAY_TIMEOUT);
   }
 
@@ -136,7 +136,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    */
   @ExceptionHandler({ConstraintViolationException.class})
   protected ResponseEntity<Error> constraintViolationException(ConstraintViolationException exception) {
-    log.info("ConstraintViolationException; ConstraintViolationException error: {}", exception.getMessage());
+    log.info("constraintViolationException; Constraint Violation error: {}", exception.getMessage());
     return new ResponseEntity<>(new Error("constraint_violation_error", exception.getMessage()), BAD_REQUEST);
   }
 }
