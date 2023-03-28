@@ -1,32 +1,37 @@
 package eu.gaiax.difs.fc.core.service.verification.impl;
 
-import com.apicatalog.jsonld.loader.DocumentLoader;
-import com.apicatalog.jsonld.loader.SchemeRouter;
-import com.apicatalog.rdf.RdfValue;
-import com.danubetech.keyformats.JWK_to_PublicKey;
-import com.danubetech.keyformats.crypto.PublicKeyVerifier;
-import com.danubetech.keyformats.crypto.PublicKeyVerifierFactory;
-import com.danubetech.keyformats.jose.JWK;
-import com.danubetech.keyformats.keytypes.KeyTypeName_for_JWK;
-import com.danubetech.verifiablecredentials.CredentialSubject;
-import com.danubetech.verifiablecredentials.VerifiableCredential;
-import com.danubetech.verifiablecredentials.VerifiablePresentation;
-import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
-import eu.gaiax.difs.fc.core.exception.ClientException;
-import eu.gaiax.difs.fc.core.exception.VerificationException;
-import eu.gaiax.difs.fc.core.pojo.*;
-import eu.gaiax.difs.fc.core.service.filestore.FileStore;
-import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
-import eu.gaiax.difs.fc.core.service.verification.ClaimExtractor;
-import eu.gaiax.difs.fc.core.service.validatorcache.ValidatorCache;
-import eu.gaiax.difs.fc.core.service.verification.VerificationService;
-import foundation.identity.did.DIDDocument;
-import foundation.identity.jsonld.JsonLDException;
-import foundation.identity.jsonld.JsonLDObject;
-import info.weboftrust.ldsignatures.LdProof;
-import info.weboftrust.ldsignatures.verifier.JsonWebSignature2020LdVerifier;
-import info.weboftrust.ldsignatures.verifier.LdVerifier;
-import lombok.extern.slf4j.Slf4j;
+import static org.apache.jena.rdf.model.ResourceFactory.createProperty;
+import static org.apache.jena.rdf.model.ResourceFactory.createResource;
+import static org.apache.jena.rdf.model.ResourceFactory.createStatement;
+import static org.apache.jena.rdf.model.ResourceFactory.createTypedLiteral;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.Security;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.text.ParseException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpResponse;
@@ -40,37 +45,65 @@ import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.datatypes.TypeMapper;
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.ontology.OntModelSpec;
-import org.apache.jena.query.*;
-import org.apache.jena.rdf.model.*;
-import org.apache.jena.vocabulary.RDF;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.topbraid.shacl.validation.ValidationUtil;
-import org.topbraid.shacl.vocabulary.SH;
-
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
-import java.security.Security;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.text.ParseException;
-import java.time.Instant;
-import java.util.*;
-
+import org.apache.jena.query.Query;
+import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QueryFactory;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.NodeIterator;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFParser;
 import org.apache.jena.riot.system.stream.StreamManager;
+import org.apache.jena.vocabulary.RDF;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.topbraid.shacl.util.ModelPrinter;
+import org.topbraid.shacl.validation.ValidationUtil;
+import org.topbraid.shacl.vocabulary.SH;
 
-import static org.apache.jena.rdf.model.ResourceFactory.*;
+import com.apicatalog.jsonld.loader.DocumentLoader;
+import com.apicatalog.jsonld.loader.SchemeRouter;
+import com.apicatalog.rdf.RdfValue;
+import com.danubetech.keyformats.JWK_to_PublicKey;
+import com.danubetech.keyformats.crypto.PublicKeyVerifier;
+import com.danubetech.keyformats.crypto.PublicKeyVerifierFactory;
+import com.danubetech.keyformats.jose.JWK;
+import com.danubetech.keyformats.keytypes.KeyTypeName_for_JWK;
+import com.danubetech.verifiablecredentials.CredentialSubject;
+import com.danubetech.verifiablecredentials.VerifiableCredential;
+import com.danubetech.verifiablecredentials.VerifiablePresentation;
+
+import eu.gaiax.difs.fc.api.generated.model.SelfDescriptionStatus;
+import eu.gaiax.difs.fc.core.exception.ClientException;
+import eu.gaiax.difs.fc.core.exception.VerificationException;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
+import eu.gaiax.difs.fc.core.pojo.SdClaim;
+import eu.gaiax.difs.fc.core.pojo.SemanticValidationResult;
+import eu.gaiax.difs.fc.core.pojo.Validator;
+import eu.gaiax.difs.fc.core.pojo.VerificationResult;
+import eu.gaiax.difs.fc.core.pojo.VerificationResultOffering;
+import eu.gaiax.difs.fc.core.pojo.VerificationResultParticipant;
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
+import eu.gaiax.difs.fc.core.service.validatorcache.ValidatorCache;
+import eu.gaiax.difs.fc.core.service.verification.ClaimExtractor;
+import eu.gaiax.difs.fc.core.service.verification.VerificationService;
+import foundation.identity.did.DIDDocument;
+import foundation.identity.jsonld.JsonLDException;
+import foundation.identity.jsonld.JsonLDObject;
+import info.weboftrust.ldsignatures.LdProof;
+import info.weboftrust.ldsignatures.verifier.JsonWebSignature2020LdVerifier;
+import info.weboftrust.ldsignatures.verifier.LdVerifier;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -426,8 +459,7 @@ public class VerificationServiceImpl implements VerificationService {
       log.info("verifySelfDescriptionAgainstSchema.error: {}", exc.getMessage());
     }
     stamp = System.currentTimeMillis() - stamp;
-    log.debug("verifySelfDescriptionAgainstSchema.exit; conforms: {}, model: {}; time taken: {}",
-            result.isConforming(), result.getValidationReport(), stamp);
+    log.debug("verifySelfDescriptionAgainstSchema.exit; conforms: {}, time taken: {}", result.isConforming(), stamp);
     return result;
   }
   
@@ -442,8 +474,7 @@ public class VerificationServiceImpl implements VerificationService {
 	  log.info("verifyClaimsAgainstCompositeSchema.error: {}", exc.getMessage());
 	}
 	stamp = System.currentTimeMillis() - stamp;
-	log.debug("verifyClaimsAgainstCompositeSchema.exit; conforms: {}, model: {}; time taken: {}",
-	          result.isConforming(), result.getValidationReport(), stamp);
+	log.debug("verifyClaimsAgainstCompositeSchema.exit; conforms: {}, time taken: {}", result.isConforming(), stamp);
 	return result;
   }
 
@@ -463,31 +494,28 @@ public class VerificationServiceImpl implements VerificationService {
             .lang(SHAPES_LANG)
             .parse(shape);
 
+    RDFNode node;
     for (SdClaim claim: claims) {
       log.debug("validatePayloadAgainstSchema; {}", claim);
       RdfValue object = claim.getObject();
       if(object.isLiteral()) {
-
         RDFDatatype objectType = TypeMapper.getInstance().getSafeTypeByName(object.asLiteral().getDatatype());
         log.debug("validatePayloadAgainstSchema; objectType is: {}", objectType);
-        Literal objectLiteral = createTypedLiteral(object.getValue(),objectType);
-        Statement s = ResourceFactory.createStatement(createResource(claim.getSubject().getValue()), createProperty(claim.getPredicate().getValue()),
-                objectLiteral);
-        data.add(s);
+        node = createTypedLiteral(object.getValue(), objectType);
       } else {
-        Resource objectResource = createResource(object.getValue());
-        Statement s = ResourceFactory.createStatement(createResource(claim.getSubject().getValue()), createProperty(claim.getPredicate().getValue()),
-                objectResource);
-        data.add(s);
+        node = createResource(object.getValue());
       }
-
+      Statement s = createStatement(createResource(claim.getSubject().getValue()), createProperty(claim.getPredicate().getValue()), node);
+      data.add(s);
     }
+    
     Resource reportResource = ValidationUtil.validateModel(data, shape, true);
+    log.debug("validatePayloadAgainstSchema; got result: {}", reportResource);
 
     boolean conforms = reportResource.getProperty(SH.conforms).getBoolean();
     String report = null;
     if (!conforms) {
-      report = reportResource.getModel().toString();
+      report = ModelPrinter.get().print(reportResource.getModel());
     }
     data.close();
     shape.close();

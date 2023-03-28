@@ -119,6 +119,17 @@ public class VerificationServiceImplTest {
     assertEquals(Instant.parse("2020-03-10T04:24:12.164Z"), vrp.getIssuedDateTime());
   }
 
+  //@Test
+  void validSyntax_ValidSO() throws Exception {
+    log.debug("validSyntax_ValidSO");
+    //schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
+    schemaStore.initializeDefaultSchemas();
+    verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
+    String path = "sd2.json";
+    VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
+    assertNotNull(vr);
+  }  
+  
   @Test
   void validSyntax_ValidServiceOldSchema() throws Exception {
     log.debug("validSyntax_ValidServiceOldSchema");

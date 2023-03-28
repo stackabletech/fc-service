@@ -1,8 +1,13 @@
 management:
+  endpoint:
+    configprops:
+      show-values: ALWAYS
+    env:
+      show-values: ALWAYS  
   endpoints:
     web:
       exposure:
-        include: health, info, metrics, prometheus, graph-rebuild
+        include: "*" #health, info, metrics, prometheus, graph-rebuild
 
 server:
   port: 8081
@@ -72,7 +77,7 @@ datastore:
 graphstore:
   uri: bolt://localhost:7687
   user: neo4j
-  password: 12345
+  password: neo12345
 
 logging:
   level:

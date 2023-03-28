@@ -20,7 +20,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -35,7 +34,6 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 @Configuration
 @EnableWebSecurity //(debug = true)
 //@EnableMethodSecurity
-//@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
   private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -53,7 +51,6 @@ public class SecurityConfig {
 
     http
       .csrf().disable()
-      //.antMatcher("/**")
       .authorizeHttpRequests(authorization -> authorization
 		  .requestMatchers(antMatcher(HttpMethod.GET, "/api/**")).permitAll()
           .requestMatchers(antMatcher(HttpMethod.GET, "/swagger-ui/**")).permitAll()
@@ -66,7 +63,8 @@ public class SecurityConfig {
           .requestMatchers(antMatcher(HttpMethod.POST, "/schemas")).hasRole(CATALOGUE_ADMIN_ROLE)
           .requestMatchers(antMatcher(HttpMethod.DELETE, "/schemas/**")).hasRole(CATALOGUE_ADMIN_ROLE)
           .requestMatchers(antMatcher(HttpMethod.PUT, "/schemas")).hasRole(CATALOGUE_ADMIN_ROLE)
-          .requestMatchers(antMatcher(HttpMethod.GET, "/schemas")).authenticated() //, "/schemas/**"
+          .requestMatchers(antMatcher(HttpMethod.GET, "/schemas")).authenticated() 
+          .requestMatchers(antMatcher(HttpMethod.GET, "/schemas/**")).authenticated() 
 
           // Query APIs
           .requestMatchers(antMatcher("/query")).permitAll()
