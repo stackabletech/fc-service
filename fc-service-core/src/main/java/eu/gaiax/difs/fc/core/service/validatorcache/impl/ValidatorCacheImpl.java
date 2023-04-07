@@ -44,7 +44,7 @@ public class ValidatorCacheImpl implements ValidatorCache {
   @Override
   public void removeFromCache(String didURI) {
     String deleteQuery = "delete from Validator where didURI = :uri";
-    sessionFactory.getCurrentSession().createQuery(deleteQuery)
+    sessionFactory.getCurrentSession().createMutationQuery(deleteQuery)
         .setParameter("uri", didURI)
         .executeUpdate();
   }
@@ -58,7 +58,7 @@ public class ValidatorCacheImpl implements ValidatorCache {
   public int expireValidators() {
     final Session currentSession = sessionFactory.getCurrentSession();
     String deleteQuery = "delete from Validator where expirationDate <= :dateTime";
-    int deleted = currentSession.createQuery(deleteQuery)
+    int deleted = currentSession.createMutationQuery(deleteQuery)
         .setParameter("dateTime", Instant.now())
         .executeUpdate();
     log.debug("Expired {} Validators", deleted);

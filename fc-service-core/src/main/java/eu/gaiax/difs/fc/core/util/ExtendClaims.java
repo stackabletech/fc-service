@@ -35,23 +35,11 @@ public class ExtendClaims {
             Resource s = triple.getSubject();
             Property p = triple.getPredicate();
             RDFNode o = triple.getObject();
-            additionalTriples.add(
-                    new StatementImpl(
-                            s,
-                            claimsGraphUri,
-                            credentialSubjectLiteral
-                    )
-            );
+            additionalTriples.add(new StatementImpl(s, claimsGraphUri, credentialSubjectLiteral));
 
             if (o.isResource() && !p.equals(RDF.type)) {
                 // URIs and blank nodes, but not literals
-                additionalTriples.add(
-                        new StatementImpl(
-                                o.asResource(),
-                                claimsGraphUri,
-                                credentialSubjectLiteral
-                        )
-                );
+                additionalTriples.add(new StatementImpl(o.asResource(), claimsGraphUri, credentialSubjectLiteral));
             }
         }
 
@@ -60,7 +48,6 @@ public class ExtendClaims {
         claims.write(outputstream, "N-TRIPLES");
         return outputstream.toString();
     }
-
 
     public static Set<String> getMultivalProp(Model claims) {
         Set<String> multiprop = new HashSet<String>();
@@ -73,10 +60,11 @@ public class ExtendClaims {
         return multiprop;
     }
 
-
     private static boolean checkMultivalueProp(Resource subject, Property predicate) {
-        if (subject.listProperties(predicate).toList().size() > 1)
-            return true;
-        return false;
+        StmtIterator iter = subject.listProperties(predicate); 
+        if (!iter.hasNext()) return false;
+        iter.next();
+        if (!iter.hasNext()) return false;
+        return true;
     }
 }

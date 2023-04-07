@@ -201,8 +201,7 @@ gax:provides
     a owl:ObjectProperty ;
     rdfs:label "provides"@en ;
     rdfs:domain [ owl:unionOf ( gax:Provider gax:Federator ) ] ;
-    rdfs:range [ owl:unionOf ( gax:ServiceInstance gax:FederationService ) ]
-.
+    rdfs:range [ owl:unionOf ( gax:ServiceInstance gax:FederationService ) ] .
 gax:definesSchemas
     a owl:ObjectProperty ;
     rdfs:label "defines schemas"@en ;

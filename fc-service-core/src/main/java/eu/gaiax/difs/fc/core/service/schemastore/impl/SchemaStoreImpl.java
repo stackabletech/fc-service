@@ -1,19 +1,8 @@
 package eu.gaiax.difs.fc.core.service.schemastore.impl;
 
-import com.google.common.base.Strings;
-import eu.gaiax.difs.fc.core.exception.ConflictException;
-import eu.gaiax.difs.fc.core.exception.NotFoundException;
-import eu.gaiax.difs.fc.core.exception.ServerException;
-import eu.gaiax.difs.fc.core.exception.VerificationException;
-import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
-import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
-import eu.gaiax.difs.fc.core.service.filestore.FileStore;
-import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
-import eu.gaiax.difs.fc.core.util.HashUtils;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,9 +15,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import jakarta.persistence.EntityExistsException;
-import jakarta.persistence.LockModeType;
-import lombok.extern.slf4j.Slf4j;
+
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.RDFNode;
@@ -36,21 +23,36 @@ import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.shacl.vocabulary.SHACLM;
+import org.apache.jena.vocabulary.OWL;
+import org.apache.jena.vocabulary.OWL2;
+import org.apache.jena.vocabulary.RDF;
+import org.apache.jena.vocabulary.RDFS;
+import org.apache.jena.vocabulary.SKOS;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.apache.jena.vocabulary.RDF;
-import org.apache.jena.vocabulary.RDFS;
-import org.apache.jena.vocabulary.SKOS;
-import org.apache.jena.vocabulary.OWL;
-import org.apache.jena.shacl.vocabulary.SHACLM;
-import org.apache.jena.vocabulary.OWL2;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
+
+import com.google.common.base.Strings;
+
+import eu.gaiax.difs.fc.core.exception.ConflictException;
+import eu.gaiax.difs.fc.core.exception.NotFoundException;
+import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.exception.VerificationException;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.service.filestore.FileStore;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
+import eu.gaiax.difs.fc.core.util.HashUtils;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.LockModeType;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  *
@@ -79,7 +81,6 @@ public class SchemaStoreImpl implements SchemaStore {
       Long found = session.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
       if (found == 0) {
         tx = session.beginTransaction();
-        log.debug("initializeDefaultSchemas; tx: {}, session: {}", tx, session);
         
         count += addSchemasFromDirectory("defaultschema/ontology", session);
         count += addSchemasFromDirectory("defaultschema/shacl", session);
@@ -162,7 +163,7 @@ public class SchemaStoreImpl implements SchemaStore {
           }
         } else {
           result.setValid(false);
-          result.setErrorMessage("Schema is not supported");
+          result.setErrorMessage("Schema type not supported");
         }
       }
     }
@@ -264,6 +265,7 @@ public class SchemaStoreImpl implements SchemaStore {
     if (!result.isValid()) {
       throw new VerificationException("Schema is not valid: " + result.getErrorMessage());
     }
+    
     String schemaId = result.getExtractedId();
     String nameHash;
     if (Strings.isNullOrEmpty(schemaId)) {
@@ -319,7 +321,7 @@ public class SchemaStoreImpl implements SchemaStore {
     }
 
     // Remove old terms
-    int deleted = currentSession.createNativeQuery("delete from schematerms where schemaid = :schemaid")
+    int deleted = currentSession.createMutationQuery("delete from SchemaTerm t where t.schemaId = :schemaid")
         .setParameter("schemaid", identifier)
         .executeUpdate();
     log.debug("updateSchema; Deleted {} terms", deleted);
@@ -340,7 +342,7 @@ public class SchemaStoreImpl implements SchemaStore {
     existing.replaceTerms(new ArrayList<>(result.getExtractedUrls()));
     existing.setContent(schema.getContentAsString());
     try {
-      currentSession.update(existing);
+      currentSession.merge(existing);
       currentSession.flush();
     } catch (EntityExistsException ex) {
       throw new ConflictException("Schema redefines terms.");
@@ -352,17 +354,14 @@ public class SchemaStoreImpl implements SchemaStore {
   @Override
   public void deleteSchema(String identifier) {
     Session currentSession = sessionFactory.getCurrentSession();
-    // Find and lock record.
-    String delete = "delete from schemafiles where schemaid = :schemaid returning schemaid, type";
-    Query<?> q = currentSession.createNativeQuery(delete);
+    Query<Integer> q = currentSession.createNativeQuery("delete from schemafiles where schemaid = :schemaid returning type", Integer.class);
     q.setParameter("schemaid", identifier);
-    List<?> result = q.list();
+    List<Integer> result = q.list();
     log.debug("deleteSchema; delete result: {}", result);
     if (result.size() == 0) {
       throw new NotFoundException("Schema with id " + identifier + " was not found");
     }
-    Object[] values = (Object[]) result.get(0);
-    Integer type = (Integer) values[1];
+    int type = result.get(0);
     currentSession.flush();
     COMPOSITE_SCHEMAS.remove(SchemaType.values()[type]);
   }
@@ -371,10 +370,9 @@ public class SchemaStoreImpl implements SchemaStore {
   public Map<SchemaType, List<String>> getSchemaList() {
     Session currentSession = sessionFactory.getCurrentSession();
     Map<SchemaType, List<String>> result = new HashMap<>();
-    currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaTypeIdPair(s.type, s.schemaId) from SchemaRecord s", SchemaTypeIdPair.class)
-        .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
-    // TORemove
-    log.debug("getSchemaList.exit; returning schemaList: {}", result);
+    currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaTypeRecord(s.type, s.schemaId) from SchemaRecord s", 
+    		SchemaTypeRecord.class)
+        .stream().forEach(p -> result.computeIfAbsent(p.type(), t -> new ArrayList<>()).add(p.schemaId()));
     return result;
   }
 
@@ -393,9 +391,10 @@ public class SchemaStoreImpl implements SchemaStore {
   public Map<SchemaType, List<String>> getSchemasForTerm(String entity) {
     Session currentSession = sessionFactory.getCurrentSession();
     Map<SchemaType, List<String>> result = new HashMap<>();
-    currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaTypeIdPair(s.type, s.schemaId) from SchemaRecord s join s.terms as t where t.term=?1", SchemaTypeIdPair.class)
+    currentSession.createQuery("select new eu.gaiax.difs.fc.core.service.schemastore.impl.SchemaTypeRecord(s.type, s.schemaId) " + 
+    		"from SchemaRecord s join s.terms as t where t.term=?1", SchemaTypeRecord.class)
         .setParameter(1, entity)
-        .stream().forEach(p -> result.computeIfAbsent(p.getType(), t -> new ArrayList<>()).add(p.getSchemaId()));
+        .stream().forEach(p -> result.computeIfAbsent(p.type(), t -> new ArrayList<>()).add(p.schemaId()));
     return result;
   }
 
@@ -411,10 +410,10 @@ public class SchemaStoreImpl implements SchemaStore {
       // Transaction is sometimes not active. For instance when called from an @AfterAll Test method
       if (transaction == null || !transaction.isActive()) {
         transaction = session.beginTransaction();
-        session.createNativeQuery("delete from schemafiles").executeUpdate();
+        session.createMutationQuery("delete from SchemaRecord").executeUpdate();
         transaction.commit();
       } else {
-        session.createNativeQuery("delete from schemafiles").executeUpdate();
+        session.createMutationQuery("delete from SchemaRecord").executeUpdate();
       }
     } catch (Exception ex) {
       log.error("SchemaStoreImpl: Exception while clearing Database.", ex);

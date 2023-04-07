@@ -1,34 +1,35 @@
 package eu.gaiax.difs.fc.core.service.schemastore.impl;
 
-import eu.gaiax.difs.fc.core.config.DatabaseConfig;
-import eu.gaiax.difs.fc.core.config.FileStoreConfig;
-import eu.gaiax.difs.fc.core.exception.ConflictException;
-import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
-import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
-import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
-import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
 import static eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType.ONTOLOGY;
 import static eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType.SHAPE;
 import static eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType.VOCABULARY;
-import eu.gaiax.difs.fc.core.util.TestUtil;
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.Statement;
-import org.apache.jena.rdf.model.StmtIterator;
-import org.hibernate.SessionFactory;
-import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.rdf.model.StmtIterator;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -40,6 +41,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
+
+import eu.gaiax.difs.fc.core.config.DatabaseConfig;
+import eu.gaiax.difs.fc.core.config.FileStoreConfig;
+import eu.gaiax.difs.fc.core.exception.ConflictException;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessor;
+import eu.gaiax.difs.fc.core.pojo.ContentAccessorDirect;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore;
+import eu.gaiax.difs.fc.core.service.schemastore.SchemaStore.SchemaType;
+import eu.gaiax.difs.fc.core.util.TestUtil;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -66,14 +79,6 @@ public class SchemaStoreImplTest {
   @Autowired
   private SessionFactory sessionFactory;
 
-  //@Autowired
-  //@Qualifier("schemaFileStore")
-  //private FileStore fileStore;
-
-  //@AfterEach
-  //public void storageSelfCleaning() throws IOException {
-    //fileStore.clearStorage();
-  //}
 
   public Set<String> getExtractedTermsSet(ContentAccessor extractedTerms) throws IOException {
     Set<String> extractedTermsSet = new HashSet<>();
@@ -114,7 +119,6 @@ public class SchemaStoreImplTest {
     assertTrue(actual);
     assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
     assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
-
   }
 
   @Test
@@ -185,7 +189,7 @@ public class SchemaStoreImplTest {
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult result = schemaStore.analyzeSchema(content);
     String actual = result.getErrorMessage();
-    String expected = "Schema is not supported";
+    String expected = "Schema type not supported";
     assertFalse(result.isValid());
     assertEquals(expected, actual);
     assertTrue(result.getExtractedUrls().isEmpty());
@@ -203,7 +207,6 @@ public class SchemaStoreImplTest {
     assertFalse(result.isValid());
     assertNull(result.getExtractedId());
     assertTrue(result.getExtractedUrls().isEmpty());
-
   }
 
   @Test
@@ -224,12 +227,13 @@ public class SchemaStoreImplTest {
     ContentAccessor content = TestUtil.getAccessor(getClass(), path);
     SchemaAnalysisResult result = schemaStore.analyzeSchema(content);
     String actual = result.getErrorMessage();
-    String expected = "Schema is not supported";
+    String expected = "Schema type not supported";
     assertNull(result.getExtractedId());
     assertTrue(result.getExtractedUrls().isEmpty());
     assertFalse(result.isValid());
     assertEquals(expected, actual);
   }
+  
   @Test
   public void testValidJSONlD() throws UnsupportedEncodingException {
     Set<String> expectedExtractedUrlsSet = new HashSet<>();
@@ -245,6 +249,7 @@ public class SchemaStoreImplTest {
     assertEquals(expectedExtractedUrlsSet.size(), actualExtractedUrlsSet.size());
     assertEquals(expectedExtractedUrlsSet, actualExtractedUrlsSet);
   }
+  
   @Test
   public void testValidRDFXML() throws UnsupportedEncodingException {
     Set<String> expectedExtractedUrlsSet = new HashSet<>();
@@ -331,19 +336,24 @@ public class SchemaStoreImplTest {
     String path = "Schema-Tests/valid-schemaShape.ttl";
     schemaStore.addSchema(TestUtil.getAccessor(getClass(), path));
     assertThrowsExactly(ConflictException.class, () -> schemaStore.addSchema(TestUtil.getAccessor(getClass(), path)));
-
   }
 
+  //@Test
+  //public void testAddUnsupportedSchema() throws IOException {
+  //  log.info("testAddUnsupportedSchema");
+  //  String path = "Schema-Tests/unsupportedSchema.ttl";
+  //  schemaStore.addSchema(TestUtil.getAccessor(getClass(), path));
+  //  assertThrowsExactly(VerificationException.class, () -> schemaStore.addSchema(TestUtil.getAccessor(getClass(), path)));
+  //}
+  
   @Test
   public void test02AddSchemaConflictingTerm() throws IOException {
     log.info("testAddSchemaConflictingTerm");
-    String pathOne = "Schema-Tests/shapeCpu.ttl";
-    String idOne = schemaStore.addSchema(TestUtil.getAccessor(pathOne));
+    schemaStore.addSchema(TestUtil.getAccessor("Schema-Tests/shapeCpu.ttl"));
     Map<SchemaType, List<String>> schemaListOne = schemaStore.getSchemaList();
     assertEquals(1, schemaListOne.get(SchemaType.SHAPE).size(), "Incorrect number of shape schemas found.");
 
-    String pathTwo = "Schema-Tests/shapeGpu.ttl";
-    assertThrowsExactly(ConflictException.class, () -> schemaStore.addSchema(TestUtil.getAccessor(pathTwo)));
+    assertThrowsExactly(ConflictException.class, () -> schemaStore.addSchema(TestUtil.getAccessor("Schema-Tests/shapeGpu.ttl")));
     Map<SchemaType, List<String>> schemaListTwo = schemaStore.getSchemaList();
     assertEquals(schemaListOne, schemaListTwo, "schema list should not have changed.");
     assertEquals(1, schemaListTwo.get(SchemaType.SHAPE).size(), "Incorrect number of shape schemas found.");
