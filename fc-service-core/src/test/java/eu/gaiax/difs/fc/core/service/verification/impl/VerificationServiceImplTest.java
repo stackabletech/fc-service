@@ -119,17 +119,6 @@ public class VerificationServiceImplTest {
     assertEquals(Instant.parse("2020-03-10T04:24:12.164Z"), vrp.getIssuedDateTime());
   }
 
-  //@Test
-  void validSyntax_ValidSO() throws Exception {
-    log.debug("validSyntax_ValidSO");
-    //schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
-    schemaStore.initializeDefaultSchemas();
-    verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
-    String path = "sd2.json";
-    VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
-    assertNotNull(vr);
-  }  
-  
   @Test
   void validSyntax_ValidServiceOldSchema() throws Exception {
     log.debug("validSyntax_ValidServiceOldSchema");
@@ -219,7 +208,7 @@ public class VerificationServiceImplTest {
     String path = "VerificationService/syntax/input.vp.jsonld";
     Exception ex = assertThrowsExactly(VerificationException.class, ()
             -> verificationService.verifySelfDescription(getAccessor(path)));
-    assertEquals("Signatures error; This proof type is not yet implemented: Ed25519Signature2018", ex.getMessage());
+    assertEquals("Signatures error; The proof type is not yet implemented: Ed25519Signature2018", ex.getMessage());
   }
 
   @Test
@@ -268,6 +257,25 @@ public class VerificationServiceImplTest {
     assertEquals("Signatures error; com.danubetech.verifiablecredentials.VerifiableCredential does not match with proof", ex.getMessage());
   }
 
+  private static String pkey = """
+	{
+		"kty": "RSA",
+		"e": "AQAB",
+		"alg": "PS256",
+		"n": "0nYZU6EuuzHKBCzkcBZqsMkVZXngYO7VujfLU_4ys7onF4HxTJPP3OGKEjbjbMgmpa7vKaWRomt_XXTjemA3r3f5t8bj0IoqFfvbTIq65GUIIh4y2mVbomdcQLRK2Auf79vDiqiONknTSstoPjAiCg6t6z_KruGFZbDOhYkZwqrjGnmB_LfFSlpeLwkQQ-5dVLhhXkImmWhnACoAo8ECny24Ap7wLbN9i9o1fNSz2uszACj0zxFhl3NGunHFUm3YkGd0URvoToXpK9a4zfihSUxHjeT0_7a9puVF4E3w1AAjSh4nV3pLE0cJyDITVb2M4d3m9tjjz_3XwjYiAAJ1MKVBSKDM27pexRFCJj_Dvb-dr-AImhqBhPDHn_gjdaRZIVoADC4zwBULkpvUaUIKmNFyYOjDYWWTBzTf4Gs9QL5adlVfVyK14MZPBOyq-cqIIymgp6A5_R3hKnCCBP8C_S0-VDidhI6Pr5VJPx9DydI0eB2DiOyOZvbfg7sKVkJXFUEJRiBTMhujyjYqeTtCHjCFHctZVQ8hU279eyk7mpmpDrktfCFJFi-00ZzQWTgtzBoGhke5hj0hjtG1n4jN6BfypdT5oB-DeXl2P1hp_hNC9I5gveWUYHAqN4VKve_52A3ub8vBlISQhEUeZoFUterTiDA3NyK7wsj_V7-KM6U"
+	}""";  
+    
+  //@Test TODO: think how to run it with the static key above
+  void validSyntax_ValidSO() throws Exception {
+    log.debug("validSyntax_ValidSO");
+    //schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
+    schemaStore.initializeDefaultSchemas();
+    verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
+    VerificationResult vr = verificationService.verifySelfDescription(getAccessor("Signature-Tests/gxfsSignarure.jsonld"), true, true, true);
+    verificationService.setTypes("http://w3id.org/gaia-x/participant#Participant", "http://w3id.org/gaia-x/service#ServiceOffering");
+    assertNotNull(vr);
+  }
+    
   @Test
   void validSD() throws UnsupportedEncodingException {
     log.debug("validSD");

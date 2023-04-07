@@ -258,13 +258,14 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     }
     log.trace("storeSelfDescription.enter; got meta: {}", sdMetadata);
     final Session currentSession = sessionFactory.getCurrentSession();
-    String upsert = "with u as (update sdfiles set status = ?1, statustime = ?2\n" +
-            "where subjectid = ?3 and status = 0 returning ?4 sdhash, subjectid),\n" +
-            "i as (insert into sdfiles(sdhash, subjectid, issuer, uploadtime, statustime, expirationtime, status, content, validators)\n" +
-            "values (?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)\n" +
-            "returning sdhash)\n" +
-            "select u.subjectid, i.sdhash from i full join u on u.sdhash = i.sdhash";
-    Query<?> q = currentSession.createNativeQuery(upsert); //, Object[].class);
+    String upsert = """
+	  with u as (update sdfiles set status = ?1, statustime = ?2
+      where subjectid = ?3 and status = 0 returning ?4 sdhash, subjectid),
+      i as (insert into sdfiles(sdhash, subjectid, issuer, uploadtime, statustime, expirationtime, status, content, validators)
+      values (?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+      returning sdhash)
+      select u.subjectid from i full join u on u.sdhash = i.sdhash""";
+    Query<String> q = currentSession.createNativeQuery(upsert, String.class); 
     q.setParameter(1, SelfDescriptionStatus.DEPRECATED.ordinal());
     q.setParameter(2, Instant.now());
     q.setParameter(3, sdMetadata.getId());
@@ -295,16 +296,14 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     q.setParameter(12, sdMetadata.getSelfDescription().getContentAsString());
     q.setParameter(13, (vaDids == null ? null : vaDids.toArray(new String[vaDids.size()])), StringArrayType.INSTANCE);
 
-    List<?> result = null;
+    List<String> result = null;
     try {
       result = q.list();
     } catch (ConstraintViolationException ex) {
-      //log.error("storeSelfDescription.error 1: {}", sdMetadata.getSdHash(), ex);
       // TODO: check for "sdfiles_pkey"
       throw new ConflictException(String.format("self-description with hash %s already exists", sdMetadata.getSdHash()));
     } catch (Exception ex) {
       if (ex.getCause() instanceof ConstraintViolationException) {
-        //log.error("storeSelfDescription.error 1.5: {}", sdMetadata.getSdHash(), ex);
         // TODO: check for "idx_sd_file_is_active"
         throw new ConflictException(String.format("active self-description with subjectId %s already exists", sdMetadata.getId()));
       }
@@ -313,8 +312,7 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     }
     log.trace("storeSelfDescription; upsert result: {}", result);
     
-    Object[] values = (Object[]) result.get(0);
-    String subjectId = (String) values[0];
+    String subjectId = result.get(0);
     if (subjectId != null) {
       graphDb.deleteClaims(subjectId);
     }
@@ -325,49 +323,45 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
   @Override
   public void changeLifeCycleStatus(final String hash, final SelfDescriptionStatus targetStatus) {
     final Session currentSession = sessionFactory.getCurrentSession();
-    String update = "with u as (update sdfiles set status = :status, statustime = :status_dt\n" + 
-      "where sdhash = :hash and status = 0 returning sdhash, subjectid),\n" +
-      "o as (select sdhash, status from sdfiles where sdhash = :hash and status > 0)\n" +
-      "select u.subjectid, o.status from u full join o on o.sdhash = u.sdhash";
-    Query<?> q = currentSession.createNativeQuery(update);
+    Query<SubjectStatusRecord> q = currentSession.createNativeQuery("""
+      with u as (update sdfiles set status = :status, statustime = :status_dt
+      where sdhash = :hash and status = 0 returning sdhash, subjectid),
+      o as (select sdhash, status from sdfiles where sdhash = :hash and status > 0)
+      select u.subjectid, o.status from u full join o on o.sdhash = u.sdhash""", 
+      "SubjectStatusRecordMapping", SubjectStatusRecord.class);
     q.setParameter("hash", hash);
     q.setParameter("status", targetStatus.ordinal());
     q.setParameter("status_dt", Instant.now());
-    List<?> result = q.list();
-    log.debug("changeLifeCycleStatus; update result: {}", result);
-    if (result.size() == 0) {
+    SubjectStatusRecord ssr = q.getSingleResultOrNull();
+    log.debug("changeLifeCycleStatus; update result: {}", ssr);
+    if (ssr == null) {
       throw new NotFoundException("no self-description found for hash " + hash);
     }
-    Object[] values = (Object[]) result.get(0);
-    String subjectId = (String) values[0];
-    if (subjectId == null) {
-      Integer status = (Integer) values[1];
+
+    if (ssr.subjectId() == null) {
       final String message = String.format(
             "can not change status of self-description with hash %s: require status %s, but encountered status %s", hash,
-            SelfDescriptionStatus.ACTIVE, SelfDescriptionStatus.values()[status]);
+            SelfDescriptionStatus.ACTIVE, ssr.getSdStatus());
       throw new ConflictException(message);
     }
-    graphDb.deleteClaims(subjectId);
+    graphDb.deleteClaims(ssr.subjectId());
     currentSession.flush();
   }
 
   @Override
   public void deleteSelfDescription(final String hash) {
     final Session currentSession = sessionFactory.getCurrentSession();
-    String delete = "delete from sdfiles where sdhash = :hash returning status, subjectid";
-    Query<?> q = currentSession.createNativeQuery(delete);
+    Query<SubjectStatusRecord> q = currentSession.createNativeQuery("delete from sdfiles where sdhash = :hash returning subjectid, status",
+      "SubjectStatusRecordMapping", SubjectStatusRecord.class);
     q.setParameter("hash", hash);
-    List<?> result = q.list();
-    log.debug("deleteSelfDescription; delete result: {}", result);
-    if (result.size() == 0) {
+    SubjectStatusRecord ssr = q.getSingleResultOrNull();
+    log.debug("deleteSelfDescription; delete result: {}", ssr);
+    if (ssr == null) {
       throw new NotFoundException("no self-description found for hash " + hash);
     }
     
-    Object[] values = (Object[]) result.get(0);
-    Integer status = (Integer) values[0];
-    if (status == SelfDescriptionStatus.ACTIVE.ordinal()) {
-      String subjectId = (String) values[1];
-      graphDb.deleteClaims(subjectId);
+    if (ssr.getSdStatus() == SelfDescriptionStatus.ACTIVE) {
+      graphDb.deleteClaims(ssr.subjectId());
     }
     currentSession.flush();
   }
@@ -423,10 +417,10 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       // Transaction is sometimes not active. For instance when called from an @AfterAll Test method
       if (transaction == null || !transaction.isActive()) {
         transaction = session.beginTransaction();
-        session.createNativeQuery("delete from sdfiles").executeUpdate();
+        session.createMutationQuery("delete from SdMetaRecord").executeUpdate();
         transaction.commit();
       } else {
-        session.createNativeQuery("delete from sdfiles").executeUpdate();
+        session.createMutationQuery("delete from SdMetaRecord").executeUpdate();
       }
     }
   }

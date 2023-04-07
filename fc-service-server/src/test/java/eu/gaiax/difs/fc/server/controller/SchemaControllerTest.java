@@ -184,6 +184,12 @@ public class SchemaControllerTest {
     MvcResult result = resultActions.andReturn();
     String id = Objects.requireNonNull(result.getResponse().getHeader("location"))
         .replace("/schemas/", "");
+
+    mockMvc.perform(MockMvcRequestBuilders.post("/schemas")
+            .content(getMockFileDataAsString("test-schema.ttl"))
+            .with(csrf())
+            .contentType("application/rdf+xml")
+    ).andExpect(status().isConflict());
     schemaStore.deleteSchema(id);
   }
 

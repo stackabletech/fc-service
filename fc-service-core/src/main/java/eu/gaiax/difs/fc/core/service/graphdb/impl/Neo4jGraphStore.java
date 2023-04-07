@@ -1,6 +1,5 @@
 package eu.gaiax.difs.fc.core.service.graphdb.impl;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,12 +12,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.jena.rdf.model.Model;
+import org.apache.commons.lang3.tuple.Pair;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
-import org.neo4j.driver.Transaction;
 import org.neo4j.driver.TransactionConfig;
+import org.neo4j.driver.TransactionContext;
 import org.neo4j.driver.internal.InternalNode;
 import org.neo4j.driver.internal.InternalRelationship;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +27,11 @@ import org.springframework.transaction.annotation.Transactional;
 import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
 import eu.gaiax.difs.fc.core.exception.ServerException;
 import eu.gaiax.difs.fc.core.exception.TimeoutException;
-import eu.gaiax.difs.fc.core.exception.VerificationException;
 import eu.gaiax.difs.fc.core.pojo.GraphQuery;
 import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
 import eu.gaiax.difs.fc.core.pojo.SdClaim;
 import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
 import eu.gaiax.difs.fc.core.util.ClaimValidator;
-import eu.gaiax.difs.fc.core.util.ExtendClaims;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -70,17 +67,12 @@ public class Neo4jGraphStore implements GraphStore {
         log.debug("addClaims.enter; got claims: {}, subject: {}", sdClaimList, credentialSubject);
         if (!sdClaimList.isEmpty()) {
             try (Session session = driver.session()) { 
-                Model model = claimValidator.validateClaims(sdClaimList);
-                String claimsAdded = ExtendClaims.addPropertyGraphUri(model, credentialSubject);
-                Set<String> properties = ExtendClaims.getMultivalProp(model);
-                if (!properties.isEmpty()) {
-                    updateGraphConfig(session, properties);
+                Pair<String, Set<String>> props = claimValidator.resolveClaims(sdClaimList, credentialSubject);
+                if (!props.getRight().isEmpty()) {
+                    updateGraphConfig(session, props.getRight());
                 }
-                Result rs = session.run(queryInsert, Map.of("payload", claimsAdded));
+                Result rs = session.run(queryInsert, Map.of("payload", props.getLeft()));
                 log.debug("addClaims; inserted: {}", rs.consume());
-            } catch (IOException ex) {
-            //    log.error("addClaims.error;", ex);
-                throw new VerificationException(ex);
             }
         }
         log.debug("addClaims.exit");
@@ -98,9 +90,8 @@ public class Neo4jGraphStore implements GraphStore {
             log.debug("deleteClaims; deleted: {}", rsDelelte.consume());
             Result rsUpdate = session.run(queryUpdate, params);
             log.debug("deleteClaims; updated: {}", rsUpdate.consume());
-        //} catch (Exception ex) {
-        //    log.error("deleteClaims.error;", ex);
         }
+        log.debug("deleteClaims.exit");
     }
 
     /**
@@ -121,8 +112,7 @@ public class Neo4jGraphStore implements GraphStore {
         long stamp = System.currentTimeMillis();
         try (Session session = driver.session()) {
             //In this method we use read transaction to avoid any Cypher query that modifies data
-        	// TODO: use executeRead instead..
-            return session.readTransaction(tx -> doQuery(tx, sdQuery), transactionConfig);
+            return session.executeRead(tx -> doQuery(tx, sdQuery), transactionConfig);
         } catch (Exception ex) {
             stamp = System.currentTimeMillis() - stamp;
             log.error("queryData.error: {}", ex.getMessage());
@@ -135,7 +125,7 @@ public class Neo4jGraphStore implements GraphStore {
         }
     }
     
-    private PaginatedResults<Map<String, Object>> doQuery(Transaction tx, GraphQuery query) {
+    private PaginatedResults<Map<String, Object>> doQuery(TransactionContext tx, GraphQuery query) {
         List<Map<String, Object>> resultList = new ArrayList<>();
         String finalString = getDynamicallyAddedCountClauseQuery(query);
         Result result = tx.run(finalString, query.getParams());
@@ -179,7 +169,8 @@ public class Neo4jGraphStore implements GraphStore {
         return new PaginatedResults<>(totalCount, resultList);
     }
 
-    private void updateGraphConfig(Session session, Set<String> properties) {
+    @SuppressWarnings("unchecked")
+	private void updateGraphConfig(Session session, Set<String> properties) {
         Result config = session.run("CALL n10s.graphconfig.show");
         while (config.hasNext()) {
             org.neo4j.driver.Record record = config.next();

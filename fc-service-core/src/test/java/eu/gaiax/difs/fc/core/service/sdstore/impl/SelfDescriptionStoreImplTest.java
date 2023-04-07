@@ -256,7 +256,7 @@ public class SelfDescriptionStoreImplTest {
         "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
         Map.of("graphUri", "TestSd/1")
     )).getResults();
-    log.debug("test03StoreDuplicateSelfDescription-1; got {} nodes", nodes.size());
+    log.debug("test04ChangeSelfDescriptionStatus-1; got {} nodes", nodes.size());
     Assertions.assertEquals(3, nodes.size());
 
     sdStore.changeLifeCycleStatus(hash, SelfDescriptionStatus.REVOKED);
@@ -274,7 +274,7 @@ public class SelfDescriptionStoreImplTest {
         "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
         Map.of("graphUri", "TestSd/1")
     )).getResults();
-    log.debug("test03StoreDuplicateSelfDescription-1; got {} nodes", nodes.size());
+    log.debug("test04ChangeSelfDescriptionStatus-2; got {} nodes", nodes.size());
     Assertions.assertEquals(0, nodes.size(), "Revoked SD should not appear in queries");
 
     Assertions.assertThrows(ConflictException.class, () -> {
@@ -285,7 +285,7 @@ public class SelfDescriptionStoreImplTest {
         "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
         Map.of("graphUri", "TestSd/1")
     )).getResults();
-    log.debug("test03StoreDuplicateSelfDescription-1; got {} nodes", nodes.size());
+    log.debug("test04ChangeSelfDescriptionStatus-3; got {} nodes", nodes.size());
     Assertions.assertEquals(0, nodes.size(), "Revoked SD should not appear in queries");
 
     sdStore.deleteSelfDescription(hash);

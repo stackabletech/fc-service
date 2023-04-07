@@ -12,8 +12,11 @@ import java.util.List;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
+import jakarta.persistence.ColumnResult;
+import jakarta.persistence.ConstructorResult;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.SqlResultSetMapping;
 import jakarta.persistence.Table;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
@@ -27,12 +30,9 @@ import org.hibernate.annotations.Type;
 @Access(AccessType.PROPERTY)
 @Table(name = "sdfiles")
 @NoArgsConstructor
-//@TypeDefs({
-//  @TypeDef(
-//      name = "string-array",
-//      typeClass = StringArrayType.class
-//  )
-//})
+@SqlResultSetMapping(name = "SubjectStatusRecordMapping",
+  classes = @ConstructorResult(targetClass = SubjectStatusRecord.class,
+    columns = {@ColumnResult(name = "subjectid"), @ColumnResult(name = "status")}))
 public class SdMetaRecord extends SelfDescriptionMetadata {
 
   private static final long serialVersionUID = -1010712678262829212L;
