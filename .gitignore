@@ -34,6 +34,7 @@ build/
 ### VS Code ###
 .vscode/
 
+.DS_Store
 ### Server logs ###
 fc-service-server/logs/
 
