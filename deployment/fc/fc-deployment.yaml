@@ -26,11 +26,9 @@ spec:
           imagePullPolicy: Always
           env:
             - name: GRAPHSTORE_URI
-#              value: bolt://10.110.142.153:7687
-              value: bolt://10.0.222.40:7687
+              value: bolt://fc-neo4j:7687
             - name: SPRING_DATASOURCE_URL
-#              value: jdbc:postgresql://10.104.96.87:5432/postgres
-              value: jdbc:postgresql://10.0.29.123:5432/postgres
+              value: jdbc:postgresql://fc-postgres:5432/postgres
             - name: GRAPHSTORE_QUERY_TIMEOUT_IN_SECONDS
               value: "5"
             - name: DATASTORE_FILE_PATH
