@@ -1,0 +1,199 @@
+# Default values for fc-service.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+name: fc-service
+replicaCount: 1
+
+image:
+  repository: registry.gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/fc-service-server
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "1.1.0-SNAPSHOT"
+
+#imagePullSecrets: []
+#nameOverride: ""
+fullnameOverride: "fc-server"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: 
+  allowPrivilegeEscalation: false
+  # fsGroup: 2000
+
+securityContext: {} 
+#  # capabilities:
+#  #   drop:
+#  #   - ALL
+#  # readOnlyRootFilesystem: true
+#  # runAsNonRoot: true
+#  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8081
+
+ingress:
+  enabled: true
+  annotations: 
+    kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: cert-manager-webhook
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+    nginx.ingress.kubernetes.io/server-snippet: |
+        location /actuator {
+          deny all;
+          return 403;
+        }
+  hosts:
+    - host: fc-server.gxfs.dev
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: 
+    - secretName: wildcard-gxfs-dev
+      hosts:
+        - fc-server.gxfs.dev
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: 
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - fc-service
+          topologyKey: "kubernetes.io/hostname"
+          
+restartPolicy: Always
+
+storage:
+  enabled: false
+  size: 2Gi
+  path: /mnt/data/postgresql
+
+env:
+  - name: DATASTORE_FILE_PATH
+    value: /var/lib/fc-service/filestore
+  - name: GRAPHSTORE_URI
+    value: bolt://fc-neo4j:7687
+  - name: GRAPHSTORE_QUERY_TIMEOUT_IN_SECONDS
+    value: "5"
+  - name: GRAPHSTORE_PASSWORD
+    value: ztfu57zKV2zcw8
+  - name: KEYCLOAK_AUTH_SERVER_URL
+    value: http://key-server:8080
+  - name: KEYCLOAK_CREDENTIALS_SECRET
+    value: DVIgraQHZsKG3IVDSDwu5CgCE07gx4YE
+#    valueFrom:
+#      secretKeyRef:
+#        name: fc-server-keys-secret
+#        key: keycloak_client_secret   
+  - name: SPRING_DATASOURCE_URL
+    value: jdbc:postgresql://fc-postgres:5432/postgres
+  - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+    value: http://key-server:8080/realms/gaia-x
+
+postgresql:
+  fullnameOverride: fc-postgres
+  nameOverride: fc-postgres
+  auth:
+    postgresPassword: postgres
+
+keycloak:
+  fullnameOverride: fc-keycloak
+  image:
+    tag: 20.0.2    
+  postgresql:
+    enabled: false  
+  externalDatabase:
+    host: fc-postgres
+    database: keycloak
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    pathType: Prefix
+    path: /
+    hostname: fc-key-server
+    tls: true
+    
+neo4j:
+  fullnameOverride: fc-neo4j
+  password: neo12345
+  neo4j:
+    name: fc-neo4j-db
+  volumes:
+    data:
+      mode: defaultStorageClass
+  env:
+#    NEO4J_AUTH: "neo4j/neo12345"
+#    NEO4J_server_http_listen__address: ":7474"
+#    NEO4J_server_bolt_listen__address: ":7687"
+    NEO4J_PLUGINS: '["apoc", "graph-data-science", "n10s"]'
+    NEO4J_dbms_security_procedures_unrestricted: gds.*,apoc.*,n10s.*,semantics.*
+    NEO4J_dbms_security_procedures_allowlist: gds.*,apoc.*,n10s.*,semantics.*
+  additionalVolumes: 
+    - name: fc-neo4j-data
+      emptyDir: {}
+  additionalVolumeMounts: 
+    - name: fc-neo4j-data
+      mountPath: "/plugins"
+  initContainers:
+    - name: init-plugins
+      image: appropriate/curl:latest
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: fc-neo4j-data
+          mountPath: /plugins
+      securityContext:
+        allowPrivilegeEscalation: false    
+      command:
+        - "/bin/sh"
+        - "-c"
+        - |
+          curl -L https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/5.5.0/apoc-5.5.0-extended.jar -O
+          curl -L https://github.com/neo4j-labs/neosemantics/releases/download/5.5.0.0/neosemantics-5.5.0.0.jar -O
+          curl -L https://graphdatascience.ninja/neo4j-graph-data-science-2.3.5.jar -O
+          cp -R apoc-5.5.0-extended.jar /plugins
+          cp -R neosemantics-5.5.0.0.jar /plugins
+          cp -R neo4j-graph-data-science-2.3.5.jar /plugins
+
+          
