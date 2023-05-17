@@ -43,7 +43,6 @@ services:
 #      - '$HOME/neo4j/data:/data'
 #      - '$HOME/neo4j/conf/:/conf/'
 
-
   keycloak:
     container_name: "keycloak"
     environment:

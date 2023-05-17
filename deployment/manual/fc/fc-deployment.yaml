@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fc-service-part
+  name: fc-service
   labels:
-    app: fc-service-part
-  namespace: federated-catalogue-partner
+    app: fc-service
+  namespace: federated-catalogue
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: fc-service-part
+      app: fc-service
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        app: fc-service-part
+        app: fc-service
     spec:
       containers:
         - name: fc-service-server-image
@@ -34,19 +34,15 @@ spec:
             - name: DATASTORE_FILE_PATH
               value: /var/lib/fc-service/filestore
             - name: KEYCLOAK_AUTH_SERVER_URL
-#              value: http://fc-key-server.gxfs.dev
-              value: https://id.lila.dih-cloud.com
+              value: https://fc-key-server.gxfs.dev
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
-#              value: http://fc-key-server.gxfs.dev/realms/gaia-x
-              value: https://id.lila.dih-cloud.com/realms/gaia-x
+              value: https://fc-key-server.gxfs.dev/realms/gaia-x
             - name: KEYCLOAK_CREDENTIALS_SECRET
               value: DVIgraQHZsKG3IVDSDwu5CgCE07gx4YE
 #              valueFrom:
 #                secretKeyRef:
-#                  name: fc-server-keys-secret-part
+#                  name: fc-server-keys-secret
 #                  key: keycloak_client_secret
-            - name: FEDERATED_CATALOGUE_QUERY_PARTNERS
-              value: "https://fc-server.lila.dih-cloud.com"
           ports:
             - name: http
               containerPort: 8081
@@ -73,7 +69,7 @@ spec:
                     - key: app
                       operator: In
                       values:
-                        - fc-service-part
+                        - fc-service
                 topologyKey: "kubernetes.io/hostname"
 #      volumes:
 #        - name: fc-file-store
