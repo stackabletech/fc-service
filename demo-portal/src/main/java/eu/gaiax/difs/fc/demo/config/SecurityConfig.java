@@ -3,16 +3,18 @@ package eu.gaiax.difs.fc.demo.config;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 
 /**
  * Specifies the application's security configuration.
  */
+@Configuration
 @EnableWebSecurity //(debug = true)
 public class SecurityConfig { 
 
@@ -26,7 +28,6 @@ public class SecurityConfig {
         		  .requestMatchers(antMatcher("/index.html")).permitAll()
         		  .requestMatchers(antMatcher("/css/**")).permitAll()
         		  .requestMatchers(antMatcher("/js/**")).permitAll()
-        		  .requestMatchers(antMatcher("/")).permitAll()
         		  .anyRequest().authenticated()
         	)
           //.and()
@@ -36,11 +37,11 @@ public class SecurityConfig {
               )
           .oauth2Client(Customizer.withDefaults())
             .logout()
-            .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "POST"))
+            .logoutRequestMatcher(antMatcher(HttpMethod.POST, "/logout"))
             .logoutSuccessUrl("/index.html")
             .clearAuthentication(true)
             .invalidateHttpSession(true)
-            .deleteCookies("JSESSIONID","XSRF-TOKEN").permitAll()
+            .deleteCookies("JSESSIONID","XSRF-TOKEN")
           ;
         return http.build();
     }
