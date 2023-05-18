@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.client;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.web.reactive.function.client.WebClient;
@@ -23,4 +24,11 @@ public class QueryClient extends ServiceClient {
         		Results.class);
     }
 
+    public List<Map<String, Object>> query(String query, Map<String, Object> params) {
+    	Statement stmt = new Statement();
+    	stmt = stmt.parameters(params).statement(query);
+        Results results = doPost(baseUrl + "/query", stmt, null, Results.class);
+        return results.getItems();
+    }
+    
 }
