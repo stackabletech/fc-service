@@ -79,9 +79,12 @@ public class VerificationServiceImpl implements VerificationService {
 
   private static final Set<String> SIGNATURES = Set.of("JsonWebSignature2020"); //, "Ed25519Signature2018");
   private static final ClaimExtractor[] extractors = new ClaimExtractor[]{new TitaniumClaimExtractor(), new DanubeTechClaimExtractor()};
-  
-  private static final String trustAnchorAddr = "https://registry.lab.gaia-x.eu/v2206/api/trustAnchor/chain/file";
-  private static final String didResolverAddr = "https://dev.uniresolver.io/1.0/identifiers/";
+
+  @Value("${federated-catalogue.verification.trust-anchor-url}")
+  private String trustAnchorAddr;
+
+  @Value("${federated-catalogue.verification.did-resolver-url}")
+  private String didResolverAddr;
 
   private static final int VRT_UNKNOWN = 0;
   private static final int VRT_PARTICIPANT = 1;

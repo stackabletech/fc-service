@@ -102,6 +102,8 @@ federated-catalogue:
 #      - "http://localhost:8081"
     recursive: true
   verification:
+    trust-anchor-url: "https://registry.lab.gaia-x.eu/v1/api/trustAnchor/chain/file"
+    did-resolver-url: "https://dev.uniresolver.io/1.0/identifiers/"
     participant:
       type: "https://w3id.org/gaia-x/core#Participant"
     service-offering:
