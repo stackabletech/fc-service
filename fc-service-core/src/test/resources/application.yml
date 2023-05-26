@@ -41,6 +41,8 @@ federated-catalogue:
     context-cache:
       location: contextCacheFiles
   verification:
+    trust-anchor-url: "https://registry.lab.gaia-x.eu/v1/api/trustAnchor/chain/file"
+    did-resolver-url: "https://dev.uniresolver.io/1.0/identifiers/"
     participant:
       type: "http://w3id.org/gaia-x/participant#Participant"
     service-offering:
