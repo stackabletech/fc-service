@@ -13,7 +13,8 @@
     <groupId>eu.gaiax.difs.fc</groupId>
     <artifactId>fc-service</artifactId>
     <packaging>pom</packaging>
-    <version>1.1.1</version>
+    <!-- Important: The property 'revision' must be updated to describe version changes in a single place for the build process -->
+    <version>1.0.0.local</version>
 
     <name>fc-service</name>
     <description>GAIA-X Federated Catalogue Service</description>
@@ -38,6 +39,8 @@
     </modules>
 
     <properties>
+        <!-- Important: The property 'revision' must be updated to describe version changes in a single place for the build process -->
+        <revision>1.1.1</revision>
         <!-- java -->
         <java.version>17</java.version>
         <maven.compiler.source>17</maven.compiler.source>

@@ -6,11 +6,12 @@
     <parent>
         <groupId>eu.gaiax.difs.fc</groupId>
         <artifactId>fc-service</artifactId>
-        <version>1.1.1</version>
+        <version>1.0.0.local</version>
         <relativePath>..</relativePath>
     </parent>
 
     <artifactId>demo-portal</artifactId>
+    <version>${revision}</version>
     <packaging>jar</packaging>
     <name>fc-demo-portal</name>
     <description>GAIA-X Federated Catalogue Demo Application</description>

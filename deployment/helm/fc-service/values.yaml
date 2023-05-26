@@ -9,7 +9,7 @@ image:
   repository: registry.gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/fc-service-server
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.1.0-SNAPSHOT"
+  tag: "1.1.1"
 
 #imagePullSecrets: []
 #nameOverride: ""
