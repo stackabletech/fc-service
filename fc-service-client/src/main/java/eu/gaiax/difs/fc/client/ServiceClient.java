@@ -15,6 +15,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import reactor.core.publisher.Mono;
+
 public abstract class ServiceClient {
     
     protected final String baseUrl; // do we need it?
@@ -91,6 +93,7 @@ public abstract class ServiceClient {
             .bodyToMono(reType)
             .block();
     }
+    
     protected <T> T doPost(String path, Object body, Map<String, Object> params, Class<T> reType, OAuth2AuthorizedClient authorizedClient) {
         return client
             .post()
@@ -102,6 +105,33 @@ public abstract class ServiceClient {
             .block();
     }
 
+    protected <T> Mono<T> doPostAsync(String path, Object body, Map<String, Object> params, Class<T> reType) {
+        return client
+            .post()
+            .uri(path, builder -> builder.build(params))
+            .bodyValue(body)
+            .retrieve()
+            .bodyToMono(reType); 
+    }
+    
+    protected <T> Mono<T> doPostAsync(String path, Map<String, Object> params, Class<T> reType) {
+        return client
+            .post()
+            .uri(path, builder -> builder.build(params))
+            .retrieve()
+            .bodyToMono(reType);
+    }
+    
+    protected <T> Mono<T> doPostAsync(String path, Object body, Map<String, Object> params, Class<T> reType, OAuth2AuthorizedClient authorizedClient) {
+        return client
+            .post()
+            .uri(path, builder -> builder.build(params))
+            .bodyValue(body)
+            .attributes(oauth2AuthorizedClient(authorizedClient))
+            .retrieve()
+            .bodyToMono(reType);
+    }
+    
     protected <T> T doPut(String path, Object body, Map<String, Object> params, Class<T> reType) {
         return client
             .put()

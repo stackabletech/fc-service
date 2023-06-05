@@ -1,5 +1,6 @@
 package eu.gaiax.difs.fc.server.config;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -15,15 +16,18 @@ import lombok.Setter;
 public class QueryProperties {
 
 	private List<String> partners;
-	private boolean recursive;
+	private String self;
 	
 	public List<String> getPartners() {
+		if (partners == null) {
+			return Collections.emptyList();
+		}
 		return partners;
 	}
 
 	@Override
 	public String toString() {
-		return "QueryProperties [partners=" + partners + ", recursive=" + recursive + "]";
+		return "QueryProperties [partners=" + partners + ", self=" + self + "]";
 	}
 	
 }

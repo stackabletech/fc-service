@@ -88,8 +88,12 @@
             <textarea id="content-target" style="width:850px;height:180px;" placeholder="Please write your query statement"></textarea>
         </div>
         <div class="form-check form-check-inline">
-            <input checked class="form-check-input" id="totalCount" type="checkbox" value="true"/>
+            <input checked class="form-check-input" id="totalCount" type="checkbox" value="" checked/>
             <label class="form-check-label" for="totalCount"> TotalCount </label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input checked class="form-check-input" id="distributed" type="checkbox" value=""/>
+            <label class="form-check-label" for="distributed"> Distributed </label>
         </div>
         <div style="  display: flex;justify-content: flex-end;">
             <button class="btn btn-primary" onclick="querySD()">Submit</button>
@@ -108,11 +112,18 @@
 
                 if(!hasEmptyParams() && !hasEmptyQueryContent()) {
                  var checkTotalCount = $("#totalCount").is(":checked") ? "true" : "false";
+                 var distributed = $("#distributed").is(":checked") ? true : false;
                     $('#result').text("");
-                    $.ajax('/query?withTotalCount='+checkTotalCount ,{
+                    var request;
+                    if (distributed) {
+                    	request = '/query/search'
+                    } else {
+                    	request = '/query?withTotalCount='+checkTotalCount;
+                    }
+                    $.ajax(request, {
                         type: 'POST',  // http method
                         contentType: "application/json;charset=utf-8",
-                        headers: {"query-language": "openCypher"},
+                      //  headers: {"query-language": "openCypher"},
                         data: JSON.stringify({
                             parameters: getRequestParams(),
                             statement: document.getElementById('content-target').value

@@ -68,6 +68,7 @@ public class SecurityConfig {
 
           // Query APIs
           .requestMatchers(antMatcher("/query")).permitAll()
+          .requestMatchers(antMatcher("/query/**")).permitAll()
 
           // Verification APIs
           .requestMatchers(antMatcher("/verification")).permitAll()

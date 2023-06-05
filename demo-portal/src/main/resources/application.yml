@@ -15,15 +15,18 @@ spring:
           fc-client-oidc:
             provider: keycloak
             client-id: federated-catalogue 
-            client-secret: 4GKU50EsxlrpmMgGA4ayQ0s7MYtHSnJB
+            client-secret: "**********"
             authorization-grant-type: authorization_code
-#            redirect-uri: https://fc-demo-server.gxfs.dev
+            scope:
+              - openid
+              - profile
+              - email
         provider:
           keycloak:
-            issuer-uri: http://key-server:8080/realms/gaia-x
+            issuer-uri: http://key-server/realms/gaia-x
 
 federated-catalogue:
-  base-uri: http://localhost:8081
+  base-uri: http://fc-server
 
 logging:
   level:
@@ -31,4 +34,4 @@ logging:
     org.springframework.web: DEBUG
     org.springframework.security: DEBUG
     org.springframework.web.client.RestTemplate: DEBUG
-    org.keycloak.adapters.OAuthRequestAuthenticator: DEBUG
+
