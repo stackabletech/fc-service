@@ -81,6 +81,10 @@ components:
           $ref: '#/components/schemas/Parameters'
       required:
         - statement
+#      discriminator:
+#        propertyName: type
+#        mapping:
+#          as: "#/components/schemas/AnnotatedStatement"  
     Parameters: 
       type: object
       additionalProperties:
@@ -100,6 +104,26 @@ components:
         - SPARQL
         - GRAPHQL
       default: OPENCYPHER
+    AnnotatedStatement:
+      allOf:
+        - $ref: '#/components/schemas/Statement'
+        - type: object
+          properties:
+            servers:
+              type: array
+              uniqueItems: true
+              items:
+                type: string
+                description: known catalog servers already queried in distributed search scenario
+            annotations:
+              type: object
+              additionalProperties:
+                type: object
+                description: additional properties to tune query execution
+              example:
+                queryLanguage: SPARQL
+                timeout: 30
+                withTotalCount: false
     VerificationResult:
       type: object
       properties:
@@ -696,6 +720,31 @@ paths:
         '408': ## Query Timeout: the query took longer than the configured timeout
           ## interval. The client needs to rewrite the query so it can be
           ## processed faster.
+          $ref: '#/components/responses/ServerError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /query/search:
+    post:
+      tags:
+        - Query
+      summary: Run distributed search query in the Catalogue
+      operationId: search
+      requestBody:
+        description: JSON object containing query with parameters and annotations
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnotatedStatement'
+      responses:
+        '200':
+          description: successful query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Results'
+        '400': ## Wrong query 
+          $ref: '#/components/responses/ClientError'
+        '408': ## Query Timeout: 
           $ref: '#/components/responses/ServerError'
         '500':
           $ref: '#/components/responses/ServerError'

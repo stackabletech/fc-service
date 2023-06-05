@@ -99,8 +99,7 @@ federated-catalogue:
       location: contextCacheFiles
   query:
     partners:
-#      - "http://localhost:8081"
-    recursive: true
+    self: "http://localhost:${server.port}"
   verification:
     trust-anchor-url: "https://registry.lab.gaia-x.eu/v1/api/trustAnchor/chain/file"
     did-resolver-url: "https://dev.uniresolver.io/1.0/identifiers/"

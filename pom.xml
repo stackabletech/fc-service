@@ -69,13 +69,14 @@
         <caffeine.version>3.1.1</caffeine.version>
         <eclipse-collections.version>11.1.0</eclipse-collections.version>
         <neo4j.driver.version>5.6.0</neo4j.driver.version>
-        <neo4j.gds.version>2.3.5</neo4j.gds.version>
+        <neo4j.gds.version>2.3.8</neo4j.gds.version>
         <neo4j.apoc.version>5.5.0</neo4j.apoc.version>
         <neo4j.neosemantics.version>5.5.0.0</neo4j.neosemantics.version>
         <neo4j.test-harness.version>5.5.0</neo4j.test-harness.version>
         <neo4j.test-spring.version>4.3.6.0</neo4j.test-spring.version>
         <bcpkix.jdk15on.version>1.70</bcpkix.jdk15on.version>
         <jose4j.version>0.8.0</jose4j.version>
+        <mockwebserver.version>4.11.0</mockwebserver.version>
         <!-- plugins -->
         <plugin.jib.version>3.2.1</plugin.jib.version>
         <plugin.openapi-generator.version>6.4.0</plugin.openapi-generator.version>
@@ -350,6 +351,18 @@
                 <groupId>org.bitbucket.b_c</groupId>
                 <artifactId>jose4j</artifactId>
                 <version>${jose4j.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${mockwebserver.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>mockwebserver</artifactId>
+                <version>${mockwebserver.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

@@ -1,28 +1,20 @@
 package eu.gaiax.difs.fc.server.service;
 
-import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
-import eu.gaiax.difs.fc.api.generated.model.Results;
-import eu.gaiax.difs.fc.api.generated.model.Statement;
-import eu.gaiax.difs.fc.client.QueryClient;
-import eu.gaiax.difs.fc.core.exception.ServerException;
-import eu.gaiax.difs.fc.core.pojo.GraphQuery;
-import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
-import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
-import eu.gaiax.difs.fc.server.config.QueryProperties;
-import eu.gaiax.difs.fc.server.generated.controller.QueryApiDelegate;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
-
-import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -39,12 +31,29 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import eu.gaiax.difs.fc.api.generated.model.AnnotatedStatement;
+import eu.gaiax.difs.fc.api.generated.model.QueryLanguage;
+import eu.gaiax.difs.fc.api.generated.model.Results;
+import eu.gaiax.difs.fc.api.generated.model.Statement;
+import eu.gaiax.difs.fc.client.QueryClient;
+import eu.gaiax.difs.fc.core.exception.ServerException;
+import eu.gaiax.difs.fc.core.pojo.GraphQuery;
+import eu.gaiax.difs.fc.core.pojo.PaginatedResults;
+import eu.gaiax.difs.fc.core.service.graphdb.GraphStore;
+import eu.gaiax.difs.fc.server.config.QueryProperties;
+import eu.gaiax.difs.fc.server.generated.controller.QueryApiDelegate;
+import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 /**
  * Service for query the catalogue. Implementation of the {@link QueryApiDelegate} .
  */
 @Slf4j
 @Service
 public class QueryService implements QueryApiDelegate {
+	
+  private static int DEFAULT_LIMIT = 100;	
   
   @Autowired
   private GraphStore graphStore;
@@ -61,7 +70,7 @@ public class QueryService implements QueryApiDelegate {
   @PostConstruct
   public void initClients() {
 	log.debug("initClients.enter; props are: {}", queryProps);
-	if (queryProps.isRecursive()) {
+	if (!queryProps.getPartners().isEmpty()) {
 		queryClients = queryProps.getPartners().stream().map(pAddr -> new QueryClient(pAddr, webClient(pAddr))).collect(Collectors.toList());
 	}
 	log.debug("initClients.exit; initiated clients: {}", queryClients);
@@ -69,12 +78,7 @@ public class QueryService implements QueryApiDelegate {
   
   private WebClient webClient(String fcUri) {
       
-      //ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2Client = new ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
-      //oauth2Client.setDefaultOAuth2AuthorizedClient(true);
-      //oauth2Client.setDefaultClientRegistrationId("fc-client-oidc");
-
       return WebClient.builder()
-        //.apply(oauth2Client.oauth2Configuration())
         .baseUrl(fcUri)
         .codecs(configurer -> {
             configurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(jsonMapper, MediaType.APPLICATION_JSON));
@@ -97,14 +101,12 @@ public class QueryService implements QueryApiDelegate {
   @Override
   public ResponseEntity<Results> query(QueryLanguage queryLanguage, Integer timeout, Boolean withTotalCount, Statement statement) {
     log.debug("query.enter; got queryLanguage: {}, timeout: {}, withTotalCount: {}, statement: {}", queryLanguage, timeout, withTotalCount, statement);
-    if (!checkIfLimitPresent(statement) && statement.getStatement().toLowerCase().indexOf("return") != -1) {
+    if (checkIfLimitAbsent(statement.getStatement())) {
       addDefaultLimit(statement);
     }
-    Map<String, Results> extra = queryPartners(queryLanguage, timeout, withTotalCount, statement);
     PaginatedResults<Map<String, Object>> queryResultList = graphStore.queryData(new GraphQuery(statement.getStatement(), 
             statement.getParameters(), queryLanguage, timeout, withTotalCount));
     Results result = new Results((int) queryResultList.getTotalCount(), queryResultList.getResults());
-   	result = mergePartnerResults(result, extra);
     log.debug("query.exit; returning results: {}", result);
     return ResponseEntity.ok(result);
   }
@@ -133,6 +135,45 @@ public class QueryService implements QueryApiDelegate {
         .headers(responseHeaders)
         .body(page);
   }
+  
+  /**
+   * performs distributed search
+   */
+  @Override
+  public ResponseEntity<Results> search(AnnotatedStatement statement) {
+	log.debug("search.enter; got statement: {}", statement);
+	if (checkIfLimitAbsent(statement.getStatement())) {
+	  statement.setStatement(statement.getStatement() + " limit $limit");
+	  statement.putParametersItem("limit", DEFAULT_LIMIT);
+	}
+	boolean first = statement.getServers() == null || statement.getServers().isEmpty();
+	Mono<List<Results>> extra = searchPartners(statement);
+	    
+	String queryLanguage = getAnnotation(statement, "queryLanguage", QueryLanguage.OPENCYPHER.name());
+	Integer timeout = getAnnotation(statement, "timeout", GraphQuery.QUERY_TIMEOUT);
+	Boolean withTotalCount = getAnnotation(statement, "withTotalCount", true);
+	    
+	PaginatedResults<Map<String, Object>> queryResultList = graphStore.queryData(new GraphQuery(statement.getStatement(), 
+	        statement.getParameters(), QueryLanguage.valueOf(queryLanguage), timeout, withTotalCount));
+	Results result = new Results((int) queryResultList.getTotalCount(), queryResultList.getResults());
+	if (extra != null) {
+	  //extra.subscribe();
+	  result = mergePartnerResults(first, result, extra.block());
+	}
+	log.debug("search.exit; returning results: {}", result);
+	return ResponseEntity.ok(result);
+  }
+  
+  private <T> T getAnnotation(AnnotatedStatement statement, String name, T defaultValue) {
+	if (statement.getAnnotations() == null) {
+	  return defaultValue;
+	}
+	T value = (T) statement.getAnnotations().get(name);
+	if (value == null) {
+	  return defaultValue;
+	}
+	return value;
+  }
 
   /**
    * Adding default limit for the query if not present.
@@ -143,9 +184,9 @@ public class QueryService implements QueryApiDelegate {
     String appendLimit = " limit $limit";
     statement.setStatement(statement.getStatement().concat(appendLimit));
     if (null == statement.getParameters()) {
-      statement.setParameters(Map.of("limit", 100));
+      statement.setParameters(Map.of("limit", DEFAULT_LIMIT));
     } else {
-      statement.getParameters().putIfAbsent("limit", 100);
+      statement.getParameters().putIfAbsent("limit", DEFAULT_LIMIT);
     }
   }
 
@@ -155,37 +196,72 @@ public class QueryService implements QueryApiDelegate {
    * @param statement Query Statement
    * @return boolean match status
    */
-  private boolean checkIfLimitPresent(Statement statement) {
-    String subItem = "limit";
-    String pattern = "(?m)(^|\\s)" + subItem + "(\\s|$)";
-    Pattern p = Pattern.compile(pattern);
-    Matcher m = p.matcher(statement.getStatement().toLowerCase());
-    return m.find();
+  private boolean checkIfLimitAbsent(String query) {
+	if (query.toLowerCase().indexOf("return") > 0) {
+      String subItem = "limit";
+      String pattern = "(?m)(^|\\s)" + subItem + "(\\s|$)";
+      Pattern p = Pattern.compile(pattern);
+      Matcher m = p.matcher(query.toLowerCase());
+      return !m.find();
+	}
+	return false;
   }
   
-  private Map<String, Results> queryPartners(QueryLanguage queryLanguage, Integer timeout, boolean withTotalCount, Statement statement) {
-	Map<String, Results> results = new HashMap<>();
+  private Mono<List<Results>> searchPartners(AnnotatedStatement statement) {
 	if (queryClients != null) {
-	  queryClients.forEach(c -> {
-		try {
-		  Results r = c.query(queryLanguage, timeout, withTotalCount, statement);
-		  results.put(c.getUrl(), r);
-		} catch (Exception ex) {
-		  log.debug("queryPartners.error; for client: {}", c.getUrl(), ex);	
-		}
-	  });
-	}
-	return results;
+	  Set<String> route = new HashSet<>();
+	  if (statement.getServers() == null) {
+		statement.setServers(new HashSet<>());  
+	  } else {
+		route.addAll(statement.getServers());
+	  }
+	  route.add(queryProps.getSelf());
+	  statement.getServers().addAll(queryProps.getPartners());
+	  statement.addServersItem(queryProps.getSelf());
+	  
+	  return Flux.fromIterable(queryClients).flatMap(c -> {
+		  	  if (!route.contains(c.getUrl())) {
+		  	    return c.searchAsync(statement);
+		  	  }
+		  	  return Mono.empty();
+	  	  })
+		  .onErrorContinue((ex, o) -> {
+		      log.debug("queryPartners.error; with object: {}", o, ex);
+	  	  })
+		  .collectList();
+	} 
+	return null;
   }
   
-  private Results mergePartnerResults(Results local, Map<String, Results> extra) {
+  private Results mergePartnerResults(boolean first, Results local, List<Results> extra) {
+	Results results = new Results(0, new ArrayList<>());	
 	if (!extra.isEmpty()) {
-		extra.values().stream().forEach(r -> {
-		    r.getItems().forEach(m -> local.addItemsItem(m));
-		    local.setTotalCount(local.getTotalCount() + r.getTotalCount());
-		}); 
+	  Set<String> urls = new HashSet<>(extra.size());
+	  extra.stream().forEach(r -> {
+	    // check extra keys for duplicate urls..
+		r.getItems().stream().forEach(m -> {
+			String server = (String) m.get("server");
+			List<Map<String, Object>> items = (List<Map<String, Object>>) m.get("items");
+			if (server != null && items != null && !urls.contains(server)) {
+				urls.add(server);
+				Integer total = (Integer) m.get("total");
+				if (first) {
+					results.getItems().addAll(items);
+				} else {
+					results.addItemsItem(m);
+				}
+				results.setTotalCount(results.getTotalCount() + total);
+			}
+		});
+	  }); 
 	}
-    return local;
+	if (first) {
+		results.getItems().addAll(local.getItems());
+	} else {
+		results.addItemsItem(Map.of("server", queryProps.getSelf(), "total", local.getTotalCount(), "items", local.getItems()));
+	}
+	results.setTotalCount(results.getTotalCount() + local.getTotalCount());
+    return results;
   }
-  
+    
 }
