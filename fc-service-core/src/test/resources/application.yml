@@ -47,7 +47,5 @@ federated-catalogue:
       type: "http://w3id.org/gaia-x/participant#Participant"
     service-offering:
       type: "http://w3id.org/gaia-x/service#ServiceOffering"
-    trust-anchor-url: "https://registry.lab.gaia-x.eu/v1/api/trustAnchor/chain/file"
-    did-resolver-url: "https://dev.uniresolver.io/1.0/identifiers/"
-      
+
       
