@@ -82,10 +82,10 @@ graphstore:
 logging:
   level:
     root: INFO
-    eu.gaiax.difs.fc: DEBUG
+    eu.gaiax.difs.fc: INFO
 #    org.neo4j.driver: DEBUG
 #    org.springframework: DEBUG
-    org.springframework.web: DEBUG
+    org.springframework.web: INFO
 #    org.springframework.security: DEBUG
 
 federated-catalogue:
