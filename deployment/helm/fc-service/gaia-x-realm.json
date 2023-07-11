@@ -633,13 +633,9 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "**********",
+      "secret": "jakobsgold2023",
       "redirectUris": [
-        "http://78.138.66.147:8088/*",
-        "https://fc-demo-server.gxfs.dev/*",
-        "http://fc-demo-server.gxfs.dev/*",
-        "http://localhost:8088/*",
-        "http://127.0.0.1:8088/*"
+        "http://demo/*",
       ],
       "webOrigins": [],
       "notBefore": 0,
