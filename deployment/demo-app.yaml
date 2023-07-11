@@ -1,0 +1,78 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fc-demo-portal
+  labels:
+    app: fc-demo-portal
+  namespace: federated-catalogue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fc-demo-portal
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: fc-demo-portal
+    spec:
+      containers:
+        - name: fc-demo-portal-image
+          image: registry.gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/demo-portal:1.0.0
+          imagePullPolicy: Always
+          env:
+            - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FC_CLIENT_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: fc-keycloak-client-secret
+                  key: keycloak_client_secret
+            - name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI
+              value: http://key-server.stackable.com/realms/gaia-x
+            - name: FEDERATED_CATALOGUE_BASE_URI
+              value: fc-service.federated-catalogue:8081
+          ports:
+            - name: "http"
+              containerPort: 8088
+          readinessProbe:
+            httpGet:
+              path: "/actuator/health"
+              port: 8088
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources: { }
+      restartPolicy: Always
+      dnsPolicy: ClusterFirst
+      hostAliases:
+      - hostnames:
+        - "key-server.stackable.com"
+        ip: "10.96.165.19" # ClusterIP of Ingress Controller
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: cert-manager-webhook
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+  name: fc-demo-portal-ingress
+  namespace: federated-catalogue
+spec:
+  rules:
+    - host: demo.stackable.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fc-demo-portal
+                port:
+                  number: 8088
