@@ -3,7 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>eu.gaiax.difs.fc</groupId>
+        <groupId>eu.xfsc.cat</groupId>
         <artifactId>fc-service</artifactId>
         <version>1.0.0.local</version>
     </parent>
@@ -13,6 +13,8 @@
     <version>${revision}</version>
     <packaging>jar</packaging>
     <name>fc-test-support</name>
+    <description>Eclipse XFSC Federated Catalogue test support tools</description>
+    
 
     <dependencies>
         <dependency>

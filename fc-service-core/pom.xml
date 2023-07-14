@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>eu.gaiax.difs.fc</groupId>
+        <groupId>eu.xfsc.cat</groupId>
         <artifactId>fc-service</artifactId>
         <version>1.0.0.local</version>
     </parent>
@@ -14,10 +14,10 @@
     <version>${revision}</version>
     <packaging>jar</packaging>
     <name>fc-service-core</name>
-    <description>GAIA-X Federated Catalogue Core Integration Services</description>
+    <description>Eclipse XFSC Federated Catalogue Core Integration Services</description>
     <dependencies>
         <dependency>
-            <groupId>eu.gaiax.difs.fc</groupId>
+            <groupId>eu.xfsc.cat</groupId>
             <artifactId>fc-service-api</artifactId>
         </dependency>
         <dependency>
@@ -114,7 +114,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>eu.gaiax.difs.fc</groupId>
+            <groupId>eu.xfsc.cat</groupId>
             <artifactId>fc-test-support</artifactId>
             <scope>test</scope>
         </dependency>

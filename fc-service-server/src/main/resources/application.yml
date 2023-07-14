@@ -82,7 +82,7 @@ graphstore:
 logging:
   level:
     root: INFO
-    eu.gaiax.difs.fc: DEBUG
+    eu.xfsc.fc: DEBUG
 #    org.neo4j.driver: DEBUG
 #    org.springframework: DEBUG
     org.springframework.web: INFO

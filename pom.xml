@@ -10,14 +10,14 @@
         <relativePath/>
     </parent>
     
-    <groupId>eu.gaiax.difs.fc</groupId>
+    <groupId>eu.xfsc.cat</groupId>
     <artifactId>fc-service</artifactId>
     <packaging>pom</packaging>
     <!-- Important: The property 'revision' must be updated to describe version changes in a single place for the build process -->
     <version>1.0.0.local</version>
 
     <name>fc-service</name>
-    <description>GAIA-X Federated Catalogue Service</description>
+    <description>Eclipse XFSC Federated Catalogue Service</description>
     <organization>
         <name>T-Systems International GmbH</name>
     </organization>
@@ -35,12 +35,12 @@
         <module>fc-test-support</module>
         <module>fc-service-core</module>
         <module>fc-service-server</module>
-        <module>demo-portal</module>
+        <module>fc-demo-portal</module>
     </modules>
 
     <properties>
         <!-- Important: The property 'revision' must be updated to describe version changes in a single place for the build process -->
-        <revision>1.1.1</revision>
+        <revision>1.1.0</revision>
         <!-- java -->
         <java.version>17</java.version>
         <maven.compiler.source>17</maven.compiler.source>
@@ -87,45 +87,45 @@
         <plugin.checkstyle.version>3.1.2</plugin.checkstyle.version>
         <plugin.checkstyle.puppycrawl.version>10.3.1</plugin.checkstyle.puppycrawl.version>
         <!-- repoositiry path -->
-        <repository.path>xfsc/cat/fc-service</repository.path>
+        <repository.path>eclipse/xfsc/cat/fc-service</repository.path>
         <!--jib-->
         <ci-registry>${env.CI_REGISTRY}/${repository.path}</ci-registry>
     </properties>
 
-    <url>https://gitlab.com/${repository.path}</url>
+    <url>https://gitlab.eclipse.org/${repository.path}</url>
     <scm>
-        <connection>scm:git:git://gitlab.com/${repository.path}.git</connection>
-        <url>https://gitlab.com/${repository.path}</url>
+        <connection>scm:git:git://gitlab.eclipse.org/${repository.path}.git</connection>
+        <url>https://gitlab.eclipse.org/${repository.path}</url>
         <tag>HEAD</tag>
     </scm>
     <issueManagement>
         <system>GitLab</system>
-        <url>https://gitlab.com/${repository.path}/-/issues</url>
+        <url>https://gitlab.eclipse.org/${repository.path}/-/issues</url>
     </issueManagement>
     <ciManagement>
-        <url>https://gitlab.com/${repository.path}/-/pipelines</url>
+        <url>https://gitlab.eclipse.org/${repository.path}/-/pipelines</url>
     </ciManagement>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>eu.gaiax.difs.fc</groupId>
+                <groupId>eu.xfsc.cat</groupId>
                 <artifactId>fc-service-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>eu.gaiax.difs.fc</groupId>
+                <groupId>eu.xfsc.cat</groupId>
                 <artifactId>fc-service-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>eu.gaiax.difs.fc</groupId>
+                <groupId>eu.xfsc.cat</groupId>
                 <artifactId>fc-test-support</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>eu.gaiax.difs.fc</groupId>
+                <groupId>eu.xfsc.cat</groupId>
                 <artifactId>fc-service-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
