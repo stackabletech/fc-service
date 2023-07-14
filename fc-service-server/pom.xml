@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>eu.gaiax.difs.fc</groupId>
+        <groupId>eu.xfsc.cat</groupId>
         <artifactId>fc-service</artifactId>
         <version>1.0.0.local</version>
     </parent>
@@ -14,7 +14,7 @@
     <version>${revision}</version>
     <packaging>jar</packaging>
     <name>fc-service-server</name>
-    <description>GAIA-X Federated Catalogue Server Application</description>
+    <description>Eclipse XFSC Federated Catalogue Server Application</description>
 
     <dependencies>
         <dependency>
@@ -26,15 +26,15 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <dependency>
-            <groupId>eu.gaiax.difs.fc</groupId>
+            <groupId>eu.xfsc.cat</groupId>
             <artifactId>fc-service-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>eu.gaiax.difs.fc</groupId>
+            <groupId>eu.xfsc.cat</groupId>
             <artifactId>fc-service-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>eu.gaiax.difs.fc</groupId>
+            <groupId>eu.xfsc.cat</groupId>
             <artifactId>fc-service-core</artifactId>
         </dependency>
         <dependency>
@@ -91,7 +91,7 @@
             <artifactId>postgresql</artifactId>
         </dependency>              
         <dependency>
-            <groupId>eu.gaiax.difs.fc</groupId>
+            <groupId>eu.xfsc.cat</groupId>
             <artifactId>fc-test-support</artifactId>
             <scope>test</scope>
         </dependency>
@@ -190,9 +190,9 @@
                             <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
                             <inputSpec>${project.parent.basedir}/openapi/fc_openapi.yaml</inputSpec>
                             <generatorName>spring</generatorName>
-                            <modelPackage>eu.gaiax.difs.fc.api.generated.model</modelPackage>
-                            <packageName>${project.groupId}.server.generated</packageName>
-                            <apiPackage>${project.groupId}.server.generated.controller</apiPackage>
+                            <modelPackage>eu.xfsc.fc.api.generated.model</modelPackage>
+                            <packageName>eu.xfsc.fc.server.generated</packageName>
+                            <apiPackage>eu.xfsc.fc.server.generated.controller</apiPackage>
                             <generateApiTests>true</generateApiTests>
                             <generateApiDocumentation>true</generateApiDocumentation>
                             <configOptions>
@@ -232,7 +232,6 @@
                 <configuration>
                     <skip>false</skip>
                     <to>
-                        <!--image>${ci-registry}/${project.name}-image</image-->
                         <image>${ci-registry}/${project.artifactId}:${project.version}</image>
                         <auth>
                             <username>${env.CI_REGISTRY_USER}</username>

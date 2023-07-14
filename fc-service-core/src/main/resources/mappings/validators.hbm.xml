@@ -4,7 +4,7 @@
 "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd"> 
 
 <hibernate-mapping>
-    <class name="eu.gaiax.difs.fc.core.pojo.Validator" table="validatorcache">
+    <class name="eu.xfsc.fc.core.pojo.Validator" table="validatorcache">
         <id name="didURI" column="diduri" type="string" />
         <property name="publicKey" column="publickey" type="string" />
         <property name="expirationDate" column="expirationtime" type="java.time.Instant" />

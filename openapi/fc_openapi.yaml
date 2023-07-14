@@ -1,14 +1,14 @@
 openapi: 3.0.1
 info:
-  title: Gaia-X Federated Catalogue
-  description: REST API of the Gaia-X catalogue
+  title: Eclipse XFSC Federated Catalogue
+  description: REST API of the XFSC catalogue
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 1.0.0
 servers:
-  - url: https://fc-server.gxfs.dev
-    description: Gaia-X test environment
+  - url: https://fc-server.xfsc.org
+    description: some future test environment
 components:
   responses:
     NotFound:
