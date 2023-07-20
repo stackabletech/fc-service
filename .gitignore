@@ -40,3 +40,7 @@ fc-service-server/logs/
 
 ### vim ###
 *.swp
+
+### chart dependencies ###
+**.tgz
+/deployment/helm/fc-service/Chart.lock
