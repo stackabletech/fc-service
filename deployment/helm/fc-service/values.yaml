@@ -92,7 +92,7 @@ env:
   - name: GRAPHSTORE_PASSWORD
     value: neo12345
   - name: KEYCLOAK_AUTH_SERVER_URL
-    value: http://fc-keycloak-headless.federated-catalogue.svc.cluster.local:8080
+    value: http://key-server.stackable.com
   - name: KEYCLOAK_CREDENTIALS_SECRET
     valueFrom:
       secretKeyRef:

@@ -635,7 +635,7 @@
       "clientAuthenticatorType": "client-secret",
       "secret": "jakobsgold2023",
       "redirectUris": [
-        "http://demo/*",
+        "http://demo/*"
       ],
       "webOrigins": [],
       "notBefore": 0,
