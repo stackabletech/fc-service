@@ -97,10 +97,11 @@ services:
     container_name: "demo-portal"
 #    image: "${CI_REGISTRY}/demo-portal:1.0.0"
     build:
-      context: ../demo-portal
+      context: ../fc-demo-portal
       dockerfile: Dockerfile
     environment:
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FC_CLIENT_OIDC_CLIENT_SECRET: "${FC_CLIENT_SECRET}"
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI: http://key-server:8080/realms/gaia-x     
     ports:
       - "8088:8088"
     networks:
