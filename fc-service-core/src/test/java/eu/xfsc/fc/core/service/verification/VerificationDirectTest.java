@@ -1,7 +1,11 @@
 package eu.xfsc.fc.core.service.verification;
 
 import static eu.xfsc.fc.core.util.TestUtil.getAccessor;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static eu.xfsc.fc.core.service.verification.VerificationServiceImpl.resolveWebUrl;
 
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +49,26 @@ import lombok.extern.slf4j.Slf4j;
 public class VerificationDirectTest {
     
     // TODO: this test is to see how Neo4j works only, will be removed at some point later on
+	
+	@Test
+	void converDIDUri() throws Exception {
+		String did = "did:web:example.com%3A3000:user:alice"; 
+		URI uri = URI.create(did);
+		URL url = resolveWebUrl(uri);
+		assertEquals("https://example.com:3000/user/alice/did.json", url.toString());
+		did = "did:web:compliance.lab.gaia-x.eu";
+		uri = URI.create(did);
+		url = resolveWebUrl(uri);
+		assertEquals("https://compliance.lab.gaia-x.eu/.well-known/did.json", url.toString());
+		did = "did:web:compliance.lab.gaia-x.eu#key-1";
+		uri = URI.create(did);
+		url = resolveWebUrl(uri);
+		assertEquals("https://compliance.lab.gaia-x.eu/.well-known/did.json#key-1", url.toString());
+		did = "did:web:integration.gxfs.dev:api:dynamic:did:cloudService1#key-1";
+		uri = URI.create(did);
+		url = resolveWebUrl(uri);
+		assertEquals("https://integration.gxfs.dev/api/dynamic/did/cloudService1/did.json#key-1", url.toString());
+	}
     
     @Test
     void parseJSONLDDirectly() throws Exception {

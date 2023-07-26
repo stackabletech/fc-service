@@ -540,7 +540,8 @@ public class VerificationServiceImpl implements VerificationService {
       throw new VerificationException("Signatures error; Unknown Verification Method: " + uri);
     }
 
-    JsonLDObject diDoc = readDIDfromURI(uri);
+    DIDDocument diDoc = readDIDfromURI(uri);
+    // better to get methods from doc using DIDDocument API...
     List<Map<String, Object>> methods = (List<Map<String, Object>>) diDoc.toMap().get("verificationMethod");
     log.debug("getVerifiedVerifier; methods: {}", methods);
 
@@ -587,11 +588,11 @@ public class VerificationServiceImpl implements VerificationService {
               alg, JWK_to_PublicKey.JWK_to_anyPublicKey(jwk));
   }
 
-  private JsonLDObject readDIDfromURI(URI uri) throws IOException {
+  private DIDDocument readDIDfromURI(URI uri) throws IOException {
     log.debug("readDIDFromURI.enter; got uri: {}", uri);
     String did_json;
     InputStream stream;
-    JsonLDObject didDoc;
+    DIDDocument didDoc;
     // let's try universal resolver
     URL url = new URL(didResolverAddr + uri.toString());
     log.debug("readDIDFromURI; resolving DIDDocument from: {}", url.toString());
@@ -601,25 +602,48 @@ public class VerificationServiceImpl implements VerificationService {
       didDoc = DIDDocument.fromJson(did_json);
     } catch (Exception ex) {
   	  log.info("readDIDfromURI; error loading URI: {}", ex.getMessage());
-      String[] uri_parts = uri.getSchemeSpecificPart().split(":");
-      if (uri_parts[0].equals("web")) {
-        String[] _parts = uri_parts[1].split("#");
-        if (_parts.length == 1) {
-          url = new URL("https://" + _parts[0] + "/.well-known/did.json");
-        } else {
-          url = new URL("https://" + _parts[0] + "/.well-known/did.json#" + _parts[1]);
-        }
-        log.debug("readDIDFromURI; requesting DIDDocument from: {}", url.toString());
-        stream = url.openStream();
-        did_json = IOUtils.toString(stream, StandardCharsets.UTF_8);
-        didDoc = JsonLDObject.fromJson(did_json);
-      } else {
+  	  url = resolveWebUrl(uri);
+  	  if (url == null) {
         throw new IOException("Couldn't load key. Method not supported");
-      }
+  	  }
+
+      log.debug("readDIDFromURI; requesting DIDDocument from: {}", url.toString());
+      stream = url.openStream();
+      did_json = IOUtils.toString(stream, StandardCharsets.UTF_8);
+      didDoc = DIDDocument.fromJson(did_json);
     }
     log.debug("readDIDFromURI.exit; returning: {}", didDoc);
     return didDoc;
   }
+  
+  public static URL resolveWebUrl(URI uri) throws IOException {
+	String[] uri_parts = uri.getSchemeSpecificPart().split(":");
+	if (uri_parts.length >= 2 && "web".equals(uri_parts[0])) {
+	  String url = "https://";
+      url += uri_parts[1];
+	  if (uri_parts.length == 2) {
+	    url += "/.well-known";
+	  } else {
+	    int idx;
+	    try {
+	      Integer.parseInt(uri_parts[2]);
+	      url += ":" + uri_parts[2];
+	      idx = 3;
+	    } catch (NumberFormatException e) {
+		  idx = 2;  
+	    }
+	    for (int i=idx; i < uri_parts.length; i++) {
+		  url += "/" + uri_parts[i];
+	    }
+	  }
+	  url += "/did.json";
+	  if (uri.getFragment() != null) {
+	    url += "#" + uri.getFragment();
+	  }
+	  return new URL(url);
+    }
+    return null;  
+  }  
 
   @SuppressWarnings("unchecked")
   private Map<String, Object> getRelevantPublicKey(Map<String, Object> method, URI verificationMethodURI) {
