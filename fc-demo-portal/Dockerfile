@@ -1,3 +1,3 @@
 FROM openjdk:17
-COPY /target/demo-portal-*.jar demo-portal.jar
-ENTRYPOINT ["java", "-jar","/demo-portal.jar"]
+COPY /target/fc-demo-portal-*.jar fc-demo-portal.jar
+ENTRYPOINT ["java", "-jar","/fc-demo-portal.jar"]
