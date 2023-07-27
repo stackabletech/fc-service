@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.jena.riot.system.stream.StreamManager;
@@ -104,6 +105,9 @@ public class VerificationServiceImpl implements VerificationService {
   @Autowired
   @Qualifier("contextCacheFileStore")
   private FileStore fileStore;
+
+  @Autowired
+  private ObjectMapper objectMapper;
 
   private boolean loadersInitialised;
   private StreamManager streamManager;
@@ -557,7 +561,8 @@ public class VerificationServiceImpl implements VerificationService {
           expiration =	hasPEMTrustAnchorAndIsNotExpired(url);
           log.debug("getVerifiedVerifier; key has valid trust anchor, expires: {}", expiration);
           PublicKeyVerifier<?> pubKey = getVerifier(jwkMap);
-          Validator validator = new Validator(uri.toString(), jwkMap.toString(), expiration);
+          String jwkString = objectMapper.writeValueAsString(jwkMap);
+          Validator validator = new Validator(uri.toString(), jwkString, expiration);
           result = Pair.of(pubKey, validator);
           break;
         }
