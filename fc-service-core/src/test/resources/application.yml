@@ -30,7 +30,7 @@ logging:
     liquibase: INFO
 #    org.hibernate: DEBUG
 #    org.neo4j.driver: DEBUG
-    eu.gaiax.difs.fc: DEBUG
+    eu.xfsc.fc: DEBUG
 
 federated-catalogue:
   scope: test

@@ -595,30 +595,28 @@ public class VerificationServiceImpl implements VerificationService {
 
   private DIDDocument readDIDfromURI(URI uri) throws IOException {
     log.debug("readDIDFromURI.enter; got uri: {}", uri);
-    String did_json;
-    InputStream stream;
     DIDDocument didDoc;
     // let's try universal resolver
     URL url = new URL(didResolverAddr + uri.toString());
-    log.debug("readDIDFromURI; resolving DIDDocument from: {}", url.toString());
     try {
-	  stream = url.openStream();    	  
-      did_json = IOUtils.toString(stream, StandardCharsets.UTF_8);
-      didDoc = DIDDocument.fromJson(did_json);
+      didDoc = loadDIDfromURL(url);
     } catch (Exception ex) {
   	  log.info("readDIDfromURI; error loading URI: {}", ex.getMessage());
   	  url = resolveWebUrl(uri);
   	  if (url == null) {
         throw new IOException("Couldn't load key. Method not supported");
   	  }
-
-      log.debug("readDIDFromURI; requesting DIDDocument from: {}", url.toString());
-      stream = url.openStream();
-      did_json = IOUtils.toString(stream, StandardCharsets.UTF_8);
-      didDoc = DIDDocument.fromJson(did_json);
+      didDoc = loadDIDfromURL(url);
     }
     log.debug("readDIDFromURI.exit; returning: {}", didDoc);
     return didDoc;
+  }
+  
+  private DIDDocument loadDIDfromURL(URL url) throws IOException {
+    log.debug("loadDIDFromURL; loading DIDDocument from: {}", url.toString());
+	InputStream stream = url.openStream();
+    String docJson = IOUtils.toString(stream, StandardCharsets.UTF_8);
+    return DIDDocument.fromJson(docJson);
   }
   
   public static URL resolveWebUrl(URI uri) throws IOException {
