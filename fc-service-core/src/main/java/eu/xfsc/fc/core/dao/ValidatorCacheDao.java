@@ -1,4 +1,4 @@
-package eu.xfsc.fc.core.service.validatorcache;
+package eu.xfsc.fc.core.dao;
 
 import eu.xfsc.fc.core.pojo.Validator;
 
@@ -6,7 +6,7 @@ import eu.xfsc.fc.core.pojo.Validator;
  *
  * @author hylke
  */
-public interface ValidatorCache {
+public interface ValidatorCacheDao {
 
   /**
    * Add the given validator to the cache.

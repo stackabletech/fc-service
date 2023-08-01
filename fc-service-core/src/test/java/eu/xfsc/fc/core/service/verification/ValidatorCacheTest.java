@@ -2,10 +2,11 @@ package eu.xfsc.fc.core.service.verification;
 
 import eu.xfsc.fc.core.config.DatabaseConfig;
 import eu.xfsc.fc.core.config.FileStoreConfig;
+import eu.xfsc.fc.core.dao.ValidatorCacheDao;
+import eu.xfsc.fc.core.dao.impl.SchemaDaoImpl;
+import eu.xfsc.fc.core.dao.impl.ValidatorCacheDaoImpl;
 import eu.xfsc.fc.core.pojo.Validator;
 import eu.xfsc.fc.core.service.schemastore.SchemaStoreImpl;
-import eu.xfsc.fc.core.service.validatorcache.ValidatorCache;
-import eu.xfsc.fc.core.service.validatorcache.ValidatorCacheImpl;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +14,6 @@ import java.io.*;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.TestInstance;
@@ -31,8 +31,8 @@ import org.springframework.test.context.ContextConfiguration;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
 @ActiveProfiles("test")
-@ContextConfiguration(classes = {ValidatorCacheTest.TestApplication.class, ValidatorCacheImpl.class, DatabaseConfig.class, FileStoreConfig.class,
-        VerificationServiceImpl.class, SchemaStoreImpl.class})
+@ContextConfiguration(classes = {ValidatorCacheTest.TestApplication.class, ValidatorCacheDaoImpl.class, DatabaseConfig.class, FileStoreConfig.class,
+        VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class})
 @DirtiesContext
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
@@ -47,10 +47,7 @@ public class ValidatorCacheTest {
   }
 
   @Autowired
-  private ValidatorCache validatorCache;
-
-  @Autowired
-  private SessionFactory sessionFactory;
+  private ValidatorCacheDao validatorCache;
 
   @Test
   void test01AddingAndRemoving() throws IOException {

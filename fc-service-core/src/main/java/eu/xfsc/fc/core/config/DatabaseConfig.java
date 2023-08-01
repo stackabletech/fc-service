@@ -10,16 +10,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
-import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.transaction.support.TransactionTemplate;
 
-import jakarta.persistence.EntityManagerFactory;
-
-/**
- * Class organizing the database connection. TODO: move to utils
- */
 @Configuration 
 @EnableTransactionManagement
 public class DatabaseConfig {
@@ -36,48 +29,28 @@ public class DatabaseConfig {
   public LocalSessionFactoryBean sessionFactory() {
     LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
     sessionFactory.setDataSource(dataSource);
-    sessionFactory.setMappingResources("mappings/validators.hbm.xml");
-    sessionFactory.setPackagesToScan(
-        "eu.xfsc.fc.core.service.sdstore",
-        "eu.xfsc.fc.core.service.schemastore"
-    );
     sessionFactory.setHibernateProperties(hibernateProperties());
     return sessionFactory;
   }
   
   /**
    * Create the transaction manager.
+   * It is still required even when we don't use ORM/Hibernate, in order for Neo4j
+   * to participate in common DB transactions
    *
    * @return the transaction manager.
    */
   @Bean
   public PlatformTransactionManager hibernateTransactionManager(SessionFactory sessionFactory) {
     HibernateTransactionManager transactionManager = new HibernateTransactionManager();
-    //SessionFactory sessionFactory = entityManagerFactory.unwrap(SessionFactory.class);
-    //EntityManagerFactory entityManagerFactory = entityManagerFactory().getObject();
-    //SessionFactory sessionFactory = entityManagerFactory.unwrap(SessionFactory.class);
-    transactionManager.setSessionFactory(sessionFactory); //.getObject());
+    transactionManager.setSessionFactory(sessionFactory);
     return transactionManager;
   }
   
-  
-  //@Bean
-  public JpaTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
-      JpaTransactionManager transactionManager = new JpaTransactionManager();
-      transactionManager.setEntityManagerFactory(entityManagerFactory);
-      return transactionManager;
-  }
-
-  //@Bean
-  public TransactionTemplate transactionTemplate(EntityManagerFactory entityManagerFactory) {
-      return new TransactionTemplate(transactionManager(entityManagerFactory));
-  }  
-
   private Properties hibernateProperties() {
     Properties hibernateProperties = new Properties();
     hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "validate");
-    //hibernateProperties.setProperty("hibernate.dialect", ArrayPostgresSQLDialect.class.getCanonicalName());
     return hibernateProperties;
   }
-
+	
 }

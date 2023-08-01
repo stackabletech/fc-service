@@ -1,6 +1,7 @@
 package eu.xfsc.fc.core.service.verification;
 
 import static eu.xfsc.fc.core.util.TestUtil.getAccessor;
+import static java.sql.Types.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -9,14 +10,13 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -28,12 +28,17 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 import eu.xfsc.fc.api.generated.model.SelfDescriptionStatus;
 import eu.xfsc.fc.core.config.DatabaseConfig;
 import eu.xfsc.fc.core.config.FileStoreConfig;
+import eu.xfsc.fc.core.dao.impl.RevalidatorChunksDaoImpl;
+import eu.xfsc.fc.core.dao.impl.SchemaDaoImpl;
+import eu.xfsc.fc.core.dao.impl.SelfDescriptionDaoImpl;
+import eu.xfsc.fc.core.dao.impl.ValidatorCacheDaoImpl;
 import eu.xfsc.fc.core.exception.VerificationException;
 import eu.xfsc.fc.core.pojo.ContentAccessor;
 import eu.xfsc.fc.core.pojo.ContentAccessorFile;
@@ -44,7 +49,6 @@ import eu.xfsc.fc.core.service.schemastore.SchemaStore;
 import eu.xfsc.fc.core.service.schemastore.SchemaStoreImpl;
 import eu.xfsc.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.xfsc.fc.core.service.sdstore.SelfDescriptionStoreImpl;
-import eu.xfsc.fc.core.service.validatorcache.ValidatorCacheImpl;
 import eu.xfsc.fc.core.service.verification.VerificationService;
 import eu.xfsc.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -54,8 +58,8 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
-@ContextConfiguration(classes = {RevalidationServiceTest.TestApplication.class, RevalidationServiceImpl.class, FileStoreConfig.class, Neo4jGraphStore.class,
-  VerificationServiceImpl.class, SchemaStoreImpl.class, DatabaseConfig.class, ValidatorCacheImpl.class, SelfDescriptionStoreImpl.class})
+@ContextConfiguration(classes = {RevalidationServiceTest.TestApplication.class, RevalidationServiceImpl.class, RevalidatorChunksDaoImpl.class, FileStoreConfig.class, Neo4jGraphStore.class,
+  VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DatabaseConfig.class, ValidatorCacheDaoImpl.class, SelfDescriptionStoreImpl.class, SelfDescriptionDaoImpl.class})
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
 public class RevalidationServiceTest {
@@ -67,6 +71,9 @@ public class RevalidationServiceTest {
       SpringApplication.run(TestApplication.class, args);
     }
   }
+  
+  @Autowired
+  private JdbcTemplate jdbc;
 
   @Autowired
   private RevalidationServiceImpl revalidator;
@@ -79,9 +86,6 @@ public class RevalidationServiceTest {
 
   @Autowired
   private SchemaStore schemaStore;
-
-  @Autowired
-  private SessionFactory sessionFactory;
 
   @Autowired
   private Neo4j embeddedDatabaseServer;
@@ -188,32 +192,20 @@ public class RevalidationServiceTest {
       log.warn("Interrupted while waiting for SDs to be added.");
     }
     long time = System.currentTimeMillis() - start;
-    Object count = sessionFactory.openSession()
-        .createNativeQuery("select count (*) from sdfiles where status = :status", Integer.class)
-        .setParameter("status", SelfDescriptionStatus.ACTIVE.ordinal())
-        .getSingleResult();
+    Integer count = jdbc.queryForObject("select count(*) from sdfiles where status = ?", Integer.class, SelfDescriptionStatus.ACTIVE.ordinal());
     log.debug("added {} Self-Descriptions from {} in {}ms", count, path, time);
   }
 
   private boolean allChunksAfter(Instant treshold) {
-    Object count;
-    try (Session session = sessionFactory.openSession()) {
-      count = session.createNativeQuery("select count(chunkid) from revalidatorchunks where lastcheck < :treshold", Integer.class)
-          .setParameter("treshold", treshold)
-          .getSingleResult();
-    }
+    Integer count = jdbc.queryForObject("select count(chunkid) from revalidatorchunks where lastcheck < ?", new Object[] {Timestamp.from(treshold)}, new int[] {TIMESTAMP}, Integer.class);
     log.debug("Open Chunk Count: {}", count);
-    return ((Number) count).intValue() == 0;
+    return count == 0;
   }
 
   private int countChunks() {
-    Object count;
-    try ( Session session = sessionFactory.openSession()) {
-      count = session.createNativeQuery("select count(chunkid) from revalidatorchunks", Integer.class)
-          .getSingleResult();
-    }
+    Integer count = jdbc.queryForObject("select count(chunkid) from revalidatorchunks", Integer.class);
     log.debug("Chunk Count: {}", count);
-    return ((Number) count).intValue();
+    return count;
   }
 
   private String addSelfDescription(String path) throws VerificationException, UnsupportedEncodingException, InterruptedException {

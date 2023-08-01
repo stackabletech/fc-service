@@ -31,6 +31,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 import eu.xfsc.fc.api.generated.model.SelfDescriptionStatus;
 import eu.xfsc.fc.core.config.DatabaseConfig;
+import eu.xfsc.fc.core.dao.impl.SelfDescriptionDaoImpl;
 import eu.xfsc.fc.core.exception.ConflictException;
 import eu.xfsc.fc.core.exception.NotFoundException;
 import eu.xfsc.fc.core.pojo.ContentAccessor;
@@ -44,7 +45,6 @@ import eu.xfsc.fc.core.pojo.Validator;
 import eu.xfsc.fc.core.pojo.VerificationResult;
 import eu.xfsc.fc.core.pojo.VerificationResultOffering;
 import eu.xfsc.fc.core.service.graphdb.Neo4jGraphStore;
-import eu.xfsc.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.xfsc.fc.core.util.HashUtils;
 import eu.xfsc.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -56,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootTest
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {SelfDescriptionStoreTest.TestApplication.class, //FileStoreConfig.class,
-  SelfDescriptionStoreImpl.class, SelfDescriptionStoreTest.class, DatabaseConfig.class, Neo4jGraphStore.class})
+  SelfDescriptionStoreImpl.class, SelfDescriptionDaoImpl.class, SelfDescriptionStoreTest.class, DatabaseConfig.class, Neo4jGraphStore.class})
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
@@ -121,6 +121,18 @@ public class SelfDescriptionStoreTest {
     return createVerificationResult(idSuffix, "<https://delta-dao.com/.well-known/serviceMVGPortal.json>");
   }
 
+  private static VerificationResult createVerificationResult(SelfDescriptionMetadata sdMeta) {
+	List<Validator> vals = null;
+	if (sdMeta.getValidatorDids() != null) {
+		vals = new ArrayList<>(sdMeta.getValidatorDids().size());
+		for (String did: sdMeta.getValidatorDids()) {
+			vals.add(new Validator(did, "PK", Instant.now().plusSeconds(3600)));
+		}
+	}
+    return new VerificationResultOffering(sdMeta.getStatusDatetime(), SelfDescriptionStatus.ACTIVE.getValue(), sdMeta.getIssuer(), sdMeta.getUploadDatetime(),
+            sdMeta.getId(), createClaims("<https://delta-dao.com/.well-known/serviceMVGPortal.json>"), vals); 
+  }
+  
   /**
    * Test storing a self-description, ensuring it creates exactly one file on disk, retrieving it by hash, and deleting
    * it again.
@@ -134,26 +146,24 @@ public class SelfDescriptionStoreTest {
         "TestUser/1",
         Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
+    VerificationResult vr = createVerificationResult(sdMeta); //0);
+    sdStore.storeSelfDescription(sdMeta, vr);
 
     assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash), true);
 
     List<Map<String, Object>> claims = graphStore.queryData(
         new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
-    //Assertions.assertEquals(5, claims.size()); only 1 node found..
+    Assertions.assertTrue(claims.size() > 0); //only 1 node found..
 
     final ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
-    assertEquals(sdfileByHash, sdMeta.getSelfDescription(),
-        "Getting the SD file by hash is equal to the stored SD file");
+    assertEquals(sdfileByHash, sdMeta.getSelfDescription(), "Getting the SD file by hash is equal to the stored SD file");
 
     sdStore.deleteSelfDescription(hash);
 
-    claims = graphStore.queryData(
-        new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
+    claims = graphStore.queryData(new GraphQuery("MATCH (n {uri: $uri}) RETURN n", Map.of("uri", sdMeta.getId()))).getResults();
     Assertions.assertEquals(0, claims.size());
 
-    Assertions.assertThrows(NotFoundException.class, () -> {
-      sdStore.getByHash(hash);
+    Assertions.assertThrows(NotFoundException.class, () -> {sdStore.getByHash(hash);
     });
   }
 
@@ -170,12 +180,12 @@ public class SelfDescriptionStoreTest {
         Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content1);
     final String hash1 = sdMeta1.getSdHash();
     sdMeta1.setSelfDescription(new ContentAccessorDirect(content1));
-    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
+    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(sdMeta1));
 
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
         Instant.parse("2022-01-01T13:00:00Z"), Instant.parse("2022-01-02T13:00:00Z"), content2);
     final String hash2 = sdMeta2.getSdHash();
-    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
+    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(sdMeta2));
 
     final SelfDescriptionMetadata byHash1 = sdStore.getByHash(hash1);
     assertEquals(SelfDescriptionStatus.DEPRECATED, byHash1.getStatus(),
@@ -202,7 +212,7 @@ public class SelfDescriptionStoreTest {
     final SelfDescriptionMetadata sdMeta1 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
         Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content1);
     final String hash1 = sdMeta1.getSdHash();
-    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
+    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(sdMeta1));
 
     List<Map<String, Object>> nodes = graphStore.queryData(new GraphQuery(
         "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
@@ -214,7 +224,7 @@ public class SelfDescriptionStoreTest {
     final SelfDescriptionMetadata sdMeta2 = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
         Instant.parse("2022-01-01T13:00:00Z"), Instant.parse("2022-01-02T13:00:00Z"), content1);
     Assertions.assertThrows(ConflictException.class, () -> {
-      sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
+      sdStore.storeSelfDescription(sdMeta2, createVerificationResult(sdMeta2));
     });
 
     nodes = graphStore.queryData(new GraphQuery(
@@ -246,7 +256,7 @@ public class SelfDescriptionStoreTest {
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta("TestSd/1", "TestUser/1",
         Instant.parse("2022-01-01T12:00:00Z"), Instant.parse("2022-01-02T12:00:00Z"), content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(sdMeta));
 
     SelfDescriptionMetadata byHash = sdStore.getByHash(hash);
     assertThatSdHasTheSameData(sdMeta, byHash, true);
@@ -307,7 +317,7 @@ public class SelfDescriptionStoreTest {
     final Instant uploadTime = Instant.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(sdMeta));
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setIssuers(List.of(issuer, "TestUser/21"));
@@ -370,7 +380,7 @@ public class SelfDescriptionStoreTest {
     final Instant uploadTime = Instant.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(sdMeta));
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setIssuers(List.of(otherIssuer));
@@ -403,7 +413,7 @@ public class SelfDescriptionStoreTest {
     final Instant uploadTime = Instant.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(sdMeta));
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setStatusTimeRange(statusTimeStart, statusTimeEnd);
@@ -436,7 +446,7 @@ public class SelfDescriptionStoreTest {
     final Instant uploadTime = Instant.parse("2022-01-02T12:00:00Z");
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(sdMeta));
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setStatusTimeRange(statusTimeStart, statusTimeEnd);
@@ -482,9 +492,9 @@ public class SelfDescriptionStoreTest {
     final String hash1 = sdMeta1.getSdHash();
     final String hash2 = sdMeta2.getSdHash();
     final String hash3 = sdMeta3.getSdHash();
-    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
-    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
-    sdStore.storeSelfDescription(sdMeta3, createVerificationResult(3));
+    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(sdMeta1));
+    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(sdMeta2));
+    sdStore.storeSelfDescription(sdMeta3, createVerificationResult(sdMeta3));
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setStatusTimeRange(statusTimeStart, statusTimeEnd);
@@ -543,9 +553,9 @@ public class SelfDescriptionStoreTest {
     final String hash1 = sdMeta1.getSdHash();
     final String hash2 = sdMeta2.getSdHash();
     final String hash3 = sdMeta3.getSdHash();
-    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
-    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
-    sdStore.storeSelfDescription(sdMeta3, createVerificationResult(3));
+    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(sdMeta1));
+    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(sdMeta2));
+    sdStore.storeSelfDescription(sdMeta3, createVerificationResult(sdMeta3));
 
     final SdFilter filterParams = new SdFilter();
     final PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, false);
@@ -593,7 +603,7 @@ public class SelfDescriptionStoreTest {
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     sdMeta.setValidatorDids(Arrays.asList(validatorId, "TestSd/0816", "TestSd/0817"));
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(sdMeta));
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setValidators(List.of(validatorId, "TestSd/0820"));
@@ -626,7 +636,7 @@ public class SelfDescriptionStoreTest {
     final SelfDescriptionMetadata sdMeta = createSelfDescriptionMeta(id, issuer, statusTime, uploadTime, content);
     sdMeta.setValidatorDids(Arrays.asList("TestSd/0816", "TestSd/0817"));
     final String hash = sdMeta.getSdHash();
-    sdStore.storeSelfDescription(sdMeta, createVerificationResult(0));
+    sdStore.storeSelfDescription(sdMeta, createVerificationResult(sdMeta));
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setValidators(List.of(validatorId));
@@ -671,9 +681,9 @@ public class SelfDescriptionStoreTest {
     final String hash1 = sdMeta1.getSdHash();
     final String hash2 = sdMeta2.getSdHash();
     final String hash3 = sdMeta3.getSdHash();
-    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(1));
-    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(2));
-    sdStore.storeSelfDescription(sdMeta3, createVerificationResult(3));
+    sdStore.storeSelfDescription(sdMeta1, createVerificationResult(sdMeta1));
+    sdStore.storeSelfDescription(sdMeta2, createVerificationResult(sdMeta2));
+    sdStore.storeSelfDescription(sdMeta3, createVerificationResult(sdMeta3));
 
     final SdFilter filterParams = new SdFilter();
     filterParams.setLimit(2);

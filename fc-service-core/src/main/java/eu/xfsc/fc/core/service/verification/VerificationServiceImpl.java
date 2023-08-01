@@ -47,6 +47,7 @@ import com.danubetech.verifiablecredentials.VerifiableCredential;
 import com.danubetech.verifiablecredentials.VerifiablePresentation;
 
 import eu.xfsc.fc.api.generated.model.SelfDescriptionStatus;
+import eu.xfsc.fc.core.dao.ValidatorCacheDao;
 import eu.xfsc.fc.core.exception.ClientException;
 import eu.xfsc.fc.core.exception.VerificationException;
 import eu.xfsc.fc.core.pojo.ContentAccessor;
@@ -58,7 +59,6 @@ import eu.xfsc.fc.core.pojo.VerificationResultOffering;
 import eu.xfsc.fc.core.pojo.VerificationResultParticipant;
 import eu.xfsc.fc.core.service.filestore.FileStore;
 import eu.xfsc.fc.core.service.schemastore.SchemaStore;
-import eu.xfsc.fc.core.service.validatorcache.ValidatorCache;
 import eu.xfsc.fc.core.util.ClaimValidator;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.jsonld.JsonLDException;
@@ -100,7 +100,7 @@ public class VerificationServiceImpl implements VerificationService {
   private SchemaStore schemaStore;
 
   @Autowired
-  private ValidatorCache validatorCache;
+  private ValidatorCacheDao validatorCache;
 
   @Autowired
   @Qualifier("contextCacheFileStore")

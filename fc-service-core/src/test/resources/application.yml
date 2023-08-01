@@ -2,14 +2,8 @@ spring:
   config:
     activate:
       on-profile: test
-
-  jpa:
-#    hibernate:
-#      ddl-auto: update
-    open-in-view: false
-    properties:
-      hibernate:
-        current_session_context_class: org.springframework.orm.hibernate5.SpringSessionContext
+#  jpa:
+#    open-in-view: false
    
   liquibase:
     change-log: classpath:/liquibase/master-changelog.xml
