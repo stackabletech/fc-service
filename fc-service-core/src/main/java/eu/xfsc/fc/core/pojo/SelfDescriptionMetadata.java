@@ -29,7 +29,7 @@ public class SelfDescriptionMetadata extends SelfDescription {
   @JsonIgnore
   private ContentAccessor selfDescription;
 
-  public SelfDescriptionMetadata(String id, String issuer, List<Validator> validators, ContentAccessorDirect contentAccessor) {
+  public SelfDescriptionMetadata(String id, String issuer, List<Validator> validators, ContentAccessor contentAccessor) {
     super(calculateSha256AsHex(contentAccessor.getContentAsString()), id, SelfDescriptionStatus.ACTIVE, issuer, 
             validators.stream().map(Validator::getDidURI).collect(Collectors.toList()), Instant.now(), Instant.now());
     this.selfDescription = contentAccessor;
@@ -37,9 +37,14 @@ public class SelfDescriptionMetadata extends SelfDescription {
 
   public SelfDescriptionMetadata(ContentAccessor contentAccessor, VerificationResult verificationResult) {
     super(calculateSha256AsHex(contentAccessor.getContentAsString()), verificationResult.getId(), SelfDescriptionStatus.ACTIVE,
-            verificationResult.getIssuer(), verificationResult.getValidatorDids(), verificationResult.getVerificationTimestamp(),
-            verificationResult.getVerificationTimestamp());
+            verificationResult.getIssuer(), verificationResult.getValidatorDids(), verificationResult.getIssuedDateTime(), 
+            verificationResult.getVerificationTimestamp()); //upload, status
     this.selfDescription = contentAccessor;
+  }
+  
+  public SelfDescriptionMetadata(String sdHash, String id, SelfDescriptionStatus status, String issuer, List<String> validatorDids, Instant uploadTime, Instant statusTime, ContentAccessor contentAccessor) {
+	super(sdHash, id, status, issuer, validatorDids, uploadTime, statusTime);
+	this.selfDescription = contentAccessor;
   }
   
   @Override

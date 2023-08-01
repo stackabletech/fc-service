@@ -4,17 +4,17 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -29,18 +29,16 @@ import org.apache.jena.vocabulary.OWL2;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 import org.apache.jena.vocabulary.SKOS;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.base.Strings;
 
+import eu.xfsc.fc.core.dao.SchemaDao;
 import eu.xfsc.fc.core.exception.ConflictException;
 import eu.xfsc.fc.core.exception.NotFoundException;
 import eu.xfsc.fc.core.exception.ServerException;
@@ -49,8 +47,6 @@ import eu.xfsc.fc.core.pojo.ContentAccessor;
 import eu.xfsc.fc.core.pojo.ContentAccessorDirect;
 import eu.xfsc.fc.core.service.filestore.FileStore;
 import eu.xfsc.fc.core.util.HashUtils;
-import jakarta.persistence.EntityExistsException;
-import jakarta.persistence.LockModeType;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -66,47 +62,39 @@ public class SchemaStoreImpl implements SchemaStore {
   private FileStore fileStore;
 
   @Autowired
-  private SessionFactory sessionFactory;
+  private SchemaDao dao;
 
   private static final Map<SchemaType, ContentAccessor> COMPOSITE_SCHEMAS = new ConcurrentHashMap<>();
 
 
   @Override
   public int initializeDefaultSchemas() {
-    Transaction tx = null;  
-    try (Session session = sessionFactory.openSession()) {
-      log.debug("initializeDefaultSchemas; got session: {}", session);
-      int count = 0;
-      Long found = session.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult();
-      if (found == 0) {
-        tx = session.beginTransaction();
-        
-        count += addSchemasFromDirectory("defaultschema/ontology", session);
-        count += addSchemasFromDirectory("defaultschema/shacl", session);
-        session.flush();
+    log.debug("initializeDefaultSchemas.enter");
+    int count = 0;
+    int found = dao.getSchemaCount();
+    if (found == 0) {
+      try {	
+        count += addSchemasFromDirectory("defaultschema/ontology");
+        count += addSchemasFromDirectory("defaultschema/shacl");
         log.info("initializeDefaultSchemas; added {} default schemas", count);
-        found = session.createQuery("select count(s) from SchemaRecord s", Long.class).getSingleResult(); // it returns 0 for some reason
-        tx.commit();
+        found = dao.getSchemaCount();// it returns 0 for some reason
+      } catch (IOException ex) {
+    	log.error("initializeDfaultSchemas.error", ex);
+    	throw new ServerException(ex);
       }
-      log.info("initializeDefaultSchemas; {} schemas found in Schema DB", found);
-      return count;
-    } catch (Exception ex) {
-      log.error("initializeDefaultSchemas.error", ex);
-      if (tx != null) {
-        tx.rollback();
-      }
-      throw new ServerException(ex);
     }
+    log.info("initializeDefaultSchemas.exit; {} schemas found in Schema DB", found);
+    return count;
   }  
   
-  private int addSchemasFromDirectory(String path, Session session) throws IOException {
+  private int addSchemasFromDirectory(String path) throws IOException {
     PathMatchingResourcePatternResolver scanner = new PathMatchingResourcePatternResolver();
     org.springframework.core.io.Resource[] resources = scanner.getResources(path + "/*");
     int cnt = 0;
     for (org.springframework.core.io.Resource resource: resources) {
       log.debug("addSchemasFromDirectory; Adding schema: {}", resource.getFilename());
       String content = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-      addSchema(new ContentAccessorDirect(content), session);
+      addSchema(new ContentAccessorDirect(content));
       cnt++;
     }
     return cnt;
@@ -251,149 +239,110 @@ public class SchemaStoreImpl implements SchemaStore {
     return result.isValid();
   }
 
+  private SchemaRecord analyzeSchemaRecord(ContentAccessor schema) {
+    SchemaAnalysisResult result = analyzeSchema(schema);
+	if (!result.isValid()) {
+	  throw new VerificationException("Schema is not valid: " + result.getErrorMessage());
+	}
+		    
+    String nameHash;
+	String schemaId = result.getExtractedId();
+	if (Strings.isNullOrEmpty(schemaId)) {
+	  nameHash = HashUtils.calculateSha256AsHex(schema.getContentAsString());
+	} else {
+	  nameHash = HashUtils.calculateSha256AsHex(schemaId);
+	}
+    return new SchemaRecord(schemaId, nameHash, result.getSchemaType(), schema.getContentAsString(), result.getExtractedUrls());  
+  }
+
   @Override
   public String addSchema(ContentAccessor schema) {
-    Session currentSession = sessionFactory.getCurrentSession();
-    log.debug("addSchema; current session: {}", currentSession);
-    return addSchema(schema, currentSession);
-  }
-    
-  private String addSchema(ContentAccessor schema, Session currentSession) {
-	  
-	SchemaAnalysisResult result = analyzeSchema(schema);
-    if (!result.isValid()) {
-      throw new VerificationException("Schema is not valid: " + result.getErrorMessage());
-    }
-    
-    String schemaId = result.getExtractedId();
-    String nameHash;
-    if (Strings.isNullOrEmpty(schemaId)) {
-      nameHash = HashUtils.calculateSha256AsHex(schema.getContentAsString());
-      schemaId = nameHash;
-      result.setExtractedId(schemaId);
-    } else {
-      nameHash = HashUtils.calculateSha256AsHex(schemaId);
-    }
-
-    // Check duplicate terms
-    List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)
-        .multiLoad(new ArrayList<>(result.getExtractedUrls()));
-    redefines = redefines.stream()
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
-    if (!redefines.isEmpty()) {
-      throw new ConflictException("Schema redefines " + redefines.size() + " terms. First: " + redefines.get(0));
-    }
-
-    SchemaRecord newRecord = new SchemaRecord(schemaId, nameHash, result.getSchemaType(), schema.getContentAsString(),
-        result.getExtractedUrls());
+    SchemaRecord newRecord = analyzeSchemaRecord(schema);
     try {
-      log.debug("addSchema; SchemaId: {}, terms count: {}", schemaId, newRecord.getTerms().size());
-      currentSession.persist(newRecord);
-      currentSession.flush();
-    } catch (EntityExistsException ex) {
-      throw new ConflictException("A schema with id " + schemaId + " already exists.");
+      if (!dao.insert(newRecord)) {
+        throw new ServerException("DB error, schema not inserted");
+      }
+    } catch (DuplicateKeyException ex) {
+      if (ex.getMessage().contains("schematerms_pkey")) {
+        throw new ConflictException("Schema redefines existing terms");
+      }
+      if (ex.getMessage().contains("schemafiles_pkey")) {
+        throw new ConflictException("A schema with id " + newRecord.getId() + " already exists.");
+      }
+      log.info("addSchema; conflict: {}", ex.getMessage());
+      throw new ServerException(ex);
     }
-
-    COMPOSITE_SCHEMAS.remove(result.getSchemaType());
-    return schemaId;
+    
+    COMPOSITE_SCHEMAS.remove(newRecord.type());
+    return newRecord.getId();
   }
-
+  
   @Override
   public void updateSchema(String identifier, ContentAccessor schema) {
-    SchemaAnalysisResult result = analyzeSchema(schema);
-    String schemaId = result.getExtractedId();
-    if (!result.isValid()) {
-      throw new VerificationException("Schema is not valid.");
+    SchemaRecord newRecord = analyzeSchemaRecord(schema);
+    if (newRecord.schemaId() != null && !identifier.equals(newRecord.schemaId())) {
+      throw new IllegalArgumentException("Given schema does not have the same Identifier as the old schema: " + identifier + " <> " + newRecord.schemaId());
     }
-    if (schemaId != null && !schemaId.equals(identifier)) {
-      throw new IllegalArgumentException("Given schema does not have the same Identifier as the old schema: " + identifier + " <> " + schemaId);
-    }
-    Session currentSession = sessionFactory.getCurrentSession();
-
-    // Find and lock record.
-    SchemaRecord existing = currentSession.find(SchemaRecord.class, identifier, LockModeType.PESSIMISTIC_WRITE);
-
-    if (existing == null) {
-      currentSession.clear();
-      throw new NotFoundException("Schema with id " + identifier + " was not found");
-    }
-
-    // Remove old terms
-    int deleted = currentSession.createMutationQuery("delete from SchemaTerm t where t.schemaId = :schemaid")
-        .setParameter("schemaid", identifier)
-        .executeUpdate();
-    log.debug("updateSchema; Deleted {} terms", deleted);
-    existing.getTerms().forEach(t -> currentSession.detach(t));
-
-    // Check duplicate terms
-    List<SchemaTerm> redefines = currentSession.byMultipleIds(SchemaTerm.class)
-        .multiLoad(new ArrayList<>(result.getExtractedUrls()));
-    redefines = redefines.stream()
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
-    if (!redefines.isEmpty()) {
-      currentSession.clear();
-      throw new ConflictException("Schema redefines " + redefines.size() + " terms. First: " + redefines.get(0));
-    }
-
-    existing.setUpdateTime(Instant.now());
-    existing.replaceTerms(new ArrayList<>(result.getExtractedUrls()));
-    existing.setContent(schema.getContentAsString());
+    
     try {
-      currentSession.merge(existing);
-      currentSession.flush();
-    } catch (EntityExistsException ex) {
-      throw new ConflictException("Schema redefines terms.");
+      if (dao.update(identifier, newRecord.content(), newRecord.terms()) == 0) {
+        throw new NotFoundException("Schema with id " + identifier + " was not found");
+      }
+    } catch (DuplicateKeyException ex) {
+      //try {	
+      //  ((SchemaDaoImpl) dao).getDataSource().getConnection().rollback();
+      //} catch (SQLException se) {
+      //  log.debug("updateSchema; error at rollback", se);	  
+      //}
+      if (ex.getMessage().contains("schematerms_pkey")) {
+        throw new ConflictException("Schema redefines existing terms");
+      }
+      log.info("updateSchema; conflict: {}", ex.getMessage());
+      throw new ServerException(ex);
     }
-    COMPOSITE_SCHEMAS.remove(result.getSchemaType());
+
+    COMPOSITE_SCHEMAS.remove(newRecord.type());
     // SDs will be revalidated in a separate thread.
   }
 
   @Override
   public void deleteSchema(String identifier) {
-    Session currentSession = sessionFactory.getCurrentSession();
-    Query<Integer> q = currentSession.createNativeQuery("delete from schemafiles where schemaid = :schemaid returning type", Integer.class);
-    q.setParameter("schemaid", identifier);
-    List<Integer> result = q.list();
-    log.debug("deleteSchema; delete result: {}", result);
-    if (result.size() == 0) {
+	Integer type = dao.delete(identifier);
+    log.debug("deleteSchema; delete result: {}", type);
+    if (type == null) {
       throw new NotFoundException("Schema with id " + identifier + " was not found");
     }
-    int type = result.get(0);
-    currentSession.flush();
     COMPOSITE_SCHEMAS.remove(SchemaType.values()[type]);
   }
 
   @Override
   public Map<SchemaType, List<String>> getSchemaList() {
-    Session currentSession = sessionFactory.getCurrentSession();
+    Map<Integer, Collection<String>> res = dao.selectSchemas();
+    //return res.entrySet().stream().map(e -> Pair.of(SchemaType.values()[e.getKey()], e.getValue()).collect(Collectors.toMap(p.getLeft(), p.getRight())));
     Map<SchemaType, List<String>> result = new HashMap<>();
-    currentSession.createQuery("select new eu.xfsc.fc.core.service.schemastore.SchemaTypeRecord(s.type, s.schemaId) from SchemaRecord s", 
-    		SchemaTypeRecord.class)
-        .stream().forEach(p -> result.computeIfAbsent(p.type(), t -> new ArrayList<>()).add(p.schemaId()));
+    for (Map.Entry<Integer, Collection<String>> e: res.entrySet()) {
+      result.put(SchemaType.values()[e.getKey()], new ArrayList<>(e.getValue()));	
+    }
     return result;
   }
 
   @Override
   public ContentAccessor getSchema(String identifier) {
-    Session currentSession = sessionFactory.getCurrentSession();
-    // Find and lock record.
-    SchemaRecord existing = currentSession.find(SchemaRecord.class, identifier);
+	SchemaRecord existing = dao.select(identifier);  
     if (existing == null) {
       throw new NotFoundException("Schema with id " + identifier + " was not found");
     }
-    return new ContentAccessorDirect(existing.getContent());
+    return new ContentAccessorDirect(existing.content());
   }
 
   @Override
   public Map<SchemaType, List<String>> getSchemasForTerm(String entity) {
-    Session currentSession = sessionFactory.getCurrentSession();
+    Map<Integer, Collection<String>> res = dao.selectSchemasByTerm(entity);
+    //return result.entrySet().stream().map(e -> SchemaType.values()[e.getKey()]).collect(Collectors.toMap(e.null, null))
     Map<SchemaType, List<String>> result = new HashMap<>();
-    currentSession.createQuery("select new eu.xfsc.fc.core.service.schemastore.SchemaTypeRecord(s.type, s.schemaId) " + 
-    		"from SchemaRecord s join s.terms as t where t.term=?1", SchemaTypeRecord.class)
-        .setParameter(1, entity)
-        .stream().forEach(p -> result.computeIfAbsent(p.type(), t -> new ArrayList<>()).add(p.schemaId()));
+    for (Map.Entry<Integer, Collection<String>> e: res.entrySet()) {
+      result.put(SchemaType.values()[e.getKey()], new ArrayList<>(e.getValue()));	
+    }
     return result;
   }
 
@@ -404,19 +353,8 @@ public class SchemaStoreImpl implements SchemaStore {
 
   @Override
   public void clear() {
-    try ( Session session = sessionFactory.openSession()) {
-      Transaction transaction = session.getTransaction();
-      // Transaction is sometimes not active. For instance when called from an @AfterAll Test method
-      if (transaction == null || !transaction.isActive()) {
-        transaction = session.beginTransaction();
-        session.createMutationQuery("delete from SchemaRecord").executeUpdate();
-        transaction.commit();
-      } else {
-        session.createMutationQuery("delete from SchemaRecord").executeUpdate();
-      }
-    } catch (Exception ex) {
-      log.error("SchemaStoreImpl: Exception while clearing Database.", ex);
-    }
+	int cnt = dao.deleteAll();
+    log.debug("clear; deleted {} schemas", cnt);
     try {
       fileStore.clearStorage();
     } catch (IOException ex) {

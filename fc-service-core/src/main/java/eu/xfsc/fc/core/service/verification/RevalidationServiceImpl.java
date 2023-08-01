@@ -1,13 +1,13 @@
 package eu.xfsc.fc.core.service.verification;
 
 import eu.xfsc.fc.api.generated.model.SelfDescriptionStatus;
+import eu.xfsc.fc.core.dao.RevalidatorChunksDao;
 import eu.xfsc.fc.core.exception.VerificationException;
 import eu.xfsc.fc.core.pojo.ContentAccessor;
 import eu.xfsc.fc.core.service.schemastore.SchemaStore;
 import eu.xfsc.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.xfsc.fc.core.util.ProcessorUtils;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -15,9 +15,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -55,7 +52,7 @@ public class RevalidationServiceImpl implements RevalidationService {
   private int instanceCount;
 
   @Autowired
-  private SessionFactory sessionFactory;
+  private RevalidatorChunksDao dao;
 
   @Autowired
   private SelfDescriptionStore sdStore;
@@ -122,7 +119,7 @@ public class RevalidationServiceImpl implements RevalidationService {
         taskQueue.clear();
       }
       if (workingOnChunk < 0) {
-        workingOnChunk = findChunkForWork();
+        workingOnChunk = dao.findChunkForWork(SchemaStore.SchemaType.SHAPE.ordinal());
       }
       if (workingOnChunk >= 0) {
         if (taskQueue.size() < 0.5 * batchSize) {
@@ -162,7 +159,7 @@ public class RevalidationServiceImpl implements RevalidationService {
       setup();
     }
     log.debug("Sending Start signal to revalidation manager.");
-    resetChunkTableTimes();
+    dao.resetChunkTableTimes();
     restart.set(true);
     notifyManager();
   }
@@ -191,7 +188,7 @@ public class RevalidationServiceImpl implements RevalidationService {
     if (taskQueue != null) {
       return;
     }
-    checkChunkTable();
+    dao.checkChunkTable(instanceCount);
     taskQueue = new ArrayBlockingQueue<>(batchSize * 2);
     executorService = ProcessorUtils.createProcessors(workerCount, taskQueue, this::handleTask, REVALIDATOR_THREAD_NAME);
     managementThread = new Thread(this::manage, MANAGER_THREAD_NAME);
@@ -214,6 +211,7 @@ public class RevalidationServiceImpl implements RevalidationService {
     managementThread = null;
   }
 
+  /*
   private int findChunkForWork() {
     int chunkId = -1;
     try ( Session session = sessionFactory.openSession()) {
@@ -279,5 +277,5 @@ public class RevalidationServiceImpl implements RevalidationService {
     }
     log.debug("Resetting chunk table times done.");
   }
-
+*/
 }

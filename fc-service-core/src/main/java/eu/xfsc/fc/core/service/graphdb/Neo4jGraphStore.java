@@ -177,7 +177,7 @@ public class Neo4jGraphStore implements GraphStore {
             if (propMap.get("param").equals("multivalPropList")) {
                 Collection<String> propList = new HashSet<>((Collection<String>) propMap.get("value"));
                 log.debug("updateGraphConfig; got multivalPropList {}", propList);
-                int size= propList.size();
+                int size = propList.size();
                 propList.addAll(properties);
                 if (propList.size() > size) {
                     log.debug("updateGraphConfig; Adding new properties to graphconfig {}", propList);
@@ -215,7 +215,7 @@ public class Neo4jGraphStore implements GraphStore {
             StringBuffer actualQuery = new StringBuffer(sdQuery.getQuery());
             int indexOfAfter = actualQuery.toString().toLowerCase().lastIndexOf(statement) + statement.length();
 
-            if(queryStatementLowerCase.lastIndexOf("return *") == -1) {
+            if (queryStatementLowerCase.lastIndexOf("return *") == -1) {
                 actualQuery.insert(indexOfAfter + 1, "totalCount, ");
             }
             /*finally combine both string */
