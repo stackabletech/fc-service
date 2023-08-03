@@ -1,25 +1,23 @@
 ## Build & Test Procedure
 
-Ensure you have JDK 11, Maven 3.5.4 (or newer) and Git installed
+Ensure you have JDK 17, Maven 3.5.4 (or newer) and Git installed
 
 First clone the Federated Catalogue repository:
 
-```
->git clone https://gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service.git
-```
-Then go to the project folder and build it with maven:
-
-```
->mvn clean install
+``` sh
+git clone https://gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service.git
 ```
 
-This will build all modules and run the testsuite.
-
-To see how the FC Service works go to `/docker` folder and start it with docker-compose:
-
+## Run Catalog
+User docker compose to run start the stack needed to use the Catalog.
+ 
+``` sh
+docker-compose up
 ```
->cd docker
->docker-compose up
+Option for Development that starts the stack with locally build jar files. To build the jars run
+`mvn clean install` in the root folder of this repository.
+```sh
+docker-compose --env-file dev.env up --build
 ```
 ### Keycloak setup
 
@@ -35,3 +33,29 @@ When all components started you should setup Keycloak which is used as Identity 
 - Restart federated-catalogue-server container to pick up changes applied at the second step above.
 
 Now you can test FC Service with Demo Portal web app. Go to `http://localhost:8088` in your browser and press Login button. You should be redirected to Keycloak Login page. Use  user credentials you created above..
+
+## Run tests
+To run all tests as part of this project run `mvn test` in the root folder of the repository.
+
+
+## Build Docker-Images manually
+
+### Docker based build 
+*This methode only requires to have a working instance of docker installed on your system.*
+
+Go to the main folder of this repository and run the following command:
+```sh
+# Build an image for the Catalog server 
+docker build --target fc-service-server -t fc-service-server . 
+
+# Build an image for the Catalog server 
+docker build --target fc-service-server -t fc-service-server . 
+```
+### Maven based build
+For a build without docker you can use the [Maven Jib plugin](https://github.com/GoogleContainerTools/jib) to build container for the catalogs components. 
+
+1. Set the Environment variables  `CI_REGISTRY`, `CI_REGISTRY_USERNAME` and `CI_REGISTRY_PASSWORD`.
+2. Run following command in the root folder of this repository:
+    ```sh
+    mvn compile jib:build
+    ```
