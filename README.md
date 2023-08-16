@@ -18,7 +18,7 @@ To start with FC project please follow the instructions: [Steps to build FC](./d
 
 
 ## Roadmap
-The project v1.0.0 released.
+The project v1.0.0 was released in February 2023.
 
 ## Contributing
 If you want to contribute to the project - please request a membership at [Project Members](https://gitlab.eclipse.org/eclipse/xfsc/cat/fc-service/-/project_members) section or drop an email to project maintainer [Denis Sukhoroslov](mailto:dsukhoroslov@gmail.com).
@@ -31,9 +31,17 @@ The project is implemented by T-Systems International GmbH, direct project membe
 - [Shyam Thorat](https://gitlab.com/shyamthorat)
 - [Natallia Smoliak](https://gitlab.com/nsmoliak)
 
+In the scope of the [GXFS (Gaia-X Federation Services) project](https://gxfs.eu/), the following colleagues …
 
-The project implementation wouldn't be possible without a great help of our partners from Fraunhofer Institute:
-- [Christoph Lange](https://gitlab.com/langec), Fraunhofer FIT
+- [Christoph Lange](https://gitlab.eclipse.org/langec), Fraunhofer FIT
+- [Paul Moosmann](https://gitlab.eclipse.org/moosmannp), Fraunhofer FIT
+
+… are in charge of:
+- aligning the roadmap of this project with the requirements of further funded projects in the Gaia-X community, [including these in Germany](https://gaia-x-hub.de/gaia-x-foerdervorhaben/), and
+- providing support to this community, especially in events such as the [GXFS Tech Workshops](https://www.gxfs.eu/events/).
+
+The project implementation wouldn't have been possible without a great help of our partners from these Fraunhofer Institutes:
+- Christoph Lange (see above)
 - [Hylke van der Schaaf](https://gitlab.com/hylkevds), Fraunhofer IOSB
 - [Jürgen Reuter](https://gitlab.com/j_reuter), Fraunhofer IOSB
 - [Nikhil Acharya](https://gitlab.com/nik77612), Fraunhofer IAIS
@@ -41,7 +49,7 @@ The project implementation wouldn't be possible without a great help of our part
 - [Patrick Westphal](https://gitlab.com/patrick_westphal), Fraunhofer IAIS
 - [Ahmad Hemid](https://gitlab.com/ahmad.hemid), Fraunhofer FIT
 - [Diego Collarana](https://gitlab.com/collaran), Fraunhofer IAIS
-- [Paul Moosmann](https://gitlab.com/moosmannp), Fraunhofer FIT
+- Paul Moosmann (see above)
 - [Philipp Hertweck](https://gitlab.com/phertweck), Fraunhofer IOSB
 - [Khalil Baydoun](https://gitlab.com/baydounkhalil), Fraunhofer FIT
 
