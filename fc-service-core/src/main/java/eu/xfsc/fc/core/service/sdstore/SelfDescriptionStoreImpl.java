@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author j_reuter
  */
 @Slf4j
-@Component
+@Component("sdStore")
 @Transactional
 public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
@@ -65,6 +65,10 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
 
   @Override
   public void storeSelfDescription(final SelfDescriptionMetadata sdMetadata, final VerificationResult verificationResult) {
+	storeSDInternal(sdMetadata, verificationResult);
+  }
+  
+  protected SubjectHashRecord storeSDInternal(final SelfDescriptionMetadata sdMetadata, final VerificationResult verificationResult) {
     if (verificationResult == null) {
       throw new IllegalArgumentException("verification result must not be null");
     }
@@ -79,9 +83,9 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
     SdMetaRecord sd = new SdMetaRecord(sdMetadata.getSdHash(), sdMetadata.getId(), sdMetadata.getStatus(), sdMetadata.getIssuer(), sdMetadata.getValidatorDids(), 
     		sdMetadata.getUploadDatetime(), sdMetadata.getStatusDatetime(), sdMetadata.getSelfDescription(), expirationTime); // sdMetadata.getSelfDescription(), verificationResult);
 
-    String subjectId = null;
+    SubjectHashRecord subjectHash = null;
     try {
-      subjectId = dao.insert(sd);
+      subjectHash = dao.insert(sd);
     } catch (DuplicateKeyException ex) {
       if (ex.getMessage().contains("sdfiles_pkey")) {
         throw new ConflictException(String.format("self-description with hash %s already exists", sdMetadata.getSdHash()));
@@ -92,10 +96,11 @@ public class SelfDescriptionStoreImpl implements SelfDescriptionStore {
       log.error("storeSelfDescription.error 2", ex);
       throw new ServerException(ex);
     }
-    if (subjectId != null) {
-      graphDb.deleteClaims(subjectId);
+    if (subjectHash != null && subjectHash.subjectId() != null) {
+      graphDb.deleteClaims(subjectHash.subjectId());
     }
     graphDb.addClaims(verificationResult.getClaims(), sdMetadata.getId());
+    return subjectHash;
   }
 
   @Override

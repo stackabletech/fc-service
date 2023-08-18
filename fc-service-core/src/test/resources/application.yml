@@ -18,14 +18,22 @@ graphstore:
   password: 12345
   query-timeout-in-seconds: 5
 
-logging:
-  level:
-    root: INFO
-    liquibase: INFO
-#    org.hibernate: DEBUG
-#    org.neo4j.driver: DEBUG
-    eu.xfsc.fc: DEBUG
+publisher:
+  impl: none #nats
+  url: nats://localhost:4222 
+  subject: fc.sd
+  instance: http://localhost:8081
+  send-content: false
 
+subscriber:
+  impl: none
+  url: nats://localhost:4222
+  subject: fc.sd.*
+  instance: http://localhost:8082
+  stream: fc-sd 
+  queue: sd-processor
+  group: sd-group
+  
 federated-catalogue:
   scope: test
   file-store:
@@ -42,4 +50,11 @@ federated-catalogue:
     service-offering:
       type: "http://w3id.org/gaia-x/service#ServiceOffering"
 
-      
+logging:
+  level:
+    root: INFO
+    liquibase: INFO
+#    org.hibernate: DEBUG
+#    org.neo4j.driver: DEBUG
+    eu.xfsc.fc: DEBUG
+

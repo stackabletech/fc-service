@@ -78,6 +78,7 @@
         <bcpkix.jdk15on.version>1.70</bcpkix.jdk15on.version>
         <jose4j.version>0.9.3</jose4j.version>
         <mockwebserver.version>4.11.0</mockwebserver.version>
+        <jnats.version>2.16.13</jnats.version>
         <!-- plugins -->
         <plugin.jib.version>3.2.1</plugin.jib.version>
         <plugin.openapi-generator.version>6.4.0</plugin.openapi-generator.version>
@@ -287,6 +288,12 @@
                 <artifactId>did-common-java</artifactId>
                 <version>${did.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.nats</groupId>
+                <artifactId>jnats</artifactId>
+                <version>${jnats.version}</version>
+            </dependency>
+                        
             <!-- Test dependencies -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>

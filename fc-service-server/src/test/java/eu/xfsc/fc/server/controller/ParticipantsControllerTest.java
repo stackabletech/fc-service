@@ -117,7 +117,7 @@ public class ParticipantsControllerTest {
   @Autowired
   private WebApplicationContext context;
   @Autowired
-  private SelfDescriptionStoreImpl selfDescriptionStore;
+  private SelfDescriptionStoreImpl sdStorePublisher;
   @Autowired
   private Neo4j embeddedDatabaseServer;
   @Autowired
@@ -213,7 +213,7 @@ public class ParticipantsControllerTest {
     assertEquals(PUBLIC_KEY_AS_JWK, partResult.getPublicKey());
     assertEquals(part.getSelfDescription(), partResult.getSelfDescription());
 
-    assertDoesNotThrow(() -> selfDescriptionStore.getByHash(part.getSdHash()));
+    assertDoesNotThrow(() -> sdStorePublisher.getByHash(part.getSdHash()));
   }
 
   @Test
@@ -229,7 +229,7 @@ public class ParticipantsControllerTest {
     ContentAccessorDirect contentAccessor = new ContentAccessorDirect(json);
     VerificationResultParticipant verResult = verificationService.verifyParticipantSelfDescription(contentAccessor);
     SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor, verResult);
-    selfDescriptionStore.storeSelfDescription(sdMetadata, verResult);
+    sdStorePublisher.storeSelfDescription(sdMetadata, verResult);
 
     List<Map<String, Object>> nodes = graphStore.queryData(new GraphQuery(
             "MATCH (n) WHERE $graphUri IN n.claimsGraphUri RETURN n",
@@ -389,7 +389,7 @@ public class ParticipantsControllerTest {
   public void addParticipantFailWithSameSDShouldReturnConflictFromKeyCloakWithoutDBStore() throws Exception {
     String json = getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE);
     ParticipantMetaData partNew = new ParticipantMetaData("did:example:issuer", "did:example:holder", "did:example:holder#key", json);
-    selfDescriptionStore.deleteSelfDescription(partNew.getSdHash());
+    sdStorePublisher.deleteSelfDescription(partNew.getSdHash());
     setupKeycloak(HttpStatus.SC_CONFLICT, partNew);
 
     mockMvc
@@ -399,7 +399,7 @@ public class ParticipantsControllerTest {
             .andExpect(status().isConflict());
 
     NotFoundException exceptionSDStore = assertThrows(NotFoundException.class,
-            () -> selfDescriptionStore.getByHash(partNew.getSdHash()));
+            () -> sdStorePublisher.getByHash(partNew.getSdHash()));
     assertEquals(NotFoundException.class, exceptionSDStore.getClass());
   }
 
@@ -419,7 +419,7 @@ public class ParticipantsControllerTest {
             .andExpect(status().is5xxServerError());
 
     Throwable exceptionSD = assertThrows(Throwable.class,
-            () -> selfDescriptionStore.getByHash(part.getSdHash()));
+            () -> sdStorePublisher.getByHash(part.getSdHash()));
     assertEquals(NotFoundException.class, exceptionSD.getClass());
   }
 
@@ -453,9 +453,9 @@ public class ParticipantsControllerTest {
     assertEquals("did:example:holder", partResult.getName());
     assertEquals(PUBLIC_KEY_AS_JWK, partResult.getPublicKey());
 
-    assertDoesNotThrow(() -> selfDescriptionStore.getByHash(part.getSdHash()));
+    assertDoesNotThrow(() -> sdStorePublisher.getByHash(part.getSdHash()));
 
-    SelfDescriptionMetadata metadata = selfDescriptionStore.getByHash(part.getSdHash());
+    SelfDescriptionMetadata metadata = sdStorePublisher.getByHash(part.getSdHash());
     assertEquals(part.getSelfDescription(), metadata.getSelfDescription().getContentAsString());
   }
 
@@ -486,7 +486,7 @@ public class ParticipantsControllerTest {
     ContentAccessorDirect contentAccessor = new ContentAccessorDirect(json);
     VerificationResultParticipant verResult = verificationService.verifyParticipantSelfDescription(contentAccessor);
     SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor, verResult);
-    selfDescriptionStore.storeSelfDescription(sdMetadata, verResult);
+    sdStorePublisher.storeSelfDescription(sdMetadata, verResult);
 
     String updatedParticipant = getMockFileDataAsString(ALTERNATIVE2_PARTICIPANT_FILE);
     String partId = URLEncoder.encode(part.getId(), Charset.defaultCharset());
@@ -515,7 +515,7 @@ public class ParticipantsControllerTest {
             .andExpect(status().is5xxServerError());
 
     Throwable exceptionSD = assertThrows(Throwable.class,
-            () -> selfDescriptionStore.getByHash(part.getSdHash()));
+            () -> sdStorePublisher.getByHash(part.getSdHash()));
     assertEquals(NotFoundException.class, exceptionSD.getClass());
   }
 
@@ -561,7 +561,7 @@ public class ParticipantsControllerTest {
             .andExpect(status().isNotFound());
 
     Throwable exceptionSD = assertThrows(Throwable.class,
-            () -> selfDescriptionStore.getByHash(part.getSdHash()));
+            () -> sdStorePublisher.getByHash(part.getSdHash()));
     assertEquals(NotFoundException.class, exceptionSD.getClass());
 
   }
@@ -578,7 +578,7 @@ public class ParticipantsControllerTest {
     ContentAccessorDirect contentAccessor = new ContentAccessorDirect(json);
     VerificationResultParticipant verResult = verificationService.verifyParticipantSelfDescription(contentAccessor);
     SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(contentAccessor, verResult);
-    selfDescriptionStore.storeSelfDescription(sdMetadata, verResult);
+    sdStorePublisher.storeSelfDescription(sdMetadata, verResult);
 
     setupKeycloak(HttpStatus.SC_OK, part);
     String partId = URLEncoder.encode(part.getId(), Charset.defaultCharset());
@@ -596,7 +596,7 @@ public class ParticipantsControllerTest {
     assertEquals("did:example:holder#key", participantMetaData.getPublicKey());
 
     Throwable exceptionSD = assertThrows(Throwable.class,
-            () -> selfDescriptionStore.getByHash(part.getSdHash()));
+            () -> sdStorePublisher.getByHash(part.getSdHash()));
     assertEquals(NotFoundException.class, exceptionSD.getClass());
   }
 
@@ -631,7 +631,7 @@ public class ParticipantsControllerTest {
     assertNotNull(participantMetaData);
 
     Throwable exceptionSD = assertThrows(Throwable.class,
-            () -> selfDescriptionStore.getByHash(part.getSdHash()));
+            () -> sdStorePublisher.getByHash(part.getSdHash()));
     assertEquals(NotFoundException.class, exceptionSD.getClass());
 
     assertEquals(0, userDao.search(userId, 0, 1).getTotalCount());
@@ -717,7 +717,7 @@ public class ParticipantsControllerTest {
 
   private void deleteParticipantFromSdStore(ParticipantMetaData part) {
     try {
-      selfDescriptionStore.deleteSelfDescription(part.getSdHash());
+      sdStorePublisher.deleteSelfDescription(part.getSdHash());
     } catch (Exception ex) {
     }
   }

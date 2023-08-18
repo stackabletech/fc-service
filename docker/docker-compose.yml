@@ -15,8 +15,6 @@ services:
       - "5432:5432"
     networks:
       - "gaia-x"
-#    extra_hosts:
-#      - "localhost:host-gateway"
 #    volumes:
 #      - pgdata:/var/lib/postgresql/data/
 
@@ -35,8 +33,6 @@ services:
       - "7687:7687"
     networks:
       - "gaia-x"
-#    extra_hosts:
-#      - "localhost:host-gateway"
     restart: always
     command: neo4j
 #    volumes:
@@ -49,7 +45,7 @@ services:
       KEYCLOAK_ADMIN: "${KEYCLOAK_ADMIN}"
       KEYCLOAK_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD}"
       PROXY_ADDRESS_FORWARDING: "true"
-    image: "quay.io/keycloak/keycloak:${KEYCLOAK_VERSION}"
+    image: quay.io/keycloak/keycloak:20.0.2
     ports:
       - "8080:8080"
     networks:
@@ -69,6 +65,16 @@ services:
           '--log-level=DEBUG,io.quarkus:INFO,liquibase:INFO,org.hibernate:INFO,org.infinispan:INFO,org.keycloak.services.scheduled:INFO,org.keycloak.transaction:INFO,io.netty.buffer.PoolThreadCache:INFO,org.keycloak.models.sessions.infinispan:INFO'
       ]
 
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    restart: always
+    command: --js --sd /data -p 4222  
+    networks: 
+      - "gaia-x"
+      
   server:
     container_name: "fc-server"
 #    image: "${CI_REGISTRY}/fc-service-server:latest"
@@ -82,6 +88,9 @@ services:
       GRAPHSTORE_URI: "${GRAPH_STORE_URI}"
       GRAPHSTORE_USER: "${GRAPH_STORE_USER}"
       GRAPHSTORE_PASSWORD: "${GRAPH_STORE_PASSWORD}"
+      PUBLISHER_IMPL: nats
+      PUBLISHER_URL: ${NATS_URL}
+      SUBSCRIBER_IMPL: none
     ports:
       - "8081:8081"
     networks:
@@ -93,6 +102,7 @@ services:
     depends_on:
       - postgres
       - neo4j
+      - nats
         
   portal:
     container_name: "demo-portal"

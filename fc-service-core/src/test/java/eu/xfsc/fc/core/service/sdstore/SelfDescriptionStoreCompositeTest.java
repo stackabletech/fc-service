@@ -65,7 +65,7 @@ public class SelfDescriptionStoreCompositeTest {
   private VerificationService verificationService;
 
   @Autowired
-  private SelfDescriptionStore sdStore;
+  private SelfDescriptionStore sdStorePublisher;
 
   @Autowired
   private SchemaStoreImpl schemaStore;
@@ -79,7 +79,7 @@ public class SelfDescriptionStoreCompositeTest {
   @AfterEach
   public void storageSelfCleaning() {
     schemaStore.clear();
-    sdStore.clear();
+    sdStorePublisher.clear();
   }
 
   @AfterAll
@@ -99,10 +99,10 @@ public class SelfDescriptionStoreCompositeTest {
     // Only verify semantics, not schema or signatures
     VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
-    sdStore.storeSelfDescription(sdMeta, result);
+    sdStorePublisher.storeSelfDescription(sdMeta, result);
 
     String hash = sdMeta.getSdHash();
-    assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash), false);
+    assertThatSdHasTheSameData(sdMeta, sdStorePublisher.getByHash(hash), false);
 
     String uri = "http://example.org/test-issuer";
     List<Map<String, Object>> claims = graphStore.queryData(
@@ -120,14 +120,14 @@ public class SelfDescriptionStoreCompositeTest {
     //final ContentAccessor sdfileByHash = sdStore.getSDFileByHash(hash);
     //assertEquals(sdfileByHash, sdMeta.getSelfDescription(),
     //    "Getting the SD file by hash is equal to the stored SD file");
-    sdStore.deleteSelfDescription(hash);
+    sdStorePublisher.deleteSelfDescription(hash);
 
     claims = graphStore.queryData(
         new GraphQuery("MATCH (n {uri: $uri}) RETURN labels(n), n", Map.of("uri", uri))).getResults();
     Assertions.assertEquals(0, claims.size());
 
     Assertions.assertThrows(NotFoundException.class, () -> {
-      sdStore.getByHash(hash);
+      sdStorePublisher.getByHash(hash);
     });
   }
 
@@ -139,11 +139,11 @@ public class SelfDescriptionStoreCompositeTest {
     // Only verify semantics, not schema or signatures
     VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
-    sdStore.storeSelfDescription(sdMeta, result);
+    sdStorePublisher.storeSelfDescription(sdMeta, result);
 
     String hash = sdMeta.getSdHash();
 
-    assertThatSdHasTheSameData(sdMeta, sdStore.getByHash(hash), false);
+    assertThatSdHasTheSameData(sdMeta, sdStorePublisher.getByHash(hash), false);
 
     List<Map<String, Object>> claims = graphStore.queryData(
         new GraphQuery("MATCH (n) RETURN n", null)).getResults();
@@ -157,7 +157,7 @@ public class SelfDescriptionStoreCompositeTest {
     log.debug("Claims: {}", claims);
     Assertions.assertEquals(1, claims.size());
 
-    GraphRebuilder reBuilder = new GraphRebuilder(sdStore, graphStore, verificationService);
+    GraphRebuilder reBuilder = new GraphRebuilder(sdStorePublisher, graphStore, verificationService);
     reBuilder.rebuildGraphDb(1, 0, 1, 1);
 
     claims = graphStore.queryData(
@@ -165,14 +165,14 @@ public class SelfDescriptionStoreCompositeTest {
     log.debug("Claims: {}", claims);
     Assertions.assertEquals(3, claims.size());
 
-    sdStore.deleteSelfDescription(hash);
+    sdStorePublisher.deleteSelfDescription(hash);
 
     claims = graphStore.queryData(
         new GraphQuery("MATCH (n) RETURN n", null)).getResults();
     Assertions.assertEquals(1, claims.size());
 
     Assertions.assertThrows(NotFoundException.class, () -> {
-      sdStore.getByHash(hash);
+      sdStorePublisher.getByHash(hash);
     });
   }
 
