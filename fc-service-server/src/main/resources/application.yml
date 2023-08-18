@@ -79,15 +79,22 @@ graphstore:
   user: neo4j
   password: neo12345
 
-logging:
-  level:
-    root: INFO
-    eu.gaiax.difs.fc: DEBUG
-#    org.neo4j.driver: DEBUG
-#    org.springframework: DEBUG
-    org.springframework.web: INFO
-#    org.springframework.security: DEBUG
+publisher:
+  impl: none #nats
+  url: nats://localhost:4222 
+  subject: fc.sd
+  instance: http://localhost:8081
+  send-content: false
 
+subscriber:
+  impl: none
+  url: nats://localhost:4222
+  subject: fc.sd.*
+  instance: http://localhost:8082
+  stream: fc-sd 
+  queue: sd-processor
+  group: sd-group
+  
 federated-catalogue:
   scope: runtime
   file-store:
@@ -107,3 +114,12 @@ federated-catalogue:
       type: "https://w3id.org/gaia-x/core#Participant"
     service-offering:
       type: "https://w3id.org/gaia-x/core#ServiceOffering"
+
+logging:
+  level:
+    root: INFO
+    eu.xfsc.fc: DEBUG
+#    org.neo4j.driver: DEBUG
+#    org.springframework: DEBUG
+    org.springframework.web: INFO
+#    org.springframework.security: DEBUG

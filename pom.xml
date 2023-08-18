@@ -6,18 +6,18 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.0.4</version>
+        <version>3.1.2</version>
         <relativePath/>
     </parent>
     
-    <groupId>eu.gaiax.difs.fc</groupId>
+    <groupId>eu.xfsc.cat</groupId>
     <artifactId>fc-service</artifactId>
     <packaging>pom</packaging>
     <!-- Important: The property 'revision' must be updated to describe version changes in a single place for the build process -->
     <version>1.0.0.local</version>
 
     <name>fc-service</name>
-    <description>GAIA-X Federated Catalogue Service</description>
+    <description>Eclipse XFSC Federated Catalogue Service</description>
     <organization>
         <name>T-Systems International GmbH</name>
     </organization>
@@ -35,12 +35,12 @@
         <module>fc-test-support</module>
         <module>fc-service-core</module>
         <module>fc-service-server</module>
-        <module>demo-portal</module>
+        <module>fc-demo-portal</module>
     </modules>
 
     <properties>
         <!-- Important: The property 'revision' must be updated to describe version changes in a single place for the build process -->
-        <revision>1.1.1</revision>
+        <revision>1.3.0-SNAPSHOT</revision>
         <!-- java -->
         <java.version>17</java.version>
         <maven.compiler.source>17</maven.compiler.source>
@@ -49,27 +49,25 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- dependencies -->
-        <spring.version>6.0.6</spring.version>
-        <spring-boot.version>3.0.4</spring-boot.version>
-        <spring.security.version>6.0.2</spring.security.version>
-        <spring-cloud-contract-wiremock.version>4.0.1</spring-cloud-contract-wiremock.version>
+        <spring.version>6.0.11</spring.version>
+        <spring-boot.version>3.1.2</spring-boot.version>
+        <spring.security.version>6.1.2</spring.security.version>
+        <spring-cloud-contract-wiremock.version>4.0.3</spring-cloud-contract-wiremock.version>
         <security.test-addons.version>4.5.1</security.test-addons.version>
-        <springdoc.version>2.0.2</springdoc.version>
-        <lombok.version>1.18.24</lombok.version>
-        <keycloak.version>17.0.1</keycloak.version>
-        <micrometer.version>1.10.3</micrometer.version>
-        <embedded.postgres.version>2.0.1</embedded.postgres.version>
-        <embedded.postgres.test.version>2.1.2</embedded.postgres.test.version>
-        <liquibase.version>4.20.0</liquibase.version>
-        <hibernate.entitymanager.version>5.6.15.Final</hibernate.entitymanager.version>
-        <hibernate-types.version>2.21.1</hibernate-types.version>
+        <springdoc.version>2.1.0</springdoc.version>
+        <lombok.version>1.18.28</lombok.version>
+        <keycloak.version>20.0.2</keycloak.version>
+        <micrometer.version>1.11.2</micrometer.version>
+        <embedded.postgres.version>2.0.4</embedded.postgres.version>
+        <embedded.postgres.test.version>2.3.0</embedded.postgres.test.version>
+        <liquibase.version>4.23.0</liquibase.version>
         <jena.version>4.6.1</jena.version>
         <topbraid.version>1.4.2</topbraid.version>
-        <vc.version>1.0.0</vc.version>
-        <key-format.version>1.5.0</key-format.version>
+        <vc.version>1.2.0</vc.version>
+        <key-format.version>1.8.0</key-format.version>
         <did.version>1.4.0</did.version>
         <titanium.version>1.3.2</titanium.version>
-        <caffeine.version>3.1.1</caffeine.version>
+        <caffeine.version>3.1.7</caffeine.version>
         <eclipse-collections.version>11.1.0</eclipse-collections.version>
         <neo4j.driver.version>5.6.0</neo4j.driver.version>
         <neo4j.gds.version>2.3.8</neo4j.gds.version>
@@ -78,8 +76,9 @@
         <neo4j.test-harness.version>5.5.0</neo4j.test-harness.version>
         <neo4j.test-spring.version>4.3.6.0</neo4j.test-spring.version>
         <bcpkix.jdk15on.version>1.70</bcpkix.jdk15on.version>
-        <jose4j.version>0.8.0</jose4j.version>
+        <jose4j.version>0.9.3</jose4j.version>
         <mockwebserver.version>4.11.0</mockwebserver.version>
+        <jnats.version>2.16.13</jnats.version>
         <!-- plugins -->
         <plugin.jib.version>3.2.1</plugin.jib.version>
         <plugin.openapi-generator.version>6.4.0</plugin.openapi-generator.version>
@@ -87,45 +86,45 @@
         <plugin.checkstyle.version>3.1.2</plugin.checkstyle.version>
         <plugin.checkstyle.puppycrawl.version>10.3.1</plugin.checkstyle.puppycrawl.version>
         <!-- repoositiry path -->
-        <repository.path>xfsc/cat/fc-service</repository.path>
+        <repository.path>eclipse/xfsc/cat/fc-service</repository.path>
         <!--jib-->
         <ci-registry>${env.CI_REGISTRY}/${repository.path}</ci-registry>
     </properties>
 
-    <url>https://gitlab.com/${repository.path}</url>
+    <url>https://gitlab.eclipse.org/${repository.path}</url>
     <scm>
-        <connection>scm:git:git://gitlab.com/${repository.path}.git</connection>
-        <url>https://gitlab.com/${repository.path}</url>
+        <connection>scm:git:git://gitlab.eclipse.org/${repository.path}.git</connection>
+        <url>https://gitlab.eclipse.org/${repository.path}</url>
         <tag>HEAD</tag>
     </scm>
     <issueManagement>
         <system>GitLab</system>
-        <url>https://gitlab.com/${repository.path}/-/issues</url>
+        <url>https://gitlab.eclipse.org/${repository.path}/-/issues</url>
     </issueManagement>
     <ciManagement>
-        <url>https://gitlab.com/${repository.path}/-/pipelines</url>
+        <url>https://gitlab.eclipse.org/${repository.path}/-/pipelines</url>
     </ciManagement>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>eu.gaiax.difs.fc</groupId>
+                <groupId>eu.xfsc.cat</groupId>
                 <artifactId>fc-service-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>eu.gaiax.difs.fc</groupId>
+                <groupId>eu.xfsc.cat</groupId>
                 <artifactId>fc-service-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>eu.gaiax.difs.fc</groupId>
+                <groupId>eu.xfsc.cat</groupId>
                 <artifactId>fc-test-support</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>eu.gaiax.difs.fc</groupId>
+                <groupId>eu.xfsc.cat</groupId>
                 <artifactId>fc-service-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -207,34 +206,10 @@
                 <version>${liquibase.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.vladmihalcea</groupId>
-                <artifactId>hibernate-types-60</artifactId>
-                <version>${hibernate-types.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
-            </dependency>            
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-entitymanager</artifactId>
-                <version>${hibernate.entitymanager.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.hibernate</groupId>
-                        <artifactId>hibernate-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.persistence</groupId>
-                        <artifactId>javax.persistence-api</artifactId>
-				    </exclusion>
-                    <exclusion>
-                        <groupId>org.hibernate.common</groupId>
-                        <artifactId>hibernate-commons-annotations</artifactId>
-				    </exclusion>
-   		        </exclusions>
-            </dependency>
+            </dependency> 
             <dependency>
                 <groupId>org.eclipse.collections</groupId>
                 <artifactId>eclipse-collections</artifactId>        
@@ -313,6 +288,12 @@
                 <artifactId>did-common-java</artifactId>
                 <version>${did.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.nats</groupId>
+                <artifactId>jnats</artifactId>
+                <version>${jnats.version}</version>
+            </dependency>
+                        
             <!-- Test dependencies -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>

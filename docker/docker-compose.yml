@@ -15,8 +15,6 @@ services:
       - "5432:5432"
     networks:
       - "gaia-x"
-#    extra_hosts:
-#      - "localhost:host-gateway"
 #    volumes:
 #      - pgdata:/var/lib/postgresql/data/
 
@@ -35,8 +33,6 @@ services:
       - "7687:7687"
     networks:
       - "gaia-x"
-#    extra_hosts:
-#      - "localhost:host-gateway"
     restart: always
     command: neo4j
 #    volumes:
@@ -49,7 +45,7 @@ services:
       KEYCLOAK_ADMIN: "${KEYCLOAK_ADMIN}"
       KEYCLOAK_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD}"
       PROXY_ADDRESS_FORWARDING: "true"
-    image: "quay.io/keycloak/keycloak:${KEYCLOAK_VERSION}"
+    image: quay.io/keycloak/keycloak:20.0.2
     ports:
       - "8080:8080"
     networks:
@@ -69,18 +65,32 @@ services:
           '--log-level=DEBUG,io.quarkus:INFO,liquibase:INFO,org.hibernate:INFO,org.infinispan:INFO,org.keycloak.services.scheduled:INFO,org.keycloak.transaction:INFO,io.netty.buffer.PoolThreadCache:INFO,org.keycloak.models.sessions.infinispan:INFO'
       ]
 
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    restart: always
+    command: --js --sd /data -p 4222  
+    networks: 
+      - "gaia-x"
+      
   server:
     container_name: "fc-server"
 #    image: "${CI_REGISTRY}/fc-service-server:latest"
     build:
-      context: ../fc-service-server
+      context: "${FC_SERVICE_SERVER_DOCKER_CONTEXT}"
       dockerfile: Dockerfile
+      target: "${FC_SERVICE_SERVER_DOCKER_TARGET}"
     environment:
       KEYCLOAK_CREDENTIALS_SECRET: "${FC_CLIENT_SECRET}"
       SPRING_DATASOURCE_URL: "${DB_URL}"
       GRAPHSTORE_URI: "${GRAPH_STORE_URI}"
       GRAPHSTORE_USER: "${GRAPH_STORE_USER}"
       GRAPHSTORE_PASSWORD: "${GRAPH_STORE_PASSWORD}"
+      PUBLISHER_IMPL: nats
+      PUBLISHER_URL: ${NATS_URL}
+      SUBSCRIBER_IMPL: none
     ports:
       - "8081:8081"
     networks:
@@ -92,15 +102,18 @@ services:
     depends_on:
       - postgres
       - neo4j
+      - nats
         
   portal:
     container_name: "demo-portal"
 #    image: "${CI_REGISTRY}/demo-portal:1.0.0"
     build:
-      context: ../demo-portal
+      context: "${FC_DEMO_PORTAL_DOCKER_CONTEXT}"
       dockerfile: Dockerfile
+      target: "${FC_DEMO_PORTAL_DOCKER_TARGET}"
     environment:
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FC_CLIENT_OIDC_CLIENT_SECRET: "${FC_CLIENT_SECRET}"
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI: http://key-server:8080/realms/gaia-x     
     ports:
       - "8088:8088"
     networks:

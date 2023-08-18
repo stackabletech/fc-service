@@ -5,17 +5,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>eu.gaiax.difs.fc</groupId>
+        <groupId>eu.xfsc.cat</groupId>
         <artifactId>fc-service</artifactId>
         <version>1.0.0.local</version>
-        <!--relativePath>..</relativePath-->
     </parent>
 
     <artifactId>fc-service-api</artifactId>
     <version>${revision}</version>
     <packaging>jar</packaging>
     <name>fc-service-api</name>
-    <description>GAIA-X Federated Catalogue shared domain model</description>
+    <description>Eclipse XFSC Federated Catalogue shared domain model</description>
 
     <dependencies>
         <dependency>
@@ -53,8 +52,8 @@
                             <generateSupportingFiles>false</generateSupportingFiles>
                             <inputSpec>${project.parent.basedir}/openapi/fc_openapi.yaml</inputSpec>
                             <generatorName>spring</generatorName>
-                            <packageName>${project.groupId}.api.generated</packageName>
-                            <modelPackage>${project.groupId}.api.generated.model</modelPackage>
+                            <packageName>eu.xfsc.fc.api.generated</packageName>
+                            <modelPackage>eu.xfsc.fc.api.generated.model</modelPackage>
                             <generateModelTests>true</generateModelTests>
                             <generateModelDocumentation>true</generateModelDocumentation>
                             <configOptions>
