@@ -55,7 +55,7 @@ public class RevalidationServiceImpl implements RevalidationService {
   private RevalidatorChunksDao dao;
 
   @Autowired
-  private SelfDescriptionStore sdStore;
+  private SelfDescriptionStore sdStorePublisher;
 
   @Autowired
   private VerificationService verificationService;
@@ -94,12 +94,12 @@ public class RevalidationServiceImpl implements RevalidationService {
   }
 
   private void handleTask(final String sdhash) {
-    ContentAccessor content = sdStore.getSDFileByHash(sdhash);
+    ContentAccessor content = sdStorePublisher.getSDFileByHash(sdhash);
     try {
       verificationService.verifySelfDescriptionAgainstCompositeSchema(content);
     } catch (VerificationException ex) {
       log.info("SD {} is no longer valid", sdhash);
-      sdStore.changeLifeCycleStatus(sdhash, SelfDescriptionStatus.REVOKED);
+      sdStorePublisher.changeLifeCycleStatus(sdhash, SelfDescriptionStatus.REVOKED);
     }
     final var finalTaskQueue = taskQueue;
     if (finalTaskQueue != null && finalTaskQueue.size() < 0.5 * batchSize) {
@@ -124,7 +124,7 @@ public class RevalidationServiceImpl implements RevalidationService {
       if (workingOnChunk >= 0) {
         if (taskQueue.size() < 0.5 * batchSize) {
           // Fetch more hashes.
-          List<String> activeSdHashes = sdStore.getActiveSdHashes(lastHash, batchSize, instanceCount, workingOnChunk);
+          List<String> activeSdHashes = sdStorePublisher.getActiveSdHashes(lastHash, batchSize, instanceCount, workingOnChunk);
           if (activeSdHashes.isEmpty()) {
             log.info("Finished revalidating.");
             workingOnChunk = -1;

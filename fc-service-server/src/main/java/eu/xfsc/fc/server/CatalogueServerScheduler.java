@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CatalogueServerScheduler {
     
     @Autowired
-    private SelfDescriptionStore sdStore;
+    private SelfDescriptionStore sdStorePublisher;
     
     @Autowired
     private SchemaStore smStore;
@@ -31,7 +31,7 @@ public class CatalogueServerScheduler {
     @Scheduled(cron = "${scheduler.sd.cron.expression}")
     public void scheduleSdInvalidationTask() {
       log.debug("scheduleSdInvalidationTask.enter; Launched scheduler to invalidate expired SDs in store.");
-      int numberOfExpiredSd = sdStore.invalidateSelfDescriptions();
+      int numberOfExpiredSd = sdStorePublisher.invalidateSelfDescriptions();
       log.debug("scheduleSdInvalidationTask.exit; {} expired SDs were found and invalidated.", numberOfExpiredSd);
     }
     

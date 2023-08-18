@@ -44,7 +44,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
   @Autowired
   private ValidatorCacheDao validatorCache;
   @Autowired
-  private SelfDescriptionStore selfDescriptionStore;
+  private SelfDescriptionStore sdStorePublisher;
   @Autowired
   private VerificationService verificationService;
 
@@ -66,7 +66,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     VerificationResultParticipant verificationResult = pairResult.getLeft();
     SelfDescriptionMetadata selfDescriptionMetadata = pairResult.getRight();
 
-    selfDescriptionStore.storeSelfDescription(selfDescriptionMetadata, verificationResult);
+    sdStorePublisher.storeSelfDescription(selfDescriptionMetadata, verificationResult);
     ParticipantMetaData participantMetaData = toParticipantMetaData(verificationResult, selfDescriptionMetadata);
 
     participantMetaData = partDao.create(participantMetaData);
@@ -92,8 +92,8 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     checkParticipantAccess(participantId);
     ParticipantMetaData participant = partDao.select(participantId)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
-    String selfDescription = selfDescriptionStore.getByHash(participant.getSdHash()).getSelfDescription().getContentAsString();
-    selfDescriptionStore.deleteSelfDescription(participant.getSdHash());
+    String selfDescription = sdStorePublisher.getByHash(participant.getSdHash()).getSelfDescription().getContentAsString();
+    sdStorePublisher.deleteSelfDescription(participant.getSdHash());
     participant = partDao.delete(participant.getId()).get();
     log.debug("deleteParticipant.exit; returning: {}", participant);
     participant.setSelfDescription(selfDescription);
@@ -118,7 +118,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
     checkParticipantAccess(participantId);
     ParticipantMetaData part = partDao.select(participantId)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
-    SelfDescriptionMetadata selfDescriptionMetadata = selfDescriptionStore.getByHash(part.getSdHash());
+    SelfDescriptionMetadata selfDescriptionMetadata = sdStorePublisher.getByHash(part.getSdHash());
     part.setSelfDescription(selfDescriptionMetadata.getSelfDescription().getContentAsString());
     setParticipantPublicKey(part);
     log.debug("getParticipant.exit; returning: {}", part);
@@ -168,7 +168,7 @@ public class ParticipantsService implements ParticipantsApiDelegate {
       filter.setLimit(results.getResults().size());
       filter.setOffset(0);
       filter.setHashes(results.getResults().stream().map(ParticipantMetaData::getSdHash).collect(Collectors.toList()));
-      PaginatedResults<SelfDescriptionMetadata> page = selfDescriptionStore.getByFilter(filter, true, true);
+      PaginatedResults<SelfDescriptionMetadata> page = sdStorePublisher.getByFilter(filter, true, true);
       if (page.getTotalCount() > 0) {
         Map<String, ContentAccessor> sdsMap = page.getResults().stream().collect(
     		  Collectors.toMap(SelfDescriptionMetadata::getSdHash, SelfDescriptionMetadata::getSelfDescription));
@@ -217,11 +217,11 @@ public class ParticipantsService implements ParticipantsApiDelegate {
       throw new ClientException("Participant ID cannot be changed");
     }
 
-    selfDescriptionStore.storeSelfDescription(selfDescriptionMetadata, verificationResult);
+    sdStorePublisher.storeSelfDescription(selfDescriptionMetadata, verificationResult);
     ParticipantMetaData participantMetaData = partDao.update(participantId, participantUpdated)
         .orElseThrow(() -> new NotFoundException("Participant not found: " + participantId));
     log.debug("updateParticipant.exit; returning: {}", participantMetaData);
-    participantMetaData.setSelfDescription(selfDescriptionStore.getByHash(participantMetaData.getSdHash()).getSelfDescription().getContentAsString());
+    participantMetaData.setSelfDescription(sdStorePublisher.getByHash(participantMetaData.getSdHash()).getSelfDescription().getContentAsString());
     setParticipantPublicKey(participantMetaData);
     return ResponseEntity.ok(participantMetaData);
   }

@@ -68,7 +68,7 @@ public class DistributedQueryControllerTest {
   private Neo4j embeddedDatabaseServer;
 
   @Autowired
-  private SelfDescriptionStore sdStore;
+  private SelfDescriptionStore sdStorePublisher;
 
   @Autowired
   private VerificationService verificationService;
@@ -101,7 +101,7 @@ public class DistributedQueryControllerTest {
     mockBackEnd91.shutdown();
     mockBackEnd90.shutdown();
     schemaStore.clear();
-    sdStore.clear();
+    sdStorePublisher.clear();
     embeddedDatabaseServer.close();
   }
 
@@ -240,7 +240,7 @@ public class DistributedQueryControllerTest {
     VerificationResultParticipant verificationResult = verificationService.verifyParticipantSelfDescription(contentAccessor);
     SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(verificationResult.getId(),
             verificationResult.getIssuer(), verificationResult.getValidators(), contentAccessor);
-    sdStore.storeSelfDescription(sdMetadata, verificationResult);
+    sdStorePublisher.storeSelfDescription(sdMetadata, verificationResult);
 
     //adding second sd
     ContentAccessorDirect contentAccessor2
@@ -249,7 +249,7 @@ public class DistributedQueryControllerTest {
             = verificationService.verifyOfferingSelfDescription(contentAccessor2);
     SelfDescriptionMetadata sdMetadata2 = new SelfDescriptionMetadata(verificationResult2.getId(),
             verificationResult2.getIssuer(), verificationResult2.getValidators(), contentAccessor2);
-    sdStore.storeSelfDescription(sdMetadata2, verificationResult2);
+    sdStorePublisher.storeSelfDescription(sdMetadata2, verificationResult2);
 
     //adding sd 3
    ContentAccessorDirect contentAccessorDirect3 =
@@ -258,7 +258,7 @@ public class DistributedQueryControllerTest {
         = verificationService.verifyParticipantSelfDescription(contentAccessorDirect3);
     SelfDescriptionMetadata sdMetadata3 = new SelfDescriptionMetadata(verificationResult3.getId(),
         verificationResult3.getIssuer(), verificationResult3.getValidators(), contentAccessorDirect3);
-    sdStore.storeSelfDescription(sdMetadata3, verificationResult2);
+    sdStorePublisher.storeSelfDescription(sdMetadata3, verificationResult2);
     
 	  } catch (Exception ex) {
 		  log.error("INIT-DATA.ERROR", ex);

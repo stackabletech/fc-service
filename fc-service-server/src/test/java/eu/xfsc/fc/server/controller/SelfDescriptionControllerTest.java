@@ -88,7 +88,7 @@ public class SelfDescriptionControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
     @Autowired
-    private SelfDescriptionStore sdStore;
+    private SelfDescriptionStore sdStorePublisher;
     // can't remove it for some reason, many tests fails with auth error
     @SpyBean(name = "schemaFileStore") // "sdFileStore")
     private FileStore fileStore;
@@ -112,7 +112,7 @@ public class SelfDescriptionControllerTest {
     @AfterEach
     public void deleteTestSD() throws IOException {
         try {
-            sdStore.deleteSelfDescription(sdMeta.getSdHash());
+            sdStorePublisher.deleteSelfDescription(sdMeta.getSdHash());
         } catch (NotFoundException e) {
             // expected
         }
@@ -138,7 +138,7 @@ public class SelfDescriptionControllerTest {
     @Test
     @WithMockUser
     public void readSDsShouldReturnSuccessResponse() throws Exception {
-        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
+        sdStorePublisher.storeSelfDescription(sdMeta, getStaticVerificationResult());
         MvcResult result =  mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions")
                         .with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
@@ -154,7 +154,7 @@ public class SelfDescriptionControllerTest {
     @Test
     @WithMockUser
     public void readSDsByFilterShouldReturnSuccessResponse() throws Exception {
-        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
+        sdStorePublisher.storeSelfDescription(sdMeta, getStaticVerificationResult());
         
         MvcResult result =  mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions")
                         .accept(MediaType.APPLICATION_JSON)
@@ -247,7 +247,7 @@ public class SelfDescriptionControllerTest {
     @Test
     @WithMockUser
     public void readSDByHashShouldReturnSuccessResponse() throws Exception {
-        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
+        sdStorePublisher.storeSelfDescription(sdMeta, getStaticVerificationResult());
 
         mockMvc.perform(MockMvcRequestBuilders.get("/self-descriptions/" + sdMeta.getSdHash())
                 .with(csrf()))
@@ -278,7 +278,7 @@ public class SelfDescriptionControllerTest {
     @WithMockJwtAuth(authorities = SD_ADMIN_ROLE_WITH_PREFIX, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = "")})))
     public void deleteSdWithoutIssuerReturnForbiddenResponse() throws Exception {
-      sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
+      sdStorePublisher.storeSelfDescription(sdMeta, getStaticVerificationResult());
       mockMvc.perform(MockMvcRequestBuilders.delete("/self-descriptions/" + sdMeta.getSdHash())
               .with(csrf())
               .contentType(MediaType.APPLICATION_JSON)
@@ -301,7 +301,7 @@ public class SelfDescriptionControllerTest {
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void deleteSDReturnSuccessResponse() throws Exception {
-        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
+        sdStorePublisher.storeSelfDescription(sdMeta, getStaticVerificationResult());
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/self-descriptions/" + sdMeta.getSdHash())
                         .with(csrf())
@@ -355,7 +355,7 @@ public class SelfDescriptionControllerTest {
             .andReturn();
 
         SelfDescription sd = objectMapper.readValue(result.getResponse().getContentAsString(), SelfDescription.class);
-        sdStore.deleteSelfDescription(sd.getSdHash());
+        sdStorePublisher.deleteSelfDescription(sd.getSdHash());
     }
 
     @Test
@@ -367,7 +367,7 @@ public class SelfDescriptionControllerTest {
 
       SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata("id123", TEST_ISSUER, new ArrayList<>(), contentAccessor);
 
-      sdStore.storeSelfDescription(sdMetadata, getStaticVerificationResult());
+      sdStorePublisher.storeSelfDescription(sdMetadata, getStaticVerificationResult());
       mockMvc.perform(MockMvcRequestBuilders
               .post("/self-descriptions")
               .content(sd)
@@ -375,8 +375,8 @@ public class SelfDescriptionControllerTest {
               .contentType(MediaType.APPLICATION_JSON)
               .accept(MediaType.APPLICATION_JSON))
           .andExpect(status().isConflict());
-      sdStore.deleteSelfDescription(sdMetadata.getSdHash());
-      assertThrows(NotFoundException.class, () -> sdStore.getByHash(sdMetadata.getSdHash()));
+      sdStorePublisher.deleteSelfDescription(sdMetadata.getSdHash());
+      assertThrows(NotFoundException.class, () -> sdStorePublisher.getByHash(sdMetadata.getSdHash()));
     }
 
     // TODO: 05.09.2022 Need to add a test to check the correct scenario with graph storage when it is added
@@ -399,7 +399,7 @@ public class SelfDescriptionControllerTest {
 
         //assertThrowsExactly(FileNotFoundException.class,
         //    () -> fileStore.readFile(hash));
-        assertThrows(NotFoundException.class, () -> sdStore.getByHash(hash));
+        assertThrows(NotFoundException.class, () -> sdStorePublisher.getByHash(hash));
     }
 
     @Test
@@ -438,7 +438,7 @@ public class SelfDescriptionControllerTest {
     public void revokeSDReturnSuccessResponse() throws Exception {
         final VerificationResult vr = new VerificationResult(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), "issuer", 
                 Instant.now(), "vhash", List.of(), List.of());
-        sdStore.storeSelfDescription(sdMeta, vr);
+        sdStorePublisher.storeSelfDescription(sdMeta, vr);
 //        sdStore.storeSelfDescription(sdMeta, getStaticVerificationResult());
         mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions/" + sdMeta.getSdHash() + "/revoke")
                         .with(csrf())
@@ -454,7 +454,7 @@ public class SelfDescriptionControllerTest {
         String content = getMockFileDataAsString(SD_FILE_NAME);
         String hash = HashUtils.calculateSha256AsHex(content);
         try {
-          sdStore.deleteSelfDescription(hash);
+          sdStorePublisher.deleteSelfDescription(hash);
         } catch (NotFoundException ex) {
             // expected
         }
@@ -500,7 +500,7 @@ public class SelfDescriptionControllerTest {
         Assertions.assertEquals(0, nodes.size());
         
         // this call fails for some reason. why cannot we delete revoked SD? 
-        sdStore.deleteSelfDescription(hash);
+        sdStorePublisher.deleteSelfDescription(hash);
     }
     
     @Test
@@ -511,7 +511,7 @@ public class SelfDescriptionControllerTest {
                 Instant.now(), "vhash", List.of(), List.of());
         SelfDescriptionMetadata metadata = sdMeta;
         metadata.setStatus(SelfDescriptionStatus.DEPRECATED);
-        sdStore.storeSelfDescription(metadata, vr);
+        sdStorePublisher.storeSelfDescription(metadata, vr);
         MvcResult result = mockMvc
             .perform(MockMvcRequestBuilders.post("/self-descriptions/" + sdMeta.getSdHash() + "/revoke")
                 .with(csrf())
@@ -520,7 +520,7 @@ public class SelfDescriptionControllerTest {
             .andExpect(status().isConflict()).andReturn();
         Error error = objectMapper.readValue(result.getResponse().getContentAsString(), Error.class);
         assertEquals("The SD status cannot be changed because the SD Metadata status is deprecated", error.getMessage());
-        sdStore.deleteSelfDescription(metadata.getSdHash());
+        sdStorePublisher.deleteSelfDescription(metadata.getSdHash());
     }
 
     private static SelfDescriptionMetadata createSdMetadata() throws IOException {

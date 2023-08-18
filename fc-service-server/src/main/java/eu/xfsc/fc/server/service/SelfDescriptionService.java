@@ -45,7 +45,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   @Autowired
   private VerificationService verificationService;
   @Autowired
-  private SelfDescriptionStore sdStore;
+  private SelfDescriptionStore sdStorePublisher;
 
   /**
    * Service method for GET /self-descriptions : Get the list of metadata of SD in the Catalogue.
@@ -88,7 +88,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
       filter.setLimit(limit);
       filter.setOffset(offset);
     }
-    final PaginatedResults<SelfDescriptionMetadata> selfDescriptions = sdStore.getByFilter(filter, withMeta, withContent);
+    final PaginatedResults<SelfDescriptionMetadata> selfDescriptions = sdStorePublisher.getByFilter(filter, withMeta, withContent);
     log.debug("readSelfDescriptions.exit; returning: {}", selfDescriptions);
     List<SelfDescriptionResult> results = null;
     if (withMeta) {
@@ -120,7 +120,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
   @Override
   public ResponseEntity<String> readSelfDescriptionByHash(String selfDescriptionHash) {
     log.debug("readSelfDescriptionByHash.enter; got hash: {}", selfDescriptionHash);
-    SelfDescriptionMetadata sdMetadata = sdStore.getByHash(selfDescriptionHash);
+    SelfDescriptionMetadata sdMetadata = sdStorePublisher.getByHash(selfDescriptionHash);
 
     HttpHeaders responseHeaders = new HttpHeaders();
     //responseHeaders.set("Content-Type", "application/ld+json");
@@ -147,11 +147,11 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     log.debug("deleteSelfDescription.enter; got hash: {}", selfDescriptionHash);
     // TODO: 27.07.2022 The method is not described in the documentation.
 
-    SelfDescriptionMetadata sdMetadata = sdStore.getByHash(selfDescriptionHash);
+    SelfDescriptionMetadata sdMetadata = sdStorePublisher.getByHash(selfDescriptionHash);
 
     checkParticipantAccess(sdMetadata.getIssuer());
 
-    sdStore.deleteSelfDescription(selfDescriptionHash);
+    sdStorePublisher.deleteSelfDescription(selfDescriptionHash);
     log.debug("deleteSelfDescription.exit; deleted self-description by hash: {}", sdMetadata.getSdHash());
     return new ResponseEntity<>(HttpStatus.OK);
   }
@@ -182,7 +182,7 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
       SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(verificationResult.getId(), verificationResult.getIssuer(), 
               verificationResult.getValidators(), contentAccessor);
       checkParticipantAccess(sdMetadata.getIssuer());
-      sdStore.storeSelfDescription(sdMetadata, verificationResult);
+      sdStorePublisher.storeSelfDescription(sdMetadata, verificationResult);
 
       log.debug("addSelfDescription.exit; returning self-description by hash: {}", sdMetadata.getSdHash());
       return ResponseEntity.created(URI.create("/self-descriptions/" + sdMetadata.getId())).body(sdMetadata);
@@ -210,12 +210,12 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
     // TODO: 27.07.2022 Need to change the description and the order of actions in the documentation
     //  (The documentation specifies a search by credential object, not by hash.)
 
-    SelfDescriptionMetadata sdMetadata = sdStore.getByHash(selfDescriptionHash);
+    SelfDescriptionMetadata sdMetadata = sdStorePublisher.getByHash(selfDescriptionHash);
 
     checkParticipantAccess(sdMetadata.getIssuer());
 
     if (sdMetadata.getStatus().equals(SelfDescriptionStatus.ACTIVE)) {
-      sdStore.changeLifeCycleStatus(sdMetadata.getSdHash(), SelfDescriptionStatus.REVOKED);
+      sdStorePublisher.changeLifeCycleStatus(sdMetadata.getSdHash(), SelfDescriptionStatus.REVOKED);
     } else {
       throw new ConflictException("The SD status cannot be changed because the SD Metadata status is "
           + sdMetadata.getStatus());

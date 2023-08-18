@@ -9,6 +9,7 @@ import java.util.Map;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import eu.xfsc.fc.api.generated.model.SelfDescription;
+import eu.xfsc.fc.api.generated.model.SelfDescriptionResult;
 
 public class SelfDescriptionClient extends ServiceClient {
 
@@ -20,7 +21,7 @@ public class SelfDescriptionClient extends ServiceClient {
         super(baseUrl, client);
     }
     
-    public List<SelfDescription> getSelfDescriptions(Instant uploadStart, Instant uploadEnd, Instant statusStart, Instant statusEnd, 
+    public List<SelfDescriptionResult> getSelfDescriptions(Instant uploadStart, Instant uploadEnd, Instant statusStart, Instant statusEnd, 
     		Collection<String> issuers, Collection<String> validators, Collection<String> statuses, Collection<String> ids,
             Collection<String> hashes, Boolean withMeta, Boolean withContent, Integer offset, Integer limit) {
     	StringBuilder query = new StringBuilder(baseUrl);
@@ -59,12 +60,17 @@ public class SelfDescriptionClient extends ServiceClient {
         doPost(baseUrl + "/self-descriptions/{self_description_hash}/revoke", null, Map.of("self_description_hash", hash), Void.class);
     }
 
-    public SelfDescription getSelfDescriptionById(String id) {
-        List<SelfDescription> sds = getSelfDescriptions(null, null, null, null, null, null, null, List.of(id), null, true, true, null, null);
+    public SelfDescriptionResult getSelfDescriptionByHash(String hash, boolean withMeta, boolean withContent) {
+        List<SelfDescriptionResult> sds = getSelfDescriptions(null, null, null, null, null, null, null, null, List.of(hash), withMeta, withContent, null, null);
+        return sds.isEmpty() ? null: sds.get(0);
+    }
+    
+    public SelfDescriptionResult getSelfDescriptionById(String id) {
+        List<SelfDescriptionResult> sds = getSelfDescriptions(null, null, null, null, null, null, null, List.of(id), null, true, true, null, null);
         return sds.isEmpty() ? null: sds.get(0);
     }
    
-    public List<SelfDescription> getSelfDescriptionsByIds(List<String> ids) {
+    public List<SelfDescriptionResult> getSelfDescriptionsByIds(List<String> ids) {
         return getSelfDescriptions(null, null, null, null, null, null, null, ids, null, true, true, null, null);
     }
     

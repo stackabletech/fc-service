@@ -26,6 +26,7 @@ import eu.xfsc.fc.core.pojo.ContentAccessorDirect;
 import eu.xfsc.fc.core.pojo.PaginatedResults;
 import eu.xfsc.fc.core.pojo.SdFilter;
 import eu.xfsc.fc.core.service.sdstore.SdMetaRecord;
+import eu.xfsc.fc.core.service.sdstore.SubjectHashRecord;
 import eu.xfsc.fc.core.service.sdstore.SubjectStatusRecord;
 import lombok.extern.slf4j.Slf4j;
 
@@ -112,14 +113,14 @@ public class SelfDescriptionDaoImpl implements SelfDescriptionDao {
 	}
 	
 	@Override
-	public String insert(SdMetaRecord sd) {
+	public SubjectHashRecord insert(SdMetaRecord sd) {
 	    String upsert = """
-   		  with u as (update sdfiles set status = :upStatus, statustime = :upStatusTime
-   	      where subjectid = :subjectId and status = 0 returning :sdHash sdhash, subjectid),
+   	      with u as (update sdfiles set status = :upStatus, statustime = :upStatusTime
+   	          where subjectid = :subjectId and status = 0 returning sdhash oldhash, :sdHash sdhash, subjectid),
    	      i as (insert into sdfiles(sdhash, subjectid, issuer, uploadtime, statustime, expirationtime, status, content, validators)
-   	      values (:sdHash, :subjectId, :issuer, :uploadTime, :statusTime, :expirationTime, :status, :content, :validators)
-   	      returning sdhash)
-   	      select u.subjectid from i full join u on u.sdhash = i.sdhash""";
+   	          values (:sdHash, :subjectId, :issuer, :uploadTime, :statusTime, :expirationTime, :status, :content, :validators)
+   	          returning sdhash)
+   	      select u.subjectid, u.oldhash from i full join u on u.sdhash = i.sdhash""";
 	    MapSqlParameterSource msps = new MapSqlParameterSource();
 	    msps.addValue("upStatus", SelfDescriptionStatus.DEPRECATED.ordinal());
 	    msps.addValue("upStatusTime", Timestamp.from(Instant.now()));
@@ -132,8 +133,8 @@ public class SelfDescriptionDaoImpl implements SelfDescriptionDao {
 	    msps.addValue("status", sd.getStatus().ordinal());
 	    msps.addValue("content", sd.getContent());
 	    msps.addValue("validators", sd.getValidators());
-	    String subId = jdbc.queryForObject(upsert, msps, String.class);
-		return subId;
+	    SubjectHashRecord subHash = jdbc.queryForObject(upsert, msps, new SDSubjectHashMapper());
+		return subHash;
 	}
 
 	@Override
@@ -283,6 +284,14 @@ public class SelfDescriptionDaoImpl implements SelfDescriptionDao {
 		}
     }
 	
+	private class SDSubjectHashMapper implements RowMapper<SubjectHashRecord> {
+
+		@Override
+		public SubjectHashRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
+			return new SubjectHashRecord(rs.getString(1), rs.getString(2));
+		}
+	}
+
 	private class SDSubjectStatusMapper implements RowMapper<SubjectStatusRecord> {
 
 		@Override

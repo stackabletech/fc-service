@@ -74,7 +74,7 @@ public class QueryControllerTest {
   private Neo4j embeddedDatabaseServer;
 
   @Autowired
-  private SelfDescriptionStore sdStore;
+  private SelfDescriptionStore sdStorePublisher;
 
   @Autowired
   private VerificationService verificationService;
@@ -106,7 +106,7 @@ public class QueryControllerTest {
     mockBackEnd91.shutdown();
     mockBackEnd90.shutdown();
     schemaStore.clear();
-    sdStore.clear();
+    sdStorePublisher.clear();
     embeddedDatabaseServer.close();
   }
 
@@ -209,7 +209,7 @@ public class QueryControllerTest {
     final SdFilter filterParams = new SdFilter();
     filterParams.setIds(uriId);
 
-    PaginatedResults<SelfDescriptionMetadata> byFilter = sdStore.getByFilter(filterParams, true, true);
+    PaginatedResults<SelfDescriptionMetadata> byFilter = sdStorePublisher.getByFilter(filterParams, true, true);
     int matchCount = byFilter.getResults().size();
 
     assertEquals(uriId.size(), matchCount);
@@ -429,7 +429,7 @@ public class QueryControllerTest {
     VerificationResultParticipant verificationResult = verificationService.verifyParticipantSelfDescription(contentAccessor);
     SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(verificationResult.getId(),
             verificationResult.getIssuer(), verificationResult.getValidators(), contentAccessor);
-    sdStore.storeSelfDescription(sdMetadata, verificationResult);
+    sdStorePublisher.storeSelfDescription(sdMetadata, verificationResult);
 
     //adding second sd
     ContentAccessorDirect contentAccessor2
@@ -438,7 +438,7 @@ public class QueryControllerTest {
             = verificationService.verifyOfferingSelfDescription(contentAccessor2);
     SelfDescriptionMetadata sdMetadata2 = new SelfDescriptionMetadata(verificationResult2.getId(),
             verificationResult2.getIssuer(), verificationResult2.getValidators(), contentAccessor2);
-    sdStore.storeSelfDescription(sdMetadata2, verificationResult2);
+    sdStorePublisher.storeSelfDescription(sdMetadata2, verificationResult2);
 
     //adding sd 3
    ContentAccessorDirect contentAccessorDirect3 =
@@ -447,7 +447,7 @@ public class QueryControllerTest {
         = verificationService.verifyParticipantSelfDescription(contentAccessorDirect3);
     SelfDescriptionMetadata sdMetadata3 = new SelfDescriptionMetadata(verificationResult3.getId(),
         verificationResult3.getIssuer(), verificationResult3.getValidators(), contentAccessorDirect3);
-    sdStore.storeSelfDescription(sdMetadata3, verificationResult2);
+    sdStorePublisher.storeSelfDescription(sdMetadata3, verificationResult2);
   }
 
 }
