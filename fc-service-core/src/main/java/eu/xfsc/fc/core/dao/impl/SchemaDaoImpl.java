@@ -14,6 +14,7 @@ import java.util.Map;
 import org.bouncycastle.util.Arrays;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
@@ -99,7 +100,11 @@ public class SchemaDaoImpl implements SchemaDao {
 	@Override
 	public Integer delete(String schemaId) {
 		String sql = "delete from schemafiles where schemaid = ? returning type";
-		return jdbc.queryForObject(sql, new Object[] {schemaId}, new int[] {java.sql.Types.VARCHAR}, Integer.class);
+		try {
+		  return jdbc.queryForObject(sql, new Object[] {schemaId}, new int[] {java.sql.Types.VARCHAR}, Integer.class);
+		} catch (EmptyResultDataAccessException ex) {
+		  return null;	
+		}
 	}
 
 	@Override
