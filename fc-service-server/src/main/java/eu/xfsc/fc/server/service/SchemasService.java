@@ -114,13 +114,10 @@ public class SchemasService implements SchemasApiDelegate {
    */
   @Override
   public ResponseEntity<Void> addSchema(String schema) {
-    log.debug("addSchema.enter; got schema of length: {}", schema.length());
+    log.debug("addSchema.enter; got schema of length: {}", schema == null ? "null" : schema.length());
     String id = schemaStore.addSchema(new ContentAccessorDirect(schema));
     log.debug("addSchema.exit; returning schema id {}", id);
-
-    return ResponseEntity
-        .created(URI.create("/schemas/" + id))
-        .body(null);
+    return ResponseEntity.created(URI.create("/schemas/" + id)).body(null);
   }
 
   /**
@@ -158,7 +155,7 @@ public class SchemasService implements SchemasApiDelegate {
   @Override
   public ResponseEntity<Void> updateSchema(String id, String schema) {
     String schemaId = URLDecoder.decode(id, Charset.defaultCharset());
-    log.debug("updateSchema.enter; got id: {}, schemaId: {}, schema: {}", id, schemaId, schema);
+    log.debug("updateSchema.enter; got id: {}, schemaId: {}, schema of length: {}", id, schemaId, schema == null ? "null" : schema.length());
     schemaStore.updateSchema(schemaId, new ContentAccessorDirect(schema));
     return ResponseEntity.ok(null);
   }
