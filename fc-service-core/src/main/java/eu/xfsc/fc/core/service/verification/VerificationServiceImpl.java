@@ -79,22 +79,28 @@ public class VerificationServiceImpl implements VerificationService {
   private static final Set<String> SIGNATURES = Set.of("JsonWebSignature2020"); //, "Ed25519Signature2018");
   private static final ClaimExtractor[] extractors = new ClaimExtractor[]{new TitaniumClaimExtractor(), new DanubeTechClaimExtractor()};
 
-  @Value("${federated-catalogue.verification.trust-anchor-url}")
-  private String trustAnchorAddr;
-
-  @Value("${federated-catalogue.verification.did-resolver-url}")
-  private String didResolverAddr;
-
   private static final int VRT_UNKNOWN = 0;
   private static final int VRT_PARTICIPANT = 1;
   private static final int VRT_OFFERING = 2;
   // take it from properties..
   private static final int HTTP_TIMEOUT = 5*1000; //5sec
 
+  @Value("${federated-catalogue.verification.semantics:true}")
+  private boolean verifySemantics;
+  @Value("${federated-catalogue.verification.schema:true}")
+  private boolean verifySchema;
+  @Value("${federated-catalogue.verification.signatures:true}")
+  private boolean verifySignatures;
+
   @Value("${federated-catalogue.verification.participant.type}")
   private String participantType; // "http://w3id.org/gaia-x/participant#Participant";
   @Value("${federated-catalogue.verification.service-offering.type}")
   private String serviceOfferingType; //"http://w3id.org/gaia-x/service#ServiceOffering";
+
+  @Value("${federated-catalogue.verification.trust-anchor-url}")
+  private String trustAnchorAddr;
+  @Value("${federated-catalogue.verification.did-resolver-url}")
+  private String didResolverAddr;
 
   @Autowired
   private SchemaStore schemaStore;
@@ -134,7 +140,7 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResultParticipant verifyParticipantSelfDescription(ContentAccessor payload) throws VerificationException {
-    return (VerificationResultParticipant) verifySelfDescription(payload, true, VRT_PARTICIPANT, true, true, true);
+    return (VerificationResultParticipant) verifySelfDescription(payload, true, VRT_PARTICIPANT, verifySemantics, verifySchema, verifySignatures);
   }
 
   /**
@@ -145,7 +151,7 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResultOffering verifyOfferingSelfDescription(ContentAccessor payload) throws VerificationException {
-    return (VerificationResultOffering) verifySelfDescription(payload, true, VRT_OFFERING, true, true, true);
+    return (VerificationResultOffering) verifySelfDescription(payload, true, VRT_OFFERING, verifySemantics, verifySchema, verifySignatures);
   }
 
   /**
@@ -156,7 +162,7 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResult verifySelfDescription(ContentAccessor payload) throws VerificationException {
-    return verifySelfDescription(payload, true, true, true);
+    return verifySelfDescription(payload, verifySemantics, verifySchema, verifySignatures);
   }
 
   @Override
@@ -614,8 +620,10 @@ public class VerificationServiceImpl implements VerificationService {
   
   private DIDDocument loadDIDfromURL(URL url) throws IOException {
     log.debug("loadDIDFromURL; loading DIDDocument from: {}", url.toString());
-	InputStream stream = url.openStream();
-    String docJson = IOUtils.toString(stream, StandardCharsets.UTF_8);
+	InputStream docStream = url.openStream();
+    //String didDoc = rest.getForObject(url.toString(), String.class);
+    //InputStream docStream = new ByteArrayInputStream(didDoc.getBytes(StandardCharsets.UTF_8));
+    String docJson = IOUtils.toString(docStream, StandardCharsets.UTF_8);
     return DIDDocument.fromJson(docJson);
   }
   
@@ -658,17 +666,6 @@ public class VerificationServiceImpl implements VerificationService {
   @SuppressWarnings("unchecked")
   private Instant hasPEMTrustAnchorAndIsNotExpired(String uri) throws IOException, CertificateException {
     log.debug("hasPEMTrustAnchorAndIsNotExpired.enter; got uri: {}", uri);
-    //StringBuilder result = new StringBuilder();
-    //URL url = new URL(uri);
-    //HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-    //conn.setRequestMethod("GET");
-    //try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-    //  for (String line; (line = reader.readLine()) != null;) {
-    //    result.append(line).append(System.lineSeparator());
-    //  }
-    //}
-    //String pem = result.toString();
-    
     String pem = rest.getForObject(uri, String.class);
     InputStream certStream = new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8));
     CertificateFactory certFactory = CertificateFactory.getInstance("X.509");

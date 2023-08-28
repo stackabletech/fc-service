@@ -113,7 +113,7 @@ affinity:
 restartPolicy: Always
 
 hostAliases:
-  - ip: "10.97.211.241" #use ClusterIP of your Ingress Controller here
+  - ip: "10.97.11.112" #use ClusterIP of your Ingress Controller here
     hostnames:
       - key-server
     
@@ -125,6 +125,8 @@ storage:
 env:
   - name: DATASTORE_FILE_PATH
     value: /var/lib/fc-service/filestore
+  - name: FEDERATED_CATALOGUE_VERIFICATION_SIGNATURES
+    value: "true"
   - name: GRAPHSTORE_URI
     value: bolt://fc-neo4j:7687
   - name: GRAPHSTORE_QUERY_TIMEOUT_IN_SECONDS
