@@ -114,6 +114,9 @@ federated-catalogue:
       type: "https://w3id.org/gaia-x/core#Participant"
     service-offering:
       type: "https://w3id.org/gaia-x/core#ServiceOffering"
+    semantics: true
+    schema: true
+    signatures: true
 
 logging:
   level:
