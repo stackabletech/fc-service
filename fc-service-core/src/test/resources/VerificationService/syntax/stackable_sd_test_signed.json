@@ -1,0 +1,60 @@
+{
+    "@id": "https://delta-dao.com/.well-known/participantStackable.json",
+    "proof": {
+        "created": "2023-08-28T12:27:36Z",
+        "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..Hy26py0v1ZpNo6Xnduu26QcQohj9b9PDMNI5sk8cTryB8ctzjS918fBJQM6jFDnpubKRFMTHABDLFg9auIrSrJ34WuJSisu6cUtfRG-u8XV8HhBmWqliTdhqS_-uC6zS2nWB99Gv9w1GUcXwsUMDUboujUXEkvpA55bnlIqSFcD8F7MiWPPlN6QozCKRvd05FR53N-LCEBmN1tAeDmujrrUPGwPsLCzkCfgpCxiAlvZQn9mTVbjWD5iPs9dJvgP8FY2GgWHtI7LAp0ccp53sEJY_7PT5EmRuImEfXM1ifCS0uC8CR7e7_5FQMht6TU_3kAIQMepZWbpXdmTBDTq46cP86u9SZRiBHbH4UvErwFn6_-5kc4YjJRLIrSzF_7VQnYrwQfW0CTz5okUY_6Xen1QwkMq-oMQXH42LHPZNgQei0bub7weoMz8lscbk7lHqadO7mPsT1Iuo6x_wkiQM0mUUwi_7AM0suSvKzsaUOWUZBMUsVL4CZ1G-fMig0MiTLVwB8b7Q8rUoqDJqUwqBhaeRzdmVPsYI3yn6HWu6N_ct67VluEPXISJwYgg7R2uEzD0_GuKyyoQqM9wW0SRakNoKLNKAuvVafht0Z0bHUmvU52McChMV1Rm5eC5xWFy4Pj_r5Vj4o4QoL6jUas6BuTeUcd5Sacp5FBOzyLJxcDY",
+        "proofPurpose": "assertionMethod",
+        "type": "JsonWebSignature2020",
+        "verificationMethod": "did:web:compliance.lab.gaia-x.eu"
+    },
+    "type": ["VerifiablePresentation"],
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    "verifiableCredential": {
+        "issuanceDate": "2022-10-19T18:48:09Z",
+        "credentialSubject": {
+            "gax-trust-framework:registrationNumber": "DE334447979",
+            "gax-trust-framework:legalName": "Stackable GmbH",
+            "gax-trust-framework:headquarterAddress": {
+                "vcard:country-name": "Germany",
+                "@type": "vcard:Address",
+                "vcard:street-address": "Thomas-Mann-Straße 8",
+                "vcard:locality": "Wedel",
+                "vcard:postal-code": "22880"
+            },
+            "@type": "gax-trust-framework:LegalPerson",
+            "gax-trust-framework:legalAddress": {
+                "vcard:country-name": "Germany",
+                "@type": "vcard:Address",
+                "vcard:street-address": "Thomas-Mann-Straße 8",
+                "vcard:locality": "Wedel",
+                "vcard:postal-code": "22880"
+            },
+            "@id": "gax-core:Participant1",
+            "@context": {
+                "gax-trust-framework": "https://w3id.org/gaia-x/gax-trust-framework#",
+                "xsd": "http://www.w3.org/2001/XMLSchema#",
+                "vcard": "http://www.w3.org/2006/vcard/ns#",
+                "gax-core": "https://w3id.org/gaia-x/core#"
+            },
+            "gax-trust-framework:termsAndConditions": {
+                "gax-trust-framework:content": {
+                    "@value": "https://docs.stackable.tech/home/stable/release_notes",
+                    "@type": "xsd:anyURI"
+                },
+                "@type": "gax-trust-framework:TermsAndConditions",
+                "gax-trust-framework:hash": "1234"
+            }
+        },
+        "@type": ["VerifiableCredential"],
+        "@id": "https://delta-dao.com/.well-known/participantStackable.json",
+        "proof": {
+            "created": "2023-08-28T12:27:35Z",
+            "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..c_E-ub5fIKruajQOsDa891MWKNdHK-9m1YSkj3ZE3ztGKXtM_-IHLBe4jOFjawdwo33ehib_xgl5Rf4x-tYFnuu4nImk_JYabWTBQoAxpnqB_3JBSFakt8lzFMKClw7lARGHY-Eyjw6R1GV7MJv-G5h3AGTH_7XokXiMObv3W7eMRQKxT6NxUfqgePx6pUeYBK_qu-IxpPQDUSvl8w_tisyJEI1fwHs9n8K-C_wbSJjqUXo3Gzpz3uSBS-iV4h4iblJI2qnRW1zTbefEr4H9T_D9hk06-u52ciQ9DOEl9Qq6iWZwKv6UKKxsGP0k5Etu2dS8c5EAJYcioXaGfEI_4Jcg_RL31EsGMsHZKUiM0eWalK9e-lp6e2tKEQuya1CwY7z_mtb3-cbZXkXPvPuAVQybk3AH_xNwwkP--8i-51EJxYIXZVJeCLDbcrIBd3At53hJuikuL8-60uLMFIKUjyWT3UVDBQheItHUz1k7ah03JmhzblwUNLOBlCcnoZJHVxdfLWlAqULjP0HNvMELVExFRf3skbUuPZzuhsY26_Ij1BikHJKcz6gIv-nczSe-3XJM30gJ-fUE-I-FyFHhEb9jo6tG4-Q_eDUr7_X-WaKzw8ZhJDrnOoACvr_TArlAhccBYnY5ryWZLsEs2vToIw_hSW_9HXytl9I1sDl7s0w",
+            "proofPurpose": "assertionMethod",
+            "type": "JsonWebSignature2020",
+            "verificationMethod": "did:web:compliance.lab.gaia-x.eu"
+        },
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        "issuer": "http://gaiax.de"
+    }
+}

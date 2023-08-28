@@ -1,0 +1,56 @@
+{
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1"
+    ],
+    "@id": "https://delta-dao.com/.well-known/participantStackable.json",
+    "type": [
+      "VerifiablePresentation"
+    ],
+    "verifiableCredential": [
+      {
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1"
+        ],
+        "@id": "https://delta-dao.com/.well-known/participantStackable.json",
+        "@type": [
+          "VerifiableCredential"
+        ],
+        "issuer": "http://gaiax.de",	
+        "issuanceDate": "2022-10-19T18:48:09Z",
+        "credentialSubject": {
+          "@context": {
+            "gax-core": "https://w3id.org/gaia-x/core#",
+            "gax-trust-framework": "https://w3id.org/gaia-x/gax-trust-framework#",
+            "xsd": "http://www.w3.org/2001/XMLSchema#",
+            "vcard": "http://www.w3.org/2006/vcard/ns#"
+          },
+          "@id": "gax-core:Participant1",
+          "@type": "gax-trust-framework:LegalPerson",
+          "gax-trust-framework:registrationNumber": "DE334447979",
+          "gax-trust-framework:legalAddress": {
+            "@type": "vcard:Address",
+            "vcard:country-name": "Germany",
+            "vcard:locality": "Wedel",
+            "vcard:postal-code": "22880",
+            "vcard:street-address": "Thomas-Mann-Straße 8"
+          },
+          "gax-trust-framework:headquarterAddress": {
+            "@type": "vcard:Address",
+            "vcard:country-name": "Germany",
+            "vcard:locality": "Wedel",
+            "vcard:postal-code": "22880",
+            "vcard:street-address": "Thomas-Mann-Straße 8"
+          },
+          "gax-trust-framework:termsAndConditions": {
+            "@type": "gax-trust-framework:TermsAndConditions",
+            "gax-trust-framework:content": {
+              "@type": "xsd:anyURI",
+              "@value": "https://docs.stackable.tech/home/stable/release_notes"
+            },
+            "gax-trust-framework:hash": "1234"
+          },
+          "gax-trust-framework:legalName": "Stackable GmbH"
+        }
+      }
+    ]
+  }

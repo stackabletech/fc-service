@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.junit.Ignore;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -200,6 +201,22 @@ public class VerificationServiceTest {
     assertNull(vrp.getValidators());
     assertNull(vrp.getValidatorDids());
     assertEquals(Instant.parse("2022-10-19T18:48:09Z"), vrp.getIssuedDateTime());
+  }
+
+  @Test
+  @Ignore
+  // this test fails as the proof (provided by the same repo's signer tool) does not match the verifier.
+  void verifyStackableSelfDescription() throws Exception {
+    log.debug("verifyStackableSelfDescription");
+    schemaStore.initializeDefaultSchemas();
+
+    ContentAccessor content = getAccessor("VerificationService/syntax/stackable_sd_test.json");
+    verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+    assertNotNull(vr);
+
+    content = getAccessor("VerificationService/syntax/stackable_sd_test_signed.json");
+    verificationService.verifySelfDescription(content, true, true, true);
   }
 
   @Test
