@@ -19,7 +19,7 @@ services:
 #      - pgdata:/var/lib/postgresql/data/
       - ./postgres-initdb-scripts:/docker-entrypoint-initdb.d
     healthcheck:
-      test: pg_isready -d postgres
+      test: pg_isready -d postgres -U postgres
       interval: 10s
       timeout: 5s
       retries: 3
@@ -46,6 +46,12 @@ services:
       - "gaia-x"
     restart: always
     command: neo4j
+    healthcheck:
+      test: ["CMD-SHELL", "/var/lib/neo4j/bin/neo4j status"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 #    volumes:
 #      - '$HOME/neo4j/data:/data'
 #      - '$HOME/neo4j/conf/:/conf/'
@@ -86,12 +92,18 @@ services:
       timeout: 5s
 
   nats:
-    image: nats:latest
+    image: nats:alpine
     ports:
       - "4222:4222"
       - "8222:8222"
     restart: always
-    command: --js --sd /data -p 4222  
+    command: --js --sd /data -p 4222 -m 8222
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8222/healthz || exit 1
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     networks: 
       - "gaia-x"
       
@@ -110,6 +122,12 @@ services:
       PUBLISHER_IMPL: nats
       PUBLISHER_URL: ${NATS_URL}
       SUBSCRIBER_IMPL: none
+    healthcheck:
+      test: curl --fail http://localhost:8081/actuator/health || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     ports:
       - "8081:8081"
     networks:
@@ -119,9 +137,12 @@ services:
       - "localhost:127.0.0.1"
     restart: always #unless-stopped
     depends_on:
-      - postgres
-      - neo4j
-      - nats
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
         
   portal:
     container_name: "demo-portal"
@@ -141,7 +162,10 @@ services:
       - "localhost:host-gateway"
     restart: unless-stopped
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_healthy
+      server:
+        condition: service_healthy
 
 networks:
   gaia-x:
