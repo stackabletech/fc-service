@@ -4,95 +4,70 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.example</groupId>
-    <artifactId>gxfsTest</artifactId>
-    <version>0.1.0</version>
+    <parent>
+        <groupId>eu.xfsc.cat</groupId>
+        <artifactId>fc-service</artifactId>
+        <version>1.0.0.local</version>
+    </parent>
 
-    <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-    </properties>
+    <artifactId>fc-tools-signer</artifactId>
+    <version>${revision}</version>
+    <packaging>jar</packaging>
+    <name>fc-tools-signer</name>
+    <description>The Self-Description signer tool</description>
 
-    <repositories>
-        <repository>
-            <id>danubetech-maven-public</id>
-            <url>https://repo.danubetech.com/repository/maven-public/</url>
-        </repository>
-    </repositories>
-
-        <dependencies>
-            <dependency>
-                <groupId>org.webjars.npm</groupId>
-                <artifactId>jsrsasign</artifactId>
-                <version>10.4.1</version>
-            </dependency>
-            <dependency>
-                <groupId>com.danubetech</groupId>
-                <artifactId>verifiable-credentials-java</artifactId>
-                <version>1.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>com.danubetech</groupId>
-                <artifactId>key-formats-java</artifactId>
-                <version>1.5.0</version>
-            </dependency>
-            <dependency>
-                <groupId>decentralized-identity</groupId>
-                <artifactId>did-common-java</artifactId>
-                <version>1.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>1.70</version>
-            </dependency>
-            <dependency>
-                <groupId>org.json</groupId>
-                <artifactId>json</artifactId>
-                <version>20220924</version>
-            </dependency>
-        </dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>com.danubetech</groupId>
+            <artifactId>verifiable-credentials-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.danubetech</groupId>
+            <artifactId>key-formats-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>decentralized-identity</groupId>
+            <artifactId>did-common-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <build>
       <plugins>
         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <!--version>CHOOSE LATEST VERSION HERE</version-->
-            <configuration>
-                <archive>
-                    <manifest>
-                        <addClasspath>true</addClasspath>
-                        <mainClass>org.example.Main</mainClass>
-                    </manifest>
-                </archive>
-                <descriptorRefs>
-                    <descriptorRef>jar-with-dependencies</descriptorRef>
-                </descriptorRefs>
-            </configuration>
-            <executions>
-                <execution>
-                    <id>assemble-all</id>
-                    <phase>package</phase>
-                    <goals>
-                        <goal>single</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-        
-        <!--plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-jar-plugin</artifactId>
+          <artifactId>maven-assembly-plugin</artifactId>
           <configuration>
             <archive>
               <manifest>
                 <addClasspath>true</addClasspath>
-                <mainClass>org.example.Main</mainClass>
+                <mainClass>eu.xfsc.fc.tools.signer.SDSigner</mainClass>
               </manifest>
             </archive>
+            <descriptorRefs>
+              <descriptorRef>jar-with-dependencies</descriptorRef>
+            </descriptorRefs>
+            <finalName>${project.artifactId}-${project.version}-full</finalName>
+            <appendAssemblyId>false</appendAssemblyId>
           </configuration>
-        </plugin-->
+          <executions>
+            <execution>
+              <id>assemble-all</id>
+              <phase>package</phase>
+              <goals>
+                <goal>single</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </build>
 

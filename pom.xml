@@ -36,6 +36,7 @@
         <module>fc-service-core</module>
         <module>fc-service-server</module>
         <module>fc-demo-portal</module>
+        <module>fc-tools/signer</module>
     </modules>
 
     <properties>
@@ -294,6 +295,11 @@
                 <artifactId>jnats</artifactId>
                 <version>${jnats.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk15on</artifactId>
+                <version>${bcpkix.jdk15on.version}</version>
+            </dependency>
                         
             <!-- Test dependencies -->
             <dependency>
@@ -318,12 +324,6 @@
                 <groupId>io.zonky.test</groupId>
                 <artifactId>embedded-database-spring-test</artifactId>
                 <version>${embedded.postgres.test.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${bcpkix.jdk15on.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
