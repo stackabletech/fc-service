@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.google.common.base.Strings;
 
 import eu.xfsc.fc.core.dao.SchemaDao;
+import eu.xfsc.fc.core.exception.ClientException;
 import eu.xfsc.fc.core.exception.ConflictException;
 import eu.xfsc.fc.core.exception.NotFoundException;
 import eu.xfsc.fc.core.exception.ServerException;
@@ -281,7 +280,7 @@ public class SchemaStoreImpl implements SchemaStore {
   public void updateSchema(String identifier, ContentAccessor schema) {
     SchemaRecord newRecord = analyzeSchemaRecord(schema);
     if (newRecord.schemaId() != null && !identifier.equals(newRecord.schemaId())) {
-      throw new IllegalArgumentException("Given schema does not have the same Identifier as the old schema: " + identifier + " <> " + newRecord.schemaId());
+      throw new ClientException("Given schema does not have the same Identifier as the old schema: " + identifier + " <> " + newRecord.schemaId());
     }
     
     try {
@@ -308,7 +307,7 @@ public class SchemaStoreImpl implements SchemaStore {
   @Override
   public void deleteSchema(String identifier) {
 	Integer type = dao.delete(identifier);
-    log.debug("deleteSchema; delete result: {}", type);
+    log.debug("deleteSchema; delete result: {} for id: {}", type, identifier);
     if (type == null) {
       throw new NotFoundException("Schema with id " + identifier + " was not found");
     }

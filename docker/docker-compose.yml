@@ -3,21 +3,32 @@ version: '3.7'
 services:
   postgres:
     container_name: "postgres"
-    image: postgres:latest
-    restart: always
+    image: library/postgres:14
+    restart: on-failure
     environment:
-#      POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_MULTIPLE_DATABASES: fed_cat, keycloak
     expose:
       - "5432"
     ports:
       - "5432:5432"
     networks:
       - "gaia-x"
-#    volumes:
+    volumes:
 #      - pgdata:/var/lib/postgresql/data/
-
+      - ./postgres-initdb-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: pg_isready -d postgres -U postgres
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          
   neo4j:
     container_name: "neo4j"
     image: neo4j:5.5.0
@@ -35,6 +46,12 @@ services:
       - "gaia-x"
     restart: always
     command: neo4j
+    healthcheck:
+      test: ["CMD-SHELL", "/var/lib/neo4j/bin/neo4j status"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 #    volumes:
 #      - '$HOME/neo4j/data:/data'
 #      - '$HOME/neo4j/conf/:/conf/'
@@ -42,6 +59,11 @@ services:
   keycloak:
     container_name: "keycloak"
     environment:
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_DB_SCHEMA: public
+      KC_FEATURES: preview
       KEYCLOAK_ADMIN: "${KEYCLOAK_ADMIN}"
       KEYCLOAK_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD}"
       PROXY_ADDRESS_FORWARDING: "true"
@@ -53,31 +75,40 @@ services:
     restart: unless-stopped
     volumes:
       - "../keycloak/providers:/opt/keycloak/providers"
-      - "../keycloak/realms:/tmp/import"
+      - "../keycloak/realms:/opt/keycloak/data/import"
     command:
       [
-          'start-dev --auto-build',
-          '-Dkeycloak.migration.action=import',
-          '-Dkeycloak.migration.provider=dir',
-          '-Dkeycloak.migration.dir=/tmp/import',
-          '-Dkeycloak.migration.strategy=OVERWRITE_EXISTING',
-          '-Dkeycloak.profile.feature.upload_scripts=enabled',
+          'start --auto-build --db postgres --hostname-strict-https false --hostname-strict false --proxy edge --http-enabled true --import-realm ',
           '--log-level=DEBUG,io.quarkus:INFO,liquibase:INFO,org.hibernate:INFO,org.infinispan:INFO,org.keycloak.services.scheduled:INFO,org.keycloak.transaction:INFO,io.netty.buffer.PoolThreadCache:INFO,org.keycloak.models.sessions.infinispan:INFO'
       ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:8080/realms/master"]
+      start_period: 10s
+      interval: 30s
+      retries: 3
+      timeout: 5s
 
   nats:
-    image: nats:latest
+    image: nats:alpine
     ports:
       - "4222:4222"
       - "8222:8222"
     restart: always
-    command: --js --sd /data -p 4222  
+    command: --js --sd /data -p 4222 -m 8222
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8222/healthz || exit 1
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     networks: 
       - "gaia-x"
       
   server:
     container_name: "fc-server"
-#    image: "${CI_REGISTRY}/fc-service-server:latest"
     build:
       context: "${FC_SERVICE_SERVER_DOCKER_CONTEXT}"
       dockerfile: Dockerfile
@@ -91,6 +122,12 @@ services:
       PUBLISHER_IMPL: nats
       PUBLISHER_URL: ${NATS_URL}
       SUBSCRIBER_IMPL: none
+    healthcheck:
+      test: curl --fail http://localhost:8081/actuator/health || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     ports:
       - "8081:8081"
     networks:
@@ -100,13 +137,15 @@ services:
       - "localhost:127.0.0.1"
     restart: always #unless-stopped
     depends_on:
-      - postgres
-      - neo4j
-      - nats
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
         
   portal:
     container_name: "demo-portal"
-#    image: "${CI_REGISTRY}/demo-portal:1.0.0"
     build:
       context: "${FC_DEMO_PORTAL_DOCKER_CONTEXT}"
       dockerfile: Dockerfile
@@ -123,7 +162,10 @@ services:
       - "localhost:host-gateway"
     restart: unless-stopped
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_healthy
+      server:
+        condition: service_healthy
 
 networks:
   gaia-x:
