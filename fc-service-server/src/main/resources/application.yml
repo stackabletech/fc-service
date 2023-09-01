@@ -112,6 +112,8 @@ federated-catalogue:
     did-resolver-url: "https://dev.uniresolver.io/1.0/identifiers/"
     participant:
       type: "https://w3id.org/gaia-x/core#Participant"
+    resource:
+      type: "https://w3id.org/gaia-x/core#Resource"
     service-offering:
       type: "https://w3id.org/gaia-x/core#ServiceOffering"
     semantics: true

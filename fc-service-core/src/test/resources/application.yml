@@ -47,9 +47,11 @@ federated-catalogue:
     did-resolver-url: "https://dev.uniresolver.io/1.0/identifiers/"
     participant:
       type: "http://w3id.org/gaia-x/participant#Participant"
+    resource:
+      type: "http://w3id.org/gaia-x/resource#Resource"
     service-offering:
       type: "http://w3id.org/gaia-x/service#ServiceOffering"
-
+      
 logging:
   level:
     root: INFO

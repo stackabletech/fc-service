@@ -361,6 +361,22 @@ public class SelfDescriptionControllerTest {
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
+    public void addResourceReturnCreatedResponse() throws Exception {
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions/resource")
+                .content(getMockFileDataAsString("sd_resource.json"))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        SelfDescription sd = objectMapper.readValue(result.getResponse().getContentAsString(), SelfDescription.class);
+        sdStorePublisher.deleteSelfDescription(sd.getSdHash());
+    }
+
+    @Test
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void addDuplicateSDReturnConflictWithSdStorage() throws Exception {
       String sd = getMockFileDataAsString(SD_FILE_NAME);
       ContentAccessorDirect contentAccessor = new ContentAccessorDirect(sd);
