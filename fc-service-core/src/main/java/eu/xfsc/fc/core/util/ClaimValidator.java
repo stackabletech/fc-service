@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
@@ -50,6 +51,7 @@ import com.apicatalog.rdf.RdfValue;
 import eu.xfsc.fc.core.exception.QueryException;
 import eu.xfsc.fc.core.pojo.ContentAccessor;
 import eu.xfsc.fc.core.pojo.SdClaim;
+import eu.xfsc.fc.core.service.verification.TrustFrameworkBaseClass;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -225,7 +227,7 @@ public class ClaimValidator {
     
     private static final String CREDENTIAL_SUBJECT = "https://www.w3.org/2018/credentials#credentialSubject";
     
-    public static Boolean getSubjectType(ContentAccessor ontology, StreamManager sm, String subject, String partType, String offerType) {
+    public static TrustFrameworkBaseClass getSubjectType(ContentAccessor ontology, StreamManager sm, String subject, Map<TrustFrameworkBaseClass, String> сlassUris) {
         try {
           Model data = ModelFactory.createDefaultModel();
           RDFParser.create()
@@ -240,11 +242,12 @@ public class ClaimValidator {
             List <RDFNode> rdfNodeList = typeNode.toList();
             for (RDFNode rdfNode: rdfNodeList) {
               String resourceURI = rdfNode.asResource().getURI();
-              if (checkTypeSubClass(ontology, resourceURI, partType)) {
-                return true;
-              }
-              if (checkTypeSubClass(ontology, resourceURI, offerType)) {
-                return false;
+              // Check whether the type is or is at least derived from one of the base types according to the TrustFramework
+              for (TrustFrameworkBaseClass baseClass: TrustFrameworkBaseClass.values()) {
+                String сlassUri = сlassUris.get(baseClass);
+                if (checkTypeSubClass(ontology, resourceURI, сlassUri)) {
+                  return baseClass;
+                }
               }
             }
           }

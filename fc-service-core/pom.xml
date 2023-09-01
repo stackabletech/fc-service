@@ -83,10 +83,6 @@
             <artifactId>verifiable-credentials-java</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.danubetech</groupId>
-            <artifactId>key-formats-java</artifactId>
-        </dependency>
-        <dependency>
             <groupId>decentralized-identity</groupId>
             <artifactId>did-common-java</artifactId>
         </dependency>

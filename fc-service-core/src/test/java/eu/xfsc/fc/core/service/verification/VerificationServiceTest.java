@@ -36,6 +36,7 @@ import eu.xfsc.fc.core.pojo.SemanticValidationResult;
 import eu.xfsc.fc.core.pojo.VerificationResult;
 import eu.xfsc.fc.core.pojo.VerificationResultOffering;
 import eu.xfsc.fc.core.pojo.VerificationResultParticipant;
+import eu.xfsc.fc.core.pojo.VerificationResultResource;
 import eu.xfsc.fc.core.service.schemastore.SchemaStoreImpl;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import lombok.extern.slf4j.Slf4j;
@@ -144,9 +145,9 @@ public class VerificationServiceTest {
     log.debug("validSyntax_ValidServiceNewSchema");
     schemaStore.initializeDefaultSchemas();
     ContentAccessor content = getAccessor("VerificationService/syntax/serviceOffering2.jsonld");
-    verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "https://w3id.org/gaia-x/core#ServiceOffering");
     VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
-    verificationService.setTypes("http://w3id.org/gaia-x/participant#Participant", "http://w3id.org/gaia-x/service#ServiceOffering");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "http://w3id.org/gaia-x/service#ServiceOffering");
     assertNotNull(vr);
     assertTrue(vr instanceof VerificationResultOffering);
     assertFalse(vr instanceof VerificationResultParticipant);
@@ -185,9 +186,9 @@ public class VerificationServiceTest {
     log.debug("validSyntax_ValidPerson2");
     schemaStore.initializeDefaultSchemas();
     ContentAccessor content = getAccessor("VerificationService/syntax/legalPerson2.jsonld");
-    verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "https://w3id.org/gaia-x/core#Participant"); 
     VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
-    verificationService.setTypes("http://w3id.org/gaia-x/participant#Participant", "http://w3id.org/gaia-x/service#ServiceOffering");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "http://w3id.org/gaia-x/participant#Participant"); 
     assertNotNull(vr);
     assertTrue(vr instanceof VerificationResultParticipant);
     assertFalse(vr instanceof VerificationResultOffering);
@@ -202,6 +203,27 @@ public class VerificationServiceTest {
     assertEquals(Instant.parse("2022-10-19T18:48:09Z"), vrp.getIssuedDateTime());
   }
 
+  @Test
+  void validSyntax_ValidResourceNewSchema() throws Exception {
+    log.debug("validSyntax_ValidResource");
+    schemaStore.initializeDefaultSchemas();
+    ContentAccessor content = getAccessor("VerificationService/syntax/resourceSD.jsonld");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.RESOURCE, "https://w3id.org/gaia-x/core#Resource"); 
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.RESOURCE, "http://w3id.org/gaia-x/resource#Resource"); 
+    assertNotNull(vr);
+    assertTrue(vr instanceof VerificationResultResource);
+    assertFalse(vr instanceof VerificationResultOffering);
+    VerificationResultResource vrr = (VerificationResultResource) vr;
+    assertEquals("did:example:fad49ec6-d488-4bf9-bae5-d0ffa62a9bd2", vrr.getId());
+    assertEquals("did:web:compliance.lab.gaia-x.eu", vrr.getIssuer());
+    assertEquals(Instant.parse("2023-08-08T11:29:40Z"), vrr.getIssuedDateTime());
+    assertNotNull(vrr.getClaims());
+    assertEquals(4, vrr.getClaims().size()); 
+    assertNull(vrr.getValidators());
+    assertNull(vrr.getValidatorDids());
+  }
+  
   @Test
   void invalidProof_InvalidSignatureType() throws Exception {
     log.debug("invalidProof_InvalidSignatureType");
@@ -271,9 +293,9 @@ public class VerificationServiceTest {
     log.debug("validSyntax_ValidSO");
     //schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     schemaStore.initializeDefaultSchemas();
-    verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "https://w3id.org/gaia-x/core#ServiceOffering");
     VerificationResult vr = verificationService.verifySelfDescription(getAccessor("Signature-Tests/gxfsSignarure.jsonld"), true, true, true);
-    verificationService.setTypes("http://w3id.org/gaia-x/participant#Participant", "http://w3id.org/gaia-x/service#ServiceOffering");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "http://w3id.org/gaia-x/service#ServiceOffering");
     assertNotNull(vr);
   }
     

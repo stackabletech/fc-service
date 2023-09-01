@@ -29,6 +29,7 @@ import eu.xfsc.fc.core.pojo.PaginatedResults;
 import eu.xfsc.fc.core.pojo.SdFilter;
 import eu.xfsc.fc.core.pojo.SelfDescriptionMetadata;
 import eu.xfsc.fc.core.pojo.VerificationResultOffering;
+import eu.xfsc.fc.core.pojo.VerificationResultResource;
 import eu.xfsc.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.xfsc.fc.core.service.verification.VerificationService;
 import eu.xfsc.fc.server.generated.controller.SelfDescriptionsApiDelegate;
@@ -187,11 +188,45 @@ public class SelfDescriptionService implements SelfDescriptionsApiDelegate {
       log.debug("addSelfDescription.exit; returning self-description by hash: {}", sdMetadata.getSdHash());
       return ResponseEntity.created(URI.create("/self-descriptions/" + sdMetadata.getId())).body(sdMetadata);
     } catch (ValidationException exception) {
-      log.debug("Self-description isn't parsed due to: " + exception.getMessage(), exception);
+      log.debug("addSelfDescription.error; Self-description isn't parsed due to: " + exception.getMessage(), exception);
       throw new ClientException("Self-description isn't parsed due to: " + exception.getMessage());
     }
   }
 
+  /**
+   * Service method for POST /self-descriptions : Add a new SD to the catalogue.
+   *
+   * @param selfDescription The new SD (required)
+   * @return Created (status code 201)
+   *         or The request was accepted but the validation is not finished yet. (status code 202)
+   *         or May contain hints how to solve the error or indicate what was wrong in the request. (status code 400)
+   *         or Forbidden. The user does not have the permission to execute this request. (status code 403)
+   *         or May contain hints how to solve the error or indicate what went wrong at the server.
+   *         Must not outline any information about the internal structure of the server. (status code 500)
+   */
+  @Override
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public ResponseEntity<SelfDescription> addResource(String selfDescription) {
+    log.debug("addResource.enter; got selfDescription: {}", selfDescription.length());
+
+    try {
+      ContentAccessorDirect contentAccessor = new ContentAccessorDirect(selfDescription);
+
+      VerificationResultResource verificationResult = verificationService.verifyResourceSelfDescription(contentAccessor);
+
+      SelfDescriptionMetadata sdMetadata = new SelfDescriptionMetadata(verificationResult.getId(), verificationResult.getIssuer(), 
+              verificationResult.getValidators(), contentAccessor);
+      checkParticipantAccess(sdMetadata.getIssuer());
+      sdStorePublisher.storeSelfDescription(sdMetadata, verificationResult);
+
+      log.debug("addResource.exit; returning self-description by hash: {}", sdMetadata.getSdHash());
+      return ResponseEntity.created(URI.create("/self-descriptions/" + sdMetadata.getId())).body(sdMetadata);
+    } catch (ValidationException exception) {
+      log.debug("addResource.error; Self-description isn't parsed due to: " + exception.getMessage(), exception);
+      throw new ClientException("Self-description isn't parsed due to: " + exception.getMessage());
+    }
+  }
+  
   /**
    * Service method for POST /self-descriptions/{self_description_hash}/revoke :
    * Change the lifecycle state of a SD to revoke.
