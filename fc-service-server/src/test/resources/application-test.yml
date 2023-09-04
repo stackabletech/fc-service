@@ -3,6 +3,8 @@ federated-catalogue:
   verification:
     participant:
       type: "http://w3id.org/gaia-x/participant#Participant"
+    resource:
+      type: "http://w3id.org/gaia-x/gax-trust-framework#Resource"
     service-offering:
       type: "http://w3id.org/gaia-x/service#ServiceOffering"
   query:

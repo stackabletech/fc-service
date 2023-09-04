@@ -7,6 +7,7 @@ import eu.xfsc.fc.core.pojo.SemanticValidationResult;
 import eu.xfsc.fc.core.pojo.VerificationResult;
 import eu.xfsc.fc.core.pojo.VerificationResultOffering;
 import eu.xfsc.fc.core.pojo.VerificationResultParticipant;
+import eu.xfsc.fc.core.pojo.VerificationResultResource;
 
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,14 @@ public interface VerificationService {
    */
   VerificationResultOffering verifyOfferingSelfDescription(ContentAccessor payload) throws VerificationException;
 
+  /**
+   * The function validates the Self-Description as JSON and tries to parse the json handed over.
+   *
+   * @param payload ContentAccessor to SD which should be syntactically validated.
+   * @return a Verification result. If the verification fails, the reason explains the issue.
+   */
+  VerificationResultResource verifyResourceSelfDescription(ContentAccessor payload) throws VerificationException;
+  
   /**
    * The function validates the Self-Description as JSON and tries to parse the json handed over.
    *

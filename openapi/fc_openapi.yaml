@@ -514,7 +514,7 @@ paths:
     post:
       tags:
         - SelfDescriptions
-      summary: Add a new SelfDescription to the catalogue
+      summary: Add a new Service-Offering SelfDescription to the catalogue
       operationId: addSelfDescription
       security:
         - jwt: []
@@ -550,6 +550,43 @@ paths:
                 page.
               schema:
                 type: integer
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /self-descriptions/resource:
+    post:
+      tags:
+        - SelfDescriptions
+      summary: Add a new Resource SelfDescription to the catalogue
+      operationId: addResource
+      security:
+        - jwt: []
+      requestBody:
+        description: The new Resource SelfDescription
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        '201':
+          description: Created
+          headers:
+            location:
+              description: URL of the added Self-Description.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfDescription'
         '400':
           $ref: '#/components/responses/ClientError'
         '401':

@@ -1,5 +1,7 @@
 package eu.xfsc.fc.core.service.verification;
 
+import static eu.xfsc.fc.core.service.verification.TrustFrameworkBaseClass.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,12 +15,14 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -57,6 +61,7 @@ import eu.xfsc.fc.core.pojo.Validator;
 import eu.xfsc.fc.core.pojo.VerificationResult;
 import eu.xfsc.fc.core.pojo.VerificationResultOffering;
 import eu.xfsc.fc.core.pojo.VerificationResultParticipant;
+import eu.xfsc.fc.core.pojo.VerificationResultResource;
 import eu.xfsc.fc.core.service.filestore.FileStore;
 import eu.xfsc.fc.core.service.schemastore.SchemaStore;
 import eu.xfsc.fc.core.util.ClaimValidator;
@@ -66,6 +71,7 @@ import foundation.identity.jsonld.JsonLDObject;
 import info.weboftrust.ldsignatures.LdProof;
 import info.weboftrust.ldsignatures.verifier.JsonWebSignature2020LdVerifier;
 import info.weboftrust.ldsignatures.verifier.LdVerifier;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -79,9 +85,6 @@ public class VerificationServiceImpl implements VerificationService {
   private static final Set<String> SIGNATURES = Set.of("JsonWebSignature2020"); //, "Ed25519Signature2018");
   private static final ClaimExtractor[] extractors = new ClaimExtractor[]{new TitaniumClaimExtractor(), new DanubeTechClaimExtractor()};
 
-  private static final int VRT_UNKNOWN = 0;
-  private static final int VRT_PARTICIPANT = 1;
-  private static final int VRT_OFFERING = 2;
   // take it from properties..
   private static final int HTTP_TIMEOUT = 5*1000; //5sec
 
@@ -93,9 +96,13 @@ public class VerificationServiceImpl implements VerificationService {
   private boolean verifySignatures;
 
   @Value("${federated-catalogue.verification.participant.type}")
-  private String participantType; // "http://w3id.org/gaia-x/participant#Participant";
+  private String participantType; 
   @Value("${federated-catalogue.verification.service-offering.type}")
-  private String serviceOfferingType; //"http://w3id.org/gaia-x/service#ServiceOffering";
+  private String serviceOfferingType; 
+  @Value("${federated-catalogue.verification.resource.type}")
+  private String resourceType;
+
+  private Map<TrustFrameworkBaseClass, String> trustFrameworkBaseClassUris;
 
   @Value("${federated-catalogue.verification.trust-anchor-url}")
   private String trustAnchorAddr;
@@ -132,6 +139,14 @@ public class VerificationServiceImpl implements VerificationService {
     return new RestTemplate(factory); 
   }
   
+  @PostConstruct
+  private void initializeTrustFrameworkBaseClasses() {
+    trustFrameworkBaseClassUris = new HashMap<>();
+    trustFrameworkBaseClassUris.put(SERVICE_OFFERING, serviceOfferingType);
+    trustFrameworkBaseClassUris.put(RESOURCE, resourceType);
+    trustFrameworkBaseClassUris.put(PARTICIPANT, participantType);
+  }
+  
   /**
    * The function validates the Self-Description as JSON and tries to parse the json handed over.
    *
@@ -140,7 +155,7 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResultParticipant verifyParticipantSelfDescription(ContentAccessor payload) throws VerificationException {
-    return (VerificationResultParticipant) verifySelfDescription(payload, true, VRT_PARTICIPANT, verifySemantics, verifySchema, verifySignatures);
+    return (VerificationResultParticipant) verifySelfDescription(payload, true, PARTICIPANT, verifySemantics, verifySchema, verifySignatures);
   }
 
   /**
@@ -151,9 +166,21 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResultOffering verifyOfferingSelfDescription(ContentAccessor payload) throws VerificationException {
-    return (VerificationResultOffering) verifySelfDescription(payload, true, VRT_OFFERING, verifySemantics, verifySchema, verifySignatures);
+    return (VerificationResultOffering) verifySelfDescription(payload, true, SERVICE_OFFERING, verifySemantics, verifySchema, verifySignatures);
   }
 
+  
+  /**
+   * The function validates the Self-Description as JSON and tries to parse the json handed over.
+   *
+   * @param payload ContentAccessor to SD which should be syntactically validated.
+   * @return a Verification result. If the verification fails, the reason explains the issue.
+   */
+  @Override
+  public VerificationResultResource verifyResourceSelfDescription(ContentAccessor payload) throws VerificationException {
+	return (VerificationResultResource) verifySelfDescription(payload, true, RESOURCE, verifySemantics, verifySchema, verifySignatures);
+  }
+  
   /**
    * The function validates the Self-Description as JSON and tries to parse the json handed over.
    *
@@ -168,13 +195,13 @@ public class VerificationServiceImpl implements VerificationService {
   @Override
   public VerificationResult verifySelfDescription(ContentAccessor payload, boolean verifySemantics, boolean verifySchema, 
 		  boolean verifySignatures) throws VerificationException {
-    return verifySelfDescription(payload, false, VRT_UNKNOWN, verifySemantics, verifySchema, verifySignatures);
+    return verifySelfDescription(payload, false, null, verifySemantics, verifySchema, verifySignatures);
   }
 
-  private VerificationResult verifySelfDescription(ContentAccessor payload, boolean strict, int expectedType, boolean verifySemantics, 
+  private VerificationResult verifySelfDescription(ContentAccessor payload, boolean strict, TrustFrameworkBaseClass expectedClass, boolean verifySemantics, 
 		  boolean verifySchema, boolean verifySignatures) throws VerificationException {
     log.debug("verifySelfDescription.enter; strict: {}, expectedType: {}, verifySemantics: {}, verifySchema: {}, verifySignatures: {}",
-            strict, expectedType, verifySemantics, verifySchema, verifySignatures);
+            strict, expectedClass, verifySemantics, verifySchema, verifySignatures);
     long stamp = System.currentTimeMillis();
 
     // syntactic validation
@@ -183,10 +210,10 @@ public class VerificationServiceImpl implements VerificationService {
 
     // semantic verification
     long stamp2 = System.currentTimeMillis();
-    TypedCredentials tcs;
+    TypedCredentials typedCredentials;
     if (verifySemantics) {
       try {
-        tcs = verifyPresentation(vp);
+    	typedCredentials = verifyPresentation(vp);
       } catch (VerificationException ex) {
         throw ex;
       } catch (Exception ex) {
@@ -194,28 +221,22 @@ public class VerificationServiceImpl implements VerificationService {
         throw new VerificationException("Semantic error: " + ex.getMessage());
       }
     } else {
-      tcs = getCredentials(vp);
+    	typedCredentials = getCredentials(vp);
     }
     log.debug("verifySelfDescription; credentials processed, time taken: {}", System.currentTimeMillis() - stamp2);
 
-    if (tcs.isEmpty()) {
+    if (typedCredentials.isEmpty()) {
       throw new VerificationException("Semantic Error: no proper CredentialSubject found");
     }
 
+    Collection<TrustFrameworkBaseClass> baseClasses = typedCredentials.getBaseClasses();
+    TrustFrameworkBaseClass baseClass = baseClasses.iterator().next();
     if (strict) {
-      if (tcs.isParticipant()) {
-        if (tcs.isOffering()) {
-          throw new VerificationException("Semantic error: SD is both, Participant and Service Offering SD");
-        }
-        if (expectedType == VRT_OFFERING) {
-          throw new VerificationException("Semantic error: Expected Service Offering SD, got Participant SD");
-        }
-      } else if (tcs.isOffering()) {
-        if (expectedType == VRT_PARTICIPANT) {
-          throw new VerificationException("Semantic error: Expected Participant SD, got Service Offering SD");
-        }
-      } else {
-        throw new VerificationException("Semantic error: SD is neither Participant nor Service Offering SD");
+      if (baseClasses.size() > 1) {
+        throw new VerificationException("Semantic error: SD has several types: " + baseClasses);
+      }
+      if (baseClass != expectedClass) {
+        throw new VerificationException("Semantic error: expected SD of type " + expectedClass + " but found " + baseClass);
       }
     }
 
@@ -258,28 +279,31 @@ public class VerificationServiceImpl implements VerificationService {
     // signature verification
     List<Validator> validators;
     if (verifySignatures) {
-      validators = checkCryptography(tcs);
+      validators = checkCryptography(typedCredentials);
     } else {
       validators = null; //is it ok?
     }
 
-    String id = tcs.getID();
-    String issuer = tcs.getIssuer();
-    Instant issuedDate = tcs.getIssuanceDate();
+    String id = typedCredentials.getID();
+    String issuer = typedCredentials.getIssuer();
+    Instant issuedDate = typedCredentials.getIssuanceDate();
 
     VerificationResult result;
-    if (tcs.isParticipant()) {
+    if (baseClass == PARTICIPANT) {
       if (issuer == null) {
         issuer = id;
       }
-      String method = tcs.getProofMethod();
-      String holder = tcs.getHolder();
+      String method = typedCredentials.getProofMethod();
+      String holder = typedCredentials.getHolder();
       String name = holder == null ? issuer : holder;
       result = new VerificationResultParticipant(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
               claims, validators, name, method);
-    } else if (tcs.isOffering()) {
+    } else if (baseClass == SERVICE_OFFERING) {
       result = new VerificationResultOffering(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
               id, claims, validators);
+    } else if (baseClass == RESOURCE) {
+        result = new VerificationResultResource(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
+                id, claims, validators);
     } else {
       result = new VerificationResult(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
               id, claims, validators);
@@ -314,9 +338,9 @@ public class VerificationServiceImpl implements VerificationService {
       sb.append(" - VerifiablePresentation must contain 'verifiableCredential' property").append(sep);
     }
     TypedCredentials tcreds = getCredentials(presentation);
-    List<VerifiableCredential> credentials = tcreds.getCredentials();
-    for (int i = 0; i < credentials.size(); i++) {
-      VerifiableCredential credential = credentials.get(i);
+    Collection<VerifiableCredential> credentials = tcreds.getCredentials();
+    int i = 0;
+    for (VerifiableCredential credential: credentials) {
       if (credential != null) {
         if (checkAbsence(credential, "@context")) {
           sb.append(" - VerifiableCredential[").append(i).append("] must contain '@context' property").append(sep);
@@ -344,6 +368,7 @@ public class VerificationServiceImpl implements VerificationService {
           sb.append(" - 'expirationDate' of VerifiableCredential[").append(i).append("] must be in the future").append(sep);
         }
       }
+      i++;
     }
 
     if (sb.length() > 0) {
@@ -419,11 +444,15 @@ public class VerificationServiceImpl implements VerificationService {
     return streamManager;
   }
 
-  public void setTypes(String partType, String soType) {
-    this.participantType = partType;
-    this.serviceOfferingType = soType;
+  /**
+   * Override URI set for one of the Trust Framework base classes.
+   * @param baseClass The base class for which the URI is to be overwritten
+   * @param uri New URI
+   */
+  public void setBaseClassUri(TrustFrameworkBaseClass baseClass, String uri) {
+    trustFrameworkBaseClassUris.put(baseClass, uri);
   }
-
+  
 
   /* SD validation against SHACL Schemas */
   @Override
@@ -700,10 +729,8 @@ public class VerificationServiceImpl implements VerificationService {
 
   private class TypedCredentials {
 
-    private Boolean isParticipant;
-    private Boolean isOffering;
     private VerifiablePresentation presentation;
-    private List<VerifiableCredential> credentials;
+    private Map<VerifiableCredential, TrustFrameworkBaseClass> credentials;
 
     TypedCredentials(VerifiablePresentation presentation) {
       this.presentation = presentation;
@@ -713,44 +740,41 @@ public class VerificationServiceImpl implements VerificationService {
     @SuppressWarnings("unchecked")
     private void initCredentials() {
       Object obj = presentation.getJsonObject().get("verifiableCredential");
-      List<VerifiableCredential> creds;
+      Map<VerifiableCredential, TrustFrameworkBaseClass> creds;
       if (obj == null) {
-        creds = Collections.emptyList();
+        creds = Collections.emptyMap();
       } else if (obj instanceof List) {
         List<Map<String, Object>> l = (List<Map<String, Object>>) obj;
-        creds = new ArrayList<>(l.size());
+        creds = new LinkedHashMap<>(l.size());
         for (Map<String, Object> _vc : l) {
           VerifiableCredential vc = VerifiableCredential.fromMap(_vc);
-          Pair<Boolean, Boolean> p = getSDTypes(vc);
-          if (Objects.equals(p.getLeft(), p.getRight())) {
-            continue;
+          TrustFrameworkBaseClass bc = getSDBaseClass(vc);
+          if (bc != null) {
+            creds.put(vc, bc);
           }
-          creds.add(vc);
-          // TODO: dont't think the next two lines are correct..
-          // not sure we should override existing values
-          isParticipant = p.getLeft();
-          isOffering = p.getRight();
         }
       } else {
         VerifiableCredential vc = VerifiableCredential.fromMap((Map<String, Object>) obj);
-        Pair<Boolean, Boolean> p = getSDTypes(vc);
-        if (Objects.equals(p.getLeft(), p.getRight())) {
-          creds = Collections.emptyList();
+        TrustFrameworkBaseClass bc = getSDBaseClass(vc);
+        if (bc == null) {
+          creds = Collections.emptyMap();
         } else {
-          creds = List.of(vc);
-          isParticipant = p.getLeft();
-          isOffering = p.getRight();
+          creds = Map.of(vc, bc);
         }
       }
       this.credentials = creds;
     }
 
     private VerifiableCredential getFirstVC() {
-      return credentials.isEmpty() ? null : credentials.get(0);
+      return credentials.isEmpty() ? null : credentials.keySet().iterator().next();
     }
 
-    List<VerifiableCredential> getCredentials() {
-      return credentials;
+    Collection<TrustFrameworkBaseClass> getBaseClasses() {
+      return credentials.values().stream().distinct().toList();
+    }
+
+    Collection<VerifiableCredential> getCredentials() {
+      return credentials.keySet();
     }
 
     String getHolder() {
@@ -812,24 +836,13 @@ public class VerificationServiceImpl implements VerificationService {
       return credentials.isEmpty();
     }
 
-    boolean isParticipant() {
-      return isParticipant != null && isParticipant;
-    }
-
-    boolean isOffering() {
-      return isOffering != null && isOffering;
-    }
-
-    private Pair<Boolean, Boolean> getSDTypes(VerifiableCredential credential) {
+    private TrustFrameworkBaseClass getSDBaseClass(VerifiableCredential credential) {
       ContentAccessor gaxOntology = schemaStore.getCompositeSchema(SchemaStore.SchemaType.ONTOLOGY);
-      Boolean result = ClaimValidator.getSubjectType(gaxOntology, getStreamManager(), credential.toJson(), participantType, serviceOfferingType);
-      log.debug("getSDTypes; got type result: {}", result);
-      if (result == null) {
-        return Pair.of(false, false);
-      }
-      return result ? Pair.of(true, false) : Pair.of(false, true);
+      TrustFrameworkBaseClass result = ClaimValidator.getSubjectType(gaxOntology, getStreamManager(), credential.toJson(), trustFrameworkBaseClassUris);
+      log.debug("getSDBaseClass; got type result: {}", result);
+      return result;
     }
-
+    
     @SuppressWarnings("unchecked")
     private List<CredentialSubject> getSubjects(VerifiableCredential credential) {
       Object obj = credential.getJsonObject().get("credentialSubject");
