@@ -212,7 +212,7 @@ public class VerificationServiceTest {
     schemaStore.initializeDefaultSchemas();
 
     ContentAccessor content = getAccessor("VerificationService/syntax/stackable_sd_test.json");
-    verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
+    //verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
     VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
     assertNotNull(vr);
 
