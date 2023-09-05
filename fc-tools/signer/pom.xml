@@ -8,6 +8,7 @@
         <groupId>eu.xfsc.cat</groupId>
         <artifactId>fc-service</artifactId>
         <version>1.0.0.local</version>
+        <relativePath>../..</relativePath>
     </parent>
 
     <artifactId>fc-tools-signer</artifactId>
