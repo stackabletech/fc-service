@@ -302,8 +302,8 @@ public class VerificationServiceImpl implements VerificationService {
       result = new VerificationResultOffering(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
               id, claims, validators);
     } else if (baseClass == RESOURCE) {
-        result = new VerificationResultResource(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
-                id, claims, validators);
+      result = new VerificationResultResource(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
+              id, claims, validators);
     } else {
       result = new VerificationResult(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
               id, claims, validators);
@@ -319,7 +319,7 @@ public class VerificationServiceImpl implements VerificationService {
     try {
       return VerifiablePresentation.fromJson(content.getContentAsString());
     } catch (Exception ex) {
-      log.error("parseContent.syntactic error;", ex);
+      log.warn("parseContent.syntactic error: {}", ex.getMessage());
       throw new ClientException("Syntactic error: " + ex.getMessage(), ex);
     }
   }
