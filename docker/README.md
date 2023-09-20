@@ -5,7 +5,7 @@ Ensure you have JDK 17, Maven 3.5.4 (or newer) and Git installed
 First clone the Federated Catalogue repository:
 
 ``` sh
-git clone https://gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service.git
+git clone git@gitlab.eclipse.org:eclipse/xfsc/cat/fc-service.git
 ```
 
 ## Run Catalog
