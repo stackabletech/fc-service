@@ -8,6 +8,7 @@ COPY fc-test-support fc-test-support
 COPY fc-service-core fc-service-core
 COPY fc-service-server fc-service-server
 COPY fc-demo-portal fc-demo-portal
+COPY fc-tools fc-tools
 COPY openapi openapi
 
 COPY pom.xml pom.xml
