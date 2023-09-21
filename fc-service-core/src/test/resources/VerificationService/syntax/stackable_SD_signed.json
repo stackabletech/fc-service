@@ -1,0 +1,60 @@
+{
+  "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+  "@id" : "https://delta-dao.com/.well-known/participantStackable.json",
+  "type" : [ "VerifiablePresentation" ],
+  "verifiableCredential" : [ {
+    "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+    "@id" : "https://delta-dao.com/.well-known/participantStackable.json",
+    "@type" : [ "VerifiableCredential" ],
+    "issuer" : "http://gaiax.de",
+    "issuanceDate" : "2022-10-19T18:48:09Z",
+    "credentialSubject" : {
+      "@context" : {
+        "gax-core" : "https://w3id.org/gaia-x/core#",
+        "gax-trust-framework" : "https://w3id.org/gaia-x/gax-trust-framework#",
+        "xsd" : "http://www.w3.org/2001/XMLSchema#",
+        "vcard" : "http://www.w3.org/2006/vcard/ns#"
+      },
+      "@id" : "gax-core:Participant1",
+      "@type" : "gax-trust-framework:LegalPerson",
+      "gax-trust-framework:registrationNumber" : "DE334447979",
+      "gax-trust-framework:legalAddress" : {
+        "@type" : "vcard:Address",
+        "vcard:country-name" : "Germany",
+        "vcard:locality" : "Wedel",
+        "vcard:postal-code" : "22880",
+        "vcard:street-address" : "Thomas-Mann-Straße 8"
+      },
+      "gax-trust-framework:headquarterAddress" : {
+        "@type" : "vcard:Address",
+        "vcard:country-name" : "Germany",
+        "vcard:locality" : "Wedel",
+        "vcard:postal-code" : "22880",
+        "vcard:street-address" : "Thomas-Mann-Straße 8"
+      },
+      "gax-trust-framework:termsAndConditions" : {
+        "@type" : "gax-trust-framework:TermsAndConditions",
+        "gax-trust-framework:content" : {
+          "@type" : "xsd:anyURI",
+          "@value" : "https://docs.stackable.tech/home/stable/release_notes"
+        },
+        "gax-trust-framework:hash" : "1234"
+      },
+      "gax-trust-framework:legalName" : "Stackable GmbH"
+    },
+    "proof" : {
+      "type" : "JsonWebSignature2020",
+      "created" : "2023-09-21T10:47:34Z",
+      "proofPurpose" : "assertionMethod",
+      "verificationMethod" : "did:web:compliance.lab.gaia-x.eu",
+      "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..nt-G9pSQ-bdrZSCYPEMyl0qhgdUaX8VBMWryaVmqNxULkY7lIl9bIybAhz3da57VOF8NLQowLRiiMTYz9-70EQj8-AsECB1G5Rfq4UwjhDwf2C4Hc7IMTiH5zk0SANoVId16A4qjvh5Ja6b_fAIVFqAPR4eixgzC6K5K88JDH7IuPw4gXGC9h6DYHZgC_RcfxNdKQmotfSSHyB9FSCfp25Nu5VsgkFxSE5nH3fHX35v7W_roXm1wP835qqj-W4pr4CTBVaGX7q8UfSAYwWO4ZUy8rK_aYHn7PVYCBwSPSSwdR8v8_kP8p3G-z-Fq2qjeGooYAXTWcSRorwf13lqnEIrnMivCtVTPQaYpN6FRXkbtJTPHs5uKO7ds4B4xTxdcCkUCo1nzElPVgmxi8PW8unhRjYjAJnmOIPLnnnDUyvNHemytSEFqBE31JIzdwmQnrgWmq94GrIzngYjMWJ_8k2n3-7_1bZxupHfrIrhlPdlnI-58B4rhwvIXJw-hR8l6TWzPMeeG-vFkBQLH01cIbwwghJLf4awRRqpgPdUhrNAIZACnVUgxW1l6R1Ac59L57l5cuxYe0nFXdeZbQusyhVimn5EWDWAMP8tkVV1teAFUUuQkNOG29hLHvwtxSRGgUhNNEmQKmZZPzKLu1_UZo34Gs59PhtDB94PSvEcZnhE"
+    }
+  } ],
+  "proof" : {
+    "type" : "JsonWebSignature2020",
+    "created" : "2023-09-21T10:47:34Z",
+    "proofPurpose" : "assertionMethod",
+    "verificationMethod" : "did:web:compliance.lab.gaia-x.eu",
+    "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..DkI6UvRGQp9X-dIkvmfjIc9y_Ae2WlijkXgb3ps_JGFt6pyoMaqOYZAN_iuWbmkbYOgW9lFlYTDDnhzV54_09LEpwdSNIhK4DvHC0WcQIcUCT8f4ohdsE9LxclSmUpy9e7wQhs0LBpy_qKzHb8h43H4phZiZkqLTRuaDg9q9Ms9-wSqmkBs4IQUOddVDc1l6hIz-eeaK9pXl6zQXn-ltm-O8F_XpHHfTwYGFPtHEq9yaUsKTRxQ2cWYOlnMyOE__53IfQsDCTJF5GIj5Phx7xqZwv5oZ5xYoV2SeZTxM6I-7w2naOeG4YOXcrSkYXujXrt_BJug_Wt2Tg8vBjr16FkU6EH6TNvwTQ8rvH5w3lSkPH_GfldizPcyuGowxUrEHjZFzh6AESufBdw49wOoeCkpK6nRHmcuc4yUv0OvSLx2ZCdwbDZfcNE1g6qyijvg1FCKB-v-ek1F5Br2BJH_YZpQim5Xny_i_JftMMtU668xxkE84cXWuUU5sVtg8zBTxs9CJ76J9t3sBZl3e1tg-clU0zzpnxa2CaM98aaINFW90cWE6cxT4BKpn3dIkuhAKMg0g1Otc2LkBycPmvqHN20hlV4Rd7HU-bzeE1uLNwMDRXho51SoQ0X-SyFQy1vbFHAB4X9T7NXon_3c2ABDKeVZy1J3Yovz4zCmFL27WOqI"
+  }
+}

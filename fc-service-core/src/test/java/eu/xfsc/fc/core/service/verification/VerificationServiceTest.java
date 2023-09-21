@@ -205,19 +205,24 @@ public class VerificationServiceTest {
   }
 
   @Test
-  @Ignore
-  // this test fails as the proof (provided by the same repo's signer tool) does not match the verifier.
-  void verifyStackableSelfDescription() throws Exception {
-    log.debug("verifyStackableSelfDescription");
+  void verifyStackableSD() throws Exception {
+    log.debug("verifyStackableSD");
     schemaStore.initializeDefaultSchemas();
 
-    ContentAccessor content = getAccessor("VerificationService/syntax/stackable_sd_test.json");
-    //verificationService.setTypes("https://w3id.org/gaia-x/core#Participant", "https://w3id.org/gaia-x/core#ServiceOffering");
+    ContentAccessor content = getAccessor("VerificationService/syntax/stackable_SD_unsigned.json");
+
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "https://w3id.org/gaia-x/core#ServiceOffering");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "https://w3id.org/gaia-x/core#Participant");
+
     VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
     assertNotNull(vr);
 
-    content = getAccessor("VerificationService/syntax/stackable_sd_test_signed.json");
+    content = getAccessor("VerificationService/syntax/stackable_SD_signed.json");
     verificationService.verifySelfDescription(content, true, true, true);
+
+    // reset to defaults
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "http://w3id.org/gaia-x/service#ServiceOffering");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "http://w3id.org/gaia-x/participant#Participant");
   }
 
   void validSyntax_ValidResourceNewSchema() throws Exception {
