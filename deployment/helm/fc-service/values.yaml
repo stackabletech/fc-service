@@ -2,9 +2,11 @@ name: fc-service
 replicaCount: 1
 
 image:
-  repository: registry.gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/fc-service-server
+  #repository: registry.gitlab.com/gaia-x/data-infrastructure-federation-services/cat/fc-service/fc-service-server
+  repository: docker.stackable.tech/sandbox/xfsc/fc-service-server
   pullPolicy: Always
-  tag: "1.1.1"
+  #tag: "1.1.1"
+  tag: "1.3.0"
 
 fullnameOverride: "fc-service"
 
@@ -73,7 +75,7 @@ affinity:
 restartPolicy: Always
 
 hostAliases:
-  - ip: "10.97.11.112" #use ClusterIP of your Ingress Controller here
+  - ip: "10.96.221.149" #use ClusterIP of your Ingress Controller here
     hostnames:
       - key-server.stackable.com
     
