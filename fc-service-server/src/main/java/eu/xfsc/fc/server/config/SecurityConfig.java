@@ -19,7 +19,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
@@ -51,7 +50,8 @@ public class SecurityConfig {
     http
       .csrf().disable()
       .authorizeHttpRequests(authorization -> authorization
-		  .requestMatchers(antMatcher(HttpMethod.GET, "/api/**")).permitAll()
+          .requestMatchers(antMatcher(HttpMethod.OPTIONS, "/**")).permitAll()
+          .requestMatchers(antMatcher(HttpMethod.GET, "/api/**")).permitAll()
           .requestMatchers(antMatcher(HttpMethod.GET, "/swagger-ui/**")).permitAll()
           .requestMatchers(antMatcher(HttpMethod.GET, "/actuator")).permitAll()
           .requestMatchers(antMatcher(HttpMethod.GET, "/actuator/**")).permitAll()
