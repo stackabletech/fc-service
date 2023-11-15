@@ -106,7 +106,7 @@
                 var checkVerifySemantics = $("#verifySemantics").is(":checked") ? "true" : "false";
                 var checkVerifySchema = $("#verifySchema").is(":checked") ? "true" : "false";
                 var checkVerifySignatures = $("#verifySignatures").is(":checked") ? "true" : "false";
-                var urlWithParam = "/verification?verifySemantics="+checkVerifySemantics+"&verifySchema="+checkVerifySchema+"&verifySignatures="+checkVerifySignatures;
+                var urlWithParam = "verification?verifySemantics="+checkVerifySemantics+"&verifySchema="+checkVerifySchema+"&verifySignatures="+checkVerifySignatures;
 
                 $.ajax(urlWithParam,{
                     type: 'POST',
