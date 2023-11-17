@@ -15,7 +15,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -40,11 +39,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import com.apicatalog.jsonld.document.Document;
-import com.apicatalog.jsonld.document.JsonDocument;
-import com.apicatalog.jsonld.http.ProfileConstants;
 import com.apicatalog.jsonld.loader.DocumentLoader;
-import com.apicatalog.jsonld.loader.DocumentLoaderOptions;
 import com.apicatalog.jsonld.loader.SchemeRouter;
 import com.danubetech.keyformats.JWK_to_PublicKey;
 import com.danubetech.keyformats.crypto.PublicKeyVerifier;
@@ -71,7 +66,6 @@ import eu.xfsc.fc.core.service.filestore.FileStore;
 import eu.xfsc.fc.core.service.schemastore.SchemaStore;
 import eu.xfsc.fc.core.util.ClaimValidator;
 import foundation.identity.did.DIDDocument;
-import foundation.identity.jsonld.ConfigurableDocumentLoader;
 import foundation.identity.jsonld.JsonLDException;
 import foundation.identity.jsonld.JsonLDObject;
 import info.weboftrust.ldsignatures.LdProof;
@@ -114,8 +108,6 @@ public class VerificationServiceImpl implements VerificationService {
   private String trustAnchorAddr;
   @Value("${federated-catalogue.verification.did-resolver-url}")
   private String didResolverAddr;
-  @Value("${federated-catalogue.verification.additional-contexts}")
-  private List<String> trustAnchorAdditionalContexts;
 
   @Autowired
   private SchemaStore schemaStore;
@@ -129,6 +121,10 @@ public class VerificationServiceImpl implements VerificationService {
 
   @Autowired
   private ObjectMapper objectMapper;
+  
+  @Qualifier("additionalContextDocumentLoader")
+  @Autowired
+  private DocumentLoader documentLoader;
 
   private boolean loadersInitialised;
   private StreamManager streamManager;
@@ -218,38 +214,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     // see https://gitlab.eclipse.org/eclipse/xfsc/cat/fc-service/-/issues/200
     // add GAIA-X context(s) if present
-    // TODO all w3c context files are part of the libraries in use, may be we should add the 
-    //      contexts we configure in the application into the catalog and load them by a classloader
-    //      instead of streaming them all the time. Right now we should stay with this solution, since
-    //      GAIA-X is enforcing fast changes during the last months...
-    if (vp.getDocumentLoader() instanceof ConfigurableDocumentLoader
-    		&& this.trustAnchorAdditionalContexts != null 
-    		&& !this.trustAnchorAdditionalContexts.isEmpty()) {
-		final ConfigurableDocumentLoader cdl = ConfigurableDocumentLoader.class.cast(vp.getDocumentLoader());
-
-		final DocumentLoaderOptions loaderOptions = new DocumentLoaderOptions();
-        loaderOptions.setProfile(ProfileConstants.CONTEXT);
-        loaderOptions.setRequestProfile(Arrays.asList(loaderOptions.getProfile()));
-
-        for (final String trustAnchroContextUrl : this.trustAnchorAdditionalContexts) {
-	        try {
-				final URI uri = URI.create(trustAnchroContextUrl);
-				// use cached document loader
-	        	final Document document = SchemeRouter.defaultInstance().loadDocument(uri, loaderOptions);
-	        	if (document instanceof JsonDocument) {
-					final JsonDocument jsonDocument = JsonDocument.class.cast(document);
-					cdl.getLocalCache().put(uri, jsonDocument);
-					log.debug("Add additional context {} to the VerifiablePresentation", trustAnchroContextUrl);
-	        	} else {
-	        		log.error("Load an unknown document type '{}' for context '{}', expected was '{}'", document.getClass(), trustAnchroContextUrl, JsonDocument.class.getSimpleName());
-			        throw new VerificationException("Unknown document format while load additional (GAIA-X) context '" + trustAnchroContextUrl + "'");
-	        	}
-			} catch (Exception ex) {
-				log.error("Unexpected error while try to load additional (GAIA-X) context {} to the VerifiablePresentation", trustAnchroContextUrl);
-		        throw new VerificationException("Unexpected error while load additional (GAIA-X) context '" + trustAnchroContextUrl + "': " + ex.getMessage());
-			} 
-        }
-    }
+    vp.setDocumentLoader(this.documentLoader);
     
     // semantic verification
     long stamp2 = System.currentTimeMillis();
@@ -466,10 +431,12 @@ public class VerificationServiceImpl implements VerificationService {
   private void initLoaders() {
     if (!loadersInitialised) {
       log.debug("initLoaders; Setting up Caching com.apicatalog.jsonld DocumentLoader");
-      DocumentLoader cachingLoader = new CachingHttpLoader(fileStore);
+//      DocumentLoader cachingLoader = new CachingHttpLoader(fileStore);
       SchemeRouter loader = (SchemeRouter) SchemeRouter.defaultInstance();
-      loader.set("http", cachingLoader);
-      loader.set("https", cachingLoader);
+//      loader.set("http", cachingLoader);
+//      loader.set("https", cachingLoader);
+      loader.set("http", documentLoader);
+      loader.set("https", documentLoader);
       loadersInitialised = true;
     }
   }
