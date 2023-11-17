@@ -758,6 +758,7 @@ public class VerificationServiceImpl implements VerificationService {
         creds = new LinkedHashMap<>(l.size());
         for (Map<String, Object> _vc : l) {
           VerifiableCredential vc = VerifiableCredential.fromMap(_vc);
+          vc.setDocumentLoader(this.presentation.getDocumentLoader());
           TrustFrameworkBaseClass bc = getSDBaseClass(vc);
           if (bc != null) {
             creds.put(vc, bc);
@@ -765,6 +766,7 @@ public class VerificationServiceImpl implements VerificationService {
         }
       } else {
         VerifiableCredential vc = VerifiableCredential.fromMap((Map<String, Object>) obj);
+        vc.setDocumentLoader(this.presentation.getDocumentLoader());
         TrustFrameworkBaseClass bc = getSDBaseClass(vc);
         if (bc == null) {
           creds = Collections.emptyMap();
