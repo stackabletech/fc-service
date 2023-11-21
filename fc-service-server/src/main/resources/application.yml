@@ -110,6 +110,8 @@ federated-catalogue:
   verification:
     trust-anchor-url: "https://registry.lab.gaia-x.eu/v1/api/trustAnchor/chain/file"
     did-resolver-url: "https://dev.uniresolver.io/1.0/identifiers/"
+    # add additional context for the GAIA-X trustfromework here. Use a comma separated list of URLs, that will be loaded as additional context(s) into the VerifiablePresentation
+    additional-contexts: ""
     participant:
       type: "https://w3id.org/gaia-x/core#Participant"
     resource:

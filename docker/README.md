@@ -1,4 +1,4 @@
-0## Build & Test Procedure
+# Build & Test Procedure
 
 Ensure you have JDK 17, Maven 3.5.4 (or newer) and Git installed
 
@@ -37,6 +37,18 @@ When all components started you should setup Keycloak which is used as Identity 
 - Restart fc-service-server container to pick up changes applied at the second step above.
 
 Now you can test FC Service with Demo Portal web app. Go to `http://localhost:8088` in your browser and press Login button. You should be redirected to Keycloak Login page. Use  user credentials you created above..
+
+
+### Add gx prefix to the catalog
+- load the postmann collection from `/fc-service/fc-tools/Federated Catalogue API.postman_collection.json`
+- POST `/fc-service/examples/gx.rdf` to /schema endpoint
+
+
+### Add additional context(s) to the catalog
+- open the `/fc-service-core/src/test/resources/application.yml` for editing
+- search for `federated-catalogue.verification.additional-contexts`
+- add a comma separated list of context URLs (e.g. `"https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework# , https://registry.lab.gaia-x.eu/v1/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#"`
+- build and run the catalog again
 
 ## Run tests
 To run all tests as part of this project run `mvn test` in the root folder of the repository.

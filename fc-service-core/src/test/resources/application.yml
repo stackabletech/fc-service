@@ -45,6 +45,7 @@ federated-catalogue:
   verification:
     trust-anchor-url: "https://registry.lab.gaia-x.eu/v1/api/trustAnchor/chain/file"
     did-resolver-url: "https://dev.uniresolver.io/1.0/identifiers/"
+    additional-contexts: "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework# , https://registry.lab.gaia-x.eu/v1/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#"
     participant:
       type: "http://w3id.org/gaia-x/participant#Participant"
     resource:
