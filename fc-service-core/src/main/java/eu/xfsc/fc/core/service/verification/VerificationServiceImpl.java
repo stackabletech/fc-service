@@ -121,6 +121,10 @@ public class VerificationServiceImpl implements VerificationService {
 
   @Autowired
   private ObjectMapper objectMapper;
+  
+  @Qualifier("additionalContextDocumentLoader")
+  @Autowired
+  private DocumentLoader documentLoader;
 
   private boolean loadersInitialised;
   private StreamManager streamManager;
@@ -208,6 +212,10 @@ public class VerificationServiceImpl implements VerificationService {
     VerifiablePresentation vp = parseContent(payload);
     log.debug("verifySelfDescription; content parsed, time taken: {}", System.currentTimeMillis() - stamp);
 
+    // see https://gitlab.eclipse.org/eclipse/xfsc/cat/fc-service/-/issues/200
+    // add GAIA-X context(s) if present
+    vp.setDocumentLoader(this.documentLoader);
+    
     // semantic verification
     long stamp2 = System.currentTimeMillis();
     TypedCredentials typedCredentials;
@@ -302,8 +310,8 @@ public class VerificationServiceImpl implements VerificationService {
       result = new VerificationResultOffering(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
               id, claims, validators);
     } else if (baseClass == RESOURCE) {
-        result = new VerificationResultResource(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
-                id, claims, validators);
+      result = new VerificationResultResource(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
+              id, claims, validators);
     } else {
       result = new VerificationResult(Instant.now(), SelfDescriptionStatus.ACTIVE.getValue(), issuer, issuedDate,
               id, claims, validators);
@@ -319,7 +327,7 @@ public class VerificationServiceImpl implements VerificationService {
     try {
       return VerifiablePresentation.fromJson(content.getContentAsString());
     } catch (Exception ex) {
-      log.error("parseContent.syntactic error;", ex);
+      log.warn("parseContent.syntactic error: {}", ex.getMessage());
       throw new ClientException("Syntactic error: " + ex.getMessage(), ex);
     }
   }
@@ -423,10 +431,12 @@ public class VerificationServiceImpl implements VerificationService {
   private void initLoaders() {
     if (!loadersInitialised) {
       log.debug("initLoaders; Setting up Caching com.apicatalog.jsonld DocumentLoader");
-      DocumentLoader cachingLoader = new CachingHttpLoader(fileStore);
+//      DocumentLoader cachingLoader = new CachingHttpLoader(fileStore);
       SchemeRouter loader = (SchemeRouter) SchemeRouter.defaultInstance();
-      loader.set("http", cachingLoader);
-      loader.set("https", cachingLoader);
+//      loader.set("http", cachingLoader);
+//      loader.set("https", cachingLoader);
+      loader.set("http", documentLoader);
+      loader.set("https", documentLoader);
       loadersInitialised = true;
     }
   }
@@ -748,6 +758,7 @@ public class VerificationServiceImpl implements VerificationService {
         creds = new LinkedHashMap<>(l.size());
         for (Map<String, Object> _vc : l) {
           VerifiableCredential vc = VerifiableCredential.fromMap(_vc);
+          vc.setDocumentLoader(this.presentation.getDocumentLoader());
           TrustFrameworkBaseClass bc = getSDBaseClass(vc);
           if (bc != null) {
             creds.put(vc, bc);
@@ -755,6 +766,7 @@ public class VerificationServiceImpl implements VerificationService {
         }
       } else {
         VerifiableCredential vc = VerifiableCredential.fromMap((Map<String, Object>) obj);
+        vc.setDocumentLoader(this.presentation.getDocumentLoader());
         TrustFrameworkBaseClass bc = getSDBaseClass(vc);
         if (bc == null) {
           creds = Collections.emptyMap();

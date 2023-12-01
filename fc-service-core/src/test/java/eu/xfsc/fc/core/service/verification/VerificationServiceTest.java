@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -26,6 +27,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 import eu.xfsc.fc.core.config.DatabaseConfig;
+import eu.xfsc.fc.core.config.DocumentLoaderConfig;
 import eu.xfsc.fc.core.config.FileStoreConfig;
 import eu.xfsc.fc.core.dao.impl.SchemaDaoImpl;
 import eu.xfsc.fc.core.dao.impl.ValidatorCacheDaoImpl;
@@ -46,7 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
-@ContextConfiguration(classes = {VerificationServiceTest.TestApplication.class, FileStoreConfig.class,
+@ContextConfiguration(classes = {VerificationServiceTest.TestApplication.class, FileStoreConfig.class, DocumentLoaderConfig.class,
         VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DatabaseConfig.class, ValidatorCacheDaoImpl.class})
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 public class VerificationServiceTest {
@@ -422,6 +424,20 @@ public class VerificationServiceTest {
     assertEquals(expectedClaims, actualClaims);
   }
 
+  @Test
+  void extractClaims_participantTwoAdditionalContextTest() throws Exception {
+    log.debug("extractClaims_participantTwoVCsTest");
+    schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
+    ContentAccessor content = getAccessor("Claims-Extraction-Tests/participantTwoAdditionalContext.jsonld");
+    try {
+		verificationService.verifySelfDescription(content, true, true, true);
+		fail("Signature error expected");
+	} catch (VerificationException e) {
+		assertFalse(e.getMessage().contains("Imported context is null"), "Context related error message not expecteed");
+		assertTrue(e.getMessage().contains("VerifiablePresentation does not match with proof"), "Exception message not expecteed");
+	}
+  }
+  
   @Test
   void extractClaims_participantTwoCSsTest() throws Exception {
     log.debug("extractClaims_participantTwoCSsTest");

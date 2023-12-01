@@ -31,7 +31,7 @@ services:
           
   neo4j:
     container_name: "neo4j"
-    image: neo4j:5.5.0
+    image: neo4j:5.7.0
     environment:
       NEO4J_AUTH: "${GRAPH_STORE_USER}/${GRAPH_STORE_PASSWORD}"
       NEO4J_server_http_listen__address: :7474

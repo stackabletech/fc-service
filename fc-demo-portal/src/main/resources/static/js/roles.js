@@ -6,7 +6,7 @@ $(document).ready(function() {
 
                      $.ajax({
                          type: "GET",
-                         url: "/roles",
+                         url: "roles",
                          datatype: 'json',
                          success: function (response) {
                              $.each(response, function(index, item) {
