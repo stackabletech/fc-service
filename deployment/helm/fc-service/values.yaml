@@ -2,7 +2,7 @@ name: fc-service
 replicaCount: 1
 
 image:
-  repository: docker.stackable.tech/sandbox/xfsc/fc-service-server
+  repository: docker.stackable.tech/gaia-x/xfsc/fc-service-server
   pullPolicy: Always
   tag: "1.4.0"
 
@@ -34,8 +34,9 @@ ingress:
     nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
     nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
     nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    cert-manager.io/cluster-issuer: letsencrypt
   hosts:
-    - host: fc-server.stackable.com
+    - host: fc.xfsc.stackable.tech
       paths:
         - path: /
           pathType: Prefix
@@ -73,9 +74,9 @@ affinity:
 restartPolicy: Always
 
 hostAliases:
-  - ip: "10.96.221.149" #use ClusterIP of your Ingress Controller here
+  - ip: "10.233.51.172" #use ClusterIP of your Ingress Controller here
     hostnames:
-      - key-server.stackable.com
+      - keycloak.xfsc.stackable.tech
     
 storage:
   enabled: false
@@ -94,7 +95,7 @@ env:
   - name: GRAPHSTORE_PASSWORD
     value: neo12345
   - name: KEYCLOAK_AUTH_SERVER_URL
-    value: http://key-server.stackable.com
+    value: http://keycloak.xfsc.stackable.tech
   - name: KEYCLOAK_CREDENTIALS_SECRET
     valueFrom:
       secretKeyRef:
@@ -108,7 +109,7 @@ env:
         name: fc-postgres
         key: postgres-password
   - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
-    value: http://key-server.stackable.com/realms/gaia-x
+    value: http://keycloak.xfsc.stackable.tech/realms/gaia-x
 
 postgresql:
   fullnameOverride: fc-postgres
@@ -143,9 +144,9 @@ keycloak:
     - name: PROXY_ADDRESS_FORWARDING
       value: "true"
     - name: KEYCLOAK_FRONTEND_URL
-      value: "http://key-server.stackable.com/"
+      value: "http://keycloak.xfsc.stackable.tech/"
     - name: KEYCLOAK_ADMIN_URL
-      value: "http://key-server.stackable.com/admin/"
+      value: "http://keycloak.xfsc.stackable.tech/admin/"
   extraVolumeMounts:
     - name: config
       mountPath: "/config"
@@ -175,9 +176,10 @@ keycloak:
     ingressClassName: nginx
     annotations:
       nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+      cert-manager.io/cluster-issuer: letsencrypt
     pathType: Prefix
     path: /
-    hostname: key-server.stackable.com
+    hostname: keycloak.xfsc.stackable.tech
     servicePort: 8080
   serviceAccount:
     create: false
