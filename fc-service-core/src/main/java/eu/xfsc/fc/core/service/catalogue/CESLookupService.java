@@ -25,12 +25,11 @@ import static eu.xfsc.fc.core.service.catalogue.utils.constant.CESConstant.*;
 @RequiredArgsConstructor
 public class CESLookupService {
 
-    private final ObjectMapper mapper;
     private final CESTrackerDao cesTracker;
     private final CESClient cesClient;
     private final ServiceOfferService serviceOfferService;
 
-    @Scheduled(cron = "${scheduler.ces.lookup.cron}")
+    @Scheduled(cron = "${scheduler.ces.lookup.cron:-}")
     public void cesLookup() {
         String lastReceivedEventId = cesTracker.fetchLastIngestedEvent();
         List<Object> cesCredentials = cesClient.fetchCredentials(lastReceivedEventId, 0L, 10L);
