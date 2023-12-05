@@ -22,7 +22,7 @@ public class CESTrackerDaoImpl implements CESTrackerDao {
 
     @Override
     public CESTracker getByCesId(String cesId) {
-        String sql = "SELECT * FROM ces_process_tracker Where ces_id=?";
+        String sql = "SELECT * FROM ces_process_tracker WHERE ces_id=?";
         try {
             return jdbc.queryForObject(sql, new Object[]{cesId}, new RowMapper<>() {
                 @Override
