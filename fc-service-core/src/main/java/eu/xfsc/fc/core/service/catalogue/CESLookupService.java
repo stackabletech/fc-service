@@ -1,6 +1,5 @@
 package eu.xfsc.fc.core.service.catalogue;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.xfsc.fc.core.dao.catalogue.CESTrackerDao;
 import eu.xfsc.fc.core.service.catalogue.serviceoffer.ServiceOfferService;
 import eu.xfsc.fc.core.service.catalogue.utils.InvokeService;
@@ -70,11 +69,27 @@ public class CESLookupService {
     private void checkSelfDescriptionType(String cesId, String url) {
         try {
             String sdJson = InvokeService.executeRequest(url, HttpMethod.GET);
+            if (!sdJson.contains(GX_SERVICE_OFFERING)) {
+                log.info("Credential with CES ID {} is not a service", cesId);
+                return;
+            }
+
             JSONObject sd = new JSONObject(sdJson);
-            JSONArray verifiableCredentials = sd.getJSONObject(SELF_DESCRIPTION_CREDENTIAL).getJSONArray(VERIFIABLE_CREDENTIAL);
+            JSONArray verifiableCredentials;
+            if (sd.has(SELF_DESCRIPTION_CREDENTIAL)) {
+                verifiableCredentials = sd.getJSONObject(SELF_DESCRIPTION_CREDENTIAL).getJSONArray(VERIFIABLE_CREDENTIAL);
+            } else {
+                verifiableCredentials = sd.getJSONArray(VERIFIABLE_CREDENTIAL);
+            }
+
             for (Object vcs : verifiableCredentials) {
                 JSONObject vc = (JSONObject) vcs;
-                JSONObject credentialSubject = vc.getJSONObject(CREDENTIAL_SUBJECT);
+                JSONObject credentialSubject = vc.optJSONObject(CREDENTIAL_SUBJECT);
+
+                if (credentialSubject == null) {
+                    credentialSubject = vc.getJSONArray(CREDENTIAL_SUBJECT).getJSONObject(0);
+                }
+
                 if (!Objects.equals(credentialSubject.getString(ID), url)) {
                     continue;
                 }
