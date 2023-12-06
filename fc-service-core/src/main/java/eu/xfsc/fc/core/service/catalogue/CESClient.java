@@ -15,5 +15,5 @@ public interface CESClient {
     List<Object> fetchCredentials(@RequestParam("lastReceivedID") String lastReceivedID, @RequestParam(value = "page", defaultValue = "0") Long page, @RequestParam(value = "size", defaultValue = "20") Long size);
 
     @GetMapping(value = "/credentials-events/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    Object fetchCredentials(@PathVariable("id") String cesId);
+    Object fetchCredentialById(@PathVariable("id") String cesId);
 }

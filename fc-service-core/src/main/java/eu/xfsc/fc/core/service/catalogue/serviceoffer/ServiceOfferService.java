@@ -39,13 +39,22 @@ public class ServiceOfferService {
     private final LabelLevelService labelLevelService;
 
     public void processServiceOfferCredential(String serviceOfferUrl) {
-        String serviceOfferSd = InvokeService.executeRequest(serviceOfferUrl, HttpMethod.GET);
+        String serviceOfferSd;
+        try {
+            serviceOfferSd = InvokeService.executeRequest(serviceOfferUrl, HttpMethod.GET);
+        } catch (Exception e) {
+            log.error("error while fetching SD from URL {}", serviceOfferUrl);
+            return;
+        }
         JSONObject sdJson = processorService.parseJson(serviceOfferSd, "Not able to parse service offer selfDescription {}");
         JSONArray verifiableCredentials = sdJson.getJSONObject(SELF_DESCRIPTION_CREDENTIAL).getJSONArray(VERIFIABLE_CREDENTIAL);
         Map<String, JSONObject> vcMap = new HashMap<>();
         for (Object vcs : verifiableCredentials) {
             JSONObject vc = (JSONObject) vcs;
-            JSONObject credentialSubject = vc.getJSONObject(CREDENTIAL_SUBJECT);
+            JSONObject credentialSubject = vc.optJSONObject(CREDENTIAL_SUBJECT);
+            if (credentialSubject == null) {
+                credentialSubject = vc.getJSONArray(CREDENTIAL_SUBJECT).getJSONObject(0);
+            }
             vcMap.put(credentialSubject.getString(CESConstant.ID), vc);
         }
         for (Map.Entry<String, JSONObject> map : vcMap.entrySet()) {
@@ -57,7 +66,12 @@ public class ServiceOfferService {
         if (Objects.isNull(vc)) {
             return null;
         }
-        JSONObject credentialSubject = vc.getJSONObject(CREDENTIAL_SUBJECT);
+
+        JSONObject credentialSubject = vc.optJSONObject(CREDENTIAL_SUBJECT);
+        if (credentialSubject == null) {
+            credentialSubject = vc.getJSONArray(CREDENTIAL_SUBJECT).getJSONObject(0);
+        }
+
         String type = credentialSubject.getString(TYPE);
         if (!Objects.equals(type, GX_SERVICE_OFFERING)) {
             return null;
@@ -70,9 +84,13 @@ public class ServiceOfferService {
         offer.setDescription(credentialSubject.optString(GX_DESCRIPTION));
         offer.setTnc(processorService.processForTnc(credentialSubject.getJSONObject(GX_TERMS_AND_CONDITIONS)));
         JSONObject dataAccountExport = credentialSubject.getJSONObject(GX_DATA_ACCOUNT_EXPORT);
-        JSONArray formatTypes = dataAccountExport.getJSONArray(GX_FORMAT_TYPE);
         HashSet<String> formats = new HashSet<>();
-        processorService.processString(formatTypes, formats);
+        if (dataAccountExport.optString(GX_FORMAT_TYPE) != null) {
+            formats.add(dataAccountExport.getString(GX_FORMAT_TYPE));
+        } else {
+            JSONArray formatTypes = dataAccountExport.getJSONArray(GX_FORMAT_TYPE);
+            processorService.processString(formatTypes, formats);
+        }
         offer.setDataAccountExport(new DataAccountExportDTO(dataAccountExport.getString(GX_REQUEST_TYPE), dataAccountExport.getString(GX_ACCESS_TYPE), formats));
         processorService.processString(credentialSubject.optJSONArray(GX_DATA_PROTECTION_REGIME), offer.getDataProtectionRegime());
         processorService.processString(credentialSubject.optJSONArray(GX_POLICY), offer.getPolicy());
