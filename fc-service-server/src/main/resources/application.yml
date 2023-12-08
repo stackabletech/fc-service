@@ -3,7 +3,7 @@ management:
     configprops:
       show-values: ALWAYS
     env:
-      show-values: ALWAYS  
+      show-values: ALWAYS
   endpoints:
     web:
       exposure:
@@ -36,7 +36,7 @@ spring:
   liquibase:
     change-log: classpath:/liquibase/master-changelog.xml
   main:
-    allow-bean-definition-overriding: true    
+    allow-bean-definition-overriding: true
   mvc:
     log-request-details: true
   security:
@@ -44,9 +44,12 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://key-server:8080/realms/gaia-x
-#          jwk-set-uri: http://key-server:8080/realms/gaia-x/protocol/openid-connect/certs
+  #          jwk-set-uri: http://key-server:8080/realms/gaia-x/protocol/openid-connect/certs
   transaction:
     default-timeout: 10
+
+host:
+  ces: https://ces-development.lab.gaia-x.eu
 
 scheduler:
   sd:
@@ -54,6 +57,9 @@ scheduler:
       expression: 0 1 0 * * *
   schema:
     init-delay: 10000
+  ces:
+    lookup:
+      cron: 0/5 * * * * *
 
 openapi:
   gaiaXCatalogue:
@@ -81,7 +87,7 @@ graphstore:
 
 publisher:
   impl: none #nats
-  url: nats://localhost:4222 
+  url: nats://localhost:4222
   subject: fc.sd
   instance: http://localhost:8081
   send-content: false
@@ -91,10 +97,10 @@ subscriber:
   url: nats://localhost:4222
   subject: fc.sd.*
   instance: http://localhost:8082
-  stream: fc-sd 
+  stream: fc-sd
   queue: sd-processor
   group: sd-group
-  
+
 federated-catalogue:
   scope: runtime
   file-store:
@@ -126,7 +132,7 @@ logging:
   level:
     root: INFO
     eu.xfsc.fc: DEBUG
-#    org.neo4j.driver: DEBUG
-#    org.springframework: DEBUG
+    #    org.neo4j.driver: DEBUG
+    #    org.springframework: DEBUG
     org.springframework.web: INFO
 #    org.springframework.security: DEBUG
