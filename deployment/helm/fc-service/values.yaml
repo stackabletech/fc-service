@@ -4,7 +4,7 @@ replicaCount: 1
 image:
   repository: docker.stackable.tech/gaia-x/xfsc/fc-service-server
   pullPolicy: Always
-  tag: "1.4.0"
+  tag: "1.4.0-ces-event"
 
 fullnameOverride: "fc-service"
 
