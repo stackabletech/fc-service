@@ -234,8 +234,8 @@
                     <to>
                         <image>${ci-registry}/${project.artifactId}:${project.version}</image>
                         <auth>
-                            <username>${env.CI_REGISTRY_USER}</username>
-                            <password>${env.CI_REGISTRY_PASSWORD}</password>
+                            <username>${env.HARBOR_USERNAME}</username>
+                            <password>${env.HARBOR_PASSWORD}</password>
                         </auth>
                     </to>
                 </configuration>

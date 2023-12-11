@@ -21,6 +21,7 @@ import org.neo4j.driver.TransactionContext;
 import org.neo4j.driver.internal.InternalNode;
 import org.neo4j.driver.internal.InternalRelationship;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +49,9 @@ public class Neo4jGraphStore implements GraphStore {
     private Driver driver;
     private final ClaimValidator claimValidator;
 
+    @Value("${graphstore.timeout-marker:timeout}")
+    private String timeoutMarker;
+    
     /* Any appearances of ORDER BY (each word surrounded by any whitespace)
      * which is not enclosed by quotes
      */
@@ -115,7 +119,7 @@ public class Neo4jGraphStore implements GraphStore {
         } catch (Exception ex) {
             stamp = System.currentTimeMillis() - stamp;
             log.error("queryData.error: {}", ex.getMessage());
-            if (ex.getMessage() != null && ex.getMessage().contains("The transaction has not completed within the timeout specified")) {
+            if (ex.getMessage() != null && ex.getMessage().contains(timeoutMarker)) {
                 if (stamp > sdQuery.getTimeout() * 1000) {
                     throw new TimeoutException("query timeout (" + sdQuery.getTimeout() + " sec) exceeded)");
                 }
