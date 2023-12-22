@@ -85,8 +85,8 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
    * @param exception Thrown Server Exception.
    * @return The custom Federated Catalogue application error with status code 404.
    */
-  @ExceptionHandler({javax.ws.rs.NotFoundException.class})
-  protected ResponseEntity<Error> handleRsNotFoundException(javax.ws.rs.NotFoundException exception) {
+  @ExceptionHandler({jakarta.ws.rs.NotFoundException.class})
+  protected ResponseEntity<Error> handleRsNotFoundException(jakarta.ws.rs.NotFoundException exception) {
     log.info("handleRsNotFoundException; Not Found error: {}", exception.getMessage()); 
     return new ResponseEntity<>(new Error("not_found_error", exception.getMessage()), NOT_FOUND);
   }
