@@ -17,7 +17,7 @@ graphstore:
   user: neo4j
   password: 12345
   query-timeout-in-seconds: 5
-  timeout-marker: (db.transaction.timeout)
+  timeout-marker: The transaction has not completed within the timeout specified
 
 publisher:
   impl: none #nats

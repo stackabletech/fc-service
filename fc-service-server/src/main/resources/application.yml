@@ -78,7 +78,7 @@ graphstore:
   uri: bolt://localhost:7687
   user: neo4j
   password: neo12345
-  timeout-marker: (db.transaction.timeout)
+  timeout-marker: The transaction has not completed within the timeout specified
 
 publisher:
   impl: none #nats
