@@ -58,7 +58,7 @@
                     "@value": "ExampleResourceForFederatedCatalogue"
                 }
             },
-            "expirationDate": "2024-01-23T11:29:40Z",
+            "expirationDate": "2034-01-23T11:29:40Z",
             "issuanceDate": "2023-08-08T11:29:40Z",
             "issuer": "did:web:compliance.lab.gaia-x.eu",
             "proof": {
