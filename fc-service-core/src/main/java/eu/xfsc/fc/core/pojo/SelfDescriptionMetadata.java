@@ -31,7 +31,7 @@ public class SelfDescriptionMetadata extends SelfDescription {
 
   public SelfDescriptionMetadata(String id, String issuer, List<Validator> validators, ContentAccessor contentAccessor) {
     super(calculateSha256AsHex(contentAccessor.getContentAsString()), id, SelfDescriptionStatus.ACTIVE, issuer, 
-            validators.stream().map(Validator::getDidURI).collect(Collectors.toList()), Instant.now(), Instant.now());
+        validators != null ? validators.stream().map(Validator::getDidURI).collect(Collectors.toList()) : null, Instant.now(), Instant.now());
     this.selfDescription = contentAccessor;
   }
 
