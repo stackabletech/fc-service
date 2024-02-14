@@ -11,7 +11,7 @@
             </not>
         </preConditions>
         <createTable tableName="validatorcache">
-            <column name="diduri" type="java.sql.Types.VARCHAR(2048)">
+            <column name="diduri" type="TEXT">
                 <constraints primaryKey="true" primaryKeyName="validatorcache_pkey" nullable="false"/>
             </column>
             <column name="publickey" type="java.sql.Types.CLOB">

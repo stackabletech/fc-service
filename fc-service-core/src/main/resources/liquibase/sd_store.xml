@@ -14,10 +14,10 @@
             <column name="sdhash" type="java.sql.Types.VARCHAR(64)">
                 <constraints primaryKey="true" primaryKeyName="sdfiles_pkey" nullable="false"/>
             </column>
-            <column name="subjectid" type="java.sql.Types.VARCHAR(2048)">
+            <column name="subjectid" type="TEXT">
                 <constraints  nullable="false" />
             </column>
-            <column name="issuer" type="java.sql.Types.VARCHAR(2048)"/>
+            <column name="issuer" type="TEXT"/>
             <column name="uploadtime" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
                 <constraints nullable="false" />
             </column>
