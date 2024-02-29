@@ -55,7 +55,7 @@
         <spring.security.version>6.2.2</spring.security.version>
         <springdoc.version>2.2.0</springdoc.version>
         <lombok.version>1.18.30</lombok.version>
-        <keycloak.version>23.0.3</keycloak.version>
+        <keycloak.version>23.0.7</keycloak.version>
         <liquibase.version>4.25.1</liquibase.version>
         <jena.version>4.9.0</jena.version>
         <topbraid.version>1.4.2</topbraid.version>
@@ -75,6 +75,8 @@
         <logback.version>1.4.14</logback.version>
         <protobuf-javalite.version>3.25.1</protobuf-javalite.version>
         <jackson-bom.version>2.16.0</jackson-bom.version>
+        <commons-compress.version>1.26.0</commons-compress.version>
+        <ipaddress.version>5.4.2</ipaddress.version>
         <!-- test libs -->
         <junit-platform.version>1.10.0</junit-platform.version>
         <spring-cloud-contract-wiremock.version>4.1.0</spring-cloud-contract-wiremock.version>
@@ -319,6 +321,16 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bcpkix-jdk18on.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.seancfoley</groupId>
+                <artifactId>ipaddress</artifactId>
+                <version>${ipaddress.version}</version>
             </dependency>
 
             <!-- Test dependencies -->
