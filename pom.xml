@@ -42,6 +42,7 @@
     <properties>
         <!-- Important: The property 'revision' must be updated to describe version changes in a single place for the build process -->
         <revision>1.2.0</revision>
+        <tag.version>1.2.0</tag.version>
         <!-- java -->
         <java.version>17</java.version>
         <maven.compiler.source>17</maven.compiler.source>

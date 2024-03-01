@@ -16,10 +16,10 @@ stages:
 maven:test:
   script:
     - mvn $MAVEN_CLI_OPTS verify
-    - cat service/target/site/jacoco/index.html | grep -o '<tfoot>.*</tfoot>'
+    - cat fc-service-server/target/site/jacoco/index.html | grep -o '<tfoot>.*</tfoot>'
   artifacts:
     paths:
-      - 'service/target/site/jacoco/index.html'
+      - 'fc-service-server/target/site/jacoco/index.html'
 
 sast:
   stage: build

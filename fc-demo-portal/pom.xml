@@ -60,7 +60,7 @@
                 <configuration>
                     <skip>false</skip>
                     <to>
-                        <image>${ci-registry}/${project.artifactId}:${project.version}</image>
+                        <image>${ci-registry}/${project.artifactId}:${tag.version}</image>
                         <auth>
                             <username>${env.HARBOR_USERNAME}</username>
                             <password>${env.HARBOR_PASSWORD}</password>
