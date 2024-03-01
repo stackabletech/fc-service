@@ -65,6 +65,7 @@
                                 <openApiNullable>false</openApiNullable>
                                 <generateModelTests>true</generateModelTests>
                                 <generateModelDocumentation>true</generateModelDocumentation>
+                                <generatedConstructorWithRequiredArgs>false</generatedConstructorWithRequiredArgs>
                             </configOptions>
                             <typeMappings>
                                 <typeMapping>OffsetDateTime=Instant</typeMapping>

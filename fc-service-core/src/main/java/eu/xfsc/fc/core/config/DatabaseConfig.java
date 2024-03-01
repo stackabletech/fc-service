@@ -11,11 +11,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.transaction.annotation.TransactionManagementConfigurer;
 
 @Configuration 
 @EnableTransactionManagement
-public class DatabaseConfig {
+public class DatabaseConfig implements TransactionManagementConfigurer {
 
   @Autowired
   DataSource dataSource;
@@ -51,6 +53,11 @@ public class DatabaseConfig {
     Properties hibernateProperties = new Properties();
     hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "validate");
     return hibernateProperties;
+  }
+
+  @Override
+  public TransactionManager annotationDrivenTransactionManager() {
+	return hibernateTransactionManager(sessionFactory().getObject());
   }
 	
 }
