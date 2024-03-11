@@ -1,4 +1,4 @@
-package eu.xfsc.fc.core.service.verification;
+package eu.xfsc.fc.core.service.verification.cache;
 
 import com.apicatalog.jsonld.JsonLdError;
 import com.apicatalog.jsonld.JsonLdErrorCode;

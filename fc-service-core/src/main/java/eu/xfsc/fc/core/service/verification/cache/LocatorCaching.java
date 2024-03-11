@@ -1,7 +1,7 @@
-package eu.xfsc.fc.core.service.verification;
+package eu.xfsc.fc.core.service.verification.cache;
 
 import eu.xfsc.fc.core.service.filestore.FileStore;
-import eu.xfsc.fc.core.service.verification.CachingHttpLoader.HttpDocument;
+import eu.xfsc.fc.core.service.verification.cache.CachingHttpLoader.HttpDocument;
 import eu.xfsc.fc.core.util.HashUtils;
 
 import java.io.IOException;
@@ -17,7 +17,7 @@ import org.apache.jena.riot.system.stream.LocatorHTTP;
  * A Jena Locator that caches http downloads.
  */
 @Slf4j
-class LocatorCaching implements Locator {
+public class LocatorCaching implements Locator {
 
   private final HttpDocumentCache httpCache;
   private final LocatorHTTP locatorHttp = new LocatorHTTP();

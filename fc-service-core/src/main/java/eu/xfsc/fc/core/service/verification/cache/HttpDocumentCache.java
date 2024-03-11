@@ -1,4 +1,4 @@
-package eu.xfsc.fc.core.service.verification;
+package eu.xfsc.fc.core.service.verification.cache;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
