@@ -128,10 +128,9 @@ federated-catalogue:
         size: 100
         timeout: 1H
     doc-loader:
-      additional-contexts: ""
-      cache:
-        size: 500
-        timeout: 24H
+      additional-context: 
+      cache-size: 500
+      cache-timeout: 24H
       enable-file: true
       enable-http: true
       enable-local-cache: false

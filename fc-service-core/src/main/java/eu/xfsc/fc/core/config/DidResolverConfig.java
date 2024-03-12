@@ -30,7 +30,7 @@ public class DidResolverConfig {
 
 	@Bean
 	public UniResolver uniResolver(@Value("${federated-catalogue.verification.did.base-url}") String baseUrl) {
-		log.info("uniResolver.enter; configured base URI: {}, config path: {}", baseUrl);
+		log.info("uniResolver.enter; configured base URI: {}", baseUrl);
 		UniResolver resolver;
 		URI uri;
 		try {

@@ -59,10 +59,14 @@ federated-catalogue:
         timeout: 1H
     doc-loader:
       # when http enabled then contixt will be loaded on the fly..      
-      additional-contexts: "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework# , https://registry.lab.gaia-x.eu/v1/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#"
-      cache:
-        size: 100
-        timeout: 8H
+      additional-context: 
+        '[https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#]': https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#
+        '[https://registry.lab.gaia-x.eu/v1/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#]': https://registry.lab.gaia-x.eu/v1/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#
+      # plain content and file scheme are supported too   
+      #  '[https://schema.org]': '{"@context": {}}'
+      #  '[https://sample.net]': file:///opt/context-sample.jsonld 
+      cache-size: 100
+      cache-timeout: 8H
       enable-file: true
       enable-http: true
       enable-local-cache: false
