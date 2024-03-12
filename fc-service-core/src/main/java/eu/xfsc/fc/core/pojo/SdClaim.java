@@ -4,6 +4,8 @@ import java.util.Objects;
 
 import com.apicatalog.rdf.RdfTriple;
 import com.apicatalog.rdf.RdfValue;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * POJO Class for holding a Claim. A Claim is a triple represented by a subject, predicate, and object.
@@ -97,7 +99,16 @@ public class SdClaim {
   
   private String rdf2String(RdfValue rdf) {
     if (rdf.isBlankNode()) return rdf.getValue();
-    if (rdf.isLiteral()) return "\"" + rdf.getValue() + "\"";
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    try {
+        if (rdf.isLiteral()) {
+            return objectMapper.writeValueAsString(rdf.getValue());
+        }
+    } catch (JsonProcessingException e) {
+        e.printStackTrace();
+    }
+
     // rdf is IRI. here we could try to make it absolute..
     return "<" + rdf.getValue() + ">";
   }
