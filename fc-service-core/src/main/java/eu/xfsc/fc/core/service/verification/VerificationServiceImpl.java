@@ -45,7 +45,7 @@ import eu.xfsc.fc.core.pojo.VerificationResultParticipant;
 import eu.xfsc.fc.core.pojo.VerificationResultResource;
 import eu.xfsc.fc.core.service.filestore.FileStore;
 import eu.xfsc.fc.core.service.schemastore.SchemaStore;
-import eu.xfsc.fc.core.service.verification.cache.LocatorCaching;
+import eu.xfsc.fc.core.service.verification.cache.CachingLocator;
 import eu.xfsc.fc.core.service.verification.claims.ClaimExtractor;
 import eu.xfsc.fc.core.service.verification.claims.DanubeTechClaimExtractor;
 import eu.xfsc.fc.core.service.verification.claims.TitaniumClaimExtractor;
@@ -388,11 +388,9 @@ public class VerificationServiceImpl implements VerificationService {
 
   private void initLoaders() {
     if (!loadersInitialised) {
-      log.debug("initLoaders; Setting up Caching com.apicatalog.jsonld DocumentLoader");
-//      DocumentLoader cachingLoader = new CachingHttpLoader(fileStore);
+      log.debug("initLoaders; Setting up SchemeRouter");
       SchemeRouter loader = (SchemeRouter) SchemeRouter.defaultInstance();
-//      loader.set("http", cachingLoader);
-//      loader.set("https", cachingLoader);
+      loader.set("file", documentLoader);
       loader.set("http", documentLoader);
       loader.set("https", documentLoader);
       loadersInitialised = true;
@@ -406,7 +404,7 @@ public class VerificationServiceImpl implements VerificationService {
       log.debug("getStreamManager; Setting up Jena caching Locator");
       StreamManager clone = StreamManager.get().clone();
       clone.clearLocators();
-      clone.addLocator(new LocatorCaching(fileStore));
+      clone.addLocator(new CachingLocator(fileStore));
       streamManager = clone;
     }
     return streamManager;
@@ -523,7 +521,7 @@ public class VerificationServiceImpl implements VerificationService {
       if (signVerifier.verify(payload, proof, jwk, jwk.getAlg())) {
     	return validator;  
       }
-      // validator doesm't verifies any more. let's drop it
+      // validator doesn't verifies any more. let's drop it
       if (dropValidators) {
         validatorCache.removeFromCache(vmKey);
       } else {

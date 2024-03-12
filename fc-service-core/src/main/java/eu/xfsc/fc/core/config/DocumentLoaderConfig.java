@@ -90,7 +90,7 @@ public class DocumentLoaderConfig {
 			if (ref == null) {
 				document = JsonDocument.of(new StringReader(contentRef));
 			} else {
-				document = loader.loadDocument(ref, options); // SchemeRouter.defaultInstance().loadDocument(uri, options);
+				document = loader.loadDocument(ref, options); 
 			}
 			if (document instanceof JsonDocument) {
 				final JsonDocument jsonDocument = JsonDocument.class.cast(document);
