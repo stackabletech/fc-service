@@ -404,6 +404,22 @@ public class VerificationServiceTest {
   }
 
   @Test
+  void extractClaims_jsonValueCharacterTest() throws Exception {
+    log.debug("validSyntax_jsonValueCharacterTest");
+    schemaStore.initializeDefaultSchemas();
+    ContentAccessor content = getAccessor("VerificationService/syntax/specialCharacters.jsonld");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.RESOURCE, "https://w3id.org/gaia-x/core#Resource");
+    VerificationResult result = verificationService.verifySelfDescription(content, true, false, false);
+    List<SdClaim> actualClaims = result.getClaims();
+    log.debug("validSyntax_jsonValueCharacterTest; actual claims: {}", actualClaims);
+    Set<SdClaim> expectedClaims = new HashSet<>();
+    expectedClaims.add(new SdClaim("<did:web:example.com:fad49ec6-d488-4bf9-bae5-d0ffa62a9bd2>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<https://w3id.org/gaia-x/gax-trust-framework#Resource>"));
+    expectedClaims.add(new SdClaim("<did:web:example.com:fad49ec6-d488-4bf9-bae5-d0ffa62a9bd2>", "<http://purl.org/dc/terms/description>", "\"\\n \\\\ Test with </\\\"s>pecial\\\" \\\\ / characters \\b </\\f \\n \\r \\t 🔥\""));
+    assertEquals(expectedClaims.size(), actualClaims.size());
+    assertEquals(expectedClaims, new HashSet<>(actualClaims));
+  }
+
+  @Test
   void extractClaims_participantTwoAdditionalContextTest() throws Exception {
     log.debug("extractClaims_participantTwoVCsTest");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
