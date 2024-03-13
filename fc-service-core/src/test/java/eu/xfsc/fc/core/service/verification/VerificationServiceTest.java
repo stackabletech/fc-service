@@ -234,7 +234,7 @@ public class VerificationServiceTest {
     String path = "VerificationService/syntax/input.vp.jsonld";
     Exception ex = assertThrowsExactly(VerificationException.class, ()
             -> verificationService.verifySelfDescription(getAccessor(path)));
-    assertEquals("Signatures error; The proof type is not yet implemented: Ed25519Signature2018", ex.getMessage());
+    assertEquals("Signatures error; The proof type is not supported yet: Ed25519Signature2018", ex.getMessage());
   }
 
   @Test

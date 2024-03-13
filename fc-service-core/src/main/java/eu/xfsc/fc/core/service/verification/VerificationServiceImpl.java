@@ -4,9 +4,17 @@ import static eu.xfsc.fc.core.service.verification.TrustFrameworkBaseClass.PARTI
 import static eu.xfsc.fc.core.service.verification.TrustFrameworkBaseClass.RESOURCE;
 import static eu.xfsc.fc.core.service.verification.TrustFrameworkBaseClass.SERVICE_OFFERING;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,7 +30,10 @@ import org.apache.jena.riot.system.stream.StreamManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import com.apicatalog.jsonld.loader.DocumentLoader;
 import com.apicatalog.jsonld.loader.SchemeRouter;
@@ -86,7 +97,6 @@ public class VerificationServiceImpl implements VerificationService {
 
   @Autowired
   private SchemaStore schemaStore;
-
   @Autowired
   private SignatureVerifier signVerifier;
 
@@ -99,9 +109,30 @@ public class VerificationServiceImpl implements VerificationService {
   @Autowired
   private ValidatorCacheDao validatorCache;
 
+  @Value("${federated-catalogue.verification.trust-anchor-url}")
+  private String trustAnchorAddr;
+  @Value("${federated-catalogue.verification.http-timeout:5000}") 
+  private int httpTimeout;
+  @Value("${federated-catalogue.verification.validator-expire:1D}")
+  private Duration validatorExpiration;
+
+  private static final int HTTP_TIMEOUT = 5*1000; 
+
+  private RestTemplate rest;
   private boolean loadersInitialised;
   private StreamManager streamManager;
 
+  public VerificationServiceImpl() {
+    rest = restTemplate();
+  }
+
+  private RestTemplate restTemplate() {
+    HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+    factory.setConnectTimeout(HTTP_TIMEOUT);
+    factory.setConnectionRequestTimeout(HTTP_TIMEOUT);
+    return new RestTemplate(factory); 
+  }
+  
   @PostConstruct
   private void initializeTrustFrameworkBaseClasses() {
     trustFrameworkBaseClassUris = new HashMap<>();
@@ -492,6 +523,7 @@ public class VerificationServiceImpl implements VerificationService {
     return new ArrayList<>(validators);
   }
 
+  @SuppressWarnings("unchecked")
   public Validator checkSignature(JsonLDObject payload) {
 	Map<String, Object> proofMap = (Map<String, Object>) payload.getJsonObject().get("proof");
 	if (proofMap == null) {
@@ -514,13 +546,14 @@ public class VerificationServiceImpl implements VerificationService {
     String vmKey = proof.getVerificationMethod().toString();
     Validator validator = validatorCache.getFromCache(vmKey);
     if (validator == null) {
-      log.debug("checkSignature; validator was not cached");
+      log.debug("checkSignature; validator not found in cache");
     } else {
-      log.debug("checkSignature; validator was cached");
+      log.debug("checkSignature; got validator from cache");
       JWK jwk = JWK.fromJson(validator.getPublicKey());
       if (signVerifier.verify(payload, proof, jwk, jwk.getAlg())) {
-    	return validator;  
+    	return validator;
       }
+
       // validator doesn't verifies any more. let's drop it
       if (dropValidators) {
         validatorCache.removeFromCache(vmKey);
@@ -528,11 +561,59 @@ public class VerificationServiceImpl implements VerificationService {
    	    throw new VerificationException("Signatures error; " + payload.getClass().getSimpleName() + " does not match with proof");
       }
     }
+
     validator = signVerifier.checkSignature(payload, proof);
+    Instant expiration = null;
+    JWK jwk = JWK.fromJson(validator.getPublicKey());
+    String url = jwk.getX5u();
+    if (url != null) {
+      expiration = hasPEMTrustAnchorAndIsNotExpired(url);
+    }
+    if (expiration == null) {
+      // set default expiration at next midnight
+	  expiration = Instant.now().plus(validatorExpiration).truncatedTo(ChronoUnit.DAYS);
+    }
+    validator.setExpirationDate(expiration);
     validatorCache.addToCache(validator);
     return validator;
   }
 
+  @SuppressWarnings("unchecked")
+  private Instant hasPEMTrustAnchorAndIsNotExpired(String uri) {
+    log.debug("hasPEMTrustAnchorAndIsNotExpired.enter; got uri: {}", uri);
+    String pem = rest.getForObject(uri, String.class);
+    InputStream certStream = new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8));
+    List<X509Certificate> certs;
+    try {
+      CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+      certs = (List<X509Certificate>) certFactory.generateCertificates(certStream);
+    } catch (CertificateException ex) {
+      log.debug("hasPEMTrustAnchorAndIsNotExpired.error: {}", ex.getMessage());
+      return null;
+    }
+
+    //Then extract relevant cert
+    X509Certificate relevant = null;
+    for (X509Certificate cert: certs) {
+      try {
+        cert.checkValidity();
+        if (relevant == null || relevant.getNotAfter().before(cert.getNotAfter())) { // .after(cert.getNotAfter())) {
+          relevant = cert;
+        }
+      } catch (Exception ex) {
+        log.debug("hasPEMTrustAnchorAndIsNotExpired.error: {}", ex.getMessage());
+      }
+    }
+
+    ResponseEntity<Map> resp = rest.postForEntity(trustAnchorAddr, Map.of("uri", uri), Map.class);
+    if (!resp.getStatusCode().is2xxSuccessful()) {
+      log.info("hasPEMTrustAnchorAndIsNotExpired; Trust anchor is not set in the registry. URI: {}", uri);
+    }
+    Instant exp = relevant == null ? null : relevant.getNotAfter().toInstant();
+    log.debug("hasPEMTrustAnchorAndIsNotExpired.exit; returning: {}", exp);
+    return exp;
+  }
+  
   
   private class TypedCredentials {
 

@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -78,13 +76,11 @@ public class UniSignatureVerifier implements SignatureVerifier {
 		}
 		
 		try {
-			// think about expiration..
-			Instant exp = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
 			JWK jwk = JWK.fromMap(ovm.get().getPublicKeyJwk());
 			if (jwk.getAlg() == null) {
 				jwk.setAlg(alg);
 			}
-			Validator result = new Validator(proof.getVerificationMethod().toString(), jwk.toJson(), exp);
+			Validator result = new Validator(proof.getVerificationMethod().toString(), jwk.toJson(), null);
 			log.debug("verifyLDProof.exit; returning: {}", result);
 			return result;
 		} catch (IOException ex) {
@@ -133,7 +129,6 @@ public class UniSignatureVerifier implements SignatureVerifier {
 		log.debug("resolveDidDocument.exit; returning doc: {}, from cache: {}", diDoc, cached);
 		return diDoc;
 	}
-
 	
 	private String getAlgFromProof(LdProof proof) {
 		if (proof.getType().contains(KeyTypeName.Ed25519.getValue())) {
