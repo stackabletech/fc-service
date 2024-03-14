@@ -31,7 +31,7 @@
     <div>
         <h2>Verify Self-Description</h2>
         <br>
-        Please upload a file OR copy / paste in textarea:<br>
+        Please upload SD file or copy/paste SD content in textarea:<br>
         <br>
         <input accept="application/json" class="btn btn-info" id="sdFile" name="datafile" size="40" type="file">
         </p>
@@ -51,8 +51,13 @@
         </div>
 
         <div class="form-check form-check-inline">
-            <input checked class="form-check-input" id="verifySignatures" type="checkbox" value="true"/>
-            <label class="form-check-label" for="verifySignatures"> Verify Signature </label>
+            <input checked class="form-check-input" id="verifyVPSignature" type="checkbox" value="true"/>
+            <label class="form-check-label" for="verifyVPSignature"> Verify VP Signature </label>
+        </div>
+
+        <div class="form-check form-check-inline">
+            <input checked class="form-check-input" id="verifyVCSignature" type="checkbox" value="true"/>
+            <label class="form-check-label" for="verifyVCSignature"> Verify VC Signature </label>
         </div>
 
         <br>
@@ -105,8 +110,10 @@
                 }
                 var checkVerifySemantics = $("#verifySemantics").is(":checked") ? "true" : "false";
                 var checkVerifySchema = $("#verifySchema").is(":checked") ? "true" : "false";
-                var checkVerifySignatures = $("#verifySignatures").is(":checked") ? "true" : "false";
-                var urlWithParam = "verification?verifySemantics="+checkVerifySemantics+"&verifySchema="+checkVerifySchema+"&verifySignatures="+checkVerifySignatures;
+                var checkVerifyVPSignature = $("#verifyVPSignature").is(":checked") ? "true" : "false";
+                var checkVerifyVCSignature = $("#verifyVCSignature").is(":checked") ? "true" : "false";
+                var urlWithParam = "verification?verifySemantics=" + checkVerifySemantics + "&verifySchema=" + checkVerifySchema +
+                	"&verifyVPSignature=" + checkVerifyVPSignature + "&verifyVCSignature=" + checkVerifyVCSignature;
 
                 $.ajax(urlWithParam,{
                     type: 'POST',
@@ -119,7 +126,7 @@
                     error: function (jqXhr, textStatus, errorMessage) {
                           $('#result').html('Status : ' + textStatus + ', Error : ' + JSON.stringify(jqXhr.responseJSON).replace(/\\n|\\r/g, '\r\n'));
                           $("#result").height( $("#result")[0].scrollHeight );
-                          }
+                    }
                 });
             }
 

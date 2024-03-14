@@ -30,14 +30,14 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 
+@Slf4j
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {ValidatorCacheTest.TestApplication.class, ValidatorCacheDaoImpl.class, DatabaseConfig.class, FileStoreConfig.class,
         VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class, DidResolverConfig.class})
-@DirtiesContext
-@Slf4j
+//@DirtiesContext
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 public class ValidatorCacheTest {
 

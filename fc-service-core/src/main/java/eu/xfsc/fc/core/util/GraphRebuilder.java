@@ -13,6 +13,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,7 +30,8 @@ public class GraphRebuilder {
    */
   private static final int QUEUE_CLEAR_WAIT_INTERVAL = 100;
 
-  private final SelfDescriptionStore sdStore;
+  @Autowired
+  private SelfDescriptionStore sdStore;
   private final GraphStore graphStore;
   private final VerificationService verificationService;
 

@@ -41,6 +41,7 @@ import com.danubetech.keyformats.jose.JWK;
 import com.danubetech.verifiablecredentials.CredentialSubject;
 import com.danubetech.verifiablecredentials.VerifiableCredential;
 import com.danubetech.verifiablecredentials.VerifiablePresentation;
+import com.danubetech.verifiablecredentials.jsonld.VerifiableCredentialKeywords;
 
 import eu.xfsc.fc.api.generated.model.SelfDescriptionStatus;
 import eu.xfsc.fc.core.dao.ValidatorCacheDao;
@@ -77,12 +78,16 @@ public class VerificationServiceImpl implements VerificationService {
 
   private static final ClaimExtractor[] extractors = new ClaimExtractor[]{new TitaniumClaimExtractor(), new DanubeTechClaimExtractor()};
 
+  @Value("${federated-catalogue.verification.require-vp:true}")
+  private boolean requireVP;
   @Value("${federated-catalogue.verification.semantics:true}")
   private boolean verifySemantics;
   @Value("${federated-catalogue.verification.schema:true}")
   private boolean verifySchema;
-  @Value("${federated-catalogue.verification.signatures:true}")
-  private boolean verifySignatures;
+  @Value("${federated-catalogue.verification.vp-signature:true}")
+  private boolean verifyVPSignature;
+  @Value("${federated-catalogue.verification.vc-signature:true}")
+  private boolean verifyVCSignature;
   @Value("${federated-catalogue.verification.drop-validarors:false}")
   private boolean dropValidators;
 
@@ -149,7 +154,7 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResultParticipant verifyParticipantSelfDescription(ContentAccessor payload) throws VerificationException {
-    return (VerificationResultParticipant) verifySelfDescription(payload, true, PARTICIPANT, verifySemantics, verifySchema, verifySignatures);
+    return (VerificationResultParticipant) verifySelfDescription(payload, true, PARTICIPANT, verifySemantics, verifySchema, verifyVPSignature, verifyVCSignature);
   }
 
   /**
@@ -160,7 +165,7 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResultOffering verifyOfferingSelfDescription(ContentAccessor payload) throws VerificationException {
-    return (VerificationResultOffering) verifySelfDescription(payload, true, SERVICE_OFFERING, verifySemantics, verifySchema, verifySignatures);
+    return (VerificationResultOffering) verifySelfDescription(payload, true, SERVICE_OFFERING, verifySemantics, verifySchema, verifyVPSignature, verifyVCSignature);
   }
   
   /**
@@ -171,7 +176,7 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResultResource verifyResourceSelfDescription(ContentAccessor payload) throws VerificationException {
-	return (VerificationResultResource) verifySelfDescription(payload, true, RESOURCE, verifySemantics, verifySchema, verifySignatures);
+	return (VerificationResultResource) verifySelfDescription(payload, true, RESOURCE, verifySemantics, verifySchema, verifyVPSignature, verifyVCSignature);
   }
   
   /**
@@ -182,44 +187,32 @@ public class VerificationServiceImpl implements VerificationService {
    */
   @Override
   public VerificationResult verifySelfDescription(ContentAccessor payload) throws VerificationException {
-    return verifySelfDescription(payload, verifySemantics, verifySchema, verifySignatures);
+    return verifySelfDescription(payload, verifySemantics, verifySchema, verifyVPSignature, verifyVCSignature);
   }
 
   @Override
   public VerificationResult verifySelfDescription(ContentAccessor payload, boolean verifySemantics, boolean verifySchema, 
-		  boolean verifySignatures) throws VerificationException {
-    return verifySelfDescription(payload, false, null, verifySemantics, verifySchema, verifySignatures);
+		  boolean verifyVPSignatures, boolean verifyVCSignatures) throws VerificationException {
+    return verifySelfDescription(payload, false, null, verifySemantics, verifySchema, verifyVPSignatures, verifyVCSignatures);
   }
 
   private VerificationResult verifySelfDescription(ContentAccessor payload, boolean strict, TrustFrameworkBaseClass expectedClass, boolean verifySemantics, 
-		  boolean verifySchema, boolean verifySignatures) throws VerificationException {
-    log.debug("verifySelfDescription.enter; strict: {}, expectedType: {}, verifySemantics: {}, verifySchema: {}, verifySignatures: {}",
-            strict, expectedClass, verifySemantics, verifySchema, verifySignatures);
+		  boolean verifySchema, boolean verifyVPSignatures, boolean verifyVCSignatures) throws VerificationException {
+    log.debug("verifySelfDescription.enter; strict: {}, expectedType: {}, verifySemantics: {}, verifySchema: {}, verifyVPSignatures: {}, verifyVCSignatures: {}",
+            strict, expectedClass, verifySemantics, verifySchema, verifyVPSignatures, verifyVCSignatures);
     long stamp = System.currentTimeMillis();
 
     // syntactic validation
-    VerifiablePresentation vp = parseContent(payload);
+    JsonLDObject ld = parseContent(payload);
     log.debug("verifySelfDescription; content parsed, time taken: {}", System.currentTimeMillis() - stamp);
 
     // see https://gitlab.eclipse.org/eclipse/xfsc/cat/fc-service/-/issues/200
     // add GAIA-X context(s) if present
-    vp.setDocumentLoader(this.documentLoader);
+    ld.setDocumentLoader(this.documentLoader);
     
     // semantic verification
     long stamp2 = System.currentTimeMillis();
-    TypedCredentials typedCredentials;
-    if (verifySemantics) {
-      try {
-    	typedCredentials = verifyPresentation(vp);
-      } catch (VerificationException ex) {
-        throw ex;
-      } catch (Exception ex) {
-        log.error("verifySelfDescription.semantic error", ex);
-        throw new VerificationException("Semantic error: " + ex.getMessage());
-      }
-    } else {
-    	typedCredentials = getCredentials(vp);
-    }
+    TypedCredentials typedCredentials = parseCredentials(ld, verifySemantics);
     log.debug("verifySelfDescription; credentials processed, time taken: {}", System.currentTimeMillis() - stamp2);
 
     if (typedCredentials.isEmpty()) {
@@ -275,8 +268,8 @@ public class VerificationServiceImpl implements VerificationService {
 
     // signature verification
     List<Validator> validators;
-    if (verifySignatures) {
-      validators = checkCryptography(typedCredentials);
+    if (verifyVPSignatures || verifyVCSignatures) {
+      validators = checkCryptography(typedCredentials, verifyVPSignatures, verifyVCSignatures);
     } else {
       validators = null; //is it ok?
     }
@@ -310,11 +303,42 @@ public class VerificationServiceImpl implements VerificationService {
     log.debug("verifySelfDescription.exit; returning: {}; time taken: {}", result, stamp);
     return result;
   }
+  
+  private TypedCredentials parseCredentials(JsonLDObject ld, boolean verifySemantics) {
+	//try {  
+   	  if (ld.isType(VerifiableCredentialKeywords.JSONLD_TERM_VERIFIABLE_PRESENTATION)) {
+   	    VerifiablePresentation vp = VerifiablePresentation.fromJsonLDObject(ld);
+   	    if (verifySemantics) {
+          return verifyPresentation(vp);
+   	    }
+   	    return getCredentials(vp);
+   	  }
+      if (requireVP) {
+        throw new VerificationException("Semantic error: expected SD of type 'VerifiablePresentation', actual SD type: " + ld.getTypes());
+      }
+      if (ld.isType(VerifiableCredentialKeywords.JSONLD_TERM_VERIFIABLE_CREDENTIAL)) {
+        VerifiableCredential vc = VerifiableCredential.fromJsonLDObject(ld);
+        if (verifySemantics) {
+          String err = verifyCredential(vc, 0);
+          if (err != null) {
+            throw new VerificationException("Semantic error: " + err);
+          }
+        }
+        return getCredentials(vc);
+      } 
+      throw new VerificationException("Semantic error: unexpected SD type: " + ld.getTypes());
+    //} catch (VerificationException ex) {
+    //    throw ex;
+    //  } catch (Exception ex) {
+    //    log.error("verifySelfDescription.semantic error", ex);
+    //    throw new VerificationException("Semantic error: " + ex.getMessage());
+    //  }
+  }
 
   /* SD parsing, semantic validation */
-  private VerifiablePresentation parseContent(ContentAccessor content) {
+  private JsonLDObject parseContent(ContentAccessor content) {
     try {
-      return VerifiablePresentation.fromJson(content.getContentAsString());
+      return JsonLDObject.fromJson(content.getContentAsString());
     } catch (Exception ex) {
       log.warn("parseContent.syntactic error: {}", ex.getMessage());
       throw new ClientException("Syntactic error: " + ex.getMessage(), ex);
@@ -339,31 +363,7 @@ public class VerificationServiceImpl implements VerificationService {
     int i = 0;
     for (VerifiableCredential credential: credentials) {
       if (credential != null) {
-        if (checkAbsence(credential, "@context")) {
-          sb.append(" - VerifiableCredential[").append(i).append("] must contain '@context' property").append(sep);
-        }
-        if (checkAbsence(credential, "type", "@type")) {
-          sb.append(" - VerifiableCredential[").append(i).append("] must contain 'type' property").append(sep);
-        }
-        if (checkAbsence(credential, "credentialSubject")) {
-          sb.append(" - VerifiableCredential[").append(i).append("] must contain 'credentialSubject' property").append(sep);
-        }
-        if (checkAbsence(credential, "issuer")) {
-          sb.append(" - VerifiableCredential[").append(i).append("] must contain 'issuer' property").append(sep);
-        }
-        if (checkAbsence(credential, "issuanceDate")) {
-          sb.append(" - VerifiableCredential[").append(i).append("] must contain 'issuanceDate' property").append(sep);
-        }
-
-        Date today = Date.from(Instant.now());
-        Date issDate = credential.getIssuanceDate();
-        if (issDate != null && issDate.after(today)) {
-          sb.append(" - 'issuanceDate' of VerifiableCredential[").append(i).append("] must be in the past").append(sep);
-        }
-        Date expDate = credential.getExpirationDate();
-        if (expDate != null && expDate.before(today)) {
-          sb.append(" - 'expirationDate' of VerifiableCredential[").append(i).append("] must be in the future").append(sep);
-        }
+    	sb.append(verifyCredential(credential, i));  
       }
       i++;
     }
@@ -375,6 +375,37 @@ public class VerificationServiceImpl implements VerificationService {
 
     log.debug("verifyPresentation.exit; returning {} VCs", credentials.size());
     return tcreds;
+  }
+  
+  private String verifyCredential(VerifiableCredential credential, int idx) {
+    StringBuilder sb = new StringBuilder();
+	String sep = System.lineSeparator();
+    if (checkAbsence(credential, "@context")) {
+      sb.append(" - VerifiableCredential[").append(idx).append("] must contain '@context' property").append(sep);
+    }
+    if (checkAbsence(credential, "type", "@type")) {
+      sb.append(" - VerifiableCredential[").append(idx).append("] must contain 'type' property").append(sep);
+    }
+    if (checkAbsence(credential, "credentialSubject")) {
+      sb.append(" - VerifiableCredential[").append(idx).append("] must contain 'credentialSubject' property").append(sep);
+    }
+    if (checkAbsence(credential, "issuer")) {
+      sb.append(" - VerifiableCredential[").append(idx).append("] must contain 'issuer' property").append(sep);
+    }
+    if (checkAbsence(credential, "issuanceDate")) {
+      sb.append(" - VerifiableCredential[").append(idx).append("] must contain 'issuanceDate' property").append(sep);
+    }
+
+    Date today = Date.from(Instant.now());
+    Date issDate = credential.getIssuanceDate();
+    if (issDate != null && issDate.after(today)) {
+      sb.append(" - 'issuanceDate' of VerifiableCredential[").append(idx).append("] must be in the past").append(sep);
+    }
+    Date expDate = credential.getExpirationDate();
+    if (expDate != null && expDate.before(today)) {
+      sb.append(" - 'expirationDate' of VerifiableCredential[").append(idx).append("] must be in the future").append(sep);
+    }
+    return sb.toString();
   }
 
   private boolean checkAbsence(JsonLDObject container, String... keys) {
@@ -393,6 +424,13 @@ public class VerificationServiceImpl implements VerificationService {
     return tcs;
   }
 
+  private TypedCredentials getCredentials(VerifiableCredential vc) {
+    log.trace("getCredentials.enter; got VC: {}", vc);
+    TypedCredentials tcs = new TypedCredentials(vc);
+    log.trace("getCredentials.exit; returning: {}", tcs);
+    return tcs;
+  }
+  
   /**
    * A method that returns a list of claims given a self-description's VerifiablePresentation
    *
@@ -501,17 +539,20 @@ public class VerificationServiceImpl implements VerificationService {
 
   
   /* SD signatures verification */
-  private List<Validator> checkCryptography(TypedCredentials tcs) {
+  private List<Validator> checkCryptography(TypedCredentials tcs, boolean verifyVP, boolean verifyVC) {
     log.debug("checkCryptography.enter;");
     long timestamp = System.currentTimeMillis();
 
     Set<Validator> validators = new HashSet<>();
     try {
-      validators.add(checkSignature(tcs.getPresentation()));
-      for (VerifiableCredential credential : tcs.getCredentials()) {
-        validators.add(checkSignature(credential));
+      if (verifyVC) {
+        for (VerifiableCredential credential : tcs.getCredentials()) {
+          validators.add(checkSignature(credential));
+        }
       }
-//      validators.add(checkSignature(tcs.getPresentation()));
+      if (verifyVP) {	
+        validators.add(checkSignature(tcs.getPresentation()));
+      }
     } catch (VerificationException ex) {
       throw ex;
     } catch (Exception ex) {
@@ -524,25 +565,25 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   @SuppressWarnings("unchecked")
-  public Validator checkSignature(JsonLDObject payload) {
+  private Validator checkSignature(JsonLDObject payload) {
 	Map<String, Object> proofMap = (Map<String, Object>) payload.getJsonObject().get("proof");
 	if (proofMap == null) {
 	  throw new VerificationException("Signatures error; No proof found");
 	}
-
+	
 	LdProof proof = LdProof.fromMap(proofMap);
 	if (proof.getType() == null) {
 	  throw new VerificationException("Signatures error; Proof must have 'type' property");
 	}
 	    
 	try {
-	  return checkSignature(payload, proof);
+	  return checkProofSignature(payload, proof);
 	} catch (IOException ex) {
 	  throw new VerificationException(ex);
 	}
   }
 
-  private Validator checkSignature(JsonLDObject payload, LdProof proof) throws IOException { 
+  private Validator checkProofSignature(JsonLDObject payload, LdProof proof) throws IOException {
     String vmKey = proof.getVerificationMethod().toString();
     Validator validator = validatorCache.getFromCache(vmKey);
     if (validator == null) {
@@ -625,6 +666,18 @@ public class VerificationServiceImpl implements VerificationService {
       initCredentials();
     }
 
+    TypedCredentials(VerifiableCredential credential) {
+      this.presentation = null;
+      Map<VerifiableCredential, TrustFrameworkBaseClass> creds;
+      TrustFrameworkBaseClass bc = getSDBaseClass(credential);
+      if (bc == null) {
+          creds = Collections.emptyMap();
+      } else {
+        creds = Map.of(credential, bc);
+      }
+      this.credentials = creds;
+    }
+
     @SuppressWarnings("unchecked")
     private void initCredentials() {
       Object obj = presentation.getJsonObject().get("verifiableCredential");
@@ -668,6 +721,9 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     String getHolder() {
+      if (presentation == null) {
+    	return null;  
+      }
       URI holder = presentation.getHolder();
       if (holder == null) {
         return null;
@@ -717,7 +773,14 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     String getProofMethod() {
-      LdProof proof = presentation.getLdProof();
+      LdProof proof = null;	
+      if (presentation == null) {
+    	if (!credentials.isEmpty()) {
+    	  proof = credentials.keySet().iterator().next().getLdProof();
+    	}
+      } else {
+        proof = presentation.getLdProof();
+      }
       URI method = proof == null ? null : proof.getVerificationMethod();
       return method == null ? null : method.toString();
     }

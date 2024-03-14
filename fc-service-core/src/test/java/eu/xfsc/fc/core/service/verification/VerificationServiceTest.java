@@ -91,8 +91,7 @@ public class VerificationServiceTest {
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     Exception ex = assertThrowsExactly(VerificationException.class, ()
             -> verificationService.verifySelfDescription(getAccessor(path)));
-    assertTrue(ex.getMessage().contains("VerifiablePresentation must contain 'type' property"));
-    assertTrue(ex.getMessage().contains("VerifiablePresentation must contain 'verifiableCredential' property"));
+    assertTrue(ex.getMessage().contains("expected SD of type 'VerifiablePresentation', actual SD type: null"));
   }
 
   @Test
@@ -114,7 +113,7 @@ public class VerificationServiceTest {
     log.debug("validSyntax_ValidSDVP");
     //schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     String path = "VerificationService/syntax/input.vp.jsonld";
-    VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false);
+    VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false, false);
     assertNotNull(vr);
     assertTrue(vr instanceof VerificationResultParticipant);
     VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
@@ -129,7 +128,7 @@ public class VerificationServiceTest {
     log.debug("validSyntax_ValidServiceOldSchema");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("VerificationService/syntax/serviceOffering1.jsonld");
-    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false, false);
     assertNotNull(vr);
     assertFalse(vr instanceof VerificationResultParticipant);
     assertTrue(vr instanceof VerificationResultOffering);
@@ -149,7 +148,7 @@ public class VerificationServiceTest {
     schemaStore.initializeDefaultSchemas();
     ContentAccessor content = getAccessor("VerificationService/syntax/serviceOffering2.jsonld");
     verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "https://w3id.org/gaia-x/core#ServiceOffering");
-    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false, false);
     verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "http://w3id.org/gaia-x/service#ServiceOffering");
     assertNotNull(vr);
     assertTrue(vr instanceof VerificationResultOffering);
@@ -169,7 +168,7 @@ public class VerificationServiceTest {
     log.debug("validSyntax_ValidPerson");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("VerificationService/syntax/legalPerson1.jsonld");
-    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false, false);
     assertNotNull(vr);
     assertTrue(vr instanceof VerificationResultParticipant);
     assertFalse(vr instanceof VerificationResultOffering);
@@ -190,7 +189,7 @@ public class VerificationServiceTest {
     schemaStore.initializeDefaultSchemas();
     ContentAccessor content = getAccessor("VerificationService/syntax/legalPerson2.jsonld");
     verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "https://w3id.org/gaia-x/core#Participant"); 
-    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false, false);
     verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "http://w3id.org/gaia-x/participant#Participant"); 
     assertNotNull(vr);
     assertTrue(vr instanceof VerificationResultParticipant);
@@ -212,7 +211,7 @@ public class VerificationServiceTest {
     schemaStore.initializeDefaultSchemas();
     ContentAccessor content = getAccessor("VerificationService/syntax/resourceSD.jsonld");
     verificationService.setBaseClassUri(TrustFrameworkBaseClass.RESOURCE, "https://w3id.org/gaia-x/core#Resource"); 
-    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false, false);
     verificationService.setBaseClassUri(TrustFrameworkBaseClass.RESOURCE, "http://w3id.org/gaia-x/resource#Resource"); 
     assertNotNull(vr);
     assertTrue(vr instanceof VerificationResultResource);
@@ -244,7 +243,7 @@ public class VerificationServiceTest {
     String path = "VerificationService/sign/hasNoSignature1.json";
 
     Exception ex = assertThrowsExactly(VerificationException.class, ()
-            -> verificationService.verifySelfDescription(getAccessor(path), false, true, true));
+            -> verificationService.verifySelfDescription(getAccessor(path), false, true, true, true));
     assertEquals("Signatures error; No proof found", ex.getMessage());
     assertNull(ex.getCause());
   }
@@ -256,7 +255,7 @@ public class VerificationServiceTest {
     String path = "VerificationService/sign/hasInvalidSignatureType.json";
 
     Exception ex = assertThrowsExactly(VerificationException.class, ()
-            -> verificationService.verifySelfDescription(getAccessor(path), false, true, true));
+            -> verificationService.verifySelfDescription(getAccessor(path), false, true, true, false));
     assertEquals("Signatures error; Unknown Verification Method: https://example.edu/issuers/565049#key-1", ex.getMessage());
     assertNull(ex.getCause());
   }
@@ -297,7 +296,7 @@ public class VerificationServiceTest {
     //schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     schemaStore.initializeDefaultSchemas();
     verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "https://w3id.org/gaia-x/core#ServiceOffering");
-    VerificationResult vr = verificationService.verifySelfDescription(getAccessor("Signature-Tests/gxfsSignarure.jsonld"), true, true, true);
+    VerificationResult vr = verificationService.verifySelfDescription(getAccessor("Signature-Tests/gxfsSignarure.jsonld"), true, true, true, true);
     verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "http://w3id.org/gaia-x/service#ServiceOffering");
     assertNotNull(vr);
   }
@@ -308,7 +307,7 @@ public class VerificationServiceTest {
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     String path = "VerificationService/sign/valid_signature.json";
     //VerificationResult result = verificationService.verifySelfDescription(getAccessor(path));
-    VerificationResult result = verificationService.verifySelfDescription(getAccessor(path), false, false, true);
+    VerificationResult result = verificationService.verifySelfDescription(getAccessor(path), false, false, true, true);
     assertEquals(1, result.getValidators().size(), "Incorrect number of validators found");
   }
 
@@ -326,7 +325,7 @@ public class VerificationServiceTest {
     log.debug("extractClaims_providerTest");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("Claims-Extraction-Tests/providerTest.jsonld");
-    VerificationResult result = verificationService.verifySelfDescription(content, true, true, false);
+    VerificationResult result = verificationService.verifySelfDescription(content, true, true, false, false);
     List<SdClaim> actualClaims = result.getClaims();
     log.debug("extractClaims_providerTest; actual claims: {}", actualClaims);
 
@@ -349,7 +348,7 @@ public class VerificationServiceTest {
     log.debug("extractClaims_participantTest");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("Claims-Extraction-Tests/participantSD.jsonld");
-    VerificationResult result = verificationService.verifySelfDescription(content, true, false, false);
+    VerificationResult result = verificationService.verifySelfDescription(content, true, false, false, false);
     List<SdClaim> actualClaims = result.getClaims();
     log.debug("extractClaims_participantTest; actual claims: {}", actualClaims);
 
@@ -383,7 +382,7 @@ public class VerificationServiceTest {
     log.debug("extractClaims_participantTwoVCsTest");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("Claims-Extraction-Tests/participantTwoVCs.jsonld");
-    VerificationResult result = verificationService.verifySelfDescription(content, true, true, false);
+    VerificationResult result = verificationService.verifySelfDescription(content, true, true, false, false);
     List<SdClaim> actualClaims = result.getClaims();
     log.debug("extractClaims_participantTest; actual claims: {}", actualClaims);
     List<SdClaim> expectedClaims = new ArrayList<>();
@@ -411,7 +410,7 @@ public class VerificationServiceTest {
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("Claims-Extraction-Tests/participantTwoAdditionalContext.jsonld");
     try {
-		verificationService.verifySelfDescription(content, true, true, true);
+		verificationService.verifySelfDescription(content, true, true, true, false);
 		fail("Signature error expected");
 	} catch (VerificationException e) {
 		assertFalse(e.getMessage().contains("Imported context is null"), "Context related error message not expecteed");
@@ -424,7 +423,7 @@ public class VerificationServiceTest {
     log.debug("extractClaims_participantTwoCSsTest");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("Claims-Extraction-Tests/participantTwoCSs.jsonld");
-    VerificationResult result = verificationService.verifySelfDescription(content, true, true, false);
+    VerificationResult result = verificationService.verifySelfDescription(content, true, true, false, false);
     List<SdClaim> actualClaims = result.getClaims();
     log.debug("extractClaims_participantTest; actual claims: {}", actualClaims);
 

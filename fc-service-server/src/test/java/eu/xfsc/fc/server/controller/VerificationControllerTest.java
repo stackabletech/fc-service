@@ -107,7 +107,8 @@ public class VerificationControllerTest {
     String json = getMockFileDataAsString("participant_without_proofs.json");
     mockMvc.perform(MockMvcRequestBuilders.post("/verification")
             .queryParam("verifySemantics", "false")
-            .queryParam("verifySignatures", "false")
+            .queryParam("verifyVPSignature", "false")
+            .queryParam("verifyVCSignature", "false")
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .content(json))
