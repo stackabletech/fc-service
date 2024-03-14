@@ -110,9 +110,8 @@ federated-catalogue:
     self: "http://localhost:${server.port}"
   verification:
     trust-anchor-url: "https://registry.lab.gaia-x.eu/v1/api/trustAnchor/chain/file"
-    did-resolver-url: "https://dev.uniresolver.io/1.0/identifiers/"
-    # add additional context for the GAIA-X trustfromework here. Use a comma separated list of URLs, that will be loaded as additional context(s) into the VerifiablePresentation
-    additional-contexts: ""
+    http-timeout: 3000 
+    validator-expire: 1D
     participant:
       type: "https://w3id.org/gaia-x/core#Participant"
     resource:
@@ -122,6 +121,21 @@ federated-catalogue:
     semantics: true
     schema: true
     signatures: true
+    signature-verifier: local
+    did:
+      base-url: "https://dev.uniresolver.io/1.0/identifiers/"
+      cache:
+        size: 100
+        timeout: 1H
+    doc-loader:
+      additional-context:
+        '[https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#]': https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#
+        '[https://registry.lab.gaia-x.eu/v1/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#]': https://registry.lab.gaia-x.eu/v1/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#
+      cache-size: 500
+      cache-timeout: 24H
+      enable-file: true
+      enable-http: true
+      enable-local-cache: false
 
 logging:
   level:

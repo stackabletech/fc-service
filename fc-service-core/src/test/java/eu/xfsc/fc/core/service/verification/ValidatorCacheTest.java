@@ -1,7 +1,9 @@
 package eu.xfsc.fc.core.service.verification;
 
 import eu.xfsc.fc.core.config.DatabaseConfig;
+import eu.xfsc.fc.core.config.DidResolverConfig;
 import eu.xfsc.fc.core.config.DocumentLoaderConfig;
+import eu.xfsc.fc.core.config.DocumentLoaderProperties;
 import eu.xfsc.fc.core.config.FileStoreConfig;
 import eu.xfsc.fc.core.dao.ValidatorCacheDao;
 import eu.xfsc.fc.core.dao.impl.SchemaDaoImpl;
@@ -33,7 +35,7 @@ import org.springframework.test.context.ContextConfiguration;
 @SpringBootTest
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {ValidatorCacheTest.TestApplication.class, ValidatorCacheDaoImpl.class, DatabaseConfig.class, FileStoreConfig.class,
-        VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DocumentLoaderConfig.class})
+        VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class, DidResolverConfig.class})
 @DirtiesContext
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
