@@ -10,6 +10,7 @@ import com.apicatalog.jsonld.document.JsonDocument;
 import com.apicatalog.rdf.RdfDataset;
 import com.apicatalog.rdf.RdfGraph;
 import com.apicatalog.rdf.RdfTriple;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.xfsc.fc.core.pojo.ContentAccessor;
 import eu.xfsc.fc.core.pojo.SdClaim;
@@ -20,6 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TitaniumClaimExtractor implements ClaimExtractor {
+
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public List<SdClaim> extractClaims(ContentAccessor content) throws Exception {
@@ -55,7 +58,7 @@ public class TitaniumClaimExtractor implements ClaimExtractor {
             List<RdfTriple> triples = rdfGraph.toList();
             for (RdfTriple triple: triples) {
                 log.debug("extractClaims; got triple: {}", triple);
-                SdClaim claim = new SdClaim(triple);
+                SdClaim claim = new SdClaim(triple, objectMapper);
                 claims.add(claim);
             }
         }

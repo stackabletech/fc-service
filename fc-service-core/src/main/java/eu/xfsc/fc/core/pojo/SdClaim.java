@@ -4,6 +4,8 @@ import java.util.Objects;
 
 import com.apicatalog.rdf.RdfTriple;
 import com.apicatalog.rdf.RdfValue;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * POJO Class for holding a Claim. A Claim is a triple represented by a subject, predicate, and object.
@@ -15,11 +17,11 @@ public class SdClaim {
   private String predicate;
   private String object;
   
-  public SdClaim(RdfTriple triple) {
-	this.triple = triple;
-	this.subject = rdf2String(triple.getSubject());
-	this.predicate = rdf2String(triple.getPredicate());
-	this.object = rdf2String(triple.getObject());
+  public SdClaim(RdfTriple triple, ObjectMapper objectMapper) {
+    this.triple = triple;
+    this.subject = rdf2String(triple.getSubject(), objectMapper);
+    this.predicate = rdf2String(triple.getPredicate(), objectMapper);
+    this.object = rdf2String(triple.getObject(), objectMapper);
   }
   
   public SdClaim(String subject, String predicate, String object) {
@@ -95,9 +97,17 @@ public class SdClaim {
 	return "SdClaim[" + subject + " " + predicate + " " + object + "]";  
   }
   
-  private String rdf2String(RdfValue rdf) {
+  private String rdf2String(RdfValue rdf, ObjectMapper objectMapper) {
     if (rdf.isBlankNode()) return rdf.getValue();
-    if (rdf.isLiteral()) return "\"" + rdf.getValue() + "\"";
+
+    try {
+        if (rdf.isLiteral()) {
+            return objectMapper.writeValueAsString(rdf.getValue());
+        }
+    } catch (JsonProcessingException e) {
+        e.printStackTrace();
+    }
+
     // rdf is IRI. here we could try to make it absolute..
     return "<" + rdf.getValue() + ">";
   }
