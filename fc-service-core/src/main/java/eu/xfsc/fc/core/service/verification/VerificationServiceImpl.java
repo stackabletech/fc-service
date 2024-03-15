@@ -1,8 +1,6 @@
 package eu.xfsc.fc.core.service.verification;
 
-import static eu.xfsc.fc.core.service.verification.TrustFrameworkBaseClass.PARTICIPANT;
-import static eu.xfsc.fc.core.service.verification.TrustFrameworkBaseClass.RESOURCE;
-import static eu.xfsc.fc.core.service.verification.TrustFrameworkBaseClass.SERVICE_OFFERING;
+import static eu.xfsc.fc.core.service.verification.TrustFrameworkBaseClass.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -193,7 +191,7 @@ public class VerificationServiceImpl implements VerificationService {
   @Override
   public VerificationResult verifySelfDescription(ContentAccessor payload, boolean verifySemantics, boolean verifySchema, 
 		  boolean verifyVPSignatures, boolean verifyVCSignatures) throws VerificationException {
-    return verifySelfDescription(payload, false, null, verifySemantics, verifySchema, verifyVPSignatures, verifyVCSignatures);
+    return verifySelfDescription(payload, false, UNKNOWN, verifySemantics, verifySchema, verifyVPSignatures, verifyVCSignatures);
   }
 
   private VerificationResult verifySelfDescription(ContentAccessor payload, boolean strict, TrustFrameworkBaseClass expectedClass, boolean verifySemantics, 
@@ -212,16 +210,16 @@ public class VerificationServiceImpl implements VerificationService {
     
     // semantic verification
     long stamp2 = System.currentTimeMillis();
-    TypedCredentials typedCredentials = parseCredentials(ld, verifySemantics);
+    TypedCredentials typedCredentials = parseCredentials(ld, strict && requireVP, verifySemantics);
     log.debug("verifySelfDescription; credentials processed, time taken: {}", System.currentTimeMillis() - stamp2);
 
-    if (typedCredentials.isEmpty()) {
+    if (verifySemantics && !typedCredentials.hasClasses()) {
       throw new VerificationException("Semantic Error: no proper CredentialSubject found");
     }
 
     Collection<TrustFrameworkBaseClass> baseClasses = typedCredentials.getBaseClasses();
-    TrustFrameworkBaseClass baseClass = baseClasses.iterator().next();
-    if (strict) {
+    TrustFrameworkBaseClass baseClass = baseClasses.isEmpty() ? UNKNOWN : baseClasses.iterator().next();
+    if (verifySemantics && strict) {
       if (baseClasses.size() > 1) {
         throw new VerificationException("Semantic error: SD has several types: " + baseClasses);
       }
@@ -235,7 +233,7 @@ public class VerificationServiceImpl implements VerificationService {
     log.debug("verifySelfDescription; claims extracted: {}, time taken: {}", (claims == null ? "null" : claims.size()),
     		System.currentTimeMillis() - stamp2);
 
-    if (verifySemantics) {
+    if (verifySemantics && strict) {
       Set<String> subjects = new HashSet<>();
       Set<String> objects = new HashSet<>();
       if (claims != null && !claims.isEmpty()) {
@@ -304,7 +302,7 @@ public class VerificationServiceImpl implements VerificationService {
     return result;
   }
   
-  private TypedCredentials parseCredentials(JsonLDObject ld, boolean verifySemantics) {
+  private TypedCredentials parseCredentials(JsonLDObject ld, boolean vpRequired, boolean verifySemantics) {
 	//try {  
    	  if (ld.isType(VerifiableCredentialKeywords.JSONLD_TERM_VERIFIABLE_PRESENTATION)) {
    	    VerifiablePresentation vp = VerifiablePresentation.fromJsonLDObject(ld);
@@ -313,14 +311,14 @@ public class VerificationServiceImpl implements VerificationService {
    	    }
    	    return getCredentials(vp);
    	  }
-      if (requireVP) {
+      if (vpRequired) {
         throw new VerificationException("Semantic error: expected SD of type 'VerifiablePresentation', actual SD type: " + ld.getTypes());
       }
       if (ld.isType(VerifiableCredentialKeywords.JSONLD_TERM_VERIFIABLE_CREDENTIAL)) {
         VerifiableCredential vc = VerifiableCredential.fromJsonLDObject(ld);
         if (verifySemantics) {
           String err = verifyCredential(vc, 0);
-          if (err != null) {
+          if (err != null && err.length() > 0) {
             throw new VerificationException("Semantic error: " + err);
           }
         }
@@ -670,11 +668,7 @@ public class VerificationServiceImpl implements VerificationService {
       this.presentation = null;
       Map<VerifiableCredential, TrustFrameworkBaseClass> creds;
       TrustFrameworkBaseClass bc = getSDBaseClass(credential);
-      if (bc == null) {
-          creds = Collections.emptyMap();
-      } else {
-        creds = Map.of(credential, bc);
-      }
+      creds = Map.of(credential, bc);
       this.credentials = creds;
     }
 
@@ -691,19 +685,13 @@ public class VerificationServiceImpl implements VerificationService {
           VerifiableCredential vc = VerifiableCredential.fromMap(_vc);
           vc.setDocumentLoader(this.presentation.getDocumentLoader());
           TrustFrameworkBaseClass bc = getSDBaseClass(vc);
-          if (bc != null) {
-            creds.put(vc, bc);
-          }
+          creds.put(vc, bc);
         }
       } else {
         VerifiableCredential vc = VerifiableCredential.fromMap((Map<String, Object>) obj);
         vc.setDocumentLoader(this.presentation.getDocumentLoader());
         TrustFrameworkBaseClass bc = getSDBaseClass(vc);
-        if (bc == null) {
-          creds = Collections.emptyMap();
-        } else {
-          creds = Map.of(vc, bc);
-        }
+        creds = Map.of(vc, bc);
       }
       this.credentials = creds;
     }
@@ -713,7 +701,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     Collection<TrustFrameworkBaseClass> getBaseClasses() {
-      return credentials.values().stream().distinct().toList();
+      return credentials.values().stream().filter(bc -> bc != UNKNOWN).distinct().toList();
     }
 
     Collection<VerifiableCredential> getCredentials() {
@@ -785,13 +773,16 @@ public class VerificationServiceImpl implements VerificationService {
       return method == null ? null : method.toString();
     }
 
-    boolean isEmpty() {
-      return credentials.isEmpty();
+    boolean hasClasses() {
+      return credentials.values().stream().anyMatch(bc -> bc != UNKNOWN);
     }
 
     private TrustFrameworkBaseClass getSDBaseClass(VerifiableCredential credential) {
       ContentAccessor gaxOntology = schemaStore.getCompositeSchema(SchemaStore.SchemaType.ONTOLOGY);
       TrustFrameworkBaseClass result = ClaimValidator.getSubjectType(gaxOntology, getStreamManager(), credential.toJson(), trustFrameworkBaseClassUris);
+      if (result == null) {
+    	  result = UNKNOWN;
+      }
       log.debug("getSDBaseClass; got type result: {}", result);
       return result;
     }

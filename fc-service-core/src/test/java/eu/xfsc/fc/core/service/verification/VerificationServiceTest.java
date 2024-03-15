@@ -91,7 +91,49 @@ public class VerificationServiceTest {
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     Exception ex = assertThrowsExactly(VerificationException.class, ()
             -> verificationService.verifySelfDescription(getAccessor(path)));
-    assertTrue(ex.getMessage().contains("expected SD of type 'VerifiablePresentation', actual SD type: null"));
+    assertTrue(ex.getMessage().contains("unexpected SD type: null"));
+  }
+
+  @Test
+  void validVCnoVP() {
+    log.debug("validVCnoVP");
+    String path = "VerificationService/syntax/input.vc.jsonld";
+    schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
+    VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), true, true, false, false);
+    assertNotNull(vr);
+    assertTrue(vr instanceof VerificationResultParticipant);
+    VerificationResultParticipant vrp = (VerificationResultParticipant) vr;
+    assertEquals(vrp.getIssuer(), "did:v1:test:nym:z6MkhdmzFu659ZJ4XKj31vtEDmjvsi5yDZG5L7Caz63oP39k");
+    assertEquals(vrp.getParticipantName(), vrp.getIssuer());
+    assertEquals(vrp.getId(), vrp.getIssuer()); // not sure this is correct..
+  }
+
+  @Test
+  void validVCUnknownType() {
+    log.debug("validVCUnknownType");
+    String path = "VerificationService/jsonld/input.vc.jsonld";
+    schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
+    Exception ex = assertThrowsExactly(VerificationException.class, () -> verificationService.verifySelfDescription(getAccessor(path)));
+    assertEquals("Semantic Error: no proper CredentialSubject found", ex.getMessage());
+
+    VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), false, true, false, false);
+    assertNotNull(vr);
+    assertEquals("did:example:ebfeb1f712ebc6f1c276e12ec21", vr.getId());
+    assertEquals("https://example.edu/issuers/565049", vr.getIssuer());
+  }
+  
+  @Test
+  void validVPUnknownType() {
+    log.debug("validVPUnknownType");
+    String path = "VerificationService/jsonld/input.vp.jsonld";
+    schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
+    Exception ex = assertThrowsExactly(VerificationException.class, () -> verificationService.verifySelfDescription(getAccessor(path)));
+    assertEquals("Semantic Error: no proper CredentialSubject found", ex.getMessage());
+
+    VerificationResult vr = verificationService.verifySelfDescription(getAccessor(path), false, true, false, false);
+    assertNotNull(vr);
+    assertEquals("did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd", vr.getId());
+    assertEquals("did:v1:test:nym:z6MkhdmzFu659ZJ4XKj31vtEDmjvsi5yDZG5L7Caz63oP39k", vr.getIssuer());
   }
 
   @Test

@@ -70,5 +70,4 @@ public class SignatureVerificationTest {
 	    assertEquals(1, result.getValidators().size(), "Incorrect number of validators found");
 	}
 
-	  
 }
