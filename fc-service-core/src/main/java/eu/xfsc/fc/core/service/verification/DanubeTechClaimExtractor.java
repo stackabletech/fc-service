@@ -9,6 +9,7 @@ import java.util.Map;
 import com.apicatalog.rdf.RdfNQuad;
 import com.danubetech.verifiablecredentials.CredentialSubject;
 import com.danubetech.verifiablecredentials.VerifiablePresentation;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.xfsc.fc.core.pojo.ContentAccessor;
 import eu.xfsc.fc.core.pojo.SdClaim;
@@ -16,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DanubeTechClaimExtractor implements ClaimExtractor {
+
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     @SuppressWarnings("unchecked")
@@ -54,7 +57,7 @@ public class DanubeTechClaimExtractor implements ClaimExtractor {
                 log.debug("extractClaims; CS claims: {}", cs.getClaims());
                 for (RdfNQuad nquad: cs.toDataset().toList()) {
                     log.debug("extractClaims; got NQuad: {}", nquad);
-                    SdClaim claim = new SdClaim(nquad);
+                    SdClaim claim = new SdClaim(nquad, objectMapper);
                     claims.add(claim);
                 }
             }
