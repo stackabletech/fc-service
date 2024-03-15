@@ -1,4 +1,4 @@
-package eu.xfsc.fc.core.service.verification;
+package eu.xfsc.fc.core.service.verification.claims;
 
 import static com.danubetech.verifiablecredentials.jsonld.VerifiableCredentialKeywords.*;
 

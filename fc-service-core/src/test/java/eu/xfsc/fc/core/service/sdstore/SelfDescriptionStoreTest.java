@@ -31,7 +31,9 @@ import org.springframework.test.context.ContextConfiguration;
 
 import eu.xfsc.fc.api.generated.model.SelfDescriptionStatus;
 import eu.xfsc.fc.core.config.DatabaseConfig;
+import eu.xfsc.fc.core.config.DidResolverConfig;
 import eu.xfsc.fc.core.config.DocumentLoaderConfig;
+import eu.xfsc.fc.core.config.DocumentLoaderProperties;
 import eu.xfsc.fc.core.dao.impl.SelfDescriptionDaoImpl;
 import eu.xfsc.fc.core.exception.ConflictException;
 import eu.xfsc.fc.core.exception.NotFoundException;
@@ -56,9 +58,8 @@ import lombok.extern.slf4j.Slf4j;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SpringBootTest
 @ActiveProfiles("test")
-@ContextConfiguration(classes = {SelfDescriptionStoreTest.TestApplication.class, //FileStoreConfig.class,
-  SelfDescriptionStoreImpl.class, SelfDescriptionDaoImpl.class, SelfDescriptionStoreTest.class,
-  DatabaseConfig.class, Neo4jGraphStore.class, DocumentLoaderConfig.class})
+@ContextConfiguration(classes = {SelfDescriptionStoreTest.TestApplication.class, SelfDescriptionStoreImpl.class, SelfDescriptionDaoImpl.class, SelfDescriptionStoreTest.class,
+  DatabaseConfig.class, Neo4jGraphStore.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class, DidResolverConfig.class})
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)

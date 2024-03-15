@@ -257,7 +257,7 @@ public class ClaimValidator {
         return null;
       }
 
-      private static boolean checkTypeSubClass(ContentAccessor ontology, String type, String gaxType) {
+    private static boolean checkTypeSubClass(ContentAccessor ontology, String type, String gaxType) {
         log.debug("checkTypeSubClass.enter; got type: {}, gaxType: {}", type, gaxType);
         if (type.equals(gaxType)) {
           return true;
@@ -279,5 +279,6 @@ public class ClaimValidator {
           }
         }
         return false;
-      }    
+    }    
+
 }

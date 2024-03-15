@@ -87,6 +87,14 @@
             <artifactId>did-common-java</artifactId>
         </dependency>
         <dependency>
+            <groupId>info.weboftrust</groupId>
+            <artifactId>ld-signatures-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>decentralized-identity</groupId>
+	        <artifactId>uni-resolver-client</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.nats</groupId>
             <artifactId>jnats</artifactId>
         </dependency>
