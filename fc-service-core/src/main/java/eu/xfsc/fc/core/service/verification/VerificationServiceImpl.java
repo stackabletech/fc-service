@@ -605,7 +605,9 @@ public class VerificationServiceImpl implements VerificationService {
     Instant expiration = null;
     JWK jwk = JWK.fromJson(validator.getPublicKey());
     String url = jwk.getX5u();
-    if (url != null) {
+    if (url == null) {
+      throw new VerificationException("Signatures error; no trust anchor url found");
+    } else {
       expiration = hasPEMTrustAnchorAndIsNotExpired(url);
     }
     if (expiration == null) {
@@ -618,7 +620,7 @@ public class VerificationServiceImpl implements VerificationService {
   }
 
   @SuppressWarnings("unchecked")
-  private Instant hasPEMTrustAnchorAndIsNotExpired(String uri) {
+  private Instant hasPEMTrustAnchorAndIsNotExpired(String uri) throws VerificationException {
     log.debug("hasPEMTrustAnchorAndIsNotExpired.enter; got uri: {}", uri);
     String pem = rest.getForObject(uri, String.class);
     InputStream certStream = new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8));
@@ -627,8 +629,8 @@ public class VerificationServiceImpl implements VerificationService {
       CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
       certs = (List<X509Certificate>) certFactory.generateCertificates(certStream);
     } catch (CertificateException ex) {
-      log.debug("hasPEMTrustAnchorAndIsNotExpired.error: {}", ex.getMessage());
-      return null;
+      log.warn("hasPEMTrustAnchorAndIsNotExpired; certificate error: {}", ex.getMessage());
+      throw new VerificationException("Signatures error; " + ex.getMessage());
     }
 
     //Then extract relevant cert
@@ -640,13 +642,19 @@ public class VerificationServiceImpl implements VerificationService {
           relevant = cert;
         }
       } catch (Exception ex) {
-        log.debug("hasPEMTrustAnchorAndIsNotExpired.error: {}", ex.getMessage());
+        log.warn("hasPEMTrustAnchorAndIsNotExpired; check validity error: {}", ex.getMessage());
+        throw new VerificationException("Signatures error; " + ex.getMessage());
       }
     }
 
-    ResponseEntity<Map> resp = rest.postForEntity(trustAnchorAddr, Map.of("uri", uri), Map.class);
-    if (!resp.getStatusCode().is2xxSuccessful()) {
-      log.info("hasPEMTrustAnchorAndIsNotExpired; Trust anchor is not set in the registry. URI: {}", uri);
+    try {
+      ResponseEntity<Map> resp = rest.postForEntity(trustAnchorAddr, Map.of("uri", uri), Map.class);
+      if (!resp.getStatusCode().is2xxSuccessful()) {
+        log.info("hasPEMTrustAnchorAndIsNotExpired; Trust anchor is not set in the registry. URI: {}", uri);
+      }
+    } catch (Exception ex) {
+      log.warn("hasPEMTrustAnchorAndIsNotExpired; trust anchor error: {}", ex.getMessage());
+      throw new VerificationException("Signatures error; " + ex.getMessage());
     }
     Instant exp = relevant == null ? null : relevant.getNotAfter().toInstant();
     log.debug("hasPEMTrustAnchorAndIsNotExpired.exit; returning: {}", exp);

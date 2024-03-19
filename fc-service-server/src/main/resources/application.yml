@@ -110,6 +110,7 @@ federated-catalogue:
     self: "http://localhost:${server.port}"
   verification:
     trust-anchor-url: "https://registry.lab.gaia-x.eu/v1/api/trustAnchor/chain/file"
+#    trust-anchor-url: "https://registry.lab.gaia-x.eu/development/api/trustAnchor/chain/file"
     http-timeout: 3000 
     validator-expire: 1D
     participant:
@@ -122,9 +123,9 @@ federated-catalogue:
     schema: true
     vp-signature: true
     vc-signature: true
-    signature-verifier: local
-    did:
-      base-url: "https://dev.uniresolver.io/1.0/identifiers/"
+    signature-verifier: uni-res #local
+    did: 
+      base-url: "https://dev.uniresolver.io/1.0" #/identifiers/
       cache:
         size: 100
         timeout: 1H
@@ -145,4 +146,8 @@ logging:
 #    org.neo4j.driver: DEBUG
 #    org.springframework: DEBUG
     org.springframework.web: INFO
-#    org.springframework.security: DEBUG
+#    org.springframework.security: DEBUG 
+java.lang.ClassCastException: class eu.xfsc.fc.core.pojo.VerificationResult cannot be cast to class eu.xfsc.fc.core.pojo.VerificationResultOffering (eu.xfsc.fc.core.pojo.VerificationResult and eu.xfsc.fc.core.pojo.VerificationResultOffering are in unnamed module of loader org.springframework.boot.loader.launch.LaunchedClassLoader @279f2327)
+  at eu.xfsc.fc.core.service.verification.VerificationServiceImpl.verifyOfferingSelfDescription(VerificationServiceImpl.java:166)
+  at eu.xfsc.fc.server.service.SelfDescriptionService.addSelfDescription(SelfDescriptionService.java:181)
+
