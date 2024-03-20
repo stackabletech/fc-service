@@ -101,7 +101,7 @@ public class SelfDescriptionStoreCompositeTest {
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("Claims-Extraction-Tests/providerTest.jsonld");
     // Only verify semantics, not schema or signatures
-    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false);
+    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false, false);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
     sdStorePublisher.storeSelfDescription(sdMeta, result);
 
@@ -141,7 +141,7 @@ public class SelfDescriptionStoreCompositeTest {
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("Claims-Extraction-Tests/providerTest.jsonld");
     // Only verify semantics, not schema or signatures
-    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false);
+    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false, false);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
     sdStorePublisher.storeSelfDescription(sdMeta, result);
 

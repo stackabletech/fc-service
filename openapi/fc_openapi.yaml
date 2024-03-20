@@ -1035,9 +1035,16 @@ paths:
           schema:
             type: boolean
             default: true  
-        - name: verifySignatures
+        - name: verifyVPSignature
           in: query
-          description: 'To verify SD signatures or not'
+          description: 'To verify VP signature or not'
+          required: false
+          schema:
+            type: boolean
+            default: true  
+        - name: verifyVCSignature
+          in: query
+          description: 'To verify VC signature or not'
           required: false
           schema:
             type: boolean

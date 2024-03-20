@@ -219,7 +219,7 @@ public class RevalidationServiceTest {
 
   public String addSelfDescription(final ContentAccessor content) throws VerificationException {
     try {
-      final VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+      final VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false, false);
       final SelfDescriptionMetadata sd = new SelfDescriptionMetadata(content, vr);
       sdStore.storeSelfDescription(sd, vr);
       return sd.getSdHash();

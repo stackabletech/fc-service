@@ -2,12 +2,15 @@ package eu.xfsc.fc.core.service.verification;
 
 import static eu.xfsc.fc.core.util.TestUtil.getAccessor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import java.io.IOException;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -22,6 +25,7 @@ import eu.xfsc.fc.core.config.DocumentLoaderProperties;
 import eu.xfsc.fc.core.config.FileStoreConfig;
 import eu.xfsc.fc.core.dao.impl.SchemaDaoImpl;
 import eu.xfsc.fc.core.dao.impl.ValidatorCacheDaoImpl;
+import eu.xfsc.fc.core.exception.VerificationException;
 import eu.xfsc.fc.core.pojo.VerificationResult;
 import eu.xfsc.fc.core.service.schemastore.SchemaStoreImpl;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -33,6 +37,7 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 @ContextConfiguration(classes = {SignatureVerificationTest.TestApplication.class, FileStoreConfig.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class,
         VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DatabaseConfig.class, DidResolverConfig.class, ValidatorCacheDaoImpl.class})
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class SignatureVerificationTest {
 
 	@SpringBootApplication
@@ -44,10 +49,9 @@ public class SignatureVerificationTest {
 	}
 
 	@Autowired
-	private VerificationServiceImpl verificationService;
-
-	@Autowired
 	private SchemaStoreImpl schemaStore;
+	@Autowired
+	private VerificationServiceImpl verificationService;
 
 	@AfterEach
 	public void storageSelfCleaning() throws IOException {
@@ -63,12 +67,12 @@ public class SignatureVerificationTest {
 	}
 
 	@Test
-	void testJWKSignature() {
+	void testJWKCertificate() {
 	    schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
 	    String path = "VerificationService/sign-unires/participant_jwk_signed.jsonld";
-	    VerificationResult result = verificationService.verifySelfDescription(getAccessor(path));
-	    assertEquals(1, result.getValidators().size(), "Incorrect number of validators found");
+	    Exception ex = assertThrowsExactly(VerificationException.class, ()
+	            -> verificationService.verifySelfDescription(getAccessor(path), true, true, true, true));
+	    assertEquals("Signatures error; no trust anchor url found", ex.getMessage());
 	}
-
-	  
+	
 }

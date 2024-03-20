@@ -56,12 +56,13 @@ public interface VerificationService {
    * @param payload
    * @param verifySemantics
    * @param verifySchema
-   * @param verifySignatures
+   * @param verifyVPSignatures
+   * @param verifyVCSignatures
    * @return
    * @throws VerificationException
    */
-  VerificationResult verifySelfDescription(ContentAccessor payload,
-      boolean verifySemantics, boolean verifySchema, boolean verifySignatures) throws VerificationException;
+  VerificationResult verifySelfDescription(ContentAccessor payload, boolean verifySemantics, boolean verifySchema, 
+		  boolean verifyVPSignatures, boolean verifyVCSignatures) throws VerificationException;
 
   /**
    * Extract claims from the given payload. This does not do any validation of the payload.
