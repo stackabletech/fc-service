@@ -40,6 +40,7 @@ import eu.xfsc.fc.core.pojo.VerificationResult;
 import eu.xfsc.fc.core.pojo.VerificationResultOffering;
 import eu.xfsc.fc.core.pojo.VerificationResultParticipant;
 import eu.xfsc.fc.core.pojo.VerificationResultResource;
+import eu.xfsc.fc.core.service.schemastore.SchemaStore.SchemaType;
 import eu.xfsc.fc.core.service.schemastore.SchemaStoreImpl;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import lombok.extern.slf4j.Slf4j;
@@ -249,7 +250,7 @@ public class VerificationServiceTest {
 
   @Test
   void validSyntax_ValidResourceNewSchema() {
-    log.debug("validSyntax_ValidResource");
+    log.debug("validSyntax_ValidResourceNewSchema");
     schemaStore.initializeDefaultSchemas();
     ContentAccessor content = getAccessor("VerificationService/syntax/resourceSD.jsonld");
     verificationService.setBaseClassUri(TrustFrameworkBaseClass.RESOURCE, "https://w3id.org/gaia-x/core#Resource"); 
@@ -268,6 +269,31 @@ public class VerificationServiceTest {
     assertNull(vrr.getValidatorDids());
   }
   
+  @Test
+  void validSyntax_LegalParticipantNewSchema() {
+    log.debug("validSyntax_LegalParticipantNewSchema");
+    schemaStore.initializeDefaultSchemas();
+    ContentAccessor content = getAccessor("VerificationService/syntax/legalParticipant.jsonld");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "https://w3id.org/gaia-x/core#Participant"); 
+    VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false, false);
+    assertNotNull(vr);
+    assertTrue(vr instanceof VerificationResultParticipant);
+    assertFalse(vr instanceof VerificationResultOffering);
+    VerificationResultParticipant vrr = (VerificationResultParticipant) vr;
+    //assertEquals("did:example:fad49ec6-d488-4bf9-bae5-d0ffa62a9bd2", vrr.getId());
+    //assertEquals("did:web:compliance.lab.gaia-x.eu", vrr.getIssuer());
+    assertEquals(Instant.parse("2024-03-15T12:40:58.486Z"), vrr.getIssuedDateTime());
+    assertNotNull(vrr.getClaims());
+    assertEquals(14, vrr.getClaims().size()); 
+    assertEquals(3, schemaStore.getSchemaList().get(SchemaType.ONTOLOGY).size());
+    schemaStore.deleteSchema("https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#");
+    assertEquals(2, schemaStore.getSchemaList().get(SchemaType.ONTOLOGY).size());
+    Exception ex = assertThrowsExactly(VerificationException.class, ()
+            -> verificationService.verifySelfDescription(content, true, true, false, false));
+    assertEquals("Semantic Error: no proper CredentialSubject found", ex.getMessage());
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "http://w3id.org/gaia-x/participant#Participant"); 
+  }
+
   @Test
   void invalidProof_InvalidSignatureType(){
     log.debug("invalidProof_InvalidSignatureType");

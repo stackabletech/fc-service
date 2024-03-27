@@ -391,18 +391,19 @@ public class SchemaStoreTest {
   @Test
   void testAddDeleteDefaultSchemas() {
     int initialized = schemaStore.initializeDefaultSchemas();
-    assertEquals(3, initialized, "Expected different number of schemas initialized.");
+    assertEquals(4, initialized, "Expected different number of schemas initialized.");
     //int count = TestUtil.countFilesInStore(fileStore);
     //assertEquals(3, count, "Expected different number of files in the store.");
     Map<SchemaType, List<String>> schemaList = schemaStore.getSchemaList();
-    assertEquals(2, schemaList.get(SchemaType.ONTOLOGY).size());
+    assertEquals(3, schemaList.get(SchemaType.ONTOLOGY).size());
     assertEquals(1, schemaList.get(SchemaType.SHAPE).size());
     assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("https://w3id.org/gaia-x/gax-trust-framework#"), "Ontology identifier not found in schema list.");
     assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("https://w3id.org/gaia-x/core#"), "Ontology identifier not found in schema list.");
+    assertTrue(schemaList.get(SchemaType.ONTOLOGY).contains("https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#"), "Ontology identifier not found in schema list.");
     schemaStore.deleteSchema("https://w3id.org/gaia-x/gax-trust-framework#");
     Map<SchemaType, List<String>> schemaListDelete = schemaStore.getSchemaList();
     assertFalse(schemaListDelete.get(SchemaType.ONTOLOGY).contains("https://w3id.org/gaia-x/gax-trust-framework#"), "Ontology identifier not found in schema list.");
-    assertEquals(1, schemaListDelete.get(SchemaType.ONTOLOGY).size());
+    assertEquals(2, schemaListDelete.get(SchemaType.ONTOLOGY).size());
   }
 
   /**
