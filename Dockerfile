@@ -17,10 +17,10 @@ COPY lombok.config lombok.config
 RUN mvn clean install -DskipTests -Dcheckstyle.skip
 
 
-FROM openjdk:17 as fc-service-server
+FROM eclipse-temurin:17-jre as fc-service-server
 COPY --from=build /app/fc-service-server/target/fc-service-server-*.jar fc-service-server.jar
 ENTRYPOINT ["java", "-jar","/fc-service-server.jar"]
 
-FROM openjdk:17 as fc-demo-portal
+FROM eclipse-temurin:17-jre as fc-demo-portal
 COPY --from=build /app/fc-demo-portal/target/fc-demo-portal-*.jar fc-demo-portal.jar
 ENTRYPOINT ["java", "-jar","/fc-demo-portal.jar"]
