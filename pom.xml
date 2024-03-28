@@ -482,7 +482,10 @@
                         <container>
 						    <!-- ${maven.build.timestamp} should work also -->
                             <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
-                        </container>						
+                        </container>
+                        <from>
+                            <image>gcr.io/distroless/java17-debian12</image>
+                        </from>
                         <!-- Turn it off for all the modules, but
                             turn it on in server module only -->
                         <skip>true</skip>
