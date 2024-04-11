@@ -9,6 +9,36 @@ gx:
 
 gx:LegalParticipant
     a               owl:Class;
-    rdfs:label      "Legal Participant"@en ;
+    rdfs:label      "LegalParticipant"@en ;
     rdfs:subClassOf  gax-core:Participant ;
+.
+
+gx:ServiceOffering
+	a		 		owl:Class;
+	rdfs:label		"ServiceOffering"@en ;
+	rdfs:subClassOf	 gax-core:ServiceOffering ;
+.
+
+gx:DataResource
+	a		 		owl:Class;
+	rdfs:label		"DataResource"@en ;
+	rdfs:subClassOf	 gax-core:Resource ;
+.
+
+gx:PhysicalResource
+	a		 		owl:Class;
+	rdfs:label		"PhysicalResource"@en ;
+	rdfs:subClassOf	 gax-core:Resource ;
+.
+
+gx:SoftwareResource
+	a		 		owl:Class;
+	rdfs:label		"SoftwareResource"@en ;
+	rdfs:subClassOf	 gax-core:Resource ;
+.
+
+gx:InstantiatedVirtualResource
+	a		 		owl:Class;
+	rdfs:label		"InstantiatedVirtualResource"@en ;
+	rdfs:subClassOf	 gax-core:Resource ;
 .
