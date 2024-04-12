@@ -303,34 +303,27 @@ public class VerificationServiceImpl implements VerificationService {
   }
   
   private TypedCredentials parseCredentials(JsonLDObject ld, boolean vpRequired, boolean verifySemantics) {
-	//try {  
-   	  if (ld.isType(VerifiableCredentialKeywords.JSONLD_TERM_VERIFIABLE_PRESENTATION)) {
-   	    VerifiablePresentation vp = VerifiablePresentation.fromJsonLDObject(ld);
-   	    if (verifySemantics) {
-          return verifyPresentation(vp);
-   	    }
-   	    return getCredentials(vp);
-   	  }
-      if (vpRequired) {
-        throw new VerificationException("Semantic error: expected SD of type 'VerifiablePresentation', actual SD type: " + ld.getTypes());
+    if (ld.isType(VerifiableCredentialKeywords.JSONLD_TERM_VERIFIABLE_PRESENTATION)) {
+      VerifiablePresentation vp = VerifiablePresentation.fromJsonLDObject(ld);
+      if (verifySemantics) {
+        return verifyPresentation(vp);
       }
-      if (ld.isType(VerifiableCredentialKeywords.JSONLD_TERM_VERIFIABLE_CREDENTIAL)) {
-        VerifiableCredential vc = VerifiableCredential.fromJsonLDObject(ld);
-        if (verifySemantics) {
-          String err = verifyCredential(vc, 0);
-          if (err != null && err.length() > 0) {
-            throw new VerificationException("Semantic error: " + err);
-          }
+      return getCredentials(vp);
+    }
+    if (vpRequired) {
+      throw new VerificationException("Semantic error: expected SD of type 'VerifiablePresentation', actual SD type: " + ld.getTypes());
+    }
+    if (ld.isType(VerifiableCredentialKeywords.JSONLD_TERM_VERIFIABLE_CREDENTIAL)) {
+      VerifiableCredential vc = VerifiableCredential.fromJsonLDObject(ld);
+      if (verifySemantics) {
+        String err = verifyCredential(vc, 0);
+        if (err != null && err.length() > 0) {
+          throw new VerificationException("Semantic error: " + err);
         }
-        return getCredentials(vc);
-      } 
-      throw new VerificationException("Semantic error: unexpected SD type: " + ld.getTypes());
-    //} catch (VerificationException ex) {
-    //    throw ex;
-    //  } catch (Exception ex) {
-    //    log.error("verifySelfDescription.semantic error", ex);
-    //    throw new VerificationException("Semantic error: " + ex.getMessage());
-    //  }
+      }
+      return getCredentials(vc);
+    } 
+    throw new VerificationException("Semantic error: unexpected SD type: " + ld.getTypes());
   }
 
   /* SD parsing, semantic validation */
