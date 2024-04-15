@@ -232,7 +232,7 @@ public class VerificationServiceTest {
     log.debug("validSyntax_ValidPerson2");
     schemaStore.initializeDefaultSchemas();
     ContentAccessor content = getAccessor("VerificationService/syntax/legalPerson2.jsonld");
-    verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "https://w3id.org/gaia-x/core#Participant"); 
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "https://w3id.org/gaia-x/core#Participant");
     VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false, false);
     verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "http://w3id.org/gaia-x/participant#Participant"); 
     assertNotNull(vr);
@@ -375,7 +375,6 @@ public class VerificationServiceTest {
     log.debug("validSD");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     String path = "VerificationService/sign/valid_signature.json";
-    //VerificationResult result = verificationService.verifySelfDescription(getAccessor(path));
     VerificationResult result = verificationService.verifySelfDescription(getAccessor(path), false, false, true, true);
     assertEquals(1, result.getValidators().size(), "Incorrect number of validators found");
   }
@@ -389,6 +388,44 @@ public class VerificationServiceTest {
     assertEquals(1, result.getValidators().size(), "Incorrect number of validators found");
   }
 
+  @Test
+  void validComplexSD4VC() {
+    schemaStore.initializeDefaultSchemas();
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "https://w3id.org/gaia-x/core#Participant");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "https://w3id.org/gaia-x/core#ServiceOffering");
+    String path = "VerificationService/syntax/complexSD.jsonld";
+    VerificationResult result = verificationService.verifySelfDescription(getAccessor(path), true, true, false, false);
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "http://w3id.org/gaia-x/service#ServiceOffering");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "http://w3id.org/gaia-x/participant#Participant"); 
+    assertNotNull(result);
+    assertEquals(23, result.getClaims().size());
+    List<SdClaim> expectedClaims = new ArrayList<>();
+    expectedClaims.add(new SdClaim("_:b0", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#countrySubdivisionCode>", "FR-59")); 
+    expectedClaims.add(new SdClaim("_:b1", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#countrySubdivisionCode>", "FR-59")); 
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/8255722c-35de-4741-90b2-650040b3fa57.json>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#LegalParticipant>")); 
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/8255722c-35de-4741-90b2-650040b3fa57.json>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#headquarterAddress>", "_:b0")); 
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/8255722c-35de-4741-90b2-650040b3fa57.json>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#legalAddress>", "_:b1")); 
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/8255722c-35de-4741-90b2-650040b3fa57.json>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#legalName>", "Riphixel"));
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/8255722c-35de-4741-90b2-650040b3fa57.json>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#legalRegistrationNumber>", "<https://www.riphixel.fr/workshop/demo2023/743ad60a-431c-4f45-bf15-e7bf19d64b10.json>")); 
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/be662688-2a48-48ea-bf23-43a4e83ee6e5.json>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#GaiaXTermsAndConditions>"));
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/be662688-2a48-48ea-bf23-43a4e83ee6e5.json>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#termsAndConditions>", "The PARTICIPANT signing the Self-Description agrees as follows:\n- to update its descriptions about any changes, be it technical, organizational, or legal - especially but not limited to contractual in regards to the indicated attributes present in the descriptions.\n\nThe keypair used to sign Verifiable Credentials will be revoked where Gaia-X Association becomes aware of any inaccurate statements in regards to the claims which result in a non-compliance with the Trust Framework and policy rules defined in the Policy Rules and Labelling Document (PRLD).")); 
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/743ad60a-431c-4f45-bf15-e7bf19d64b10.json>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#legalRegistrationNumber>")); 
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/743ad60a-431c-4f45-bf15-e7bf19d64b10.json>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#vatID>", "FR52899103360")); 
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/743ad60a-431c-4f45-bf15-e7bf19d64b10.json>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#vatID-countryCode>", "FR")); 
+    expectedClaims.add(new SdClaim("_:b0", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#accessType>", "digital"));
+    expectedClaims.add(new SdClaim("_:b0", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#formatType>", "application/json")); 
+    expectedClaims.add(new SdClaim("_:b0", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#requestType>", "API"));
+    expectedClaims.add(new SdClaim("_:b1", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#URL>", "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt")); 
+    expectedClaims.add(new SdClaim("_:b1", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#hash>", "sha256-a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499")); 
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/e62c1071-b2b6-46b6-9b79-dda9736fce54.json>", "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#ServiceOffering>")); 
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/e62c1071-b2b6-46b6-9b79-dda9736fce54.json>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#dataAccountExport>", "_:b0"));
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/e62c1071-b2b6-46b6-9b79-dda9736fce54.json>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#policy>", "default allow = true")); 
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/e62c1071-b2b6-46b6-9b79-dda9736fce54.json>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#providedBy>", "<https://www.riphixel.fr/workshop/demo2023/8255722c-35de-4741-90b2-650040b3fa57.json>")); 
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/e62c1071-b2b6-46b6-9b79-dda9736fce54.json>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#serviceOffering:serviceEndpoint>", "https://gronlier.fr/alive"));
+    expectedClaims.add(new SdClaim("<https://www.riphixel.fr/workshop/demo2023/e62c1071-b2b6-46b6-9b79-dda9736fce54.json>", "<https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#termsAndConditions>", "_:b1"));
+    //assertEquals(expectedClaims, result.getClaims());
+  }
+  
   @Test
   void extractClaims_providerTest() {
     log.debug("extractClaims_providerTest");

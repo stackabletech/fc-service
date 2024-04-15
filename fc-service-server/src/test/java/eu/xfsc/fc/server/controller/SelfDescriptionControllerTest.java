@@ -3,6 +3,7 @@ package eu.xfsc.fc.server.controller;
 import static eu.xfsc.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static eu.xfsc.fc.server.util.CommonConstants.CATALOGUE_ADMIN_ROLE_WITH_PREFIX;
 import static eu.xfsc.fc.server.util.TestCommonConstants.SD_ADMIN_ROLE_WITH_PREFIX;
+import static eu.xfsc.fc.server.util.TestUtil.getAccessor;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -25,6 +26,7 @@ import eu.xfsc.fc.core.pojo.VerificationResult;
 import eu.xfsc.fc.core.pojo.VerificationResultOffering;
 import eu.xfsc.fc.core.service.filestore.FileStore;
 import eu.xfsc.fc.core.service.graphdb.Neo4jGraphStore;
+import eu.xfsc.fc.core.service.schemastore.SchemaStore;
 import eu.xfsc.fc.core.service.sdstore.SelfDescriptionStore;
 import eu.xfsc.fc.core.service.verification.VerificationService;
 import eu.xfsc.fc.core.util.HashUtils;
@@ -93,11 +95,13 @@ public class SelfDescriptionControllerTest {
     @SpyBean(name = "schemaFileStore") // "sdFileStore")
     private FileStore fileStore;
 
-    private static SelfDescriptionMetadata sdMeta;
-    
+    @Autowired
+    private SchemaStore schemaStore;
     @Autowired
     private VerificationService verificationService;
 
+    private static SelfDescriptionMetadata sdMeta;
+    
     @BeforeAll
     public void setup() throws IOException {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
@@ -362,7 +366,7 @@ public class SelfDescriptionControllerTest {
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
     public void addResourceReturnCreatedResponse() throws Exception {
-        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions/resource")
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
                 .content(getMockFileDataAsString("sd_resource.json"))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -374,6 +378,24 @@ public class SelfDescriptionControllerTest {
         sdStorePublisher.deleteSelfDescription(sd.getSdHash());
     }
 
+    @Test
+    @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
+        @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
+    public void addParicipantReturnCreatedResponse() throws Exception {
+        schemaStore.addSchema(getAccessor("mock-data/gax-test-ontology.ttl"));
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
+                .content(getMockFileDataAsString("default_participant.json"))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        SelfDescription sd = objectMapper.readValue(result.getResponse().getContentAsString(), SelfDescription.class);
+        sdStorePublisher.deleteSelfDescription(sd.getSdHash());
+        schemaStore.clear();
+    }
+    
     @Test
     @WithMockJwtAuth(authorities = {CATALOGUE_ADMIN_ROLE_WITH_PREFIX}, claims = @OpenIdClaims(otherClaims = @Claims(stringClaims = {
         @StringClaim(name = "participant_id", value = TEST_ISSUER)})))
