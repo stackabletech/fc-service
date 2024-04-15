@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseSDSubscriber implements SDSubscriber {
 
-	private static final TypeReference<HashMap<String, Object>> mapTypeRef = new TypeReference<HashMap<String, Object>>() {};
+	protected static final TypeReference<HashMap<String, Object>> mapTypeRef = new TypeReference<HashMap<String, Object>>() {};
 		
     @Value("${subscriber.instance}")
     protected String instance;
@@ -66,7 +66,7 @@ public abstract class BaseSDSubscriber implements SDSubscriber {
 					    sdMeta = new SelfDescriptionMetadata(vr.getId(), vr.getIssuer(), vr.getValidators(), content);
 					} else {
 						Map<String, Object> data = jsonMapper.readValue((String) params.get("data"), mapTypeRef);
-					    String vrs = (String) data.get("verificationResult");;
+					    String vrs = (String) data.get("verificationResult");
 					    vr = jsonMapper.readValue(vrs, VerificationResult.class);
 					    String content = (String) data.get("content");
 					    sdMeta = new SelfDescriptionMetadata(new ContentAccessorDirect(content), vr); 

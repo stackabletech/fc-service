@@ -82,6 +82,10 @@ public class DocumentLoaderConfig {
 		return loader;
 	}
 	
+	public DocumentLoaderOptions getDocLoaderOptions() {
+		return options;
+	}
+	
 	private void loadContext(ConfigurableDocumentLoader loader, String url, String contentRef) {
 		try {
 			Document document;

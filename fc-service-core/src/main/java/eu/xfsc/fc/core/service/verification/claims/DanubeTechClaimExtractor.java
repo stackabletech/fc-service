@@ -29,7 +29,7 @@ public class DanubeTechClaimExtractor implements ClaimExtractor {
         Map<String, Object> vpm = vp.getJsonObject();
         List<Map<String, Object>> vcms;
         Object obj = vp.getJsonObject().get(JSONLD_TERM_VERIFIABLECREDENTIAL); 
-        log.debug("extractClaims; got VC: {}", obj);
+        log.trace("extractClaims; got VC: {}", obj);
         if (obj instanceof Map) {
             vcms = List.of((Map<String, Object>) obj);
         } else if (obj instanceof List) {
@@ -42,7 +42,7 @@ public class DanubeTechClaimExtractor implements ClaimExtractor {
         List<Map<String, Object>> csms;
         for (Map<String, Object> vcm: vcms) {
             obj = vcm.get(JSONLD_TERM_CREDENTIALSUBJECT);
-            log.debug("extractClaims; got CS: {}", obj);
+            log.trace("extractClaims; got CS: {}", obj);
             if (obj instanceof Map) {
                 csms = List.of((Map<String, Object>) obj);
             } else if (obj instanceof List) {
@@ -54,7 +54,7 @@ public class DanubeTechClaimExtractor implements ClaimExtractor {
             
             for (Map<String, Object> csm: csms) {
                 cs = CredentialSubject.fromMap(csm);
-                log.debug("extractClaims; CS claims: {}", cs.getClaims());
+                log.trace("extractClaims; CS claims: {}", cs.getClaims());
                 for (RdfNQuad nquad: cs.toDataset().toList()) {
                     log.debug("extractClaims; got NQuad: {}", nquad);
                     SdClaim claim = new SdClaim(nquad, objectMapper);

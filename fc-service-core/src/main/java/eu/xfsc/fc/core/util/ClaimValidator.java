@@ -201,11 +201,11 @@ public class ClaimValidator {
       RDFNode node;
       TypeMapper typeMapper = TypeMapper.getInstance();
       for (SdClaim claim: claims) {
-        log.debug("validateClaimsBySchema; {}", claim);
+        log.trace("validateClaimsBySchema; {}", claim);
         RdfValue object = claim.getObject();
         if (object.isLiteral()) {
           RDFDatatype objectType = typeMapper.getSafeTypeByName(object.asLiteral().getDatatype());
-          log.debug("validateClaimsBySchema; objectType is: {}", objectType);
+          log.trace("validateClaimsBySchema; objectType is: {}", objectType);
           node = createTypedLiteral(object.getValue(), objectType);
         } else {
           node = createResource(object.getValue());
@@ -257,7 +257,7 @@ public class ClaimValidator {
       }
 
     private static boolean checkTypeSubClass(ContentAccessor ontology, String type, String gaxType) {
-        log.debug("checkTypeSubClass.enter; got type: {}, gaxType: {}", type, gaxType);
+        log.trace("checkTypeSubClass.enter; got type: {}, gaxType: {}", type, gaxType);
         if (type.equals(gaxType)) {
           return true;
         }

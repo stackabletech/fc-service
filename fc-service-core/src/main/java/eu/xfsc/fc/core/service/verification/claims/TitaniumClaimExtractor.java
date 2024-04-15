@@ -30,7 +30,7 @@ public class TitaniumClaimExtractor implements ClaimExtractor {
         List<SdClaim> claims = new ArrayList<>();
         Document document = JsonDocument.of(content.getContentAsStream());
         JsonArray arr = JsonLd.expand(document).get();
-        log.debug("extractClaims; expanded: {}", arr);
+        log.trace("extractClaims; expanded: {}", arr);
         JsonObject ld = arr.get(0).asJsonObject();
         if (ld.containsKey("https://www.w3.org/2018/credentials#verifiableCredential")) {
             List<JsonValue> vcs = ld.get("https://www.w3.org/2018/credentials#verifiableCredential").asJsonArray();
@@ -45,7 +45,7 @@ public class TitaniumClaimExtractor implements ClaimExtractor {
         	// content contains just single VC
         	addClaims(claims, ld);
         }
-        log.debug("extractClaims.exit; returning claims: {}", claims);
+        log.debug("extractClaims.exit; returning claims: {}", claims.size());
         return claims;
     }
     
@@ -57,7 +57,7 @@ public class TitaniumClaimExtractor implements ClaimExtractor {
             RdfGraph rdfGraph = rdf.getDefaultGraph();
             List<RdfTriple> triples = rdfGraph.toList();
             for (RdfTriple triple: triples) {
-                log.debug("extractClaims; got triple: {}", triple);
+                log.trace("extractClaims; got triple: {}", triple);
                 SdClaim claim = new SdClaim(triple, objectMapper);
                 claims.add(claim);
             }
