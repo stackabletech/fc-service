@@ -9,6 +9,7 @@ import eu.xfsc.fc.core.dao.ValidatorCacheDao;
 import eu.xfsc.fc.core.dao.impl.SchemaDaoImpl;
 import eu.xfsc.fc.core.dao.impl.ValidatorCacheDaoImpl;
 import eu.xfsc.fc.core.pojo.Validator;
+import eu.xfsc.fc.core.service.resolve.HttpDocumentResolver;
 import eu.xfsc.fc.core.service.schemastore.SchemaStoreImpl;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ import org.springframework.test.context.ContextConfiguration;
 @SpringBootTest
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {ValidatorCacheTest.TestApplication.class, ValidatorCacheDaoImpl.class, DatabaseConfig.class, FileStoreConfig.class,
-        VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class, DidResolverConfig.class})
+        VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class, DidResolverConfig.class, HttpDocumentResolver.class})
 //@DirtiesContext
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 public class ValidatorCacheTest {

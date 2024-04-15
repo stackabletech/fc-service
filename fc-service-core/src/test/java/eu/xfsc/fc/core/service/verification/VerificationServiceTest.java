@@ -40,6 +40,7 @@ import eu.xfsc.fc.core.pojo.VerificationResult;
 import eu.xfsc.fc.core.pojo.VerificationResultOffering;
 import eu.xfsc.fc.core.pojo.VerificationResultParticipant;
 import eu.xfsc.fc.core.pojo.VerificationResultResource;
+import eu.xfsc.fc.core.service.resolve.HttpDocumentResolver;
 import eu.xfsc.fc.core.service.schemastore.SchemaStore.SchemaType;
 import eu.xfsc.fc.core.service.schemastore.SchemaStoreImpl;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -50,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {VerificationServiceTest.TestApplication.class, FileStoreConfig.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class,
-        VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DatabaseConfig.class, DidResolverConfig.class, ValidatorCacheDaoImpl.class})
+        VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DatabaseConfig.class, DidResolverConfig.class, ValidatorCacheDaoImpl.class, HttpDocumentResolver.class})
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 public class VerificationServiceTest {
 

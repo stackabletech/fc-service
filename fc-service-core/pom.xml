@@ -133,7 +133,12 @@
             <groupId>io.zonky.test</groupId>
             <artifactId>embedded-database-spring-test</artifactId>
             <scope>test</scope>
-        </dependency> 
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <scope>test</scope>
+        </dependency>       
     </dependencies>
 
     <build>

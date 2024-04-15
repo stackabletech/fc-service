@@ -48,6 +48,7 @@ import eu.xfsc.fc.core.pojo.Validator;
 import eu.xfsc.fc.core.pojo.VerificationResult;
 import eu.xfsc.fc.core.pojo.VerificationResultOffering;
 import eu.xfsc.fc.core.service.graphdb.Neo4jGraphStore;
+import eu.xfsc.fc.core.service.resolve.HttpDocumentResolver;
 import eu.xfsc.fc.core.util.HashUtils;
 import eu.xfsc.fc.testsupport.config.EmbeddedNeo4JConfig;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -59,7 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootTest
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {SelfDescriptionStoreTest.TestApplication.class, SelfDescriptionStoreImpl.class, SelfDescriptionDaoImpl.class, SelfDescriptionStoreTest.class,
-  DatabaseConfig.class, Neo4jGraphStore.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class, DidResolverConfig.class})
+  DatabaseConfig.class, Neo4jGraphStore.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class, DidResolverConfig.class, HttpDocumentResolver.class})
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)

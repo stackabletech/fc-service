@@ -6,22 +6,18 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import eu.xfsc.fc.api.generated.model.SelfDescriptionStatus;
 import eu.xfsc.fc.core.pojo.SelfDescriptionMetadata;
 import eu.xfsc.fc.core.pojo.VerificationResult;
-import eu.xfsc.fc.core.service.pubsub.SDPublisher;
+import eu.xfsc.fc.core.service.pubsub.BaseSDPublisher;
 import io.nats.client.Connection;
 import io.nats.client.JetStreamApiException;
 import io.nats.client.impl.Headers;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class NatsSDPublisherImpl implements SDPublisher {
+public class NatsSDPublisherImpl extends BaseSDPublisher {
 	
-    @Value("${publisher.instance}")
-    private String instance;
     @Value("${publisher.subject}")
     private String subject;
     @Value("${publisher.send-content}")
@@ -29,34 +25,32 @@ public class NatsSDPublisherImpl implements SDPublisher {
 	
 	@Autowired
 	private Connection pubConnection;
-	@Autowired
-	private ObjectMapper jsonMapper;
 
 	@Override
-	public boolean publish(SelfDescriptionMetadata sd, VerificationResult verificationResult) {
-		log.debug("publish. sd: {}", sd);
+	protected boolean publishInternal(SelfDescriptionMetadata sdMetadata, VerificationResult verificationResult) {
+		log.debug("publishInternal. sd: {}", sdMetadata);
 		try {
 			Headers headers = new Headers();
 			headers.put("source", instance);
 			headers.put("event", SDEvent.ADD.name());
-			headers.put("status", sd.getStatus().name());
+			headers.put("status", sdMetadata.getStatus().name());
 			byte[] body = null;
 			if (sendContent) {
-			    Map<String, Object> data = Map.of("content", sd.getSelfDescription().getContentAsString(), 
+			    Map<String, Object> data = Map.of("content", sdMetadata.getSelfDescription().getContentAsString(), 
 				    "verificationResult", jsonMapper.writeValueAsString(verificationResult));
 			    body = jsonMapper.writeValueAsString(data).getBytes();
 			}
-			pubConnection.jetStream().publish(subject + "." + sd.getSdHash(), headers, body); 
+			pubConnection.jetStream().publish(subject + "." + sdMetadata.getSdHash(), headers, body); 
 			return true;
 		} catch (IOException | JetStreamApiException ex) {
-			log.error("publish.error", ex);
+			log.error("publishInternal.error", ex);
 		}
 		return false;
 	}
 
 	@Override
-	public boolean publish(String hash, SDEvent event, SelfDescriptionStatus status) {
-		log.debug("publish. hash: {}, event: {}, status: {}", hash, event, status);
+	protected boolean publishInternal(String hash, SDEvent event, SelfDescriptionStatus status) {
+		log.debug("publishInternal. hash: {}, event: {}, status: {}", hash, event, status);
 		try {
 			Headers headers = new Headers();
 			headers.put("source", instance);
@@ -67,7 +61,7 @@ public class NatsSDPublisherImpl implements SDPublisher {
 			pubConnection.jetStream().publish(subject + "." + hash, headers, null);
 			return true;
 		} catch (IOException | JetStreamApiException ex) {
-			log.error("publish.error", ex);
+			log.error("publishInternal.error", ex);
 		}
 		return false;
 	}

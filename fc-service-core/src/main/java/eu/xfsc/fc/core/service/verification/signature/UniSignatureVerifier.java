@@ -5,7 +5,6 @@ import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,12 +14,12 @@ import com.danubetech.keyformats.crypto.PublicKeyVerifierFactory;
 import com.danubetech.keyformats.jose.JWK;
 import com.danubetech.keyformats.jose.JWSAlgorithm;
 import com.danubetech.keyformats.jose.KeyTypeName;
-import com.github.benmanes.caffeine.cache.Cache;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTParser;
 
 import eu.xfsc.fc.core.exception.VerificationException;
 import eu.xfsc.fc.core.pojo.Validator;
+import eu.xfsc.fc.core.service.resolve.DidDocumentResolver;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.VerificationMethod;
 import foundation.identity.jsonld.JsonLDException;
@@ -29,19 +28,12 @@ import info.weboftrust.ldsignatures.LdProof;
 import info.weboftrust.ldsignatures.verifier.LdVerifier;
 import info.weboftrust.ldsignatures.verifier.LdVerifierRegistry;
 import lombok.extern.slf4j.Slf4j;
-import uniresolver.ResolutionException;
-import uniresolver.UniResolver;
-import uniresolver.result.ResolveRepresentationResult;
 
 @Slf4j
 public class UniSignatureVerifier implements SignatureVerifier {
 
-	private static final Map<String, Object> RESOLVE_OPTIONS = Map.of("accept", "application/did+ld+json");
-	
 	@Autowired
-	private UniResolver resolver;
-	@Autowired
-	private Cache<String, DIDDocument> didDocumentCache;
+	private DidDocumentResolver didResolver;
 	
 	@Override
 	public Validator checkSignature(JsonLDObject payload, LdProof proof) {
@@ -52,7 +44,7 @@ public class UniSignatureVerifier implements SignatureVerifier {
 	
 	private Validator verifyLDProof(JsonLDObject payload, LdProof proof, String did, String alg) {
 		log.debug("verifyLDProof.enter; did: {}, alg: {}, payload: {}", did, alg, payload);
-		DIDDocument diDoc = resolveDidDocument(did);
+		DIDDocument diDoc = didResolver.resolveDidDocument(did);
 		List<VerificationMethod> vrMethods = diDoc.getVerificationMethods();
 		log.debug("verifyVCSignature; methods: {}; resolved proof: {}", vrMethods, proof);
 		Optional<VerificationMethod> ovm = vrMethods.stream().filter(vm -> {
@@ -101,33 +93,6 @@ public class UniSignatureVerifier implements SignatureVerifier {
 			log.info("verify.error: {}", ex.getMessage());
 		}
 		return false;
-	}
-	
-	private DIDDocument resolveDidDocument(String did) {
-		log.debug("resolveDidDocument.enter; got did to resolve: {}", did);
-		DIDDocument diDoc = didDocumentCache.getIfPresent(did);
-		boolean cached = true;
-		if (diDoc == null) {
-			cached = false;
-			ResolveRepresentationResult didResult;
-			try {
-				didResult = resolver.resolveRepresentation(did, RESOLVE_OPTIONS);
-				log.trace("resolveDid; resolved to: {}", didResult.toJson());
-			} catch (ResolutionException ex) {
-				log.warn("resolveDidDocument.error;", ex);
-				throw new VerificationException(ex);
-			}
-			if (didResult.isErrorResult()) {
-				throw new VerificationException(didResult.getErrorMessage());
-			}
-
-			String docStream = didResult.getDidDocumentStreamAsString();
-			log.trace("resolveDidDocument; doc stream is: {}", docStream);
-			diDoc = DIDDocument.fromJson(docStream);
-			didDocumentCache.put(did, diDoc);
-		}
-		log.debug("resolveDidDocument.exit; returning doc: {}, from cache: {}", diDoc, cached);
-		return diDoc;
 	}
 	
 	private String getAlgFromProof(LdProof proof) {

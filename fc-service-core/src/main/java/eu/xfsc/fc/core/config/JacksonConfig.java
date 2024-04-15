@@ -1,4 +1,4 @@
-package eu.xfsc.fc.server.config;
+package eu.xfsc.fc.core.config;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

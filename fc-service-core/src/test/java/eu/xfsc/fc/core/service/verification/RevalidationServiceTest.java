@@ -48,6 +48,7 @@ import eu.xfsc.fc.core.pojo.ContentAccessorFile;
 import eu.xfsc.fc.core.pojo.SelfDescriptionMetadata;
 import eu.xfsc.fc.core.pojo.VerificationResult;
 import eu.xfsc.fc.core.service.graphdb.Neo4jGraphStore;
+import eu.xfsc.fc.core.service.resolve.HttpDocumentResolver;
 import eu.xfsc.fc.core.service.schemastore.SchemaStore;
 import eu.xfsc.fc.core.service.schemastore.SchemaStoreImpl;
 import eu.xfsc.fc.core.service.sdstore.SelfDescriptionStore;
@@ -62,7 +63,7 @@ import lombok.extern.slf4j.Slf4j;
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {RevalidationServiceTest.TestApplication.class, RevalidationServiceImpl.class, RevalidatorChunksDaoImpl.class, FileStoreConfig.class, Neo4jGraphStore.class,
   VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DatabaseConfig.class, ValidatorCacheDaoImpl.class, SelfDescriptionStoreImpl.class, SelfDescriptionDaoImpl.class,
-  DocumentLoaderConfig.class, DocumentLoaderProperties.class, DidResolverConfig.class})
+  DocumentLoaderConfig.class, DocumentLoaderProperties.class, DidResolverConfig.class, HttpDocumentResolver.class})
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
 public class RevalidationServiceTest {

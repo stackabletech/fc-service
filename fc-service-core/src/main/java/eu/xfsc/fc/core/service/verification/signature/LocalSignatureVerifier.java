@@ -15,6 +15,7 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.danubetech.keyformats.crypto.PublicKeyVerifier;
 import com.danubetech.keyformats.crypto.PublicKeyVerifierFactory;
@@ -22,6 +23,7 @@ import com.danubetech.keyformats.jose.JWK;
 
 import eu.xfsc.fc.core.exception.VerificationException;
 import eu.xfsc.fc.core.pojo.Validator;
+import eu.xfsc.fc.core.service.resolve.HttpDocumentResolver;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.jsonld.JsonLDException;
 import foundation.identity.jsonld.JsonLDObject;
@@ -35,6 +37,9 @@ public class LocalSignatureVerifier implements SignatureVerifier {
 
     private static final Set<String> SIGNATURES = Set.of("JsonWebSignature2020"); 
 	
+	@Autowired
+	private HttpDocumentResolver httpResolver;
+    
     public LocalSignatureVerifier() {
       Security.addProvider(new BouncyCastleProvider());
     }
@@ -113,11 +118,7 @@ public class LocalSignatureVerifier implements SignatureVerifier {
 	  
 	private DIDDocument loadDIDocFromURI(URI docUri) throws IOException {
 	  log.debug("loadDIDFromURL; loading DIDDocument from: {}", docUri.toString());
-	  URL url = docUri.toURL();
-	  // do this with caching doc-loader..
-	  InputStream docStream = url.openStream();
-	  String docJson = IOUtils.toString(docStream, StandardCharsets.UTF_8);
-	  return DIDDocument.fromJson(docJson);
+	  return httpResolver.resolveDidDocument(docUri.toString());
 	}
 	  
 	@SuppressWarnings("unchecked")

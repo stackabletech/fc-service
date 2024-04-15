@@ -39,7 +39,7 @@ public class CatalogueServerScheduler {
     public void scheduleSchemaInitialization() {
       log.debug("scheduleSchemaInitialization.enter; Launching default schemas initialization.");
       int numberOfSchemas = smStore.initializeDefaultSchemas();
-      log.debug("scheduleSchemaInitialization.exit; {} default schemas initializated.", numberOfSchemas);
+      log.debug("scheduleSchemaInitialization.exit; {} default schemas initialized.", numberOfSchemas);
     }    
 
 }

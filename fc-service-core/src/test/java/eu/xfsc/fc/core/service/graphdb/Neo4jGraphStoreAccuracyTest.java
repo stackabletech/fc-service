@@ -39,6 +39,7 @@ import eu.xfsc.fc.core.pojo.GraphQuery;
 import eu.xfsc.fc.core.pojo.SdClaim;
 import eu.xfsc.fc.core.pojo.SelfDescriptionMetadata;
 import eu.xfsc.fc.core.pojo.VerificationResultOffering;
+import eu.xfsc.fc.core.service.resolve.HttpDocumentResolver;
 import eu.xfsc.fc.core.service.schemastore.SchemaStoreImpl;
 import eu.xfsc.fc.core.service.sdstore.SelfDescriptionStoreImpl;
 import eu.xfsc.fc.core.service.verification.VerificationServiceImpl;
@@ -52,7 +53,7 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {Neo4jGraphStoreAccuracyTest.TestApplication.class, DatabaseConfig.class, GraphDbConfig.class, FileStoreConfig.class, Neo4jGraphStoreAccuracyTest.class, 
 	Neo4jGraphStore.class, SelfDescriptionStoreImpl.class, SelfDescriptionDaoImpl.class, VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, ValidatorCacheDaoImpl.class,
-	DidResolverConfig.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class,})
+	DidResolverConfig.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class, HttpDocumentResolver.class})
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
 public class Neo4jGraphStoreAccuracyTest {

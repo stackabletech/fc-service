@@ -8,7 +8,9 @@ public interface SDPublisher {
 	
 	enum SDEvent {ADD, DELETE, UPDATE};
 	
-	boolean publish(SelfDescriptionMetadata sd, VerificationResult verificationResult);
+	boolean isTransactional();
+	boolean publish(SelfDescriptionMetadata sdMetadata, VerificationResult verificationResult);
 	boolean publish(String hash, SDEvent event, SelfDescriptionStatus status);
+	void setTransactional(boolean transactional);
 
 }
