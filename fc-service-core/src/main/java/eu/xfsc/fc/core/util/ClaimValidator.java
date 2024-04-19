@@ -201,11 +201,11 @@ public class ClaimValidator {
       RDFNode node;
       TypeMapper typeMapper = TypeMapper.getInstance();
       for (SdClaim claim: claims) {
-        log.debug("validateClaimsBySchema; {}", claim);
+        log.trace("validateClaimsBySchema; {}", claim);
         RdfValue object = claim.getObject();
         if (object.isLiteral()) {
           RDFDatatype objectType = typeMapper.getSafeTypeByName(object.asLiteral().getDatatype());
-          log.debug("validateClaimsBySchema; objectType is: {}", objectType);
+          log.trace("validateClaimsBySchema; objectType is: {}", objectType);
           node = createTypedLiteral(object.getValue(), objectType);
         } else {
           node = createResource(object.getValue());
@@ -243,10 +243,9 @@ public class ClaimValidator {
             for (RDFNode rdfNode: rdfNodeList) {
               String resourceURI = rdfNode.asResource().getURI();
               // Check whether the type is or is at least derived from one of the base types according to the TrustFramework
-              for (TrustFrameworkBaseClass baseClass: TrustFrameworkBaseClass.values()) {
-                String сlassUri = сlassUris.get(baseClass);
-                if (checkTypeSubClass(ontology, resourceURI, сlassUri)) {
-                  return baseClass;
+              for (Map.Entry<TrustFrameworkBaseClass, String> classEntry: сlassUris.entrySet()) {
+                if (checkTypeSubClass(ontology, resourceURI, classEntry.getValue())) {
+                  return classEntry.getKey();
                 }
               }
             }
@@ -257,8 +256,8 @@ public class ClaimValidator {
         return null;
       }
 
-      private static boolean checkTypeSubClass(ContentAccessor ontology, String type, String gaxType) {
-        log.debug("checkTypeSubClass.enter; got type: {}, gaxType: {}", type, gaxType);
+    private static boolean checkTypeSubClass(ContentAccessor ontology, String type, String gaxType) {
+        log.trace("checkTypeSubClass.enter; got type: {}, gaxType: {}", type, gaxType);
         if (type.equals(gaxType)) {
           return true;
         }
@@ -279,5 +278,6 @@ public class ClaimValidator {
           }
         }
         return false;
-      }    
+    }    
+
 }

@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Configuration;
 
 import eu.xfsc.fc.core.service.pubsub.SDPublisher;
 import eu.xfsc.fc.core.service.pubsub.SDSubscriber;
+import eu.xfsc.fc.core.service.pubsub.ces.CesSDPublisherImpl;
+import eu.xfsc.fc.core.service.pubsub.ces.CesSDSubscriberImpl;
 import eu.xfsc.fc.core.service.pubsub.nats.NatsSDPublisherImpl;
 import eu.xfsc.fc.core.service.pubsub.nats.NatsSDSubscriberImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,9 @@ public class PubSubConfig {
 			//case "basf": 
 			//	pub = new BasfSDPublisherImpl();
 			//	break;
+	    	case "ces":
+	    		pub = new CesSDPublisherImpl();
+	    		break;
 			case "nats": 
 				pub = new NatsSDPublisherImpl();
 				break;
@@ -41,6 +46,9 @@ public class PubSubConfig {
     		//case "basf": 
     		//	sub = new BasfSDSubscriberImpl();
     		//	break;
+    	    case "ces":
+    	    	sub = new CesSDSubscriberImpl();
+    	    	break;
     		case "nats": 
     			sub = new NatsSDSubscriberImpl();
     			break;
@@ -48,5 +56,5 @@ public class PubSubConfig {
     	log.debug("getSDSubscriber; returning {} for impl {}", sub, subImpl);
     	return sub;
     }
-    
+        
 }

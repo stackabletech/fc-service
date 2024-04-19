@@ -26,7 +26,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 import eu.xfsc.fc.core.config.DatabaseConfig;
+import eu.xfsc.fc.core.config.DidResolverConfig;
 import eu.xfsc.fc.core.config.DocumentLoaderConfig;
+import eu.xfsc.fc.core.config.DocumentLoaderProperties;
 import eu.xfsc.fc.core.config.FileStoreConfig;
 import eu.xfsc.fc.core.config.GraphDbConfig;
 import eu.xfsc.fc.core.dao.impl.SchemaDaoImpl;
@@ -37,6 +39,7 @@ import eu.xfsc.fc.core.pojo.GraphQuery;
 import eu.xfsc.fc.core.pojo.SdClaim;
 import eu.xfsc.fc.core.pojo.SelfDescriptionMetadata;
 import eu.xfsc.fc.core.pojo.VerificationResultOffering;
+import eu.xfsc.fc.core.service.resolve.HttpDocumentResolver;
 import eu.xfsc.fc.core.service.schemastore.SchemaStoreImpl;
 import eu.xfsc.fc.core.service.sdstore.SelfDescriptionStoreImpl;
 import eu.xfsc.fc.core.service.verification.VerificationServiceImpl;
@@ -50,7 +53,7 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider;
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {Neo4jGraphStoreAccuracyTest.TestApplication.class, DatabaseConfig.class, GraphDbConfig.class, FileStoreConfig.class, Neo4jGraphStoreAccuracyTest.class, 
 	Neo4jGraphStore.class, SelfDescriptionStoreImpl.class, SelfDescriptionDaoImpl.class, VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, ValidatorCacheDaoImpl.class,
-	DocumentLoaderConfig.class})
+	DidResolverConfig.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class, HttpDocumentResolver.class})
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
 public class Neo4jGraphStoreAccuracyTest {
@@ -317,7 +320,7 @@ public class Neo4jGraphStoreAccuracyTest {
 
     ContentAccessorDirect contentAccessor = new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME));
     VerificationResultOffering verificationResult =
-            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, false, false);
+            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, false, false, false);
 
     //TODO:: adding manually claims, after final implementation we will remove it and change the query according to sd
 
@@ -342,7 +345,7 @@ public class Neo4jGraphStoreAccuracyTest {
     ContentAccessorDirect contentAccessorDirect2 =
             new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME1));
     VerificationResultOffering verificationResult2 =
-            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, false, false);
+            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, false, false, false);
 
     SdClaim sdClaim1 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal2.json>",
             "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
@@ -366,7 +369,7 @@ public class Neo4jGraphStoreAccuracyTest {
     ContentAccessorDirect contentAccessorDirect3 =
             new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME2));
     VerificationResultOffering verificationResult3 =
-            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, false, false);
+            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, false, false, false);
 
     SdClaim sdClaim3 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal3.json>",
             "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
@@ -391,7 +394,7 @@ public class Neo4jGraphStoreAccuracyTest {
     ContentAccessorDirect contentAccessorDirect4 =
             new ContentAccessorDirect(getMockFileDataAsString(SERVICE_SD_FILE_NAME3));
     VerificationResultOffering verificationResult4 =
-            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, false, false);
+            (VerificationResultOffering) verificationService.verifySelfDescription(contentAccessor, true, false, false, false);
 
 
     SdClaim sdClaim4 = new SdClaim("<http://w3id.org/gaia-x/indiv#serviceMVGPortal4.json>",

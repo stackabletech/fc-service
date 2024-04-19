@@ -31,7 +31,7 @@ services:
           
   neo4j:
     container_name: "neo4j"
-    image: neo4j:5.7.0
+    image: neo4j:5.14.0
     environment:
       NEO4J_AUTH: "${GRAPH_STORE_USER}/${GRAPH_STORE_PASSWORD}"
       NEO4J_server_http_listen__address: :7474
@@ -67,7 +67,7 @@ services:
       KEYCLOAK_ADMIN: "${KEYCLOAK_ADMIN}"
       KEYCLOAK_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD}"
       PROXY_ADDRESS_FORWARDING: "true"
-    image: quay.io/keycloak/keycloak:20.0.2
+    image: quay.io/keycloak/keycloak:23.0.7
     ports:
       - "8080:8080"
     networks:
@@ -76,20 +76,12 @@ services:
     volumes:
       - "../keycloak/providers:/opt/keycloak/providers"
       - "../keycloak/realms:/opt/keycloak/data/import"
-    command:
-      [
-          'start --auto-build --db postgres --hostname-strict-https false --hostname-strict false --proxy edge --http-enabled true --import-realm ',
-          '--log-level=DEBUG,io.quarkus:INFO,liquibase:INFO,org.hibernate:INFO,org.infinispan:INFO,org.keycloak.services.scheduled:INFO,org.keycloak.transaction:INFO,io.netty.buffer.PoolThreadCache:INFO,org.keycloak.models.sessions.infinispan:INFO'
-      ]
+    command: >
+      start --db postgres --hostname-strict-https false --hostname-strict false --proxy edge --http-enabled true --import-realm 
+      --log-level=DEBUG,io.quarkus:INFO,liquibase:INFO,org.hibernate:INFO,org.infinispan:INFO,org.keycloak.services.scheduled:INFO,org.keycloak.transaction:INFO,io.netty.buffer.PoolThreadCache:INFO,org.keycloak.models.sessions.infinispan:INFO
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://0.0.0.0:8080/realms/master"]
-      start_period: 10s
-      interval: 30s
-      retries: 3
-      timeout: 5s
 
   nats:
     image: nats:alpine
@@ -109,6 +101,7 @@ services:
       
   server:
     container_name: "fc-server"
+#    image: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/catalogue/fc-service-server:latest
     build:
       context: "${FC_SERVICE_SERVER_DOCKER_CONTEXT}"
       dockerfile: Dockerfile
@@ -146,6 +139,7 @@ services:
         
   portal:
     container_name: "demo-portal"
+#    image: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/catalogue/fc-demo-portal:latest
     build:
       context: "${FC_DEMO_PORTAL_DOCKER_CONTEXT}"
       dockerfile: Dockerfile
@@ -163,8 +157,6 @@ services:
       - "localhost:host-gateway"
     restart: unless-stopped
     depends_on:
-      keycloak:
-        condition: service_healthy
       server:
         condition: service_healthy
 

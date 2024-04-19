@@ -1,10 +1,7 @@
 package eu.xfsc.fc.core.service.graphdb;
 
-import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
+import static eu.xfsc.fc.core.util.TestUtil.getAccessor;
+
 import java.util.Map;
 
 import org.junit.FixMethodOrder;
@@ -23,8 +20,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 import eu.xfsc.fc.core.pojo.ContentAccessor;
-import eu.xfsc.fc.core.pojo.ContentAccessorFile;
-import eu.xfsc.fc.core.service.verification.VerificationServiceTest;
 import eu.xfsc.fc.testsupport.config.EmbeddedNeo4JConfig;
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,15 +64,6 @@ public class Neo4jDirectTest {
             Result rs = session.run(query, Map.of("payload", content.getContentAsString()));
             log.debug("addClaims.exit; results: {}", rs.list());
         }
-    }
-    
-    
-    private static ContentAccessor getAccessor(String path) throws UnsupportedEncodingException {
-        URL url = VerificationServiceTest.class.getClassLoader().getResource(path);
-        String str = URLDecoder.decode(url.getFile(), StandardCharsets.UTF_8.name());
-        File file = new File(str);
-        ContentAccessor accessor = new ContentAccessorFile(file);
-        return accessor;
     }
     
 }

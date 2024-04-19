@@ -7,5 +7,6 @@ package eu.xfsc.fc.core.service.verification;
 public enum TrustFrameworkBaseClass {
     PARTICIPANT,
     RESOURCE,
-    SERVICE_OFFERING
+    SERVICE_OFFERING,
+    UNKNOWN
 }

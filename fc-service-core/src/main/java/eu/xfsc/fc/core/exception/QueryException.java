@@ -5,7 +5,7 @@ package eu.xfsc.fc.core.exception;
  * graph store that has syntax errors w.r.t. its RDF
  * serialisation, e.g. broken URIs, invalid literals etc.
  */
-public class QueryException extends ServerException {
+public class QueryException extends ServiceException {
     
   public QueryException(String msg) {
     super(msg);

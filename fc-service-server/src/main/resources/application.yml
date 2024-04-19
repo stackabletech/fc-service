@@ -78,23 +78,39 @@ graphstore:
   uri: bolt://localhost:7687
   user: neo4j
   password: neo12345
+  timeout-marker: The transaction has not completed within the timeout specified
 
 publisher:
-  impl: none #nats
-  url: nats://localhost:4222 
+#  impl: none #nats
+#  url: nats://localhost:4222 
   subject: fc.sd
-  instance: http://localhost:8081
+#  instance: http://localhost:8081
   send-content: false
+  impl: none
+  instance: http://localhost:8081
+  url: https://ces-v1.lab.gaia-x.eu
+  comp-url: https://compliance.lab.gaia-x.eu/v1/api
 
 subscriber:
-  impl: none
-  url: nats://localhost:4222
-  subject: fc.sd.*
-  instance: http://localhost:8082
-  stream: fc-sd 
-  queue: sd-processor
-  group: sd-group
-  
+#  impl: none
+#  url: nats://localhost:4222
+#  subject: fc.sd.*
+#  instance: http://localhost:8082
+#  stream: fc-sd 
+#  queue: sd-processor
+#  group: sd-group
+  impl: none #ces
+  instance: http://localhost:8081
+  url: https://ces-v1.lab.gaia-x.eu 
+  page-size: 20
+  fixed-rate: 30s
+  verify:
+    semantics: true
+    schema: true
+    vp-signature: false
+    vc-signature: false
+    integrity: true
+
 federated-catalogue:
   scope: runtime
   file-store:
@@ -109,9 +125,9 @@ federated-catalogue:
     self: "http://localhost:${server.port}"
   verification:
     trust-anchor-url: "https://registry.lab.gaia-x.eu/v1/api/trustAnchor/chain/file"
-    did-resolver-url: "https://dev.uniresolver.io/1.0/identifiers/"
-    # add additional context for the GAIA-X trustfromework here. Use a comma separated list of URLs, that will be loaded as additional context(s) into the VerifiablePresentation
-    additional-contexts: ""
+#    trust-anchor-url: "https://registry.lab.gaia-x.eu/development/api/trustAnchor/chain/file"
+    http-timeout: 3000 
+    validator-expire: 1D
     participant:
       type: "https://w3id.org/gaia-x/core#Participant"
     resource:
@@ -120,7 +136,23 @@ federated-catalogue:
       type: "https://w3id.org/gaia-x/core#ServiceOffering"
     semantics: true
     schema: true
-    signatures: true
+    vp-signature: true
+    vc-signature: true
+    signature-verifier: local #uni-res
+    did: 
+      base-url: "https://dev.uniresolver.io/1.0" #/identifiers/
+      cache:
+        size: 100
+        timeout: 1H
+    doc-loader:
+      additional-context:
+        '[https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#]': https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#
+        '[https://registry.lab.gaia-x.eu/v1/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#]': https://registry.lab.gaia-x.eu/v1/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#
+      cache-size: 500
+      cache-timeout: 24H
+      enable-file: true
+      enable-http: true
+      enable-local-cache: false
 
 logging:
   level:
@@ -128,5 +160,6 @@ logging:
     eu.xfsc.fc: DEBUG
 #    org.neo4j.driver: DEBUG
 #    org.springframework: DEBUG
-    org.springframework.web: INFO
-#    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG #INFO
+#    org.springframework.security: DEBUG 
+

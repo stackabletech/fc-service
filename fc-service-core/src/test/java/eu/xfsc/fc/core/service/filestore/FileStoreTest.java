@@ -3,10 +3,7 @@ package eu.xfsc.fc.core.service.filestore;
 import eu.xfsc.fc.core.config.FileStoreConfig;
 import eu.xfsc.fc.core.pojo.ContentAccessor;
 import eu.xfsc.fc.core.pojo.ContentAccessorDirect;
-import eu.xfsc.fc.core.service.filestore.FileStore;
-import eu.xfsc.fc.core.service.filestore.FileStoreImpl;
 import eu.xfsc.fc.core.util.HashUtils;
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,8 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -30,18 +25,9 @@ import org.springframework.test.context.ContextConfiguration;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SpringBootTest(properties = {"federated-catalogue.file-store.cached=false"})
 @ActiveProfiles("test")
-@ContextConfiguration(classes = {FileStoreTest.TestApplication.class, FileStoreConfig.class}) 
+@ContextConfiguration(classes = {FileStoreConfig.class}) 
 @Slf4j
-@AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 public class FileStoreTest {
-
-  @SpringBootApplication
-  public static class TestApplication {
-
-    public static void main(final String[] args) {
-      SpringApplication.run(TestApplication.class, args);
-    }
-  }
 
   @Autowired
   @Qualifier("schemaFileStore")

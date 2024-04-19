@@ -9,6 +9,6 @@ gx:
 
 gx:LegalParticipant
     a               owl:Class;
-    rdfs:label      "Dispatcher"@en ;
-    rdfs:subClassOf  gax-core:ServiceOffering ;
+    rdfs:label      "Legal Participant"@en ;
+    rdfs:subClassOf  gax-core:Participant ;
 .

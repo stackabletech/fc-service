@@ -2,9 +2,13 @@ name: fc-service
 replicaCount: 1
 
 image:
-  repository: docker.stackable.tech/gaia-x/xfsc/fc-service-server
+  #repository: docker.stackable.tech/gaia-x/xfsc/fc-service-server
+  #pullPolicy: Always
+  #tag: "1.4.0"
+  repository: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/catalogue/fc-service-server
   pullPolicy: Always
-  tag: "1.4.0"
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
 
 fullnameOverride: "fc-service"
 

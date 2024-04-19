@@ -34,7 +34,9 @@ import org.springframework.test.context.ContextConfiguration;
 
 import eu.xfsc.fc.api.generated.model.SelfDescriptionStatus;
 import eu.xfsc.fc.core.config.DatabaseConfig;
+import eu.xfsc.fc.core.config.DidResolverConfig;
 import eu.xfsc.fc.core.config.DocumentLoaderConfig;
+import eu.xfsc.fc.core.config.DocumentLoaderProperties;
 import eu.xfsc.fc.core.config.FileStoreConfig;
 import eu.xfsc.fc.core.dao.impl.RevalidatorChunksDaoImpl;
 import eu.xfsc.fc.core.dao.impl.SchemaDaoImpl;
@@ -46,6 +48,7 @@ import eu.xfsc.fc.core.pojo.ContentAccessorFile;
 import eu.xfsc.fc.core.pojo.SelfDescriptionMetadata;
 import eu.xfsc.fc.core.pojo.VerificationResult;
 import eu.xfsc.fc.core.service.graphdb.Neo4jGraphStore;
+import eu.xfsc.fc.core.service.resolve.HttpDocumentResolver;
 import eu.xfsc.fc.core.service.schemastore.SchemaStore;
 import eu.xfsc.fc.core.service.schemastore.SchemaStoreImpl;
 import eu.xfsc.fc.core.service.sdstore.SelfDescriptionStore;
@@ -60,7 +63,7 @@ import lombok.extern.slf4j.Slf4j;
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {RevalidationServiceTest.TestApplication.class, RevalidationServiceImpl.class, RevalidatorChunksDaoImpl.class, FileStoreConfig.class, Neo4jGraphStore.class,
   VerificationServiceImpl.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DatabaseConfig.class, ValidatorCacheDaoImpl.class, SelfDescriptionStoreImpl.class, SelfDescriptionDaoImpl.class,
-  DocumentLoaderConfig.class})
+  DocumentLoaderConfig.class, DocumentLoaderProperties.class, DidResolverConfig.class, HttpDocumentResolver.class})
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
 public class RevalidationServiceTest {
@@ -217,7 +220,7 @@ public class RevalidationServiceTest {
 
   public String addSelfDescription(final ContentAccessor content) throws VerificationException {
     try {
-      final VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false);
+      final VerificationResult vr = verificationService.verifySelfDescription(content, true, true, false, false);
       final SelfDescriptionMetadata sd = new SelfDescriptionMetadata(content, vr);
       sdStore.storeSelfDescription(sd, vr);
       return sd.getSdHash();

@@ -1,11 +1,12 @@
 package eu.xfsc.fc.core.config;
 
+import java.io.StringReader;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,8 +15,9 @@ import com.apicatalog.jsonld.document.JsonDocument;
 import com.apicatalog.jsonld.http.ProfileConstants;
 import com.apicatalog.jsonld.loader.DocumentLoader;
 import com.apicatalog.jsonld.loader.DocumentLoaderOptions;
-import com.apicatalog.jsonld.loader.SchemeRouter;
 import com.danubetech.verifiablecredentials.jsonld.VerifiableCredentialContexts;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 import eu.xfsc.fc.core.exception.VerificationException;
 import foundation.identity.jsonld.ConfigurableDocumentLoader;
@@ -36,25 +38,21 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class DocumentLoaderConfig {
 
-	@Value("${federated-catalogue.verification.additional-contexts}")
-	private List<String> trustAnchorAdditionalContexts;
-
-	private static ConfigurableDocumentLoader ADDITIONAL_CONTEXT_DOCUMENT_LOADER;
+	@Autowired
+	private DocumentLoaderProperties properties;
+	private DocumentLoaderOptions options;
+	
+	public DocumentLoaderConfig() {
+		// not sure, what it is for..
+		options = new DocumentLoaderOptions();
+		options.setProfile(ProfileConstants.CONTEXT);
+		options.setRequestProfile(Arrays.asList(options.getProfile()));
+	}
 	
 	/**
-	 * Returns a default document loader
+	 * Returns a default document loader with additional context and settings
 	 * 
 	 * @see VerifiableCredentialContexts#DOCUMENT_LOADER
-	 * @return a default document loader instance
-	 */
-	@Bean
-	public DocumentLoader documentLoader() {
-		return VerifiableCredentialContexts.DOCUMENT_LOADER;
-	}
-
-	/**
-	 * Returns a document loader with additional context(s) loaded
-	 * 
 	 * <p>
 	 * <b>TODO:</b> all w3c context files are part of the libraries in use, may be we should add the 
 	 *      contexts we configure in the application into the catalog and load them by a classloader
@@ -64,43 +62,74 @@ public class DocumentLoaderConfig {
 	 * @return a document loader instance
 	 */
 	@Bean
-	public DocumentLoader additionalContextDocumentLoader() {
-		if (ADDITIONAL_CONTEXT_DOCUMENT_LOADER == null) {
-			ADDITIONAL_CONTEXT_DOCUMENT_LOADER = new ConfigurableDocumentLoader(
-					VerifiableCredentialContexts.CONTEXTS);
-			
-			if (this.trustAnchorAdditionalContexts != null && !this.trustAnchorAdditionalContexts.isEmpty()) {
-
-				final DocumentLoaderOptions loaderOptions = new DocumentLoaderOptions();
-				loaderOptions.setProfile(ProfileConstants.CONTEXT);
-				loaderOptions.setRequestProfile(Arrays.asList(loaderOptions.getProfile()));
-
-				for (final String trustAnchroContextUrl : this.trustAnchorAdditionalContexts) {
-					try {
-						final URI uri = URI.create(trustAnchroContextUrl);
-						// use cached document loader
-						final Document document = SchemeRouter.defaultInstance().loadDocument(uri, loaderOptions);
-						if (document instanceof JsonDocument) {
-							final JsonDocument jsonDocument = JsonDocument.class.cast(document);
-							ADDITIONAL_CONTEXT_DOCUMENT_LOADER.getLocalCache().put(uri, jsonDocument);
-							log.debug("Add additional context {} to the VerifiablePresentation", trustAnchroContextUrl);
-						} else {
-							log.error("Load an unknown document type '{}' for context '{}', expected was '{}'",
-									document.getClass(), trustAnchroContextUrl, JsonDocument.class.getSimpleName());
-							throw new VerificationException(
-									"Unknown document format while load additional (GAIA-X) context '"
-											+ trustAnchroContextUrl + "'");
-						}
-					} catch (Exception ex) {
-						log.error(
-								"Unexpected error while try to load additional context {} to the VerifiablePresentation",
-								trustAnchroContextUrl);
-						throw new ExceptionInInitializerError("Unexpected error while load additional context '"
-								+ trustAnchroContextUrl + "': " + ex.getMessage());
-					}
-				}
-			} 
+	public DocumentLoader documentLoader(Cache<URI, Document> docLoaderCache) {
+		log.info("documentLoader.enter; cache: {}", docLoaderCache);
+		ConfigurableDocumentLoader loader = (ConfigurableDocumentLoader) VerifiableCredentialContexts.DOCUMENT_LOADER;
+		loader.setEnableFile(properties.isEnableFile()); 
+		loader.setEnableHttp(properties.isEnableHttp()); 
+		loader.setEnableHttps(properties.isEnableHttp());
+		loader.setEnableLocalCache(properties.isEnableLocalCache()); 
+		if (!properties.isEnableLocalCache()) { 
+		    loader.setRemoteCache(docLoaderCache);
 		}
-		return ADDITIONAL_CONTEXT_DOCUMENT_LOADER;
+
+		if (!properties.getAdditionalContext().isEmpty()) {
+			for (Map.Entry<String, String> ctxUrl: properties.getAdditionalContext().entrySet()) { 
+				loadContext(loader, ctxUrl.getKey(), ctxUrl.getValue());
+			}
+		}
+		log.info("documentLoader.exit; returning: {}", loader);
+		return loader;
 	}
+	
+	public DocumentLoaderOptions getDocLoaderOptions() {
+		return options;
+	}
+	
+	private void loadContext(ConfigurableDocumentLoader loader, String url, String contentRef) {
+		try {
+			Document document;
+			final URI uri = new URI(url);
+			final URI ref = getUri(contentRef);
+			if (ref == null) {
+				document = JsonDocument.of(new StringReader(contentRef));
+			} else {
+				document = loader.loadDocument(ref, options); 
+			}
+			if (document instanceof JsonDocument) {
+				final JsonDocument jsonDocument = JsonDocument.class.cast(document);
+				if (properties.isEnableLocalCache()) {
+				    loader.getLocalCache().put(uri, jsonDocument);
+				} else {
+				    loader.getRemoteCache().asMap().putIfAbsent(uri, jsonDocument);
+				}
+				log.debug("Add additional context {} of size {}", url, jsonDocument.getJsonContent().toString().length());
+			} else {
+				log.error("Load an unknown document type '{}' for context '{}', expected was '{}'",	document.getClass(), url, JsonDocument.class.getSimpleName());
+				throw new VerificationException("Unknown document format while load additional (GAIA-X) context '"	+ url + "'");
+			}
+		} catch (Exception ex) {
+			log.error("Unexpected error while try to load additional context for {}: {}", url, contentRef);
+			throw new ExceptionInInitializerError("Unexpected error while load additional context '" + url + "': " + ex.getMessage());
+		}
+	}
+	
+	private URI getUri(String ref) {
+		try {
+			return URI.create(ref);
+		} catch (Exception ex) {
+			return null;
+		}
+	}
+	
+	@Bean
+	public Cache<URI, Document> docLoaderCache() {
+        Caffeine<?, ?> cache = Caffeine.newBuilder().expireAfterAccess(properties.getCacheTimeout());
+        if (properties.getCacheSize() > 0) {
+            cache = cache.maximumSize(properties.getCacheSize());
+        }
+		log.info("docLoaderCache.exit; returning: {}", cache);
+        return (Cache<URI, Document>) cache.build();
+	}
+	
 }

@@ -23,7 +23,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 import eu.xfsc.fc.core.config.DatabaseConfig;
+import eu.xfsc.fc.core.config.DidResolverConfig;
 import eu.xfsc.fc.core.config.DocumentLoaderConfig;
+import eu.xfsc.fc.core.config.DocumentLoaderProperties;
 import eu.xfsc.fc.core.config.FileStoreConfig;
 import eu.xfsc.fc.core.dao.impl.SchemaDaoImpl;
 import eu.xfsc.fc.core.dao.impl.SelfDescriptionDaoImpl;
@@ -34,6 +36,7 @@ import eu.xfsc.fc.core.pojo.GraphQuery;
 import eu.xfsc.fc.core.pojo.SelfDescriptionMetadata;
 import eu.xfsc.fc.core.pojo.VerificationResultParticipant;
 import eu.xfsc.fc.core.service.graphdb.Neo4jGraphStore;
+import eu.xfsc.fc.core.service.resolve.HttpDocumentResolver;
 import eu.xfsc.fc.core.service.schemastore.SchemaStoreImpl;
 import eu.xfsc.fc.core.service.verification.VerificationService;
 import eu.xfsc.fc.core.service.verification.VerificationServiceImpl;
@@ -49,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {SelfDescriptionStoreCompositeTest.TestApplication.class, FileStoreConfig.class, VerificationServiceImpl.class, ValidatorCacheDaoImpl.class,
   SelfDescriptionStoreImpl.class, SelfDescriptionDaoImpl.class, SelfDescriptionStoreCompositeTest.class, SchemaStoreImpl.class, SchemaDaoImpl.class, DatabaseConfig.class, 
-  Neo4jGraphStore.class, DocumentLoaderConfig.class})
+  Neo4jGraphStore.class, DidResolverConfig.class, DocumentLoaderConfig.class, DocumentLoaderProperties.class, HttpDocumentResolver.class})
 @Slf4j
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @Import(EmbeddedNeo4JConfig.class)
@@ -99,7 +102,7 @@ public class SelfDescriptionStoreCompositeTest {
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("Claims-Extraction-Tests/providerTest.jsonld");
     // Only verify semantics, not schema or signatures
-    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false);
+    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false, false);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
     sdStorePublisher.storeSelfDescription(sdMeta, result);
 
@@ -139,7 +142,7 @@ public class SelfDescriptionStoreCompositeTest {
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
     ContentAccessor content = getAccessor("Claims-Extraction-Tests/providerTest.jsonld");
     // Only verify semantics, not schema or signatures
-    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false);
+    VerificationResultParticipant result = (VerificationResultParticipant) verificationService.verifySelfDescription(content, true, false, false, false);
     SelfDescriptionMetadata sdMeta = new SelfDescriptionMetadata(content, result);
     sdStorePublisher.storeSelfDescription(sdMeta, result);
 

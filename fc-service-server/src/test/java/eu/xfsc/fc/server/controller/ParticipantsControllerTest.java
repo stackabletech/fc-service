@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterAll;
@@ -653,7 +653,7 @@ public class ParticipantsControllerTest {
       } catch (UnsupportedEncodingException e) {
         throw new RuntimeException(e);
       }
-      when(groupsResource.add(any())).thenReturn(Response.status(status).type(javax.ws.rs.core.MediaType.APPLICATION_JSON).entity(byteArrayInputStream).build());
+      when(groupsResource.add(any())).thenReturn(Response.status(status).type(jakarta.ws.rs.core.MediaType.APPLICATION_JSON).entity(byteArrayInputStream).build());
     } else {
       when(groupsResource.add(any())).thenReturn(Response.status(status).build());
     }
