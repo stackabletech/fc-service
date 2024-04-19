@@ -40,3 +40,6 @@ fc-service-server/logs/
 
 ### vim ###
 *.swp
+
+### helm ###
+/deployment/helm/fc-service/charts/*.tgz
