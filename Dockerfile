@@ -10,7 +10,6 @@ COPY fc-service-server fc-service-server
 COPY fc-demo-portal fc-demo-portal
 COPY fc-tools fc-tools
 COPY openapi openapi
-COPY fc-tools/signer fc-tools/signer
 
 COPY pom.xml pom.xml
 COPY lombok.config lombok.config

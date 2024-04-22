@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Ignore;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -251,7 +250,7 @@ public class VerificationServiceTest {
   }
 
   @Test
-  void validSyntax_ValidResourceNewSchema() throws Exception {
+  void validSyntax_ValidResourceNewSchema() {
     log.debug("validSyntax_ValidResourceNewSchema");
     schemaStore.initializeDefaultSchemas();
     ContentAccessor content = getAccessor("VerificationService/syntax/resourceSD.jsonld");
