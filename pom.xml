@@ -87,7 +87,7 @@
         <embedded.postgres.test.version>2.4.0</embedded.postgres.test.version>
         <neo4j.test-harness.version>5.15.0</neo4j.test-harness.version>
         <neo4j.test-spring.version>4.3.6.0</neo4j.test-spring.version>
-        <jose4j.version>0.9.3</jose4j.version>
+        <jose4j.version>0.9.4</jose4j.version>
         <!-- plugins -->
         <plugin.jacoco.version>0.8.11</plugin.jacoco.version>
         <plugin.jib.version>3.4.0</plugin.jib.version>
@@ -114,7 +114,7 @@
     <ciManagement>
         <url>https://gitlab.eclipse.org/${repository.path}/-/pipelines</url>
     </ciManagement>
-
+    
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -219,7 +219,8 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
-            </dependency> 
+            </dependency>
+            <!-- set versions to resolve vulnerabilities --> 
             <dependency>
                 <groupId>org.eclipse.collections</groupId>
                 <artifactId>eclipse-collections</artifactId>        
@@ -230,6 +231,16 @@
                 <artifactId>protobuf-javalite</artifactId>
                 <version>${protobuf-javalite.version}</version>
             </dependency>           
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-configuration2</artifactId>
+                <version>2.10.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.james</groupId>
+                <artifactId>apache-mime4j-core</artifactId>
+                <version>0.8.11</version>
+            </dependency>
             
             <dependency>
                 <groupId>org.neo4j.driver</groupId>
