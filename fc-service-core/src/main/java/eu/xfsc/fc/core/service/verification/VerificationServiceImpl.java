@@ -219,11 +219,11 @@ public class VerificationServiceImpl implements VerificationService {
 
     Collection<TrustFrameworkBaseClass> baseClasses = typedCredentials.getBaseClasses();
     TrustFrameworkBaseClass baseClass = baseClasses.isEmpty() ? UNKNOWN : baseClasses.iterator().next();
-    if (verifySemantics && strict) {
+    if (verifySemantics) { 
       if (baseClasses.size() > 1) {
         throw new VerificationException("Semantic error: SD has several types: " + baseClasses);
       }
-      if (baseClass != expectedClass) {
+      if (expectedClass != UNKNOWN && baseClass != expectedClass) {
         throw new VerificationException("Semantic error: expected SD of type " + expectedClass + " but found " + baseClass);
       }
     }
@@ -231,7 +231,7 @@ public class VerificationServiceImpl implements VerificationService {
     stamp2 = System.currentTimeMillis();
     List<SdClaim> claims = extractClaims(payload);
     log.debug("verifySelfDescription; claims extracted: {}, time taken: {}", (claims == null ? "null" : claims.size()),
-    		System.currentTimeMillis() - stamp2);
+   		System.currentTimeMillis() - stamp2);
 
     if (verifySemantics && strict) {
       Set<String> subjects = new HashSet<>();
