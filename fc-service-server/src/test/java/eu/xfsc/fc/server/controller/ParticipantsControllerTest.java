@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -179,13 +180,13 @@ public class ParticipantsControllerTest {
 
   @Test
   public void participantAuthShouldReturnUnauthorizedResponse() throws Exception {
-    mockMvc.perform(MockMvcRequestBuilders.post("/participants")).andExpect(status().isUnauthorized());
+    mockMvc.perform(MockMvcRequestBuilders.post("/participants").with(csrf())).andExpect(status().isUnauthorized());
   }
 
   @Test
   @WithMockUser
   public void participantAuthShouldReturnForbiddenResponse() throws Exception {
-    mockMvc.perform(MockMvcRequestBuilders.post("/participants")).andExpect(status().isForbidden());
+    mockMvc.perform(MockMvcRequestBuilders.post("/participants").with(csrf())).andExpect(status().isForbidden());
   }
 
   @Test
@@ -201,6 +202,7 @@ public class ParticipantsControllerTest {
     String response = mockMvc
             .perform(MockMvcRequestBuilders.post("/participants")
                     .contentType(MediaType.APPLICATION_JSON)
+                    .with(csrf())
                     .content(json))
             .andExpect(status().isCreated())
             .andReturn()
@@ -241,6 +243,7 @@ public class ParticipantsControllerTest {
     mockMvc
             .perform(MockMvcRequestBuilders.post("/participants")
                     .contentType(MediaType.APPLICATION_JSON)
+                    .with(csrf())
                     .content(json))
             .andExpect(status().isConflict());
 
@@ -259,7 +262,8 @@ public class ParticipantsControllerTest {
     setupKeycloak(HttpStatus.SC_OK, null);
     MvcResult result = mockMvc
             .perform(MockMvcRequestBuilders.get("/participants")
-                    .contentType(MediaType.APPLICATION_JSON))
+                    .contentType(MediaType.APPLICATION_JSON)
+            		.with(csrf()))
             .andExpect(status().isOk())
             .andReturn();
     Participants parts = objectMapper.readValue(result.getResponse().getContentAsString(), Participants.class);
@@ -279,7 +283,8 @@ public class ParticipantsControllerTest {
 
     mockMvc
             .perform(MockMvcRequestBuilders.get("/participants/{participantId}", partId)
-                    .contentType(MediaType.APPLICATION_JSON))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .with(csrf()))
             .andExpect(status().isOk());
   }
 
@@ -288,7 +293,8 @@ public class ParticipantsControllerTest {
   public void getParticipantsShouldReturnForbiddenResponse() throws Exception {
     mockMvc
             .perform(MockMvcRequestBuilders.get("/participants")
-                    .contentType(MediaType.APPLICATION_JSON))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .with(csrf()))
             .andExpect(status().isForbidden());
   }
 
@@ -303,7 +309,8 @@ public class ParticipantsControllerTest {
     String response = mockMvc
             .perform(MockMvcRequestBuilders.get("/self-descriptions")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .queryParam("id", part.getId()).queryParam("withContent", "true"))
+                    .queryParam("id", part.getId()).queryParam("withContent", "true")
+                    .with(csrf()))
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
     SelfDescriptions selfDescriptions = objectMapper.readValue(response, SelfDescriptions.class);
@@ -329,7 +336,8 @@ public class ParticipantsControllerTest {
 
     mockMvc
             .perform(MockMvcRequestBuilders.get("/participants/{participantId}", partId)
-                    .contentType(MediaType.APPLICATION_JSON))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .with(csrf()))
             .andExpect(status().isNotFound());
   }
 
@@ -343,7 +351,8 @@ public class ParticipantsControllerTest {
 
     MvcResult result = mockMvc
             .perform(MockMvcRequestBuilders.get("/participants?offset={offset}&limit={limit}", null, 1)
-                    .contentType(MediaType.APPLICATION_JSON))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .with(csrf()))
             .andExpect(status().isOk())
             .andReturn();
     Participants parts = objectMapper.readValue(result.getResponse().getContentAsString(), Participants.class);
@@ -364,7 +373,8 @@ public class ParticipantsControllerTest {
     setupKeycloakForUsers(HttpStatus.SC_CREATED, userOfParticipant, userId);
     MvcResult result = mockMvc
             .perform(MockMvcRequestBuilders.get("/participants/{participantId}/users", partId)
-                    .contentType(MediaType.APPLICATION_JSON))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .with(csrf()))
             .andExpect(status().isOk())
             .andReturn();
     UserProfiles users = objectMapper.readValue(result.getResponse().getContentAsString(), UserProfiles.class);
@@ -379,7 +389,8 @@ public class ParticipantsControllerTest {
     mockMvc
             .perform(MockMvcRequestBuilders.post("/participants")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE)))
+                    .content(getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE))
+                    .with(csrf()))
             .andExpect(status().isForbidden());
   }
 
@@ -395,7 +406,8 @@ public class ParticipantsControllerTest {
     mockMvc
             .perform(MockMvcRequestBuilders.post("/participants")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(json))
+                    .content(json)
+                    .with(csrf()))
             .andExpect(status().isConflict());
 
     NotFoundException exceptionSDStore = assertThrows(NotFoundException.class,
@@ -415,7 +427,8 @@ public class ParticipantsControllerTest {
     mockMvc
             .perform(MockMvcRequestBuilders.post("/participants")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(json))
+                    .content(json)
+                    .with(csrf()))
             .andExpect(status().is5xxServerError());
 
     Throwable exceptionSD = assertThrows(Throwable.class,
@@ -442,7 +455,8 @@ public class ParticipantsControllerTest {
     String response = mockMvc
             .perform(MockMvcRequestBuilders.put("/participants/{participantId}", partId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(json))
+                    .content(json)
+                    .with(csrf()))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -467,7 +481,8 @@ public class ParticipantsControllerTest {
     mockMvc
             .perform(MockMvcRequestBuilders.put("/participants/{participantId}", "123")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE)))
+                    .content(getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE))
+                    .with(csrf()))
             .andExpect(status().isForbidden());
   }
 
@@ -493,8 +508,9 @@ public class ParticipantsControllerTest {
 
     mockMvc.perform(MockMvcRequestBuilders.put("/participants/{participantId}", partId)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(updatedParticipant))
-            .andExpect(status().isBadRequest());
+            .content(updatedParticipant)
+            .with(csrf()))
+        .andExpect(status().isBadRequest());
   }
 
   @Test
@@ -511,8 +527,9 @@ public class ParticipantsControllerTest {
 
     mockMvc.perform(MockMvcRequestBuilders.put("/participants/{participantId}", partId)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(json))
-            .andExpect(status().is5xxServerError());
+            .content(json)
+            .with(csrf()))
+        .andExpect(status().is5xxServerError());
 
     Throwable exceptionSD = assertThrows(Throwable.class,
             () -> sdStorePublisher.getByHash(part.getSdHash()));
@@ -530,7 +547,8 @@ public class ParticipantsControllerTest {
     setupKeycloak(HttpStatus.SC_OK, part);
     String partId = URLEncoder.encode(part.getId(), Charset.defaultCharset());
 
-    mockMvc.perform(MockMvcRequestBuilders.delete("/participants/{participantId}", partId))
+    mockMvc.perform(MockMvcRequestBuilders.delete("/participants/{participantId}", partId)
+            	.with(csrf()))
             .andExpect(status().isForbidden());
   }
 
@@ -541,8 +559,9 @@ public class ParticipantsControllerTest {
   public void deleteParticipantShouldReturnForbiddenResponse() throws Exception {
     mockMvc.perform(MockMvcRequestBuilders.delete("/participants/{participantId}", "123")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE)))
-            .andExpect(status().isForbidden());
+            .content(getMockFileDataAsString(DEFAULT_PARTICIPANT_FILE))
+            .with(csrf()))
+        .andExpect(status().isForbidden());
   }
 
   @Test
@@ -557,8 +576,9 @@ public class ParticipantsControllerTest {
     setupKeycloak(HttpStatus.SC_NOT_FOUND, part);
     String partId = URLEncoder.encode(part.getId(), Charset.defaultCharset());
 
-    mockMvc.perform(MockMvcRequestBuilders.delete("/participants/{participantId}", partId))
-            .andExpect(status().isNotFound());
+    mockMvc.perform(MockMvcRequestBuilders.delete("/participants/{participantId}", partId)
+            .with(csrf()))
+        .andExpect(status().isNotFound());
 
     Throwable exceptionSD = assertThrows(Throwable.class,
             () -> sdStorePublisher.getByHash(part.getSdHash()));
@@ -584,7 +604,8 @@ public class ParticipantsControllerTest {
     String partId = URLEncoder.encode(part.getId(), Charset.defaultCharset());
 
     String response = mockMvc
-            .perform(MockMvcRequestBuilders.delete("/participants/{participantId}", partId))
+            .perform(MockMvcRequestBuilders.delete("/participants/{participantId}", partId)
+                .with(csrf()))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -622,7 +643,8 @@ public class ParticipantsControllerTest {
     String partId = URLEncoder.encode(part.getId(), Charset.defaultCharset());
 
     String response = mockMvc
-            .perform(MockMvcRequestBuilders.delete("/participants/{participantId}", partId))
+            .perform(MockMvcRequestBuilders.delete("/participants/{participantId}", partId)
+                .with(csrf()))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

@@ -48,7 +48,7 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
     http
-      .csrf().disable()
+      //.csrf().disable()
       .authorizeHttpRequests(authorization -> authorization
           .requestMatchers(antMatcher(HttpMethod.OPTIONS, "/**")).permitAll()
           .requestMatchers(antMatcher(HttpMethod.GET, "/api/**")).permitAll()
@@ -106,13 +106,8 @@ public class SecurityConfig {
           
           .anyRequest().authenticated()
         )
-        .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
-        .exceptionHandling()
-        .accessDeniedHandler(accessDeniedHandler())
-        .and()
-        .oauth2ResourceServer()
-        .jwt()
-        .jwtAuthenticationConverter(new CustomJwtAuthenticationConverter(resourceId));
+        .exceptionHandling(c -> c.accessDeniedHandler(accessDeniedHandler()))
+        .oauth2ResourceServer(c -> c.jwt(jc -> jc.jwtAuthenticationConverter(new CustomJwtAuthenticationConverter(resourceId))));
 
     return http.build();
   }

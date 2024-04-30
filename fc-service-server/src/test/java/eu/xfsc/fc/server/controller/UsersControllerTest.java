@@ -33,6 +33,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -168,13 +169,13 @@ public class UsersControllerTest {
 
     @Test
     public void userAuthShouldReturnUnauthorizedResponse() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/users")).andExpect(status().isUnauthorized());
+        mockMvc.perform(MockMvcRequestBuilders.post("/users").with(csrf())).andExpect(status().isUnauthorized());
     }
 
     @Test
     @WithMockUser
     public void userAuthShouldReturnForbiddenResponse() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/users")).andExpect(status().isForbidden());
+        mockMvc.perform(MockMvcRequestBuilders.post("/users").with(csrf())).andExpect(status().isForbidden());
     }
 
     @Test
@@ -186,7 +187,8 @@ public class UsersControllerTest {
         String response = mockMvc
             .perform(MockMvcRequestBuilders.post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(user)))
+                .content(objectMapper.writeValueAsString(user))
+            	.with(csrf()))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -202,7 +204,8 @@ public class UsersControllerTest {
         mockMvc
             .perform(MockMvcRequestBuilders.post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new User())))
+                .content(objectMapper.writeValueAsString(new User()))
+                .with(csrf()))
             .andExpect(status().isForbidden());
     }
 
@@ -219,7 +222,8 @@ public class UsersControllerTest {
                 .build());
         String response = mockMvc.perform(MockMvcRequestBuilders.post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(user)))
+                .content(objectMapper.writeValueAsString(user))
+                .with(csrf()))
             .andExpect(status().isConflict())
             .andReturn()
             .getResponse()
@@ -239,7 +243,8 @@ public class UsersControllerTest {
         UserProfile existed = userDao.create(user);
         mockMvc
             .perform(MockMvcRequestBuilders.get("/users/{userId}", existed.getId())
-                .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON)
+            	.with(csrf()))
             .andExpect(status().isOk());
     }
 
@@ -249,7 +254,8 @@ public class UsersControllerTest {
         mockMvc
             .perform(MockMvcRequestBuilders.get("/users/{userId}", "123")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new User())))
+                .content(objectMapper.writeValueAsString(new User()))
+            	.with(csrf()))
             .andExpect(status().isForbidden());
     }
 
@@ -260,7 +266,8 @@ public class UsersControllerTest {
 
         String result = mockMvc
             .perform(MockMvcRequestBuilders.get("/users/{userId}", "123")
-                .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON)
+            	.with(csrf()))
             .andExpect(status().isNotFound())
             .andReturn().getResponse().getContentAsString();
         Error error = objectMapper.readValue(result, Error.class);
@@ -276,7 +283,8 @@ public class UsersControllerTest {
 
         MvcResult result = mockMvc
             .perform(MockMvcRequestBuilders.get("/users?offset={offset}&limit={limit}", null, null)
-                .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON)
+            	.with(csrf()))
             .andExpect(status().isOk())
             .andReturn();
         UserProfiles users = objectMapper.readValue(result.getResponse().getContentAsString(), UserProfiles.class);
@@ -290,7 +298,8 @@ public class UsersControllerTest {
     public void getUsersShouldReturnForbiddenResponse() throws Exception {
         mockMvc
             .perform(MockMvcRequestBuilders.get("/users")
-                .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON)
+        		.with(csrf()))
             .andExpect(status().isForbidden());
     }
 
@@ -302,7 +311,8 @@ public class UsersControllerTest {
         setupKeycloak(HttpStatus.SC_NO_CONTENT, user, userId);
         UserProfile existed = userDao.create(user);
         String response = mockMvc
-            .perform(MockMvcRequestBuilders.delete("/users/{userId}", existed.getId()))
+            .perform(MockMvcRequestBuilders.delete("/users/{userId}", existed.getId())
+               	.with(csrf()))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -326,7 +336,8 @@ public class UsersControllerTest {
         setupKeycloak(HttpStatus.SC_NOT_FOUND, null, "123");
 
         String result = mockMvc
-            .perform(MockMvcRequestBuilders.delete("/users/{userId}", "123"))
+            .perform(MockMvcRequestBuilders.delete("/users/{userId}", "123")
+            	.with(csrf()))
             .andExpect(status().isNotFound())
             .andReturn()
             .getResponse()
@@ -370,7 +381,8 @@ public class UsersControllerTest {
         mockMvc
             .perform(MockMvcRequestBuilders.put("/users/{userId}", existed.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(user)))
+                .content(objectMapper.writeValueAsString(user))
+                .with(csrf()))
             .andExpect(status().isOk());
     }
 
@@ -380,7 +392,8 @@ public class UsersControllerTest {
         mockMvc
             .perform(MockMvcRequestBuilders.put("/users/{userId}", "123")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new User())))
+                .content(objectMapper.writeValueAsString(new User()))
+                .with(csrf()))
             .andExpect(status().isForbidden());
     }
 
@@ -399,7 +412,8 @@ public class UsersControllerTest {
         String response = mockMvc
             .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE))))
+                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)))
+                .with(csrf()))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         UserProfile profile = objectMapper.readValue(response, UserProfile.class);
@@ -431,7 +445,8 @@ public class UsersControllerTest {
         String response = mockMvc
             .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE))))
+                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)))
+                .with(csrf()))
             .andExpect(status().isForbidden())
             .andReturn().getResponse().getContentAsString();
 
@@ -447,7 +462,8 @@ public class UsersControllerTest {
         String result = mockMvc
             .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", "123")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE))))
+                .content(objectMapper.writeValueAsString(List.of(SD_ADMIN_ROLE, PARTICIPANT_ADMIN_ROLE)))
+                .with(csrf()))
             .andExpect(status().isNotFound())
             .andReturn().getResponse().getContentAsString();
 
@@ -466,7 +482,8 @@ public class UsersControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(List.of(PARTICIPANT_ADMIN_ROLE))))
+                .content(objectMapper.writeValueAsString(List.of(PARTICIPANT_ADMIN_ROLE)))
+                .with(csrf()))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -489,7 +506,8 @@ public class UsersControllerTest {
         String response = mockMvc
             .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(List.of(PARTICIPANT_ADMIN_ROLE))))
+                .content(objectMapper.writeValueAsString(List.of(PARTICIPANT_ADMIN_ROLE)))
+                .with(csrf()))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         UserProfile profile = objectMapper.readValue(response, UserProfile.class);
@@ -518,7 +536,8 @@ public class UsersControllerTest {
         String response = mockMvc
             .perform(MockMvcRequestBuilders.put("/users/{userId}/roles", existed.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(List.of(PARTICIPANT_ADMIN_ROLE))))
+                .content(objectMapper.writeValueAsString(List.of(PARTICIPANT_ADMIN_ROLE)))
+                .with(csrf()))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
 

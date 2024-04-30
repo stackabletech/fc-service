@@ -500,7 +500,8 @@ public class SelfDescriptionControllerTest {
         MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
                 .content(content)
                 .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON))
+                .accept(MediaType.APPLICATION_JSON)
+            	.with(csrf()))
             .andExpect(status().isCreated())
             .andReturn();
 
@@ -515,7 +516,8 @@ public class SelfDescriptionControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions/" + hash + "/revoke")
                 .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON))
+                .accept(MediaType.APPLICATION_JSON)
+            	.with(csrf()))
                 .andExpect(status().isOk());
         
         nodes = graphStore.queryData(new GraphQuery(
@@ -527,7 +529,8 @@ public class SelfDescriptionControllerTest {
         result = mockMvc.perform(MockMvcRequestBuilders.post("/self-descriptions")
                 .content(content)
                 .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON))
+                .accept(MediaType.APPLICATION_JSON)
+            	.with(csrf()))
             .andExpect(status().isConflict())
             .andReturn();
 
