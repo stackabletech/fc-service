@@ -29,6 +29,7 @@ import static eu.xfsc.fc.server.helper.FileReaderHelper.getMockFileDataAsString;
 import static eu.xfsc.fc.server.util.TestUtil.getAccessor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -71,7 +72,8 @@ public class VerificationControllerTest {
   public void getVerifyPageShouldReturnSuccessResponse() throws Exception {
     mockMvc.perform(MockMvcRequestBuilders.get("/verification")
             .contentType(MediaType.APPLICATION_JSON)
-            .accept(MediaType.APPLICATION_JSON))
+            .accept(MediaType.APPLICATION_JSON)
+        	.with(csrf()))
             .andExpect(status().isOk())
             .andExpect(header().stringValues("Content-Type", "text/html"));
   }
@@ -82,7 +84,8 @@ public class VerificationControllerTest {
     String response = mockMvc.perform(MockMvcRequestBuilders.post("/verification")
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
-            .content(json))
+            .content(json)
+        	.with(csrf()))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -98,7 +101,8 @@ public class VerificationControllerTest {
     mockMvc.perform(MockMvcRequestBuilders.post("/verification")
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
-            .content(json))
+            .content(json)
+        	.with(csrf()))
             .andExpect(status().isUnprocessableEntity());
   }
 
@@ -111,7 +115,8 @@ public class VerificationControllerTest {
             .queryParam("verifyVCSignature", "false")
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
-            .content(json))
+            .content(json)
+        	.with(csrf()))
             .andExpect(status().isOk());
   }
 
@@ -121,7 +126,8 @@ public class VerificationControllerTest {
     String response = mockMvc.perform(MockMvcRequestBuilders.post("/verification")
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
-            .content(json))
+            .content(json)
+        	.with(csrf()))
             .andExpect(status().isUnprocessableEntity())
             .andReturn()
             .getResponse()
@@ -141,7 +147,8 @@ public class VerificationControllerTest {
             .queryParam("verifySemantics", "false")
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
-            .content(json))
+            .content(json)
+        	.with(csrf()))
             .andExpect(status().isOk());
   }
 

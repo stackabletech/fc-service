@@ -3,6 +3,7 @@ package eu.xfsc.fc.server.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -79,7 +80,7 @@ public class RolesControllerTest {
 
     @Test
     public void getRolesShouldReturnUnauthorizedResponse() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/roles")).andExpect(status().isUnauthorized());
+        mockMvc.perform(MockMvcRequestBuilders.post("/roles").with(csrf())).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -89,7 +90,8 @@ public class RolesControllerTest {
 
         MvcResult result = mockMvc
             .perform(MockMvcRequestBuilders.get("/roles")
-            .contentType(MediaType.APPLICATION_JSON))
+            .contentType(MediaType.APPLICATION_JSON)
+        	.with(csrf()))
             .andExpect(status().isOk())
             .andReturn();
         List<?> roles = objectMapper.readValue(result.getResponse().getContentAsString(), LIST_TYPE_REF);

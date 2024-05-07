@@ -1,5 +1,6 @@
 package eu.xfsc.fc.server.controller;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,8 @@ public class RebuilderControllerTest {
       GraphRebuildRequest grRequest = new GraphRebuildRequest(1, 0, 2, 3);  
       mockMvc.perform(MockMvcRequestBuilders.post("/actuator/graph-rebuild")
               .content(jsonMapper.writeValueAsString(grRequest))
-              .contentType(MediaType.APPLICATION_JSON))
+              .contentType(MediaType.APPLICATION_JSON)
+          	  .with(csrf()))
               .andExpect(status().isOk());
     }
     
