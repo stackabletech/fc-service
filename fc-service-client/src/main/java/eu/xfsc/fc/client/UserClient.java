@@ -24,10 +24,8 @@ public class UserClient extends ServiceClient {
     }
     
     public UserProfiles getUsers(int offset, int limit) {
-        if (limit == 0) {
-            limit = 50;
-        }
-        return doGet(baseUrl + "/users?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit), UserProfiles.class);
+        Map<String, Object> params = buildPagingParams(offset, limit);
+        return doGet(baseUrl + "/users?offset={offset}&limit={limit}", params, UserProfiles.class);
     }
 
     public List<String> getUserRoles(String userId) {

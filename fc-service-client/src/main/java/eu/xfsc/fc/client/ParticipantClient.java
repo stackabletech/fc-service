@@ -39,18 +39,14 @@ public class ParticipantClient extends ServiceClient {
     }
     
     public List<Participant> getParticipants(int offset, int limit) {
-        if (limit == 0) {
-            limit = 50;
-        }
+        Map<String, Object> params = buildPagingParams(offset, limit);
         Class<List<Participant>> reType = (Class<List<Participant>>)(Class<?>) List.class;
-        return doGet(baseUrl + "/participants?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit), reType);
+        return doGet(baseUrl + "/participants?offset={offset}&limit={limit}", params, reType);
     }
 
     public Participants getParticipants(int offset, int limit, OAuth2AuthorizedClient authorizedClient) {
-        if (limit == 0) {
-            limit = 50;
-        }
-        return doGet(baseUrl + "/participants?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit), Participants.class, authorizedClient);
+        Map<String, Object> params = buildPagingParams(offset, limit);
+        return doGet(baseUrl + "/participants?offset={offset}&limit={limit}", params, Participants.class, authorizedClient);
     }
 
     public Participant addParticipant(String participantSD) {

@@ -2,6 +2,7 @@ package eu.xfsc.fc.client;
 
 import static org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction.oauth2AuthorizedClient;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
@@ -63,7 +64,7 @@ public abstract class ServiceClient {
     	return this.baseUrl;
     }
     
-    private String buildQuery(Map<String, Object> params) {
+    protected String buildQuery(Map<String, Object> params) {
     	String query = "";
     	if (params.size() > 0) {
     		int idx = 0;
@@ -79,23 +80,28 @@ public abstract class ServiceClient {
     	}
     	return query;
     }
-
+    
+    protected Map<String, Object> buildPagingParams(int offset, int limit) {
+        if (limit == 0) {
+            limit = 50;
+        }
+        return Map.of("offset", offset, "limit", limit);
+    }
+    
     protected <T> T doGet(String path, Map<String, Object> params, Class<T> reType) {
     	log.debug("doGet.enter; params: {}", params);
-    	String query = buildQuery(params);
         return client
             .get()
-            .uri(path + query, builder -> builder.build(params))
+            .uri(path, builder -> builder.build(params))
             .retrieve()
             .bodyToMono(reType)
             .block();
     }
 
     protected <T> T doGet(String path, Map<String, Object> params, Class<T> reType, OAuth2AuthorizedClient authorizedClient) {
-    	String query = buildQuery(params);
         return client
             .get()
-            .uri(path + query, builder -> builder.build(params))
+            .uri(path, builder -> builder.build(params))
             .attributes(oauth2AuthorizedClient(authorizedClient))
             .retrieve()
             .bodyToMono(reType) 
@@ -105,10 +111,9 @@ public abstract class ServiceClient {
     // TODO: add asynch GET methods also
 
     protected <T> T doPost(String path, Object body, Map<String, Object> params, Class<T> reType) {
-    	String query = buildQuery(params);
         return client
             .post()
-            .uri(path + query, builder -> builder.build(params))
+            .uri(path, builder -> builder.build(params))
             .bodyValue(body)
             .retrieve()
             .bodyToMono(reType) 
@@ -116,20 +121,18 @@ public abstract class ServiceClient {
     }
 
     protected <T> T doPost(String path, Map<String, Object> params, Class<T> reType) {
-    	String query = buildQuery(params);
         return client
             .post()
-            .uri(path + query, builder -> builder.build(params))
+            .uri(path, builder -> builder.build(params))
             .retrieve()
             .bodyToMono(reType)
             .block();
     }
     
     protected <T> T doPost(String path, Object body, Map<String, Object> params, Class<T> reType, OAuth2AuthorizedClient authorizedClient) {
-    	String query = buildQuery(params);
         return client
             .post()
-            .uri(path + query, builder -> builder.build(params))
+            .uri(path, builder -> builder.build(params))
             .bodyValue(body)
             .attributes(oauth2AuthorizedClient(authorizedClient))
             .retrieve()
@@ -138,29 +141,26 @@ public abstract class ServiceClient {
     }
 
     protected <T> Mono<T> doPostAsync(String path, Object body, Map<String, Object> params, Class<T> reType) {
-    	String query = buildQuery(params);
         return client
             .post()
-            .uri(path + query, builder -> builder.build(params))
+            .uri(path, builder -> builder.build(params))
             .bodyValue(body)
             .retrieve()
             .bodyToMono(reType); 
     }
     
     protected <T> Mono<T> doPostAsync(String path, Map<String, Object> params, Class<T> reType) {
-    	String query = buildQuery(params);
         return client
             .post()
-            .uri(path + query, builder -> builder.build(params))
+            .uri(path, builder -> builder.build(params))
             .retrieve()
             .bodyToMono(reType);
     }
     
     protected <T> Mono<T> doPostAsync(String path, Object body, Map<String, Object> params, Class<T> reType, OAuth2AuthorizedClient authorizedClient) {
-    	String query = buildQuery(params);
         return client
             .post()
-            .uri(path+ query, builder -> builder.build(params))
+            .uri(path, builder -> builder.build(params))
             .bodyValue(body)
             .attributes(oauth2AuthorizedClient(authorizedClient))
             .retrieve()
@@ -168,10 +168,9 @@ public abstract class ServiceClient {
     }
     
     protected <T> T doPut(String path, Object body, Map<String, Object> params, Class<T> reType) {
-    	String query = buildQuery(params);
         return client
             .put()
-            .uri(path + query, builder -> builder.build(params))
+            .uri(path, builder -> builder.build(params))
             .bodyValue(body)
             .retrieve()
             .bodyToMono(reType) 
@@ -179,10 +178,9 @@ public abstract class ServiceClient {
     }
 
     protected <T> T doPut(String path, Object body, Map<String, Object> params, Class<T> reType, OAuth2AuthorizedClient authorizedClient) {
-    	String query = buildQuery(params);
         return client
             .put()
-            .uri(path + query, builder -> builder.build(params))
+            .uri(path, builder -> builder.build(params))
             .bodyValue(body)
             .attributes(oauth2AuthorizedClient(authorizedClient))
             .retrieve()
