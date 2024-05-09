@@ -72,13 +72,16 @@
         <neo4j.gds.version>2.5.6</neo4j.gds.version>
         <neo4j.apoc.version>5.14.0</neo4j.apoc.version>
         <neo4j.neosemantics.version>5.14.0</neo4j.neosemantics.version>
-        <bcpkix-jdk18on.version>1.77</bcpkix-jdk18on.version>
+        <bcpkix-jdk18on.version>1.78.1</bcpkix-jdk18on.version>
         <jnats.version>2.16.13</jnats.version>
         <logback.version>1.4.14</logback.version>
         <protobuf-javalite.version>3.25.1</protobuf-javalite.version>
         <jackson-bom.version>2.16.0</jackson-bom.version>
         <commons-compress.version>1.26.0</commons-compress.version>
+        <commons-config2.version>2.10.1</commons-config2.version>
+        <mime4j.version>0.8.11</mime4j.version>
         <ipaddress.version>5.4.2</ipaddress.version>
+        <xmlunit2.version>2.10.0</xmlunit2.version>
         <!-- test libs -->
         <junit-platform.version>1.10.0</junit-platform.version>
         <spring-cloud-contract-wiremock.version>4.1.0</spring-cloud-contract-wiremock.version>
@@ -234,12 +237,12 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
-                <version>2.10.1</version>
+                <version>${commons-config2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.james</groupId>
                 <artifactId>apache-mime4j-core</artifactId>
-                <version>0.8.11</version>
+                <version>${mime4j.version}</version>
             </dependency>
             
             <dependency>
@@ -340,6 +343,11 @@
                 <groupId>io.nats</groupId>
                 <artifactId>jnats</artifactId>
                 <version>${jnats.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bcpkix-jdk18on.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
