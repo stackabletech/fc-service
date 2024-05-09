@@ -27,17 +27,17 @@ public class SelfDescriptionClient extends ServiceClient {
     	StringBuilder query = new StringBuilder(baseUrl);
     	query.append("/self-descriptions?");
     	Map<String, Object> params = new HashMap<>();
-    	buildQuery(query, params, "upload-timerange", buildTimeRange(uploadStart, uploadEnd));
-    	buildQuery(query, params, "status-timerange", buildTimeRange(statusStart, statusEnd));
-    	buildQuery(query, params, "issuers", buildList(issuers));
-    	buildQuery(query, params, "validators", buildList(validators));
-    	buildQuery(query, params, "statuses", buildList(statuses));
-    	buildQuery(query, params, "ids", buildList(ids));
-    	buildQuery(query, params, "hashes", buildList(hashes));
-    	buildQuery(query, params, "withMeta", withMeta);
-    	buildQuery(query, params, "withContent", withContent);
-    	buildQuery(query, params, "offset", offset);
-    	buildQuery(query, params, "limit", limit);
+    	addQuery(query, params, "upload-timerange", addQueryTimeRange(uploadStart, uploadEnd));
+    	addQuery(query, params, "status-timerange", addQueryTimeRange(statusStart, statusEnd));
+    	addQuery(query, params, "issuers", addQueryList(issuers));
+    	addQuery(query, params, "validators", addQueryList(validators));
+    	addQuery(query, params, "statuses", addQueryList(statuses));
+    	addQuery(query, params, "ids", addQueryList(ids));
+    	addQuery(query, params, "hashes", addQueryList(hashes));
+    	addQuery(query, params, "withMeta", withMeta);
+    	addQuery(query, params, "withContent", withContent);
+    	addQuery(query, params, "offset", offset);
+    	addQuery(query, params, "limit", limit);
     	if (query.charAt(query.length() - 1) == '&') {
     		query.deleteCharAt(query.length() - 1);
     	}
@@ -74,7 +74,21 @@ public class SelfDescriptionClient extends ServiceClient {
         return getSelfDescriptions(null, null, null, null, null, null, null, ids, null, true, true, null, null);
     }
     
-    private String buildTimeRange(Instant start, Instant end) {
+    private void addQuery(StringBuilder query, Map<String, Object> params, String param, Object value) {
+    	if (value != null) {
+    		query.append(param).append("={").append(param).append("}&");
+    		params.put(param, value);
+    	}
+    }   
+        
+    private String addQueryList(Collection<String> list) {
+    	if (list == null || list.isEmpty()) {
+    		return null;
+    	}
+    	return String.join(",", list);
+    }
+    
+    private String addQueryTimeRange(Instant start, Instant end) {
     	if (start == null) {
     		if (end == null) {
     			return null;
@@ -88,18 +102,4 @@ public class SelfDescriptionClient extends ServiceClient {
     	return start.toString() + "/" + end.toEpochMilli();
     }
     
-    private String buildList(Collection<String> list) {
-    	if (list == null || list.isEmpty()) {
-    		return null;
-    	}
-    	return String.join(",", list);
-    }
-    
-    private void buildQuery(StringBuilder query, Map<String, Object> params, String param, Object value) {
-    	if (value != null) {
-    		query.append(param).append("={").append(param).append("}&");
-    		params.put(param, value);
-    	}
-    }   
-        
 }

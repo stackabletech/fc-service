@@ -18,10 +18,8 @@ public class SchemaClient extends ServiceClient {
     }
     
     public List<OntologySchema> getSchemas(int offset, int limit) {
-        if (limit == 0) {
-            limit = 100;
-        }
-        return doGet(baseUrl + "/schemas?offset={offset}&limit={limit}", Map.of("offset", offset, "limit", limit), List.class);
+        Map<String, Object> params = buildPagingParams(offset, limit);
+        return doGet(baseUrl + "/schemas?offset={offset}&limit={limit}", params, List.class);
     }
     
     public void addSchema(OntologySchema schema) {

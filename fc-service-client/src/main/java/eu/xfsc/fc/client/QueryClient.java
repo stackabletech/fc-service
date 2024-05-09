@@ -24,18 +24,20 @@ public class QueryClient extends ServiceClient {
     public List<Map<String, Object>> query(String query, Map<String, Object> params) {
     	Statement stmt = new Statement();
     	stmt = stmt.parameters(params).statement(query);
-        Results results = doPost(baseUrl + "/query", stmt, null, Results.class);
+        Results results = doPost(baseUrl + "/query", stmt, Map.of(), Results.class);
         return results.getItems();
     }
 
-    public Results query(QueryLanguage queryLanguage, Integer timeout, boolean withTotalCount, Statement statement) { 
-        return doPost(baseUrl + "/query", statement, Map.of("queryLanguage", queryLanguage, "timeout", timeout, "withTotalCount", withTotalCount), 
-        		Results.class);
+    public Results query(QueryLanguage queryLanguage, Integer timeout, boolean withTotalCount, Statement statement) {
+    	Map<String, Object> params = Map.of("queryLanguage", queryLanguage, "timeout", timeout, "withTotalCount", withTotalCount);
+    	String query = super.buildQuery(params);
+        return doPost(baseUrl + "/query" + query, statement, params, Results.class);
     }
 
     public Mono<Results> queryAsync(QueryLanguage queryLanguage, Integer timeout, boolean withTotalCount, Statement statement) { 
-        return doPostAsync(baseUrl + "/query", statement, Map.of("queryLanguage", queryLanguage, "timeout", timeout, "withTotalCount", withTotalCount), 
-        		Results.class);
+    	Map<String, Object> params = Map.of("queryLanguage", queryLanguage, "timeout", timeout, "withTotalCount", withTotalCount);
+    	String query = super.buildQuery(params);
+        return doPostAsync(baseUrl + "/query" + query, statement, params, Results.class);
     }
 
     public Results search(AnnotatedStatement statement) { 
