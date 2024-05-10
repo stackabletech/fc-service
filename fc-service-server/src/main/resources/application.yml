@@ -45,6 +45,9 @@ spring:
         jwt:
           issuer-uri: http://key-server:8080/realms/gaia-x
 #          jwk-set-uri: http://key-server:8080/realms/gaia-x/protocol/openid-connect/certs
+  threads:
+    virtual:
+      enabled: true
   transaction:
     default-timeout: 10
 
@@ -138,7 +141,7 @@ federated-catalogue:
     schema: true
     vp-signature: true
     vc-signature: true
-    signature-verifier: local #uni-res
+    signature-verifier: uni-res #local
     did: 
       base-url: "https://dev.uniresolver.io/1.0" #/identifiers/
       cache:

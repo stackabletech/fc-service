@@ -5,13 +5,17 @@ include:
     file: maven-standard-ci.yaml
     ref: main
     
-variables:
-  MAVEN_IMAGE: "maven:3.9-eclipse-temurin-17"
+#variables:
+#  MAVEN_IMAGE: "maven:3.9-eclipse-temurin-17"
       
 stages:
   - test
   - build
   - deploy
+
+gemnasium-maven-dependency_scanning:
+  variables:
+    DS_JAVA_VERSION: 21
   
 maven:test:
   script:
