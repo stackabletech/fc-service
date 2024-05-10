@@ -223,27 +223,6 @@
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
             </dependency>
-            <!-- set versions to resolve vulnerabilities --> 
-            <dependency>
-                <groupId>org.eclipse.collections</groupId>
-                <artifactId>eclipse-collections</artifactId>        
-                <version>${eclipse-collections.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-javalite</artifactId>
-                <version>${protobuf-javalite.version}</version>
-            </dependency>           
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-configuration2</artifactId>
-                <version>${commons-config2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.james</groupId>
-                <artifactId>apache-mime4j-core</artifactId>
-                <version>${mime4j.version}</version>
-            </dependency>
             
             <dependency>
                 <groupId>org.neo4j.driver</groupId>
@@ -343,6 +322,32 @@
                 <groupId>io.nats</groupId>
                 <artifactId>jnats</artifactId>
                 <version>${jnats.version}</version>
+            </dependency>
+
+            <!-- set versions to resolve vulnerabilities -->
+            <!-- 
+            <dependency>
+                <groupId>org.eclipse.collections</groupId>
+                <artifactId>eclipse-collections</artifactId>        
+                <version>${eclipse-collections.version}</version>
+            </dependency>
+            -->
+            <!--
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-javalite</artifactId>
+                <version>${protobuf-javalite.version}</version>
+            </dependency>
+            -->           
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-configuration2</artifactId>
+                <version>${commons-config2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.james</groupId>
+                <artifactId>apache-mime4j-core</artifactId>
+                <version>${mime4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
