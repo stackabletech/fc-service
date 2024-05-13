@@ -179,7 +179,7 @@ postgresql:
 keycloak:
   fullnameOverride: fc-keycloak
   image:
-    tag: 20.0.2
+    tag: 23.0.7
   auth:
     adminUser: admin
     adminPassword: admin
@@ -241,12 +241,10 @@ neo4j:
   neo4j:
     name: fc-neo4j-db
     password: "neo12345"
-#    passwordFromSecret: fc-neo4j-secret
   volumes:
     data:
       mode: defaultStorageClass
   env:
-#    NEO4J_AUTH: neo4j/neo12345
     NEO4J_PLUGINS: '["apoc", "graph-data-science", "n10s"]'
   additionalVolumes: 
     - name: fc-neo4j-data
@@ -270,9 +268,9 @@ neo4j:
         - "/bin/sh"
         - "-c"
         - |
-          curl -L https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/5.5.0/apoc-5.5.0-extended.jar -O
-          curl -L https://github.com/neo4j-labs/neosemantics/releases/download/5.5.0.0/neosemantics-5.5.0.0.jar -O
-          curl -L https://graphdatascience.ninja/neo4j-graph-data-science-2.3.5.jar -O
-          cp -R apoc-5.5.0-extended.jar /var/lib/neo4j/plugins
-          cp -R neosemantics-5.5.0.0.jar /var/lib/neo4j/plugins
-          cp -R neo4j-graph-data-science-2.3.5.jar /var/lib/neo4j/plugins
+          curl -L https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/5.18.0/apoc-5.18.0-extended.jar -O
+          curl -L https://github.com/neo4j-labs/neosemantics/releases/download/5.18.0/neosemantics-5.18.0.jar -O
+          curl -L https://graphdatascience.ninja/neo4j-graph-data-science-2.6.6.jar -O
+          cp -R apoc-5.18.0-extended.jar /var/lib/neo4j/plugins
+          cp -R neosemantics-5.18.0.jar /var/lib/neo4j/plugins
+          cp -R neo4j-graph-data-science-2.6.6.jar /var/lib/neo4j/plugins
