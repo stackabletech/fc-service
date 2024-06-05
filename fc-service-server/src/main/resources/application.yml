@@ -148,6 +148,7 @@ federated-catalogue:
       additional-context:
         '[https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#]': https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#
         '[https://registry.lab.gaia-x.eu/v1/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#]': https://registry.lab.gaia-x.eu/v1/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#
+        '[https://www.w3.org/2018/credentials/v1]': https://www.w3.org/2018/credentials/v1
       cache-size: 500
       cache-timeout: 24H
       enable-file: true
