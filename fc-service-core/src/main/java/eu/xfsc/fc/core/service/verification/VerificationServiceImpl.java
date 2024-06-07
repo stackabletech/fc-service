@@ -217,13 +217,38 @@ public class VerificationServiceImpl implements VerificationService {
       throw new VerificationException("Semantic Error: no proper CredentialSubject found");
     }
 
+    int partCount = 0;
+    int soffCount = 0;
+    TrustFrameworkBaseClass baseClass = UNKNOWN;
     Collection<TrustFrameworkBaseClass> baseClasses = typedCredentials.getBaseClasses();
-    TrustFrameworkBaseClass baseClass = baseClasses.isEmpty() ? UNKNOWN : baseClasses.iterator().next();
-    if (verifySemantics && strict) {
-      if (baseClasses.size() > 1) {
-        throw new VerificationException("Semantic error: SD has several types: " + baseClasses);
+    if (baseClasses.size() > 1) {
+  	  Map<TrustFrameworkBaseClass, Integer> classMap = baseClasses.stream().reduce(new HashMap<>(), (map, e) -> {
+	      map.merge(e, 1, Integer::sum);
+		  return map;
+	    },
+  	    (m, m2) -> {
+  	      m.putAll(m2);
+  		  return m;
+  	    }
+  	  );
+  	  partCount = classMap.getOrDefault(PARTICIPANT,  0);
+  	  soffCount = classMap.getOrDefault(SERVICE_OFFERING, 0);
+  	  if (partCount > 0) {
+  		baseClass = PARTICIPANT;  
+  	  } else if (soffCount > 0) {
+   		baseClass = SERVICE_OFFERING;  
+  	  } else if (classMap.get(RESOURCE) != null) {
+  		baseClass = RESOURCE;
+  	  }
+    } else if (!baseClasses.isEmpty()) {
+      baseClass = baseClasses.iterator().next();
+    }
+
+    if (verifySemantics) { 
+   	  if (partCount > 0 && soffCount > 0) {
+   	    throw new VerificationException("Semantic error: SD has several types: " + baseClasses);
       }
-      if (baseClass != expectedClass) {
+      if (expectedClass != UNKNOWN && baseClass != expectedClass) {
         throw new VerificationException("Semantic error: expected SD of type " + expectedClass + " but found " + baseClass);
       }
     }
@@ -231,7 +256,7 @@ public class VerificationServiceImpl implements VerificationService {
     stamp2 = System.currentTimeMillis();
     List<SdClaim> claims = extractClaims(payload);
     log.debug("verifySelfDescription; claims extracted: {}, time taken: {}", (claims == null ? "null" : claims.size()),
-    		System.currentTimeMillis() - stamp2);
+   		System.currentTimeMillis() - stamp2);
 
     if (verifySemantics && strict) {
       Set<String> subjects = new HashSet<>();

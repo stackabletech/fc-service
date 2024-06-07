@@ -21,28 +21,23 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-          .csrf()
-          .disable()
           .authorizeHttpRequests(authorization -> authorization
         		  .requestMatchers(antMatcher("/")).permitAll()
         		  .requestMatchers(antMatcher("/index.html")).permitAll()
         		  .requestMatchers(antMatcher("/css/**")).permitAll()
         		  .requestMatchers(antMatcher("/js/**")).permitAll()
         		  .anyRequest().authenticated()
-        	)
-          //.and()
+       	  )
           .oauth2Login(oauth2Login ->
               oauth2Login
                   .loginPage("/oauth2/authorization/fc-client-oidc")
-              )
+          )
           .oauth2Client(Customizer.withDefaults())
-            .logout()
-            .logoutRequestMatcher(antMatcher(HttpMethod.POST, "/logout"))
-            .logoutSuccessUrl("/index.html")
-            .clearAuthentication(true)
-            .invalidateHttpSession(true)
-            .deleteCookies("JSESSIONID","XSRF-TOKEN")
-          ;
+          		.logout(c -> c.logoutRequestMatcher(antMatcher(HttpMethod.POST, "/logout"))
+          			.logoutSuccessUrl("/index.html")
+          			.clearAuthentication(true)
+          			.invalidateHttpSession(true)
+          			.deleteCookies("JSESSIONID","XSRF-TOKEN"));
         return http.build();
     }
        
