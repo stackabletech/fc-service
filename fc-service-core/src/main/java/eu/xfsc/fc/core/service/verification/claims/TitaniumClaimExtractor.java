@@ -52,7 +52,26 @@ public class TitaniumClaimExtractor implements ClaimExtractor {
     private void addClaims(List<SdClaim> claims, JsonObject vc) throws JsonLdError {
         JsonArray css = vc.getJsonArray("https://www.w3.org/2018/credentials#credentialSubject");
         for (JsonValue cs: css) {
-            Document csDoc = JsonDocument.of(cs.asJsonObject());
+            //Document csDoc = JsonDocument.of(cs.asJsonObject());
+            JsonObject csObj = cs.asJsonObject();
+            if (csObj.containsKey("@type")) {
+                boolean isComplianceCredential = false;
+                try {
+                    JsonArray typeArray = csObj.getJsonArray("@type");
+                    for (int i = 0; i < typeArray.size(); i++) {
+                        log.info("Found type value: {}", typeArray.getString(i));
+                        isComplianceCredential |= typeArray.getString(i)
+                                .equals("https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#compliance");
+                    }
+                } catch (Exception e) {
+                    log.warn("Encountered error during VC type check: {}", e.getMessage());
+                }
+                if (isComplianceCredential) {
+                    log.info("Skipping claims from CS of type compliance");
+                    continue;
+                }
+            }
+            Document csDoc = JsonDocument.of(csObj);
             RdfDataset rdf = JsonLd.toRdf(csDoc).produceGeneralizedRdf(true).get();
             RdfGraph rdfGraph = rdf.getDefaultGraph();
             List<RdfTriple> triples = rdfGraph.toList();

@@ -94,6 +94,11 @@ public class LocalSignatureVerifier implements SignatureVerifier {
 	@Override
 	public boolean verify(JsonLDObject payload, LdProof proof, JWK jwk, String alg) {
       log.debug("verify; got jwk: {}, alg: {}", jwk, alg);
+
+	  if (isPureComplianceCredential(payload) || isPureRegistrationNumberCredential(payload)) {
+		  log.info("received proof from compliance credential subject, ignoring signature...");
+		  return true;
+	  }
 	  PublicKeyVerifier<?> pkVerifier = PublicKeyVerifierFactory.publicKeyVerifierForJWK(jwk, alg);
 	  LdVerifier<?> verifier = new JsonWebSignature2020LdVerifier(pkVerifier);
 	  try {

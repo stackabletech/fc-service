@@ -54,6 +54,10 @@ public class DanubeTechClaimExtractor implements ClaimExtractor {
             
             for (Map<String, Object> csm: csms) {
                 cs = CredentialSubject.fromMap(csm);
+                if (cs.getType().equals("gx:compliance")) {
+                    log.info("Skipping claims from CS of type compliance");
+                    continue;
+                }
                 log.trace("extractClaims; CS claims: {}", cs.getClaims());
                 for (RdfNQuad nquad: cs.toDataset().toList()) {
                     log.debug("extractClaims; got NQuad: {}", nquad);
