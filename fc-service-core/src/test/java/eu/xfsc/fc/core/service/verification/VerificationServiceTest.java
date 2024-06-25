@@ -380,6 +380,15 @@ public class VerificationServiceTest {
   }
 
   @Test
+  void validSDStackable() {
+    log.debug("validSDStackable");
+    schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
+    String path = "VerificationService/stackable/stackable_vp_20240625.yml";
+    VerificationResult result = verificationService.verifySelfDescription(getAccessor(path), false, true, false, false);
+    //assertEquals(1, result.getValidators().size(), "Incorrect number of validators found");
+  }
+
+  @Test
   void validComplexSD() {
     log.debug("validComplexSD");
     schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
