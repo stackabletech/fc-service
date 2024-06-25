@@ -382,10 +382,23 @@ public class VerificationServiceTest {
   @Test
   void validSDStackable() {
     log.debug("validSDStackable");
-    schemaStore.addSchema(getAccessor("Schema-Tests/gax-test-ontology.ttl"));
+    // loads the gx.ttl (needed for processing credentials created by the wizard)
+    schemaStore.initializeDefaultSchemas();
+
+    // these are set in fc-service/fc-service-server/src/main/resources/application.yml...
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "https://w3id.org/gaia-x/core#Participant");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "https://w3id.org/gaia-x/core#ServiceOffering");
+
     String path = "VerificationService/stackable/stackable_vp_20240625.yml";
     VerificationResult result = verificationService.verifySelfDescription(getAccessor(path), false, true, false, false);
-    //assertEquals(1, result.getValidators().size(), "Incorrect number of validators found");
+
+    log.debug("result is [{}]", result.getClass());
+    assertTrue(result instanceof VerificationResultParticipant, "Incorrect result type");
+
+    // ...but need to set back as the defaults come from the test application.yml
+    // (and are assumed for other tests)
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.SERVICE_OFFERING, "http://w3id.org/gaia-x/service#ServiceOffering");
+    verificationService.setBaseClassUri(TrustFrameworkBaseClass.PARTICIPANT, "http://w3id.org/gaia-x/participant#Participant");
   }
 
   @Test
