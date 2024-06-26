@@ -172,6 +172,9 @@ public class ParticipantDaoImpl implements ParticipantDao {
     List<GroupRepresentation> groups = instance.groups(null, offset, limit, false);
     Map<String, Long> counts = instance.count();
     long total = counts.get("count");
+    for(GroupRepresentation group: groups) {
+      log.debug("Group ID {}: with parent/name/attrs: {}/{}/[{}]", group.getId(), group.getParentId(), group.getName(), group.getAttributes());
+    }
     return new PaginatedResults<>(total, groups.stream().map(this::toParticipantExt).collect(Collectors.toList()));
   }
 

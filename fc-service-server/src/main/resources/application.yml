@@ -135,9 +135,9 @@ federated-catalogue:
     service-offering:
       type: "https://w3id.org/gaia-x/core#ServiceOffering"
     semantics: false
-    schema: false
-    vp-signature: true
-    vc-signature: true
+    schema: true
+    vp-signature: false
+    vc-signature: false
     signature-verifier: local #uni-res
     did: 
       base-url: "https://dev.uniresolver.io/1.0" #/identifiers/
