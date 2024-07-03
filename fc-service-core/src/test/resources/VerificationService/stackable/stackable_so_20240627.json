@@ -1,0 +1,38 @@
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://w3id.org/security/suites/jws-2020/v1",
+    "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#"
+  ],
+  "type": "VerifiableCredential",
+  "id": "did:web:stackable.tech",
+  "issuer": "did:web:stackable.tech",
+  "issuanceDate": "2024-06-27T15:43:05.637Z",
+  "credentialSubject": {
+    "type": "gx:ServiceOffering",
+    "gx:providedBy": {
+      "id": "did:web:stackable.tech"
+    },
+    "gx:policy": "",
+    "gx:termsAndConditions": {
+      "gx:URL": "https://stackable.tech/en/imprint/"
+    },
+    "gx:dataAccountExport": {
+      "gx:requestType": "API",
+      "gx:accessType": "digital",
+      "gx:formatType": "application/json"
+    },
+    "id": "did:web:stackable.tech"
+  },
+  "proof": {
+    "type": "JsonWebSignature2020",
+    "created": "2024-06-27T17:43:05.673+02:00",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:web:stackable.tech",
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://w3id.org/security/suites/jws-2020/v1"
+    ],
+    "jws": "eyJhbGciOiJQUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..F9yx7KZBEXA6D9zbR8TqGGDy4RYa9NJJDGaMOKXEXf1LywukQj17TugDb7MFvvJJlVk5VBG77zJKyRGHprgma6Mb7oY-G_Rho87CnGfkauHFz7Z06w7DzIgxrEYvEnEXqAw8OmzSpa0qJu-WYgacyOgp_PncMVFymYUwXTQ75R7O06TXtd8G0CpjCYT-Q9Yrh-lNrrOv7oExue2taG-Dwe1b1eye_9wOzEOZjskDlYNAQITUfFVltUl_tQ_GJlu1ZEsJvFKmP2pqCU8AvZveLkdQfK17F21GehwL7e3G0w5xrYG1moRC6s4eZaNE4UM4KxSLZt0iVqnY63HG8SdMrQ"
+  }
+}

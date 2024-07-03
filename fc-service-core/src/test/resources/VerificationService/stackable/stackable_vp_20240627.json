@@ -1,0 +1,109 @@
+{
+  "@context": "https://www.w3.org/2018/credentials/v1",
+  "type": "VerifiablePresentation",
+  "verifiableCredential": [
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/security/suites/jws-2020/v1",
+        "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#"
+      ],
+      "type": "VerifiableCredential",
+      "issuanceDate": "2024-06-27T14:48:11.534Z",
+      "credentialSubject": {
+        "gx:termsAndConditions": "The PARTICIPANT signing the Self-Description agrees as follows:\n- to update its descriptions about any changes, be it technical, organizational, or legal - especially but not limited to contractual in regards to the indicated attributes present in the descriptions.\n\nThe keypair used to sign Verifiable Credentials will be revoked where Gaia-X Association becomes aware of any inaccurate statements in regards to the claims which result in a non-compliance with the Trust Framework and policy rules defined in the Policy Rules and Labelling Document (PRLD).",
+        "type": "gx:GaiaXTermsAndConditions",
+        "id": "did:web:stackable.tech"
+      },
+      "issuer": "did:web:stackable.tech",
+      "id": "did:web:stackable.tech",
+      "proof": {
+        "type": "JsonWebSignature2020",
+        "created": "2024-06-27T16:50:29.486+02:00",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:web:stackable.tech",
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://w3id.org/security/suites/jws-2020/v1"
+        ],
+        "jws": "eyJhbGciOiJQUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..K0nlOtRqHqeGNqqg_sQs7yTZd-tUSXXFMBHqiVGN6T5BDHQ_AI6-GJP3c5mmyKtfXmRGDGpwEMGb_28g8s2XWqDzNYN9JYeC3K4QmD4VOeVgqOutIKxv9aZ8PidBFcIQOyHHrNMSqbkwlRroQ4UauPLF-1Xayaf45n-7LZV_xAAGP09JXlwXk-vt9gzhALnIyUtC2KDszEY7H3s7gJwcsEitJAOXsi1_htyPa58PVknLd2Vdq0y6DaR8c_6m3_LO8fXn373jOtDq0mkzOjKq_u7c0UJcQ805ExvvIuH4_pdORwiAnLKxKjDLmw5IZRw9EA6p4qNR4Slp3d2OLxsANw"
+      }
+    },
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/security/suites/jws-2020/v1",
+        "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#"
+      ],
+      "type": [
+        "VerifiableCredential"
+      ],
+      "id": "did:web:stackable.tech",
+      "issuer": "did:web:stackable.tech",
+      "issuanceDate": "2024-06-27T14:48:11.534Z",
+      "credentialSubject": {
+        "gx:legalName": "Stackable GmbH",
+        "gx:headquarterAddress": {
+          "gx:countrySubdivisionCode": "DE-SH"
+        },
+        "gx:legalRegistrationNumber": {
+          "id": "did:web:stackable.tech"
+        },
+        "gx:legalAddress": {
+          "gx:countrySubdivisionCode": "DE-SH"
+        },
+        "type": "gx:LegalParticipant",
+        "gx-terms-and-conditions:gaiaxTermsAndConditions": "70c1d713215f95191a11d38fe2341faed27d19e083917bc8732ca4fea4976700",
+        "id": "did:web:stackable.tech"
+      },
+      "proof": {
+        "type": "JsonWebSignature2020",
+        "created": "2024-06-27T16:56:24.982+02:00",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:web:stackable.tech",
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://w3id.org/security/suites/jws-2020/v1"
+        ],
+        "jws": "eyJhbGciOiJQUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..OaKsi5PBmREyiLAdwAlVGeRv0y2IzVZ06GQY8QwrkvHQ6WstJ3cFc4z2z-PDno6Juz7zy6WZmJM1Ga639TtaQhl6ujNXJSLF6jgtiMF2WvHlWC6fWTj-c43n1jH1iVvSWp3BHILdLYjFtNFkNaYGYn9Bhd3jdyWtZkQmcYQVvE9ES5PhcPF3BJZltDwH67lnuI-HiGzDJ8ma7Jd2rEtZGTcU0d95p_FO94KGxKa3dgMVFBjABIILvkrIv_QUKQabbX99pdO4ZEP_jwxONzXXC_qCehnk4i_qJY3wwLx0fVlfEYwMhHXw4PgSzoAXuZxmznWXIVmRyU6CwrXWmD7erQ"
+      }
+    },
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/security/suites/jws-2020/v1"
+      ],
+      "type": [
+        "VerifiableCredential"
+      ],
+      "id": "did:web:stackable.tech",
+      "issuer": "did:web:stackable.tech",
+      "issuanceDate": "2024-06-27T14:57:43.626Z",
+      "credentialSubject": {
+        "@context": "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#",
+        "type": "gx:legalRegistrationNumber",
+        "id": "did:web:stackable.tech",
+        "gx:vatID": "DE334447979",
+        "gx:vatID-countryCode": "DE"
+      },
+      "evidence": [
+        {
+          "gx:evidenceURL": "https://ec.europa.eu/taxation_customs/vies/services/checkVatService",
+          "gx:executionDate": "2024-06-27T14:57:43.626Z",
+          "gx:evidenceOf": "gx:vatID"
+        }
+      ],
+      "proof": {
+        "type": "JsonWebSignature2020",
+        "created": "2024-06-27T16:58:22.460+02:00",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:web:stackable.tech",
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://w3id.org/security/suites/jws-2020/v1"
+        ],
+        "jws": "eyJhbGciOiJQUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..YZZNQCcMQJ7Ihhbpt6xcUboTmw7prmE3cYNZS7wc71sh3Ej9eGpCAsYsNON_os35leR7Cogko5v3bMLxpR_ppfYEZ8fT8y6QGHDknHPcrInpV2Ii5dnl72Dp2rcx0aKAc8wXCBpbVbwQx77Rw59s3Q6ZdQxLkUC8iXwzRAbupq4n3lZftiP2MSWxq72tEQyIn8o3saantQ9e7IWvAHipQTs4PagvwX5uEsxuM7DiwgGDTBrxArIb45w-11POMmL9ByVJRR82V_jVpQ4VlcaoAazWwx3WfG9NzilA0ixX71UFwbk33BxoUTW6cOPWMU9OvkaRBwEaimdOPwiz_aEtTg"
+      }
+    }
+  ]
+}

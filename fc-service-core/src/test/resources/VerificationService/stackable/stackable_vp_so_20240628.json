@@ -1,0 +1,175 @@
+{
+    "@context": "https://www.w3.org/2018/credentials/v1",
+    "type": "VerifiablePresentation",
+    "verifiableCredential": [
+      {
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://w3id.org/security/suites/jws-2020/v1",
+          "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#"
+        ],
+        "type": "VerifiableCredential",
+        "issuanceDate": "2024-06-28T14:03:05.061Z",
+        "credentialSubject": {
+          "@type": "gx:ServiceOffering",
+          "id": "did:web:stackable.tech",
+          "gx:termsAndConditions": "The PARTICIPANT signing the Self-Description agrees as follows:\n- to update its descriptions about any changes, be it technical, organizational, or legal - especially but not limited to contractual in regards to the indicated attributes present in the descriptions.\n\nThe keypair used to sign Verifiable Credentials will be revoked where Gaia-X Association becomes aware of any inaccurate statements in regards to the claims which result in a non-compliance with the Trust Framework and policy rules defined in the Policy Rules and Labelling Document (PRLD).",
+          "gx:policy": "default: allow",
+          "gx:dataAccountExport": {
+            "gx:requestType": "API",
+            "gx:accessType": "digital",
+            "gx:formatType": "application/json"
+          },
+          "gx:aggregationOf": [
+            {
+              "@id": "https://github.com/stackabletech/spark-k8s-operator"
+            },
+            {
+              "@id": "https://github.com/stackabletech/commons-operator"
+            },
+            {
+              "@id": "https://github.com/stackabletech/secret-operator"
+            },
+            {
+              "@id": "https://github.com/stackabletech/listener-operator"
+            }
+          ]
+        },
+        "issuer": "did:web:stackable.tech",
+        "id": "did:web:stackable.tech",
+        "proof": {
+          "type": "JsonWebSignature2020",
+          "created": "2024-06-28T16:08:49.566+02:00",
+          "proofPurpose": "assertionMethod",
+          "verificationMethod": "did:web:wizard.lab.gaia-x.eu:api:credentials:2d37wbGvQzbAQ84yRouh2m2vBKkN8s5AfH9Q75HZRCUQmJW7yAVSNKzjJj6gcjE2mDNDUHCichXWdMH3S2c8AaDLm3kXmf5R8DWM9RTWRbT9mdBeJnDV649Cmh9CtxAQqY9g9NVmJn4aGRa4d18ZWnFAvvX87Wc5t8ZsbsdKVMhm3VLK7fRQUPHt7Zi521DSUNamNe6xBNzrqAsiza8oEmjjVdwBGDDTU7HdkmUW4jvDXro1172rEHLky3Qw1cVgXFWs56wB6HWtEFZ9CpU2yZys2doLqCyx8jxKU4YRjmCB9sW7UAWVHG44GQveoyKPxbeAtgC8HksoG19cveiyeZ3cYTfeWNuPtKPn4ptUgF2Wi3oJvLwa8y3kWFCNTuP5EjErNFUTWGSSYGAUpua214fNor7iS1iUS8HRemb5bxgUKnLsdYLjamz5wbXit9RD6s3LSxogJEPkf9LyVCxwSnYnpNVhKZAw2xvM1UGPDzrUBbkdaL1yb2wji72o55w1Le72FNfj1Jach9AQbeQVXosEDkS29gxX4Gz9EkYEKH9KGFMBX5j5dnFKzdsbtpbEq31igPWJ5nGbcg7sHCrKnuZByCLuRvnAVQA83dv#JWK2020",
+          "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://w3id.org/security/suites/jws-2020/v1"
+          ],
+          "jws": "eyJhbGciOiJQUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..H7pKRkjRnzmAvxfca7rrupD20AfJUyLdasSRNtqOwYdO-NvvDEFRNE4DQn8STMYdqyr1HuI4huZQZu3E8wLVrxEqB6gGgzGlr7Y_diXMIrxaQkz4u8g5QgtlUP9OflspDQx9W_mDcB9R5hi86gOkMETdCfqE9Z0TOE8bdo3wSWj51aTjVCj-wb_rjjG4P3Ow954oIZ4gxUaA1ONASHpsr2JfOqHZ3kkMy5AE5aQ02Dg1F-MWhksmmYnF7M5U_ofeLInV6LGIppMHXwU3ZBGXHj6q9jNIxAwybBlbrARjIsa9-r3ALHpClnWR9YkZJ9H0_UF1fLn96G8sdptK3NwLdQ"
+        }
+      },
+      {
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://w3id.org/security/suites/jws-2020/v1",
+          "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#"
+        ],
+        "type": "VerifiableCredential",
+        "issuanceDate": "2024-06-28T14:03:05.061Z",
+        "credentialSubject": {
+          "@type": "gx:SoftwareResource",
+          "@id": "https://github.com/stackabletech/spark-k8s-operator",
+          "gx:policy": "default: allow",
+          "gx:license": "OSL-3.0",
+          "gx:copyrightOwnedBy": "original owner"
+        },
+        "issuer": "did:web:stackable.tech",
+        "id": "did:web:stackable.tech",
+        "proof": {
+          "type": "JsonWebSignature2020",
+          "created": "2024-06-28T16:08:49.569+02:00",
+          "proofPurpose": "assertionMethod",
+          "verificationMethod": "did:web:wizard.lab.gaia-x.eu:api:credentials:2d37wbGvQzbAQ84yRouh2m2vBKkN8s5AfH9Q75HZRCUQmJW7yAVSNKzjJj6gcjE2mDNDUHCichXWdMH3S2c8AaDLm3kXmf5R8DWM9RTWRbT9mdBeJnDV649Cmh9CtxAQqY9g9NVmJn4aGRa4d18ZWnFAvvX87Wc5t8ZsbsdKVMhm3VLK7fRQUPHt7Zi521DSUNamNe6xBNzrqAsiza8oEmjjVdwBGDDTU7HdkmUW4jvDXro1172rEHLky3Qw1cVgXFWs56wB6HWtEFZ9CpU2yZys2doLqCyx8jxKU4YRjmCB9sW7UAWVHG44GQveoyKPxbeAtgC8HksoG19cveiyeZ3cYTfeWNuPtKPn4ptUgF2Wi3oJvLwa8y3kWFCNTuP5EjErNFUTWGSSYGAUpua214fNor7iS1iUS8HRemb5bxgUKnLsdYLjamz5wbXit9RD6s3LSxogJEPkf9LyVCxwSnYnpNVhKZAw2xvM1UGPDzrUBbkdaL1yb2wji72o55w1Le72FNfj1Jach9AQbeQVXosEDkS29gxX4Gz9EkYEKH9KGFMBX5j5dnFKzdsbtpbEq31igPWJ5nGbcg7sHCrKnuZByCLuRvnAVQA83dv#JWK2020",
+          "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://w3id.org/security/suites/jws-2020/v1"
+          ],
+          "jws": "eyJhbGciOiJQUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..qBaPbnTiQGITuEV5TjtcPsRHTcOnPMIh_ByIdSza2iYEGgwfVskXrDeE0I7I8GFw0GN6Ix3-YAB12vGOkwRIm9LEEhxu_1b6rrPIp3D-U3BmfP-w2DjjkpCI8Z_tnbJ6d5ahUnXZ6V5TSL5wcgBeG-uFFOtZ_ywg65OMKSrST1oHnf8d1mKkad9o6JoPgt-mfKEJIDQGMda1S5nSAbzJ-ZmeN5nhBI4VN5m0tD4ZIBdCypUoIuB_vHu2zrX4B-C89P4buHQJyOTSf0ff9_Lu0BSTZgB5AMVO1YL3TSiDxBafTnWc6eP0GCLcaoPlof-mlsBYP7fcGCv66lcR-bUXOw"
+        }
+      },
+      {
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://w3id.org/security/suites/jws-2020/v1",
+          "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#"
+        ],
+        "type": "VerifiableCredential",
+        "issuanceDate": "2024-06-28T14:03:05.061Z",
+        "credentialSubject": {
+          "@type": "gx:SoftwareResource",
+          "@id": "https://github.com/stackabletech/commons-operator",
+          "gx:policy": "default: allow",
+          "gx:license": "OSL-3.0",
+          "gx:copyrightOwnedBy": "original owner"
+        },
+        "issuer": "did:web:stackable.tech",
+        "id": "did:web:stackable.tech",
+        "proof": {
+          "type": "JsonWebSignature2020",
+          "created": "2024-06-28T16:08:49.571+02:00",
+          "proofPurpose": "assertionMethod",
+          "verificationMethod": "did:web:wizard.lab.gaia-x.eu:api:credentials:2d37wbGvQzbAQ84yRouh2m2vBKkN8s5AfH9Q75HZRCUQmJW7yAVSNKzjJj6gcjE2mDNDUHCichXWdMH3S2c8AaDLm3kXmf5R8DWM9RTWRbT9mdBeJnDV649Cmh9CtxAQqY9g9NVmJn4aGRa4d18ZWnFAvvX87Wc5t8ZsbsdKVMhm3VLK7fRQUPHt7Zi521DSUNamNe6xBNzrqAsiza8oEmjjVdwBGDDTU7HdkmUW4jvDXro1172rEHLky3Qw1cVgXFWs56wB6HWtEFZ9CpU2yZys2doLqCyx8jxKU4YRjmCB9sW7UAWVHG44GQveoyKPxbeAtgC8HksoG19cveiyeZ3cYTfeWNuPtKPn4ptUgF2Wi3oJvLwa8y3kWFCNTuP5EjErNFUTWGSSYGAUpua214fNor7iS1iUS8HRemb5bxgUKnLsdYLjamz5wbXit9RD6s3LSxogJEPkf9LyVCxwSnYnpNVhKZAw2xvM1UGPDzrUBbkdaL1yb2wji72o55w1Le72FNfj1Jach9AQbeQVXosEDkS29gxX4Gz9EkYEKH9KGFMBX5j5dnFKzdsbtpbEq31igPWJ5nGbcg7sHCrKnuZByCLuRvnAVQA83dv#JWK2020",
+          "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://w3id.org/security/suites/jws-2020/v1"
+          ],
+          "jws": "eyJhbGciOiJQUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..c999MCTObq2qKgAQoSpmJrWthjgYzQ0gCljAgvGofA3KESjvgTBnyGIzGtLYJjzFBn0PZoJUJflvnfeqK5BuUrz4619fkT2chuSEQHWyv61gzJ55dRbIGD8aR044yvWKDNThNx0QzQ2_s1D_Bor0ZtXQEsYbiuccqBGa2XgWJRAbaR5l8xvt9nW3nez2xrQUJjooDUSmMC85FciwgMUzNLS-ahONSSAHH-z0YmaHE-HjAgpT-5PMHhUKMC_n66iQGHNZNtA2KICD_a7StXTVhuNfdL59-3Tyvj-ULQw9WX_RdkB4uHWTLgTOde7-SLX6A19k1PsYRACNn4lZFU7ukg"
+        }
+      },
+      {
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://w3id.org/security/suites/jws-2020/v1",
+          "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#"
+        ],
+        "type": "VerifiableCredential",
+        "issuanceDate": "2024-06-28T14:03:05.061Z",
+        "credentialSubject": {
+          "@type": "gx:SoftwareResource",
+          "@id": "https://github.com/stackabletech/secret-operator",
+          "gx:policy": "default: allow",
+          "gx:license": "OSL-3.0",
+          "gx:copyrightOwnedBy": "original owner"
+        },
+        "issuer": "did:web:stackable.tech",
+        "id": "did:web:stackable.tech",
+        "proof": {
+          "type": "JsonWebSignature2020",
+          "created": "2024-06-28T16:08:49.572+02:00",
+          "proofPurpose": "assertionMethod",
+          "verificationMethod": "did:web:wizard.lab.gaia-x.eu:api:credentials:2d37wbGvQzbAQ84yRouh2m2vBKkN8s5AfH9Q75HZRCUQmJW7yAVSNKzjJj6gcjE2mDNDUHCichXWdMH3S2c8AaDLm3kXmf5R8DWM9RTWRbT9mdBeJnDV649Cmh9CtxAQqY9g9NVmJn4aGRa4d18ZWnFAvvX87Wc5t8ZsbsdKVMhm3VLK7fRQUPHt7Zi521DSUNamNe6xBNzrqAsiza8oEmjjVdwBGDDTU7HdkmUW4jvDXro1172rEHLky3Qw1cVgXFWs56wB6HWtEFZ9CpU2yZys2doLqCyx8jxKU4YRjmCB9sW7UAWVHG44GQveoyKPxbeAtgC8HksoG19cveiyeZ3cYTfeWNuPtKPn4ptUgF2Wi3oJvLwa8y3kWFCNTuP5EjErNFUTWGSSYGAUpua214fNor7iS1iUS8HRemb5bxgUKnLsdYLjamz5wbXit9RD6s3LSxogJEPkf9LyVCxwSnYnpNVhKZAw2xvM1UGPDzrUBbkdaL1yb2wji72o55w1Le72FNfj1Jach9AQbeQVXosEDkS29gxX4Gz9EkYEKH9KGFMBX5j5dnFKzdsbtpbEq31igPWJ5nGbcg7sHCrKnuZByCLuRvnAVQA83dv#JWK2020",
+          "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://w3id.org/security/suites/jws-2020/v1"
+          ],
+          "jws": "eyJhbGciOiJQUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..lFeb-AwHPJ9-AjOkaBGGuWXvxt64Rx_BtLqhEpSqr2Zr5dn4to92YzRUXp7VrSXaefj1SpvkhUYT9RhB6lPMDZIdaK_O79jH-Y1fvSgo7MhAFRw99IU_xjsfV7s7NTPmGAtDSiafFVGpURrJMVPWkGKNO3FrdSVDDtZ5i6P5E4KuoZgOd-lNCSOTY3KtHROWXoWTxP29zv1LEb-FE8TQQeGiog0nJFQ3NVpoojLMuKH0U86-N7Oh2ESVV0QVH8FPDV2Moozgq8lslcow1urXk0_hoCokBU7yFA5A3-WivsJPTh06pQp6iI12mPU7yiaxlhxEQGXLcW--gpCH9c4TFQ"
+        }
+      },
+      {
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://w3id.org/security/suites/jws-2020/v1",
+          "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#"
+        ],
+        "type": "VerifiableCredential",
+        "issuanceDate": "2024-06-28T14:03:05.061Z",
+        "credentialSubject": {
+          "@type": "gx:SoftwareResource",
+          "@id": "https://github.com/stackabletech/listener-operator",
+          "gx:policy": "default: allow",
+          "gx:license": "OSL-3.0",
+          "gx:copyrightOwnedBy": "original owner"
+        },
+        "issuer": "did:web:stackable.tech",
+        "id": "did:web:stackable.tech",
+        "proof": {
+          "type": "JsonWebSignature2020",
+          "created": "2024-06-28T16:08:49.573+02:00",
+          "proofPurpose": "assertionMethod",
+          "verificationMethod": "did:web:wizard.lab.gaia-x.eu:api:credentials:2d37wbGvQzbAQ84yRouh2m2vBKkN8s5AfH9Q75HZRCUQmJW7yAVSNKzjJj6gcjE2mDNDUHCichXWdMH3S2c8AaDLm3kXmf5R8DWM9RTWRbT9mdBeJnDV649Cmh9CtxAQqY9g9NVmJn4aGRa4d18ZWnFAvvX87Wc5t8ZsbsdKVMhm3VLK7fRQUPHt7Zi521DSUNamNe6xBNzrqAsiza8oEmjjVdwBGDDTU7HdkmUW4jvDXro1172rEHLky3Qw1cVgXFWs56wB6HWtEFZ9CpU2yZys2doLqCyx8jxKU4YRjmCB9sW7UAWVHG44GQveoyKPxbeAtgC8HksoG19cveiyeZ3cYTfeWNuPtKPn4ptUgF2Wi3oJvLwa8y3kWFCNTuP5EjErNFUTWGSSYGAUpua214fNor7iS1iUS8HRemb5bxgUKnLsdYLjamz5wbXit9RD6s3LSxogJEPkf9LyVCxwSnYnpNVhKZAw2xvM1UGPDzrUBbkdaL1yb2wji72o55w1Le72FNfj1Jach9AQbeQVXosEDkS29gxX4Gz9EkYEKH9KGFMBX5j5dnFKzdsbtpbEq31igPWJ5nGbcg7sHCrKnuZByCLuRvnAVQA83dv#JWK2020",
+          "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://w3id.org/security/suites/jws-2020/v1"
+          ],
+          "jws": "eyJhbGciOiJQUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..J3qOxbL7yauE4pH20Chh9xUQekwkjNebT4oSGuOgrrm48nKTce4yx8R14DG_QIHwCCGs0jVhUeuiq_JYWs-0EJCUtSqw-pwrXObjB7mya_tmoQED9MQxdIBQsx3HPzEqUuFSekXYPY4P3P54YPnbE9vS3gr7ZgOhSr7X_zaoZ1V0xQPClofcKLgDv0MdNBPMfWCIa_RCC5mWScZz4B6ASgsL2LiNapeB8eQCcvBEQIqVEkUrprl2f3aEn5rs9tt4huLiG7VqqlBWVWI1ghneUiURkilC7pSUA6KIVX2v8WFK4oyv98pjhMC6f_tWR_NJ6bGQ2maPOyu_NQQVvau1aw"
+        }
+      }
+    ],
+    "issuanceDate": "2024-06-28T14:08:49.220Z",
+    "issuer": "did:web:wizard.lab.gaia-x.eu:api:credentials:2d37wbGvQzbAQ84yRouh2m2vBKkN8s5AfH9Q75HZRCUQmJW7yAVSNKzjJj6gcjE2mDNDUHCichXWdMH3S2c8AaDLm3kXmf5R8DWM9RTWRbT9mdBeJnDV649Cmh9CtxAQqY9g9NVmJn4aGRa4d18ZWnFAvvX87Wc5t8ZsbsdKVMhm3VLK7fRQUPHt7Zi521DSUNamNe6xBNzrqAsiza8oEmjjVdwBGDDTU7HdkmUW4jvDXro1172rEHLky3Qw1cVgXFWs56wB6HWtEFZ9CpU2yZys2doLqCyx8jxKU4YRjmCB9sW7UAWVHG44GQveoyKPxbeAtgC8HksoG19cveiyeZ3cYTfeWNuPtKPn4ptUgF2Wi3oJvLwa8y3kWFCNTuP5EjErNFUTWGSSYGAUpua214fNor7iS1iUS8HRemb5bxgUKnLsdYLjamz5wbXit9RD6s3LSxogJEPkf9LyVCxwSnYnpNVhKZAw2xvM1UGPDzrUBbkdaL1yb2wji72o55w1Le72FNfj1Jach9AQbeQVXosEDkS29gxX4Gz9EkYEKH9KGFMBX5j5dnFKzdsbtpbEq31igPWJ5nGbcg7sHCrKnuZByCLuRvnAVQA83dv",
+    "id": "https://wizard.lab.gaia-x.eu/api/credentials/2d37wbGvQzbAQ84yRouh2m2vBKkN8s5AfH9Q75HZRCUQmJW7yAVSNKzjJj6gcjE2mDNDUHCichXWdMH3S2c8AaDLm3kXmf5R8DWM9RTWRbT9mdBeJnDV649Cmh9CtxAQqY9g9NVmJn4aGRa4d18ZWnFAvvX87Wc5t8ZsbsdKVMhm3VLK7fRQUPHt7Zi521DSUNamNe6xBNzrqAsiza8oEmjjVdwBGDDTU7HdkmUW4jvDXro1172rEHLky3Qw1cVgXFWs56wB6HWtEFZ9CpU2yZys2doLqCyx8jxKU4YRjmCB9sW7UAWVHG44GQveoyKPxbeAtgC8HksoG19cveiyeZ3cYTfeWNuPtKPn4ptUgF2Wi3oJvLwa8y3kWFCNTuP5EjErNFUTWGSSYGAUpua214fNor7iS1iUS8HRemb5bxgUKnLsdYLjamz5wbXit9RD6s3LSxogJEPkf9LyVCxwSnYnpNVhKZAw2xvM1UGPDzrUBbkdaL1yb2wji72o55w1Le72FNfj1Jach9AQbeQVXosEDkS29gxX4Gz9EkYEKH9KGFMBX5j5dnFKzdsbtpbEq31igPWJ5nGbcg7sHCrKnuZByCLuRvnAVQA83dv?uid=4a36f25e-c2da-46dd-87dd-bdd5e69433dc",
+    "credentialSubject": {
+      "id": "https://wizard.lab.gaia-x.eu/api/credentials/2d37wbGvQzbAQ84yRouh2m2vBKkN8s5AfH9Q75HZRCUQmJW7yAVSNKzjJj6gcjE2mDNDUHCichXWdMH3S2c8AaDLm3kXmf5R8DWM9RTWRbT9mdBeJnDV649Cmh9CtxAQqY9g9NVmJn4aGRa4d18ZWnFAvvX87Wc5t8ZsbsdKVMhm3VLK7fRQUPHt7Zi521DSUNamNe6xBNzrqAsiza8oEmjjVdwBGDDTU7HdkmUW4jvDXro1172rEHLky3Qw1cVgXFWs56wB6HWtEFZ9CpU2yZys2doLqCyx8jxKU4YRjmCB9sW7UAWVHG44GQveoyKPxbeAtgC8HksoG19cveiyeZ3cYTfeWNuPtKPn4ptUgF2Wi3oJvLwa8y3kWFCNTuP5EjErNFUTWGSSYGAUpua214fNor7iS1iUS8HRemb5bxgUKnLsdYLjamz5wbXit9RD6s3LSxogJEPkf9LyVCxwSnYnpNVhKZAw2xvM1UGPDzrUBbkdaL1yb2wji72o55w1Le72FNfj1Jach9AQbeQVXosEDkS29gxX4Gz9EkYEKH9KGFMBX5j5dnFKzdsbtpbEq31igPWJ5nGbcg7sHCrKnuZByCLuRvnAVQA83dv#fcdca7de262c0d16e3aae69ad83674475fea5fcebaf68e8daae9c41f03c6fd25"
+    }
+  }
