@@ -99,7 +99,7 @@ env:
   - name: GRAPHSTORE_PASSWORD
     value: neo12345
   - name: KEYCLOAK_AUTH_SERVER_URL
-    value: http://keycloak.xfsc.stackable.tech
+    value: https://keycloak.xfsc.stackable.tech
   - name: KEYCLOAK_CREDENTIALS_SECRET
     valueFrom:
       secretKeyRef:
@@ -113,7 +113,7 @@ env:
         name: fc-postgres
         key: postgres-password
   - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
-    value: http://keycloak.xfsc.stackable.tech/realms/gaia-x
+    value: https://keycloak.xfsc.stackable.tech/realms/gaia-x
 
 postgresql:
   fullnameOverride: fc-postgres
